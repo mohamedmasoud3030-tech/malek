@@ -17,7 +17,7 @@ import {
   type VaultCategory,
   type VaultDocumentItem,
 } from '../documents-vault-service';
-import { formatLatinDate, formatLatinNumber } from '@/lib/formatters';
+import { formatFileSize, formatLatinDate, formatLatinNumber } from '@/lib/formatters';
 
 function useSignedUrls(documents: VaultDocumentItem[]) {
   const [signedMap, setSignedMap] = useState<Record<string, string>>({});
@@ -160,7 +160,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
             typeLabel: document.category ? vaultCategoryLabels[document.category] : 'مستند',
             reference: document.relatedEntityTitle,
             fileName: document.fileName,
-            fileSize: document.fileSize ? `${(document.fileSize / 1024).toFixed(1)} KB` : null,
+            fileSize: formatFileSize(document.fileSize),
             mimeType: document.mimeType,
             url: signedMap[document.id] ?? null,
             relatedEntity: document.relatedEntityTitle,

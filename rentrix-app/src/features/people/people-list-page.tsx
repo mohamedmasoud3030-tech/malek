@@ -372,7 +372,3 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
     </>
   );
 }
-
-export function PeopleWorkspace({ embedded = true }: PeopleListPageProps) {
-  return <PeopleListPage embedded={embedded} />;
-}

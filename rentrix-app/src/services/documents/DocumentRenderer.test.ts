@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { documentEngine } from './DocumentEngine';
 import { collectDocumentTextChunks, escapeDocumentHtml } from './DocumentRenderer';
 import type { UnifiedDocumentModel } from './types';
+import type { DocumentCompanySettings } from './companyIdentity';
 
 const baseModel: UnifiedDocumentModel = {
   type: 'contract',
@@ -31,17 +32,27 @@ describe('collectDocumentTextChunks', () => {
   });
 
   it('builds active invoice and expense documents with Arabic labels for RTL output', () => {
-    const db = {
-      settings: { company: { companyName: 'Rentrix', defaultCurrency: 'OMR' } },
-      contracts: [{ id: 'contract-1', tenant_id: 'tenant-1', unit_id: 'unit-1', property_id: 'property-1', start_date: '2026-01-01', end_date: '2026-12-31', rent_amount: 100, payment_cycle: 'monthly', status: 'active', cancellation_reason: null, renewed_from_id: null, notes: null, attachment_url: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
-      tenants: [{ id: 'tenant-1', full_name: '\u0623\u062d\u0645\u062f \u0639\u0644\u064a', phone: null, email: null, national_id: null, type: 'tenant', address: null, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
-      units: [{ id: 'unit-1', property_id: 'property-1', name: null, unit_number: 'A-1', floor: null, status: 'occupied', rent_amount: 100, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
-      properties: [{ id: 'property-1', title: '\u0628\u0631\u062c \u0627\u0644\u0646\u064a\u0644', type: 'residential', address: '\u0627\u0644\u0642\u0627\u0647\u0631\u0629', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
-    };
-    const invoice = documentEngine.build({ type: 'invoice', payload: { invoice: { id: 'invoice-1', contract_id: 'contract-1', issue_date: '2026-06-01', due_date: '2026-06-30', amount: 100, paid_amount: 25, status: 'PARTIALLY_PAID', notes: null, created_at: '2026-06-01', updated_at: '2026-06-01', deleted_at: null }, db } });
-    const expense = documentEngine.build({ type: 'expense_voucher', payload: { expense: { id: 'expense-1', property_id: 'property-1', category: '\u0635\u064a\u0627\u0646\u0629', amount: 50, expense_date: '2026-06-15', description: '\u0645\u0635\u0639\u062f', attachment_url: null, created_at: '2026-06-15', updated_at: '2026-06-15', deleted_at: null }, db } });
+    const settings: DocumentCompanySettings = { companyName: 'Rentrix', currency: 'OMR', currencySymbol: 'ر.ع', documentPrefixes: {} };
+    const invoice = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: {
+        issueDate: '2026-06-01',
+        dueDate: '2026-06-30',
+        amount: 100,
+        paidAmount: 25,
+        status: 'PARTIALLY_PAID',
+        description: 'مطالبة إيجارية مستحقة',
+        tenantName: 'أحمد علي',
+        propertyTitle: 'برج النيل',
+        unitNumber: 'A-1',
+      },
+    });
+    const expense = documentEngine.buildDocument('expense_voucher', {
+      settings,
+      payload: { date: '2026-06-15', category: 'صيانة', amount: 50, description: 'مصعد', propertyTitle: 'برج النيل' },
+    });
 
-    // The paid total is an authoritative DB field and passes through; a
+    // The paid total is an authoritative caller field and passes through; a
     // remaining balance is NOT invented by the document layer.
     expect(collectDocumentTextChunks(invoice)).toEqual(expect.arrayContaining(['فاتورة مطالبة مالية', 'المستأجر', 'إجمالي المدفوع حتى تاريخه']));
     expect(collectDocumentTextChunks(invoice)).not.toContain('المبلغ المتبقي واجب السداد');

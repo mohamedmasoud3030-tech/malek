@@ -4,6 +4,7 @@ import { useAttachmentUpload } from '@/hooks/use-attachment-upload';
 import { ATTACHMENTS_ACCEPT, ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { createSignedAttachmentUrl } from '@/services/documents/attachment-storage-service';
 import { cn } from '@/lib/utils';
+import { formatFileSize } from '@/lib/formatters';
 
 const ALLOWED_TYPES = ATTACHMENTS_ALLOWED_MIME_TYPES;
 const MAX_SIZE_BYTES = ATTACHMENTS_MAX_FILE_SIZE;
@@ -71,7 +72,7 @@ export function FileAttachmentField({
       return;
     }
     if (file.size > MAX_SIZE_BYTES) {
-      setError('حجم الملف يتجاوز 5 ميغابايت');
+      setError(`حجم الملف يتجاوز ${formatFileSize(MAX_SIZE_BYTES, { unitLabels: 'arabic', fractionDigits: 0 })}`);
       return;
     }
 

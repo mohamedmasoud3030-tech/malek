@@ -1,12 +1,15 @@
 // @vitest-environment happy-dom
 /**
  * Regression tests for the Owner Statement Excel export financial truth
- * contract. Specifically guards against:
+ * contract, exercised against the ONE production export
+ * (`downloadOwnerStatementExcel`). Specifically guards against:
  *  - the synthetic running-balance defect (let runningBalance = 0;
  *    runningBalance += transaction.net) which violated the authority rules
  *    by fabricating an opening balance of zero;
  *  - any future regression that re-introduces a fabricated cumulative
- *    balance column in the Excel export.
+ *    balance column in the Excel export;
+ *  - authoritative `rpt_owner_statement` movement types ('payment' /
+ *    'expense' / 'settlement') falling back to the generic label.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,40 +30,12 @@ vi.mock('@/lib/xlsx-export', () => ({
   }),
 }));
 
-// We test the pure Excel export function directly by importing the handler
-// from a helper. Since the export lives inside the component, we replicate
-// the exact logic in a testable function to verify the contract.
 import type { OwnerStatementReport } from '@/features/financials/reports/financialReportsService';
-import { buildXlsxBlob } from '@/lib/xlsx-export';
-import { downloadBlob } from '@/lib/tabular-export';
-
-/**
- * Exact replica of the Owner Excel export logic from StatementsSection.
- * Kept in sync by the "matches StatementsSection implementation" test below.
- * The function MUST NOT contain any running balance computation.
- */
-function exportOwnerExcel(statement: OwnerStatementReport, ownerId: string) {
-  // Financial truth: opening/closing running balance is NOT available from
-  // an authoritative read source. We never derive it from zero — the column
-  // is omitted entirely rather than carrying a fabricated cumulative figure.
-  const rows = statement.transactions.map((transaction) => [
-    transaction.date || '—',
-    transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية / صرف' : 'حركة مالية',
-    transaction.propertyName || 'غير محدد',
-    transaction.details || 'حركة مالية',
-    transaction.gross || 0,
-    transaction.deduction || 0,
-    transaction.net || 0,
-  ] as const);
-  downloadBlob(
-    buildXlsxBlob({
-      name: 'كشف المالك',
-      headers: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان', 'الإجمالي', 'الاستقطاع', 'صافي الحركة'],
-      rows,
-    }),
-    `owner-statement-${ownerId || 'statement'}.xlsx`,
-  );
-}
+import { downloadOwnerStatementExcel } from '../premium/statement-report-actions';
+import {
+  OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL,
+  ownerStatementTransactionTypeLabels,
+} from '@/features/financials/reports/statement-ledger';
 
 const testStatement: OwnerStatementReport = {
   ownerName: 'سالم الحارثي',
@@ -85,7 +60,7 @@ describe('Owner Excel export — financial truth contract', () => {
   });
 
   it('does NOT include a running balance column (authority unavailable)', () => {
-    exportOwnerExcel(testStatement, 'o-01');
+    downloadOwnerStatementExcel(testStatement, 'o-01');
 
     expect(downloadCalls).toHaveLength(1);
     const blob = downloadCalls[0].blob as { headers: string[]; rows: ReadonlyArray<readonly unknown[]> };
@@ -98,22 +73,23 @@ describe('Owner Excel export — financial truth contract', () => {
   });
 
   it('exports each transaction verbatim without cumulative computation', () => {
-    exportOwnerExcel(testStatement, 'o-01');
+    downloadOwnerStatementExcel(testStatement, 'o-01');
 
     const blob = downloadCalls[0].blob as { rows: ReadonlyArray<readonly unknown[]> };
     expect(blob.rows).toHaveLength(3);
 
-    // Row 0: payment
+    // Row 0: payment — the authoritative rpt_owner_statement rent-collection type
     expect(blob.rows[0][0]).toBe('2026-02-10');
-    expect(blob.rows[0][1]).toBe('حركة مالية'); // 'payment' type → generic label
+    expect(blob.rows[0][1]).toBe(ownerStatementTransactionTypeLabels.payment);
+    expect(blob.rows[0][1]).not.toBe(OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL);
     expect(blob.rows[0][4]).toBe(1000);
     expect(blob.rows[0][5]).toBe(50);
     expect(blob.rows[0][6]).toBe(950);
     // No 8th column (running balance)
     expect((blob.rows[0] as unknown[])[7]).toBeUndefined();
 
-    // Row 1: expense
-    expect(blob.rows[1][1]).toBe('مصروف');
+    // Row 1: expense (statement authority only lists owner-charged expenses)
+    expect(blob.rows[1][1]).toBe('مصروف مُحمَّل على المالك');
     expect(blob.rows[1][4]).toBe(120);
 
     // Row 2: settlement
@@ -121,13 +97,29 @@ describe('Owner Excel export — financial truth contract', () => {
     expect(blob.rows[2][6]).toBe(-800);
   });
 
+  it('labels an unknown movement type truthfully as a generic movement', () => {
+    downloadOwnerStatementExcel({
+      ...testStatement,
+      transactions: [{ ...testStatement.transactions[0], type: 'legacy_adjustment' }],
+    }, 'o-01');
+
+    const blob = downloadCalls[0].blob as { rows: ReadonlyArray<readonly unknown[]> };
+    expect(blob.rows[0][1]).toBe(OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL);
+  });
+
+  it('refuses to emit a workbook without an authoritative statement', () => {
+    downloadOwnerStatementExcel(null, 'o-01');
+    downloadOwnerStatementExcel(undefined, 'o-01');
+    expect(downloadCalls).toHaveLength(0);
+  });
+
   it('produces the correct filename', () => {
-    exportOwnerExcel(testStatement, 'o-01');
+    downloadOwnerStatementExcel(testStatement, 'o-01');
     expect(downloadCalls[0].fileName).toBe('owner-statement-o-01.xlsx');
   });
 
   it('does NOT derive opening balance from zero', () => {
-    exportOwnerExcel(testStatement, 'o-01');
+    downloadOwnerStatementExcel(testStatement, 'o-01');
 
     const blob = downloadCalls[0].blob as { rows: ReadonlyArray<readonly unknown[]> };
     // If a running balance were derived from zero, the first row's

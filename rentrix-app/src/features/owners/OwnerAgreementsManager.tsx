@@ -13,7 +13,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
-import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { listOwners, listPropertyOwners, type Owner } from './services/owner-service';
 import {
   assertAgreementOwnerHasOwnership,
@@ -24,6 +24,7 @@ import {
   type OwnerAgreementVersion,
   type OwnerAgreementVersionTerms,
 } from './ownerAgreementService';
+import { commissionTypeLabels } from './owner-agreement-labels';
 import { useCreateOwnerAgreement, useCreateOwnerAgreementVersion, useOwnerAgreements, useOwnerAgreementVersions } from './useOwnerAgreements';
 import { useQuery } from '@tanstack/react-query';
 import { MONEY_STEP } from '@/lib/money';
@@ -54,7 +55,6 @@ type VersionFormState = {
 
 const emptyForm: AgreementFormState = { owner_id: '', agreement_type: 'property_management', collection_role: 'OWNER_IS_CREDITOR', commission_type: 'RATE', commission_value: '10', starts_on: '', ends_on: '', notes: '' };
 const agreementTypeLabels = { property_management: 'إدارة عقار' } as const;
-const commissionTypeLabels = { RATE: 'نسبة', FIXED_MONTHLY: 'مبلغ شهري ثابت' } as const;
 const earliestAmendmentDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
 const agreementFormSteps = [
@@ -73,6 +73,7 @@ function getOwnerName(owners: readonly Owner[], ownerId: string) {
 }
 
 function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreement: OwnerAgreement; versions: readonly OwnerAgreementVersion[]; owners: readonly Owner[]; onAmend: (agreement: OwnerAgreement, current: OwnerAgreementVersion | null) => void; tone: 'success' | 'info' | 'neutral' }) {
+  const { money: formatMoney, number: formatNumber, date: formatDate } = useCompanyFormatters();
   const current = versions.find((version) => version.superseded_at === null) ?? null;
   const displayedCommissionType = current?.commission_type ?? agreement.commission_type;
   const displayedCommissionValue = current?.commission_value ?? agreement.commission_value;
@@ -111,6 +112,7 @@ function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreemen
 }
 
 export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
+  const { money: formatMoney, number: formatNumber, date: formatDate } = useCompanyFormatters();
   const agreementsQuery = useOwnerAgreements(propertyId);
   const ownershipQuery = useQuery({
     queryKey: ['property_owners', propertyId, 'agreement-options'],

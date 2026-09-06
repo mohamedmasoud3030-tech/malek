@@ -2,18 +2,6 @@
 // Keep only exports with real consumers or contract value; do not grow a
 // second report implementation here.
 export {
-  getBalanceSheetReport,
-  getIncomeStatementReport,
-  getTrialBalanceReport,
-  type BalanceSheetReport,
-  type BalanceSheetSectionItem,
-  type IncomeStatementLine,
-  type IncomeStatementReport,
-  type TrialBalanceAccount,
-  type TrialBalanceReport,
-} from '@/features/accounting/reports/accountingReportsFacade';
-
-export {
   getOwnerStatementReport,
   getTenantStatementReport,
   normalizeOwnerStatementReport,
@@ -33,6 +21,13 @@ export {
   type VatReturnReport,
 } from './financial-statements-service';
 export {
+  agingBucketLabels,
+  agingBucketOrder,
+  getAgingBucketKeyFromDaysOverdue,
+  getAgingBucketLabel,
+  type AgingBucketKey,
+} from './aging-buckets';
+export {
   getAgedReceivablesReport,
   getArrearsSummaryReport,
   getDashboardArrearsReports,
@@ -46,7 +41,6 @@ export {
   type AgedReceivablesBucket,
   type AgedReceivablesGroupRow,
   type AgedReceivablesReport,
-  type AgingBucketKey,
   type ArrearsReportFilters,
   type ArrearsSummaryReport,
   type DashboardArrearsReports,
@@ -60,12 +54,8 @@ export {
   getCollectionSummaryReport,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
-  getExpenseTotalsReport,
   getFinancialCashflowReport,
   getFinancialPeriodSummaryReport,
-  getInvoiceTotalsReport,
-  getOutstandingBalanceReport,
-  getPaymentTotalsReport,
   getPropertyCollectionBreakdownReport,
   summarizeCollectionReport,
   summarizeDailyCollectionReport,

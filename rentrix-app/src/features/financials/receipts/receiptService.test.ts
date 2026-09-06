@@ -106,8 +106,8 @@ describe('receiptService', () => {
     vi.clearAllMocks();
   });
 
-  it('formats receipt numbers from the payment id prefix', async () => {
-    const { formatReceiptNumber } = await import('./receiptService');
+  it('never fabricates a receipt number from the payment id', async () => {
+    const { formatReceiptNumber } = await import('../components/receipt-formatters');
 
     expect(formatReceiptNumber('1234567890abcdef')).toBe('إيصال بلا مرجع تجاري');
   });

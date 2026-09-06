@@ -125,10 +125,6 @@ export function getLanguageLocale(language: unknown): string {
   return normalizeLanguage(language);
 }
 
-export function isSupportedCompanyLocale(value: unknown): value is SupportedCompanyLocale {
-  return typeof value === 'string' && supportedCompanyLocales.includes(value as SupportedCompanyLocale);
-}
-
 export function normalizeCompanyLocale(value: unknown, language: unknown = undefined): SupportedCompanyLocale {
   if (typeof value === 'string') {
     const trimmedLocale = value.trim();
@@ -153,10 +149,6 @@ export function normalizeCountry(value: unknown): SupportedCountry {
   if (isSupportedCountry(uppercaseCountry)) return uppercaseCountry;
 
   return countryAliases[uppercaseCountry] ?? countryAliases[trimmedCountry] ?? DEFAULT_COUNTRY;
-}
-
-export function isSupportedTimezone(value: unknown): value is SupportedTimezone {
-  return typeof value === 'string' && supportedTimezones.includes(value as SupportedTimezone);
 }
 
 export function normalizeTimezone(value: unknown): SupportedTimezone {

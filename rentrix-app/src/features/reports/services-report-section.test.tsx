@@ -22,6 +22,11 @@ vi.mock('@/features/utilities/use-utilities', () => ({
     partially_paid: 'مدفوعة جزئياً',
     paid: 'مسددة بالكامل',
   },
+  utilityBillStatusTone: {
+    unpaid: 'warning',
+    partially_paid: 'info',
+    paid: 'success',
+  },
   utilityTypeLabels: {
     electricity: 'كهرباء',
     water: 'مياه',

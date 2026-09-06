@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { MalekBrandWordmark } from '@/components/brand/malek-wordmark';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
+import { useMenuKeyboardNavigation } from '@/components/ui/menu-keyboard';
 import { canAccessRoute, getWriteAccessState, type AuthorizationContext, type WriteAccessState } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
@@ -129,6 +130,7 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuItemListRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const initial = email?.trim().charAt(0).toUpperCase() || 'M';
 
@@ -139,19 +141,18 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
       if (rootRef.current?.contains(event.target as Node)) return;
       setOpen(false);
     };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setOpen(false);
-      triggerRef.current?.focus();
-    };
-
     document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [open]);
+
+  // Escape, Tab and arrow navigation are delegated to the shared menu authority so
+  // this header menu behaves exactly like the canonical action menu.
+  useMenuKeyboardNavigation({
+    open,
+    menuRef: menuItemListRef,
+    triggerRef,
+    onClose: () => setOpen(false),
+  });
 
   // Menu-row layout on top of the canonical ghost `Button` — no second button.
   const itemClass = 'min-h-11 justify-start gap-3 rounded-xl px-3 text-sm font-semibold';
@@ -193,8 +194,6 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
           />
           <div
             id={menuId}
-            role="menu"
-            aria-label="قائمة المستخدم"
             data-account-menu-panel
             className="absolute end-0 top-[calc(100%+0.5rem)] z-50 w-[min(17rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-elevated"
           >
@@ -226,7 +225,12 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
               </div>
             ) : null}
 
-            <div className="space-y-0.5 p-1.5">
+            <div
+              ref={menuItemListRef}
+              role="menu"
+              aria-label="قائمة المستخدم"
+              className="space-y-0.5 p-1.5"
+            >
               {canOpenSettings ? (
                 <Button asChild variant="ghost" fullWidth role="menuitem" className={itemClass}>
                   <Link to="/settings" onClick={() => setOpen(false)}>

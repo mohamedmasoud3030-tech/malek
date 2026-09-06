@@ -11,7 +11,7 @@ import { UnitFormModal } from '@/features/units/unit-form-modal';
 import { useUnits } from '@/features/units/use-units';
 import { useUnitContractDrafts } from '@/features/contracts/queries/useUnitContractDrafts';
 import { useAuth } from '@/hooks/use-auth';
-import { formatMoney } from '@/hooks/useCompanyFormatters';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { useProperty } from '../use-properties';
 import {
@@ -27,6 +27,7 @@ export function PropertyUnitDetailPage() {
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
   const { canAccess } = useAuth();
+  const { money: formatMoney } = useCompanyFormatters();
   const canViewReports = canAccess('financial.reports.view');
   const [editOpen, setEditOpen] = useState(false);
   const unitDraftsQuery = useUnitContractDrafts({

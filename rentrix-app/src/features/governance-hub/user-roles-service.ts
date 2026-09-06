@@ -1,4 +1,4 @@
-import type { UserRole } from '@/domain/types';
+import type { AuthorizationRole as UserRole } from '@/features/auth/permissions';
 import { supabase } from '@/lib/supabase';
 
 export type GovernedUser = Readonly<{

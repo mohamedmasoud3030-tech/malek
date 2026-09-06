@@ -3,7 +3,7 @@ import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { PreviewFacts } from '@/components/ui/quick-preview';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { getFinanceStatusTone, mapInvoiceStatusToFinanceKind } from '../finance-status-mapping';
+import { getInvoiceStatusTone } from '../finance-status-mapping';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { getInvoiceGrossAmount, type InvoiceListItem } from '../invoices/invoiceService';
 import { getSafeRemainingAmount } from '../financialMath';
@@ -42,7 +42,7 @@ export function InvoicePreviewDialog({
         : undefined
       : undefined}
       status={invoice ? (
-        <StatusBadge tone={getFinanceStatusTone(mapInvoiceStatusToFinanceKind(invoice.status))}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
+        <StatusBadge tone={getInvoiceStatusTone(invoice.status)}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
       ) : undefined}
       footer={invoice ? (
         <div className="flex flex-wrap items-center gap-2">

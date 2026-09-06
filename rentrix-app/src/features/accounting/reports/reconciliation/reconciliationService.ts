@@ -27,9 +27,6 @@ function todayIsoDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-/** Row-level reconciliation data from the wp05_reconcile_all RPC. */
-export type ReconciliationResult = ReconciliationRow;
-
 /** Run reconciliation as-of a given date (defaults to today). */
 export async function getReconciliationReport(
   asOf?: string
@@ -61,16 +58,4 @@ export async function getReconciliationReport(
       gl_count: Number(r.gl_count) || 0,
     };
   });
-}
-
-/** Assert that reconciliation is PASS for all classes as-of a date. */
-export async function assertReconciliation(
-  asOf?: string
-): Promise<{ success: boolean; details?: unknown }> {
-  const p_as_of = asOf ?? todayIsoDate();
-  const { data, error } = await supabase.rpc('wp05_assert_reconciliation', { p_as_of });
-  if (error) throw error;
-
-  const result = asRecord(data);
-  return { success: Boolean(result.success), details: data };
 }

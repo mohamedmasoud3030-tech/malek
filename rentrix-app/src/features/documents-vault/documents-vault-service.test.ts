@@ -56,7 +56,7 @@ describe('documents vault real implementation', () => {
     expect(() => validateVaultFile({ size: 1, type: 'application/pdf' })).not.toThrow();
     expect(() => validateVaultFile({ size: VAULT_MAX_FILE_SIZE, type: 'image/png' })).not.toThrow();
     expect(() => validateVaultFile({ size: 0, type: 'image/png' })).toThrow('الملف فارغ');
-    expect(() => validateVaultFile({ size: VAULT_MAX_FILE_SIZE + 1, type: 'image/png' })).toThrow('5MB');
+    expect(() => validateVaultFile({ size: VAULT_MAX_FILE_SIZE + 1, type: 'image/png' })).toThrow('5 MB');
     expect(() => validateVaultFile({ size: 1, type: 'application/msword' })).toThrow('غير مدعوم');
     expect(() => validateVaultFile({ size: 1, type: '' })).toThrow('غير مدعوم');
   });

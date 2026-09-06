@@ -16,8 +16,8 @@ import {
   toReportDocumentPayload,
   type ReportDocumentData,
 } from '@/services/documents/documentPayloadAdapters';
+import { agingBucketOrder } from '@/features/financials/reports/aging-buckets';
 import {
-  agingBucketKeys,
   buildAgingBucketChartRows,
   buildReportCsvFilename,
   downloadCsv,
@@ -82,7 +82,7 @@ export function OverdueSection({
 }>) {
   const bucketRows = buildAgingBucketChartRows(
     agedReport?.buckets,
-    agingBucketKeys,
+    agingBucketOrder,
   );
   const currentBucketLabel = agedReport?.buckets?.current?.label;
 

@@ -5,20 +5,13 @@ import {
   getCollectionSummaryReport,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
-  getExpenseTotalsReport,
   getFinancialCashflowReport,
   getFinancialPeriodSummaryReport,
-  getInvoiceTotalsReport,
   getOverdueInvoicesReport,
   getOwnerStatementReport,
-  getOutstandingBalanceReport,
-  getPaymentTotalsReport,
   getPropertyCollectionBreakdownReport,
   getTenantStatementReport,
   getVatReturnReport,
-  getTrialBalanceReport,
-  getIncomeStatementReport,
-  getBalanceSheetReport,
   type ArrearsReportFilters,
   type ExpenseBreakdownReportFilters,
   type FinancialReportFilters,
@@ -35,16 +28,9 @@ export const financialReportKeys = {
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
   financialCashflow: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialCashflow', filters] as const,
   vatReturn: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'vatReturn', filters] as const,
-  invoiceTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'invoiceTotals', filters] as const,
-  paymentTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'paymentTotals', filters] as const,
-  expenseTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'expenseTotals', filters] as const,
   expenseBreakdown: (filters: ExpenseBreakdownReportFilters) => [...financialReportKeys.all, 'expenseBreakdown', filters] as const,
-  outstandingBalance: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'outstandingBalance', filters] as const,
   tenantStatement: (contractId: string) => [...financialReportKeys.all, 'tenantStatement', contractId] as const,
   ownerStatement: (ownerId: string, filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'ownerStatement', ownerId, filters] as const,
-  trialBalance: (asOf: string) => [...financialReportKeys.all, 'trialBalance', asOf] as const,
-  incomeStatement: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'incomeStatement', filters] as const,
-  balanceSheet: (asOf: string) => [...financialReportKeys.all, 'balanceSheet', asOf] as const,
 };
 
 /**
@@ -110,42 +96,10 @@ export function useVatReturnReport(filters: Pick<FinancialReportFilters, 'dateFr
   });
 }
 
-export function useInvoiceTotalsReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.invoiceTotals(filters),
-    queryFn: () => getInvoiceTotalsReport(filters),
-    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
-  });
-}
-
-export function usePaymentTotalsReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.paymentTotals(filters),
-    queryFn: () => getPaymentTotalsReport(filters),
-    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
-  });
-}
-
-export function useExpenseTotalsReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.expenseTotals(filters),
-    queryFn: () => getExpenseTotalsReport(filters),
-    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
-  });
-}
-
 export function useExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.expenseBreakdown(filters),
     queryFn: () => getExpenseBreakdownReport(filters),
-    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
-  });
-}
-
-export function useOutstandingBalanceReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.outstandingBalance(filters),
-    queryFn: () => getOutstandingBalanceReport(filters),
     enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
@@ -187,29 +141,5 @@ export function useOwnerStatementReport(ownerId: string | undefined, filters: Pi
     queryKey: financialReportKeys.ownerStatement(ownerId ?? '', filters),
     queryFn: () => getOwnerStatementReport({ ownerId: ownerId!, ...filters }),
     enabled: (options.enabled ?? true) && (Boolean(ownerId) && hasRequiredDateRange(filters)),
-  });
-}
-
-export function useTrialBalanceReport(asOf: string | undefined, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.trialBalance(asOf ?? ''),
-    queryFn: () => getTrialBalanceReport(asOf!),
-    enabled: (options.enabled ?? true) && (Boolean(asOf)),
-  });
-}
-
-export function useIncomeStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.incomeStatement(filters),
-    queryFn: () => getIncomeStatementReport(filters),
-    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
-  });
-}
-
-export function useBalanceSheetReport(asOf: string | undefined, options: ReportQueryOptions = {}) {
-  return useQuery({
-    queryKey: financialReportKeys.balanceSheet(asOf ?? ''),
-    queryFn: () => getBalanceSheetReport(asOf!),
-    enabled: (options.enabled ?? true) && (Boolean(asOf)),
   });
 }

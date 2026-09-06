@@ -1,32 +1,25 @@
 /**
  * Canonical typed DocumentEngine — the ONLY source of `UnifiedDocumentModel`.
  *
- * Public surface:
- *
- *  - `documentEngine.buildDocument(type, { settings, payload })`
- *      The canonical, typed API. Payloads follow `documentPayloads.ts` and
- *      are validated against the template registry (`documentRegistry.ts`).
- *
- *  - `documentEngine.build(request)`  (compatibility)
- *      Normalizes the historical `{ invoice, db }`-style requests through
- *      `legacyPayloadAdapters.ts` and then takes the exact same canonical
- *      path. No builder logic lives outside this engine.
+ * Public surface: `documentEngine.buildDocument(type, { settings, payload })`.
+ * Payloads follow `documentPayloads.ts` and are validated against the
+ * template registry (`documentRegistry.ts`). No builder logic lives outside
+ * this engine and no second request shape exists.
  *
  * Truthfulness rules enforced here:
  *  - company identity is asserted real and complete (never a brand name,
  *    never a fallback address/currency);
  *  - document numbers come only from real business references — UUID
- *    fragments are dropped by the adapters, never displayed;
+ *    fragments are never displayed;
  *  - status wording is taken from the registry's registered labels only;
  *  - amounts pass through unchanged (this engine never recalculates money).
  */
-import type { Contract, Expense, Invoice, Receipt } from '@/types/domain';
 import '@/lib/formatters';
 import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
+import { formatPaymentMethodLabel } from '@/features/financials/components/receipt-formatters';
 import { TableGenerator } from './TableGenerator';
 import type {
   DocumentHeader,
-  DocumentRequest,
   DocumentTable,
   ProfessionalReportBody,
   ReportKpi,
@@ -78,25 +71,6 @@ import type {
   UnitInspectionPayload,
   UnitPassportPayload,
 } from './documentPayloads';
-import {
-  legacyBalanceSheetToCanonical,
-  legacyContractToCanonical,
-  legacyExpenseToCanonical,
-  legacyIncomeStatementToCanonical,
-  legacyInvoiceToCanonical,
-  legacyOwnerStatementToCanonical,
-  legacyReceiptToCanonical,
-  legacySettingsToCanonical,
-  legacyTenantStatementToCanonical,
-  legacyTrialBalanceToCanonical,
-  type LegacyAppLikeDb,
-  type LegacyBalanceSheetPayload,
-  type LegacyIncomeStatementPayload,
-  type LegacyOwnerStatementPayload,
-  type LegacyTenantStatementPayload,
-  type LegacyTrialBalancePayload,
-} from './legacyPayloadAdapters';
-
 /* ------------------------------------------------------------------ */
 /* Validation                                                           */
 /* ------------------------------------------------------------------ */
@@ -207,12 +181,6 @@ const formatDocumentValue = (value: unknown): string => {
 };
 
 const kpi = (label: string, value: unknown) => ({ label, value: formatDocumentValue(value) });
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: 'نقداً',
-  bank_transfer: 'تحويل بنكي',
-  check: 'شيك',
-};
 
 /* ------------------------------------------------------------------ */
 /* Model assembly                                                       */
@@ -353,7 +321,7 @@ function buildInvoiceModel(entry: DocumentTemplateEntry, settings: DocumentCompa
 
 function buildReceiptModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: ReceiptDocumentPayload): UnifiedDocumentModel {
   const ctx = formatContextOf(settings);
-  const methodLabel = payload.paymentMethod ? PAYMENT_METHOD_LABELS[payload.paymentMethod] ?? payload.paymentMethod : null;
+  const methodLabel = payload.paymentMethod ? formatPaymentMethodLabel(payload.paymentMethod) : null;
   const purpose = payload.notes?.trim() || (payload.invoiceReference ? `سداد الفاتورة رقم ${payload.invoiceReference}` : 'سداد دفعة مستحقة');
 
   return {
@@ -390,7 +358,7 @@ function buildReceiptModel(entry: DocumentTemplateEntry, settings: DocumentCompa
 
 function buildExpenseVoucherModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: ExpenseVoucherPayload): UnifiedDocumentModel {
   const ctx = formatContextOf(settings);
-  const title = payload.kind === 'payment' ? 'سند حركة مالية' : 'سند صرف مصروفات';
+  const title = 'سند صرف مصروفات';
   return {
     type: entry.type,
     header: buildHeader(settings, entry, {
@@ -1292,7 +1260,6 @@ const builders: { [T in DocumentTypeId]: (entry: DocumentTemplateEntry, settings
   invoice: buildInvoiceModel,
   receipt: buildReceiptModel,
   expense_voucher: buildExpenseVoucherModel,
-  payment: buildExpenseVoucherModel,
   owner_statement: buildOwnerStatementModel,
   tenant_statement: buildTenantStatementModel,
   trial_balance: buildTrialBalanceModel,
@@ -1349,47 +1316,6 @@ class DocumentEngine {
     }
 
     return builders[type](entry, settings, payload);
-  }
-
-  /**
-   * Compatibility build for the historical `{ type, payload }` contract
-   * (payloads bundling raw rows + `db`). Normalizes via the legacy
-   * adapters, then runs the exact same canonical path.
-   */
-  build(request: DocumentRequest): UnifiedDocumentModel {
-    const payload = request.payload as Record<string, unknown> & { db?: LegacyAppLikeDb };
-    const db = payload?.db;
-    if (!db?.settings) {
-      throw new DocumentDataError('بنية بيانات المستند غير مدعومة.');
-    }
-    const settings = assertDocumentCompanySettings(legacySettingsToCanonical(db.settings));
-
-    switch (request.type) {
-      case 'invoice':
-        return this.buildDocument('invoice', { settings, payload: legacyInvoiceToCanonical({ invoice: payload.invoice as Invoice, db }) });
-      case 'contract':
-        return this.buildDocument('contract', { settings, payload: legacyContractToCanonical({ contract: payload.contract as Contract, db }) });
-      case 'receipt':
-        return this.buildDocument('receipt', { settings, payload: legacyReceiptToCanonical({ receipt: payload.receipt as Receipt, db }) });
-      case 'expense_voucher':
-        return this.buildDocument('expense_voucher', { settings, payload: legacyExpenseToCanonical({ expense: payload.expense as Expense, db, kind: 'expense' }) });
-      case 'payment':
-        return this.buildDocument('payment', { settings, payload: legacyExpenseToCanonical({ expense: payload.expense as Expense, db, kind: 'payment' }) });
-      case 'owner_statement':
-        return this.buildDocument('owner_statement', { settings, payload: legacyOwnerStatementToCanonical(payload as unknown as { data: LegacyOwnerStatementPayload }) });
-      case 'tenant_statement':
-        return this.buildDocument('tenant_statement', { settings, payload: legacyTenantStatementToCanonical(payload as unknown as { data: LegacyTenantStatementPayload }) });
-      case 'trial_balance':
-        return this.buildDocument('trial_balance', { settings, payload: legacyTrialBalanceToCanonical(payload as unknown as LegacyTrialBalancePayload) });
-      case 'income_statement':
-        return this.buildDocument('income_statement', { settings, payload: legacyIncomeStatementToCanonical(payload as unknown as LegacyIncomeStatementPayload) });
-      case 'balance_sheet':
-        return this.buildDocument('balance_sheet', { settings, payload: legacyBalanceSheetToCanonical(payload as unknown as LegacyBalanceSheetPayload) });
-      case 'generic_report':
-        return this.buildDocument('generic_report', { settings, payload: payload as unknown as GenericReportPayload });
-      default:
-        throw new Error(`Unsupported document type: ${request.type}`);
-    }
   }
 
   /** Registry-driven support check used by the service boundary. */

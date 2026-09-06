@@ -118,18 +118,12 @@ export const settingsSectionRegistry: readonly SettingsSectionDefinition[] = [
   },
 ] as const;
 
-export type SettingsSectionRegistry = ReadonlyArray<SettingsSectionDefinition>;
-
 export function getSettingsSection(id: SettingsSectionId): SettingsSectionDefinition | undefined {
   return settingsSectionRegistry.find((section) => section.id === id);
 }
 
 export function getVisibleSettingsSections(): readonly SettingsSectionDefinition[] {
   return settingsSectionRegistry.filter((section) => section.showInPrimaryNavigation);
-}
-
-export function getSettingsSectionDraftFields(id: SettingsSectionId): readonly CompanySettingsDraftField[] {
-  return getSettingsSection(id)?.fields ?? [];
 }
 
 export function getCompanySettingsSectionFieldOwners(): Readonly<Record<CompanySettingsDraftField, SettingsSectionId>> {

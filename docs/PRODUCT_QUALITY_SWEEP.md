@@ -134,22 +134,22 @@ a check: a 24px upload label now fails (verified).
   `landing-performance-contract.test.ts`. Deleting them would reverse an explicit
   product decision, so they are reported here for an owner call: re-enable and fix the
   performance, or retire the section set and its two contract tests together.
-- No canonical file-size formatter exists. Four divergent copies:
+  Phase 8 took the second option (see below).
+- No canonical file-size formatter existed (resolved in Phase 8: `formatFileSize` in
+  `src/lib/formatters.ts`). The four divergent copies were:
   `components/documents/contextual-documents-section.tsx` (`«N.N ك.ب»`),
   `features/documents-vault/components/documents-vault-workspace.tsx` (`«N.N KB»`),
   `features/financials/reconciliation/bank-csv-import-workflow.tsx` (`«N.N KB»` inside
   an Arabic sentence) and an inline MB message in
-  `features/documents-vault/documents-vault-service.ts`. Unifying them means adding a
-  shared helper and touching the Finance agent's reconciliation flow, which is outside
-  this sweep's ownership boundary.
+  `features/documents-vault/documents-vault-service.ts`.
 - The mobile quick-add sheet in `app/layout/layout-navigation-view.tsx` uses
   `role="menu"`/`role="menuitem"` on navigation links without arrow-key roving focus
   (`mobile-quick-add-list.test.tsx` asserts the current structure). Same defect class as
   the property wizard above, but it sits in the shared shell with a test that encodes
   the current pattern; it needs a deliberate shell decision rather than a drive-by fix.
-- `features/properties/property-form-modal.tsx` has no DOM-level test for its header
-  semantics — the contracts around it are source-text contracts. Adding a render test
-  would need query/form providers that no existing properties test wires up.
+- `features/properties/property-form-modal.tsx` had no DOM-level test for its header
+  semantics. Phase 8 added one (`src/features/properties/property-form-modal.test.tsx`)
+  on the harness the properties page interaction test already proves out.
 - CI caveat that allowed these stale assertions to survive: on ordinary pull requests
   `browser-smoke` is a stub that echoes "Ordinary PRs keep the browser matrix deferred"
   (`.github/workflows/browser-readiness.yml`), and the real shard only runs outside PR
@@ -171,8 +171,185 @@ time out at 90–120s while the equivalent desktop and tablet cases pass (they a
 This is a stale test contract, not a broken flow: the actions are present and named in
 the accessibility tree. The fix is to retarget that helper at the card's own overflow
 menu — now reliably row-scoped after the `entity-card.tsx` change above — or at the
-card's primary/secondary buttons. It is deliberately not done in this sweep because
-`document-platform-acceptance.spec.ts` is the financial-document acceptance suite and
-another agent is actively working in that boundary; landing a rewritten browser-evidence
-path for invoice print/PDF on top of their in-flight changes would be exactly the kind
-of silent interference this repository cannot afford.
+card's primary/secondary buttons. It was deliberately not done in that sweep because another agent was
+active in the financial-document boundary. Phase 8 verified the overlap
+(`GET /pulls?state=open` returned exactly one open PR, whose 134-file list does not
+contain `e2e/`) and repaired the contract — see the Phase 8 section below.
+
+---
+
+## Phase 8 — mobile acceptance, shared menu behavior, and dead-surface removal
+
+Continued from `main` at `c5ad6791`. Every diagnosis below was reproduced on current
+`main` first; no conclusion from Phase 7 was carried over as fact.
+
+### The five mobile failures: one stale contract, one real product defect
+
+Reproduced at `c5ad6791`: all five failed — four while waiting on an element that
+never appears (90–120 s) and one on a download event that never fired. Two different
+causes:
+
+1. **Stale test contract** (`e2e/document-platform-acceptance.spec.ts`). The invoice
+   register supplies *structured* mobile-card actions, so `entity-table.tsx` renders the
+   row's secondary operations in `EntityCard`'s own overflow menu and never renders the
+   `data-entity-table-mobile-actions` disclosure. The spec's helpers still waited for
+   that disclosure and for `button /^طباعة/` / `button /^تنزيل/` on the card face —
+   markup this register cannot produce. `expectInvoiceDocumentActionsWithheld()` was also
+   *vacuously* green: it asserted `toHaveCount(0)` for buttons that never exist, so it
+   could not have detected a withheld-actions regression at all.
+   Repair: the mobile branch drives the canonical surface — the card's
+   `[data-action-menu-trigger]` — and print/download resolve to `menuitem «طباعة»` and
+   `menuitem «PDF»` inside the opened `role="menu"` on both viewports. The mobile branch
+   now asserts the trigger is **row-scoped** (`toHaveAccessibleName(/فاتورة بلا مرجع/)`)
+   and the withheld check opens the same menu to prove `تحصيل` is present while
+   `طباعة`/`PDF` are absent, replacing an assertion that could never fail.
+2. **Real product defect** (`components/ui/action-menu.tsx`, affecting every register).
+   `positionMenu()` anchored the portalled menu at `trigger.bottom + 4` with
+   `overflow-hidden`, no viewport clamp and no flip. On a 375- or 414-px viewport the
+   last items of a card overflow menu rendered *below the fold of a fixed layer*, where
+   neither a scroll gesture nor Playwright's actionability check can reach them —
+   `element is outside of the viewport`, forever. A phone user could not tap PDF export
+   on an invoice at all.
+   Repair: `resolveActionMenuPlacement()` flips the menu above the trigger when it does
+   not fit below, caps its height to the space that exists (scrollable instead of
+   clipped), clamps the horizontal anchor, and the menu repositions on `scroll`/`resize`
+   so it keeps following its row. Unit-tested in
+   `src/components/ui/action-menu.placement.test.ts`.
+
+One test-side repair was needed as well: `double-clicking print/PDF never duplicates the
+operation` double-taps a menu item, and the second tap lands on the card underneath and
+opens the quick view. The register is then legitimately `aria-hidden` behind a modal, so
+the test returns to the register (Escape + assert the dialog is gone) before exercising
+the download. The contract under test — exactly one popup and exactly one download —
+is unchanged and still proven.
+
+### One shared menu keyboard authority
+
+`role="menu"` obligates arrow-key navigation. `ActionMenu` implemented it inline; the two
+ad-hoc shell menus announced a menu and implemented only Escape/outside-click, and the
+mobile quick-add `aria-controls` pointed at the panel *title* instead of the panel.
+`components/ui/menu-keyboard.ts` is now the single authority — `focusMenuItem()` plus
+`useMenuKeyboardNavigation()` (ArrowUp/Down with wrapping, Home/End, Escape closing and
+returning focus, Tab leaving the pattern) — used by `ActionMenu`, the account menu and
+the quick-add sheet, which also focuses the first destination on open. The account menu
+additionally had a `role="status"` card inside its `role="menu"` element, which a menu
+may not contain; the panel now wraps it and only the actions carry the menu role.
+Proofs: `mobile-quick-add-list.test.tsx` (arrow/Home/End/Escape focus handoff,
+`aria-controls` → controlled panel), `account-permission-status-polish.test.tsx`
+(status outside the menu), `mobile-shell-navigation-polish.test.tsx` (menu items,
+geometry on the panel, Escape returns focus), `action-menu.interaction.test.tsx`
+(unchanged contract through the shared module).
+
+### Canonical file size
+
+`formatFileSize()` lives in `src/lib/formatters.ts` with the module's existing
+conventions (Latin digits via `normalizeLocale`, `null` when there is nothing to show).
+Data surfaces get `12.4 KB`, prose gets `5 ميغابايت`, and validation messages derive the
+limit from the constant they enforce instead of typing `5MB` next to it. Migrated: the
+contextual documents section, the vault workspace list, the vault upload validator, the
+bank-CSV import preview and its size guard, the shared attachment field, and the office
+import guards. Guarded by a source contract so no migrated surface can divide by 1024
+again, and the office-import test's `5 ميجابايت` spelling was corrected to the single
+canonical one.
+
+### Removed, not left behind
+
+- The retired marketing surface: `Showcase.tsx`, `Security.tsx`, `FinalCta.tsx` and the
+  helpers only they used (`Reveal.tsx`, `landing-section-heading.tsx`), the 20 MB of
+  `public/landing` screenshots and demo video, nine dead sections of `i18n/messages.ts`
+  (474 lines), and the marketing anchor navigation that `/privacy` and `/terms` still
+  rendered into a redirect (`NavBar` section links, `Footer` product column). The live
+  legal surface keeps `LegalPage`, `NavBar`, `Footer` and `constants.ts`.
+- `toLatinLocaleString` / `toLatinLocaleDateString` / `toLatinLocaleTimeString`: the
+  backwards-compatible wrappers around the retired `Date`/`Number` prototype shims had
+  no consumer left; the prototype-hygiene guards stay and now also forbid re-export.
+
+### Retained on purpose
+
+Exports with no production caller but a contract test — `src/lib/money.ts` validation
+helpers, `src/lib/brand.ts` asset paths, `src/lib/lena-endorsement.ts`,
+`paginatedRead`'s page-size constants — are deliberate single-source-of-truth surfaces,
+not residue; a repo-wide file-level orphan scan after these deletions returns nothing
+(`import.meta.glob` is not used for runtime discovery anywhere in the app, so no file is
+reachable only through a glob).
+
+
+## Phase 9 — integrating this branch with the parallel Finance sweep
+
+Two branches were developed on top of the same `main` (`c5ad6791`) by two agents: the
+Phase 8 quality closure (menu reachability, one file-size formatter, retired marketing
+surface, property-wizard DOM coverage) and `arena/01a0713a-malek` (PR #1806, four passes
+of Finance/report duplicate elimination, whose head `7831f60` also merged `main` into
+itself). They were **not** disjoint: both touched nine files, and Git reported only six
+conflicts. The overlap map was built from `git diff --name-only` on each side against
+current `main` before anything was merged, and every shared file was then read, not
+auto-resolved.
+
+Four responsibilities were solved twice, in parallel, with different code. Each kept one
+canonical implementation:
+
+| Responsibility | Outcome |
+| --- | --- |
+| File-size formatting | `lib/formatters.ts` `formatFileSize` (this sweep) wins: it covers B–TB, promotes when rounding reaches the next base, returns `null` when there is nothing to display, and can render Arabic unit words. The Finance variant (KB/MB only, `'—'` for missing) was auto-merged **alongside** it in the same file — a duplicate definition Git did not report — and is removed. Its two deliberate strengths are absorbed: a second decimal above the megabyte (`2.25 MB`, not `2.3 MB`) and the pinned `'en'` locale no-op. |
+| Menu reachability | `resolveActionMenuPlacement` (flip above, cap to the room that exists, horizontal clamp, reposition on scroll/resize) wins over the in-component `bottom`-anchor variant, because it is unit-tested and also handles the case where neither side fits. The Finance fallback `max-h-[calc(100dvh-1rem)]` replaces the `80vh` guess: mobile browser toolbars are dynamic. |
+| Double-tap fall-through | The Finance fix is kept: selecting an item unmounts the menu synchronously, so the second click of a double-tap landed on the invoice card underneath. It moved out of `action-menu.tsx` into `components/ui/menu-click-shield.ts`, because the property belongs to any menu that dismisses itself on activation — the mobile quick-add sheet had the same shape. Their unit test is the contract; the browser step that used to *work around* the fall-through now asserts the shield holds. |
+| Acceptance spec helpers | Union. Their `aria-controls`-bound menu resolution, `aria-expanded` idempotency and "exactly one open menu" proof, with this sweep's row containment for the desktop trigger, menu-scoped item locators with no `.first()`, and a non-vacuous withheld check. The card-face `toHaveCount(0)` lines stay removed: the register never renders those buttons, so they could never fail. |
+
+Preserved from the Finance branch, untouched: the statement line-type ledger,
+`reports/documents/report-cells.ts`, `lib/maintenanceStatus.ts` owning status/priority
+labels, the `communication-schema` / `land-schema` label de-duplication, and its
+dead-export and unreferenced-fixture removals (re-verified here: `QuickAction`,
+`QuickActionBar` and `MobileActionGrid` have no consumer, and no live import points at
+any deleted fixture). Nothing from either branch was dropped, and no test was weakened to
+reach green — the single retargeted assertion (their `style.bottom === '44px'` placement
+pin) was rewritten to the equivalent geometry of the winning implementation, with the
+failure mode it guards against named in the comment.
+
+### Two findings deliberately left open
+
+- `features/financials/invoice-list-section.tsx` labels the desktop row menu
+  `إجراءات ${invoice.reference ?? 'الفاتورة'}`, so the label is only row-specific when a
+  reference exists. The acceptance contract is specific anyway (the trigger is bound to
+  the `<tr>` containing the invoice), and the copy belongs to the Finance sweep, so it was
+  not rewritten during integration.
+- `app/layout/notifications-menu.tsx` carries a fourth arrow/Escape/focus-restore
+  implementation. It was **not** folded into `menu-keyboard.ts`: its panel is
+  `role="dialog"` with a `role="status"` block and an error `role="alert"` among its
+  children, and the shared hook's semantics (wrapping `[role=menuitem]`, Tab closes) would
+  change both the ARIA contract and the keyboard behavior of a live surface. That is a
+  follow-up accessibility task, not an integration step.
+
+### Validation environment note
+
+`login-flow`, `login-simplification` and part of `readiness-smoke` drive the **real**
+login form, which `lib/runtime-diagnostics.ts` disables whenever Supabase public config is
+missing *or placeholder* (`example.supabase.co`, `invalid.supabase.local`,
+`test-anon-key`, `invalid-anon-key`). `playwright.config.ts`'s built-in dev-server fallback
+uses exactly those placeholders, so those specs fail on any branch — including `main`,
+verified by running them at `c5ad6791`. The document acceptance suite simultaneously tolerates
+only the placeholder hosts in its realtime console filter. CI resolves both constraints with
+`VITE_SUPABASE_URL=https://e2e.invalid.supabase.local` and
+`VITE_SUPABASE_ANON_KEY=e2e-browser-public-key` (a host that is configured for the app yet
+substring-matched by the filter), and that is the env the local browser battery must use.
+
+### Integrated-branch gate results
+
+Run on `integrate/phase8-and-finance-canonical` with the CI browser env above, serialized
+(two vCPUs / 2 GB), after every reconciliation step:
+
+| Gate | Result |
+| --- | --- |
+| `chromium-mobile`, full project | 92 passed, 0 failed, 83 skipped |
+| `chromium-desktop`, full project | 159 passed, 0 failed, 16 skipped |
+| `chromium-tablet`, full project | 80 passed, 0 failed, 95 skipped |
+| document acceptance, mobile + desktop | 20 passed, 0 failed, 6 skipped |
+| Vitest (app suite) | 508 files, 3527 tests, 0 failed |
+| `tsc -p tsconfig.json --noEmit` | clean |
+| `check:architecture` / `check:enterprise-freeze` | clean / PASS |
+| `scripts/check-doc-links.mjs` | PASS (10 files) |
+| `pnpm build` (PWA precache 28 entries, 430 KiB) | clean |
+
+`tsc -p tsconfig.test.json --noEmit` was also run against the integrated tree after the
+gates above had released memory (it had aborted under the sandbox heap cap earlier in this
+phase, which was contention, not a code condition): clean, with every test, spec and
+fixture file in the repository included.

@@ -17,14 +17,13 @@ import { canAccess, financialOperationPermissions, type AuthorizationContext } f
 import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatMoney, formatShortId } from '../components/financials-formatters';
 import { getTodayLocalDateString } from '../financials-date-utils';
-import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
+import { formatPaymentMethodLabel, formatReceiptContext, formatReceiptStatusLabel, getReceiptStatusTone, paymentMethodLabels } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
 import { ReceiptPreviewDialog } from './ReceiptPreviewDialog';
 import { openReceiptPrintTab } from './receipt-print';
 import { useApproveReceiptVoid, usePendingReceiptVoidRequests, useReceipt, useReceipts, useRequestReceiptVoid } from './useReceipts';
 import { formatLatinNumber } from '@/lib/formatters';
-import type { SemanticTone } from '@/components/ui/status-badge';
 
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
 
@@ -88,13 +87,6 @@ export function sumPostedReceiptsForDate(receipts: readonly ReceiptRecord[], day
 
 export function countPostedReceiptsForDate(receipts: readonly ReceiptRecord[], day: string) {
   return receipts.filter((receipt) => receipt.status === 'posted' && receipt.payment_date === day).length;
-}
-
-function receiptStatusTone(status: string): SemanticTone {
-  if (status === 'posted') return 'success';
-  if (status === 'void' || status === 'voided' || status === 'cancelled') return 'danger';
-  if (status === 'draft') return 'neutral';
-  return 'warning';
 }
 
 function createVoidRequestId() {
@@ -228,10 +220,10 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
     { key: 'receipt_number', header: 'رقم الإيصال', priority: 'identity', render: (receipt) => <span className="font-black">{receipt.receipt_number}</span> },
     { key: 'payment_date', header: 'تاريخ الدفع', priority: 'secondary', render: (receipt) => formatDate(receipt.payment_date) },
     { key: 'amount', header: 'المبلغ', priority: 'primary', render: (receipt) => <span dir="ltr" className="block font-bold tabular-nums">{formatMoney(receipt.amount)}</span> },
-    { key: 'method', header: 'طريقة الدفع', priority: 'detail', render: (receipt) => paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method },
+    { key: 'method', header: 'طريقة الدفع', priority: 'detail', render: (receipt) => formatPaymentMethodLabel(receipt.payment_method) },
     { key: 'invoice_id', header: 'الفاتورة', priority: 'detail', render: (receipt) => formatShortId(receipt.invoice_id) },
     { key: 'context', header: 'السياق', priority: 'secondary', render: (receipt) => formatReceiptContext(receipt) },
-    { key: 'status', header: 'الحالة', priority: 'secondary', render: (receipt) => <StatusBadge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
+    { key: 'status', header: 'الحالة', priority: 'secondary', render: (receipt) => <StatusBadge tone={getReceiptStatusTone(receipt.status)}>{formatReceiptStatusLabel(receipt.status)}</StatusBadge> },
     { key: 'actions', header: 'الإجراءات', priority: 'actions', render: (receipt) => (
       <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <ActionMenu

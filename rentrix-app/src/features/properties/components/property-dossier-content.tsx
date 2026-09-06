@@ -14,7 +14,7 @@ import { useProperty } from '../use-properties';
 import { useUnits } from '@/features/units/use-units';
 import { unitStatusLabelFor, unitStatusToneFor } from '@/features/units/unit-schema';
 import { formatInvoiceStatusLabel } from '@/features/financials/components/invoice-status-labels';
-import { getFinanceStatusTone, mapInvoiceStatusToFinanceKind } from '@/features/financials/finance-status-mapping';
+import { getInvoiceStatusTone } from '@/features/financials/finance-status-mapping';
 import { usePropertyContractsTab, usePropertyInvoicesTab } from '../use-property-workspace-tabs';
 import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { PropertyIdentityCard, PropertyUnitsSummaryCard } from '../overview/property-overview-cards';
@@ -188,7 +188,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
               <li key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                 <span className="min-w-0 flex-1 truncate font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                 <span className="flex flex-wrap items-center gap-2">
-                  <StatusBadge tone={getFinanceStatusTone(mapInvoiceStatusToFinanceKind(invoice.status))}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
+                  <StatusBadge tone={getInvoiceStatusTone(invoice.status)}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
                   <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, getInvoiceRemaining(invoice))}</span>
                 </span>
               </li>

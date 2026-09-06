@@ -6,12 +6,8 @@ import type {
   DailyCollectionReport,
   ExpenseBreakdownReport,
   ExpenseBreakdownReportFilters,
-  ExpenseTotalsReport,
   FinancialCashflowReport,
   FinancialPeriodSummaryReport,
-  InvoiceTotalsReport,
-  OutstandingBalanceReport,
-  PaymentTotalsReport,
   PropertyCollectionBreakdownReport,
 } from './report-types';
 import {
@@ -27,26 +23,6 @@ import {
   summarizePropertyCollectionBreakdownReport,
 } from './report-calculations';
 import { loadExpenses, loadInvoices, loadPayments } from './report-loaders';
-
-export async function getInvoiceTotalsReport(filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {
-  const invoices = await loadInvoices(filters);
-  return summarizeInvoiceTotals(invoices);
-}
-
-export async function getPaymentTotalsReport(filters: FinancialReportFilters): Promise<PaymentTotalsReport> {
-  const payments = await loadPayments(filters);
-  return summarizePaymentTotals(payments);
-}
-
-export async function getExpenseTotalsReport(filters: FinancialReportFilters): Promise<ExpenseTotalsReport> {
-  const expenses = await loadExpenses(filters);
-  return summarizeExpenseTotals(expenses);
-}
-
-export async function getOutstandingBalanceReport(filters: FinancialReportFilters): Promise<OutstandingBalanceReport> {
-  const invoices = await loadInvoices(filters);
-  return summarizeOutstandingBalance(invoices);
-}
 
 export async function getCollectionSummaryReport(filters: FinancialReportFilters): Promise<CollectionSummaryReport> {
   const [invoices, payments, expenses] = await Promise.all([

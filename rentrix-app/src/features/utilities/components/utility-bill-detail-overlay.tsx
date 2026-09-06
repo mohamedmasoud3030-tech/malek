@@ -11,6 +11,7 @@ import {
 import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
+  utilityBillStatusTone,
   utilityTypeLabels,
   type UtilityBill,
   type UtilityMeter,
@@ -75,7 +76,7 @@ export function UtilityBillDetailOverlay({
               {
                 label: 'حالة السداد',
                 value: (
-                  <StatusBadge tone={bill.status === 'paid' ? 'success' : bill.status === 'partially_paid' ? 'warning' : 'neutral'}>
+                  <StatusBadge tone={utilityBillStatusTone[bill.status]}>
                     {utilityBillStatusLabels[bill.status]}
                   </StatusBadge>
                 ),

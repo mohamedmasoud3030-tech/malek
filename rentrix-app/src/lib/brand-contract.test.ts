@@ -109,11 +109,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
 
   [
-    'src/services/mock-role-simulator.ts',
-    'Persisted localStorage key rentrix_simulated_role.',
-  ],
-
-  [
     'src/hooks/use-auth.tsx',
     'Auth session storage key rentrix-auth-session — renaming would sign every user out.',
   ],
@@ -156,10 +151,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   [
     'src/features/landing/constants.ts',
     'Fallback canonical host rentrixapp.vercel.app — frozen until a MALEK domain is approved.',
-  ],
-  [
-    'src/features/landing/components/Showcase.tsx',
-    'Static asset path /landing/rentrix-demo.mp4.',
   ],
   [
     'src/features/ai-assistant/services/ai-assistant-edge-function.test.ts',
@@ -301,7 +292,6 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
     const landingAndLegal = [
       'src/features/landing/components/NavBar.tsx',
       'src/features/landing/components/Footer.tsx',
-      'src/features/landing/components/FinalCta.tsx',
       'src/features/landing/components/LegalPage.tsx',
       'src/features/landing/i18n/messages.ts',
       'src/features/landing/i18n/legal.ts',
@@ -421,8 +411,8 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
   });
 
   it('stops referencing the legacy Rentrix icons from the shipped shell', () => {
-    // The PNGs stay on disk (documented as deletable legacy assets) but nothing
-    // in the manifest, HTML head, service worker precache, or UI may load them.
+    // The legacy PNGs are gone from public/; nothing in the manifest, HTML head,
+    // service worker precache, or UI may ever reference them again.
     const indexHtml = readApp('index.html');
     const manifest = readApp('public/manifest.json');
     const viteConfig = readApp('vite.config.ts');

@@ -115,7 +115,7 @@ describe('ReportsPage shaping helpers', () => {
     expect(buildRentRollRows([
       createContract({ id: 'contract_b', people: { id: 'tenant_b', full_name: 'منى سالم', phone: null, email: null, national_id: null } }),
       createContract({ id: 'contract_a' }),
-    ], { active: 'نشط', draft: 'مسودة', expired: 'منتهي', terminated: 'منهى' })).toEqual([
+    ])).toEqual([
       {
         contractId: 'contract_a',
         contractReference: null,
@@ -229,11 +229,10 @@ describe('ReportsPage shaping helpers', () => {
   });
 
   it('labels legacy-cased statuses in the rent roll instead of rendering blanks', () => {
-    const labels = { active: 'نشط', draft: 'مسودة', expired: 'منتهي', terminated: 'منهى' } as const;
     const rows = buildRentRollRows([
       createContract({ id: 'contract_legacy_active', status: 'ACTIVE' as ContractListItem['status'] }),
       createContract({ id: 'contract_legacy_ended', status: 'ENDED' as ContractListItem['status'] }),
-    ], labels);
+    ]);
 
     expect(rows.map((row) => row.statusLabel)).toEqual(['نشط', 'منتهي']);
   });

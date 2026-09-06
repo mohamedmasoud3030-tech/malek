@@ -38,22 +38,22 @@ function periodStatusBadge(status: AccountingPeriodStatus) {
     case 'HARD_CLOSED':
       return <StatusBadge tone="danger">إغلاق نهائي</StatusBadge>;
     case 'SOFT_CLOSED':
-      return <StatusBadge tone="gold">إغلاق مرن</StatusBadge>;
+      return <StatusBadge tone="warning">إغلاق مرن</StatusBadge>;
     case 'OPEN':
     default:
-      return <StatusBadge tone="green">مفتوحة</StatusBadge>;
+      return <StatusBadge tone="success">مفتوحة</StatusBadge>;
   }
 }
 
 function batchStatusBadge(status: JournalBatchStatus) {
   switch (status) {
     case 'POSTED':
-      return <StatusBadge tone="green">مرحّل</StatusBadge>;
+      return <StatusBadge tone="success">مرحّل</StatusBadge>;
     case 'REVERSED':
       return <StatusBadge tone="danger">معكوس</StatusBadge>;
     case 'DRAFT':
     default:
-      return <StatusBadge tone="gold">مسودة</StatusBadge>;
+      return <StatusBadge tone="neutral">مسودة</StatusBadge>;
   }
 }
 
@@ -168,7 +168,7 @@ export function GeneralLedgerCoreSection() {
                   </CardDescription>
                 </div>
               </div>
-              <StatusBadge tone={openPeriods > 0 ? 'green' : 'neutral'}>{openPeriods} مفتوحة</StatusBadge>
+              <StatusBadge tone={openPeriods > 0 ? 'success' : 'neutral'}>{openPeriods} مفتوحة</StatusBadge>
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -263,7 +263,7 @@ function accountColumns(currencyCode: string): ColumnDef<ChartAccount>[] {
       header: 'الحالة',
       priority: 'detail',
       render: (account) => (
-        <StatusBadge tone={account.is_active ? 'green' : 'neutral'}>
+        <StatusBadge tone={account.is_active ? 'success' : 'neutral'}>
           {account.is_active ? 'نشط' : 'غير نشط'}
         </StatusBadge>
       ),

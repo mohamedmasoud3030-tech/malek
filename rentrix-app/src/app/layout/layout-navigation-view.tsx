@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
 import { ChevronDown, Lock, LogOut, Menu, Plus, Search, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { focusMenuItem, useMenuKeyboardNavigation } from '@/components/ui/menu-keyboard';
+import { shieldDoubleClickFollowUp } from '@/components/ui/menu-click-shield';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
@@ -212,6 +214,8 @@ export function MobileFloatingControl({
 }>) {
   const { authorization } = useAuth();
   const [quickOpen, setQuickOpen] = useState(false);
+  const quickListRef = useRef<HTMLDivElement>(null);
+  const quickListId = useId();
   const [chromeVisible, setChromeVisible] = useState(true);
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
   const quickRootRef = useRef<HTMLDivElement>(null);
@@ -255,16 +259,18 @@ export function MobileFloatingControl({
       if (quickTriggerRef.current?.contains(target)) return;
       setQuickOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setQuickOpen(false);
-    };
     document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [quickOpen]);
+
+  // The quick-add list is announced as a menu, so it carries the menu keyboard
+  // contract: arrow/Home/End between destinations, Escape back to the trigger.
+  useMenuKeyboardNavigation({
+    open: quickOpen,
+    menuRef: quickListRef,
+    triggerRef: quickTriggerRef,
+    onClose: () => setQuickOpen(false),
+  });
 
   useEffect(() => {
     const phoneMedia = window.matchMedia('(max-width: 767px)');
@@ -348,11 +354,17 @@ export function MobileFloatingControl({
           type="button"
           variant="ghost"
           size="icon"
-          onClick={() => setQuickOpen((value) => !value)}
+          onClick={() => {
+            const nextOpen = !quickOpen;
+            setQuickOpen(nextOpen);
+            // Focus lands on the first destination as the menu opens, the same way
+            // the canonical action menu behaves from its trigger.
+            if (nextOpen) requestAnimationFrame(() => focusMenuItem(quickListRef.current, 'first'));
+          }}
           aria-label="فتح الإضافة السريعة"
           aria-haspopup="menu"
           aria-expanded={quickOpen}
-          aria-controls={quickOpen ? quickAddTitleId : undefined}
+          aria-controls={quickOpen ? quickListId : undefined}
           title="إضافة سريعة"
           data-header-quick-add
           className={cn(headerActionClass, 'order-[-2] text-primary hover:text-primary', quickOpen && 'bg-primary/10')}
@@ -406,6 +418,8 @@ export function MobileFloatingControl({
             </Button>
           </div>
           <div
+            ref={quickListRef}
+            id={quickListId}
             role="menu"
             aria-labelledby={quickAddTitleId}
             className="flex flex-col gap-0.5 p-1.5"
@@ -418,7 +432,12 @@ export function MobileFloatingControl({
                 search={search as Record<string, string> | undefined}
                 role="menuitem"
                 data-mobile-quick-add-item
-                onClick={() => setQuickOpen(false)}
+                // The sheet unmounts on the first tap, so a double-tap's second
+                // click would land on the navigation row underneath.
+                onClick={(event) => {
+                  setQuickOpen(false);
+                  if (event.detail > 0) shieldDoubleClickFollowUp();
+                }}
                 className="flex min-h-12 items-center gap-3 rounded-xl px-3 text-[14px] font-bold text-foreground outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary/20"
               >
                 <Icon className="size-[18px] shrink-0 text-primary" aria-hidden="true" />

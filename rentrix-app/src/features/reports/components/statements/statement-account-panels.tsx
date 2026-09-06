@@ -24,6 +24,14 @@ import {
 } from '@/components/ui/report-section-primitives';
 import { ReportPayloadGroup } from '../report-payload-groups';
 import { formatLatinNumber } from '@/lib/formatters';
+import { commissionTypeLabels, formatCommissionTypeLabel } from '@/features/owners/owner-agreement-labels';
+import {
+  deriveTenantOpeningBalance,
+  getOwnerStatementTransactionTypeLabel,
+  getTenantStatementLineTypeLabel,
+  OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL,
+  TENANT_STATEMENT_GENERIC_LINE_LABEL,
+} from '@/features/financials/reports/statement-ledger';
 
 type TenantLedgerRow = TenantStatementReport['lines'][number] & {
   rowKey: string;
@@ -32,31 +40,10 @@ type OwnerLedgerRow = OwnerStatementReport['transactions'][number] & {
   rowKey: string;
 };
 
-function tenantOpeningBalance(statement: TenantStatementReport) {
-  const first = statement.lines[0];
-  return first
-    ? (first.balance || 0) - (first.debit || 0) + (first.credit || 0)
-    : statement.finalBalance || 0;
-}
-
-function tenantLineType(type: string | null) {
-  if (type === 'invoice') return 'فاتورة / استحقاق';
-  if (type === 'receipt') return 'دفعة / إيصال';
-  if (type === 'credit') return 'دائن / عكس';
-  return 'حركة حساب';
-}
-
-function ownerLineType(type: string | null) {
-  if (type === 'receipt') return 'تحصيل';
-  if (type === 'expense') return 'مصروف';
-  if (type === 'settlement') return 'تسوية / صرف';
-  return 'حركة مالية';
-}
-
 function ownerCommissionSummary(type: string | null, value: number) {
-  if (type === 'RATE') return `نسبة ${formatLatinNumber(value, 'ar')}٪`;
-  if (type === 'FIXED_MONTHLY') return `مبلغ شهري ${formatMoney(value)}`;
-  return 'غير محددة';
+  if (type === 'RATE') return `${commissionTypeLabels.RATE} ${formatLatinNumber(value, 'ar')}٪`;
+  if (type === 'FIXED_MONTHLY') return `${commissionTypeLabels.FIXED_MONTHLY} ${formatMoney(value)}`;
+  return formatCommissionTypeLabel(type);
 }
 
 export function TenantStatementPanel({
@@ -76,7 +63,7 @@ export function TenantStatementPanel({
       rowKey: `${line.date ?? 'line'}-${index}`,
     }),
   );
-  const opening = statement ? tenantOpeningBalance(statement) : 0;
+  const opening = statement ? deriveTenantOpeningBalance(statement) : 0;
   const totalDebit = ledgerRows.reduce(
     (sum, line) => sum + (line.debit || 0),
     0,
@@ -100,13 +87,13 @@ export function TenantStatementPanel({
       key: 'type',
       header: 'نوع الحركة',
       priority: 'secondary',
-      render: (line) => tenantLineType(line.type),
+      render: (line) => getTenantStatementLineTypeLabel(line.type),
     },
     {
       key: 'description',
       header: 'البيان / المرجع',
       priority: 'secondary',
-      render: (line) => line.description ?? 'حركة حساب',
+      render: (line) => line.description ?? TENANT_STATEMENT_GENERIC_LINE_LABEL,
     },
     {
       key: 'debit',
@@ -279,7 +266,7 @@ export function OwnerStatementPanel({
       key: 'type',
       header: 'نوع الحركة',
       priority: 'secondary',
-      render: (row) => ownerLineType(row.type),
+      render: (row) => getOwnerStatementTransactionTypeLabel(row.type),
     },
     {
       key: 'property',
@@ -291,7 +278,7 @@ export function OwnerStatementPanel({
       key: 'details',
       header: 'البيان',
       priority: 'secondary',
-      render: (row) => row.details ?? 'حركة مالية',
+      render: (row) => row.details ?? OWNER_STATEMENT_GENERIC_TRANSACTION_LABEL,
     },
     {
       key: 'gross',

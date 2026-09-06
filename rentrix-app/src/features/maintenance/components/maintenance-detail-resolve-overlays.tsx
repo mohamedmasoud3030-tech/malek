@@ -20,15 +20,9 @@ import {
   maintenancePriorityTone,
   maintenanceStatusLabels,
   maintenanceStatusTone,
-} from './maintenance-list';
+} from '@/lib/maintenanceStatus';
 
 export type ChargeTarget = 'landlord' | 'tenant' | 'office';
-
-export const chargeTargetLabels: Record<ChargeTarget, string> = {
-  landlord: 'خصم استقطاع من حساب المالك (مالك العقار)',
-  tenant: 'إصدار فاتورة مطالبة على المستأجر (سوء استخدام)',
-  office: 'مصروف تشغيلي عام على شركة الإدارة',
-};
 
 export const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc: string }> = {
   landlord: { title: 'المالك (استقطاع)', desc: 'تحميل المالك تكلفة الصيانة من حسابه' },

@@ -75,7 +75,7 @@ const KNOWN_STATUSES: readonly string[] = [
  * ISO timestamp instead. Normalizing by string prefix keeps the key on the
  * intended calendar day and never shifts it through the local timezone.
  */
-export function taxReadinessDateKey(value: unknown): string | null {
+function taxReadinessDateKey(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
   return match ? `${match[1]}-${match[2]}-${match[3]}` : null;

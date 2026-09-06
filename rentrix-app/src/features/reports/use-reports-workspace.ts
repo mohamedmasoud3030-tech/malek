@@ -45,7 +45,6 @@ import {
   buildOccupancyRows,
   buildPropertyPerformanceRows,
   buildRentRollRows,
-  contractStatusLabels,
   getTodayLocalDateString,
   isWithinDateRange,
   latestReceiptLimit,
@@ -403,7 +402,7 @@ export function useReportsWorkspace(
     [propertyTitlesQuery.data],
   );
   const rentRollRows = useMemo(
-    () => buildRentRollRows(scopedContracts, contractStatusLabels),
+    () => buildRentRollRows(scopedContracts),
     [scopedContracts],
   );
   const occupancyUnits = useMemo(

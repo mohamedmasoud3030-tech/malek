@@ -1,3 +1,4 @@
+import { formatFileSize } from '@/lib/formatters';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { withUtf8Bom } from '@/lib/csvExport';
 
@@ -314,7 +315,9 @@ function parseWorksheet(source: string, sharedStrings: readonly string[]): strin
 
 export async function parseXlsxMatrix(bytes: Uint8Array): Promise<string[][]> {
   if (bytes.byteLength > OFFICE_IMPORT_MAX_FILE_BYTES) {
-    throw new Error('حجم الملف يتجاوز 5 ميجابايت');
+    throw new Error(
+      `حجم الملف يتجاوز ${formatFileSize(OFFICE_IMPORT_MAX_FILE_BYTES, { unitLabels: 'arabic', fractionDigits: 0 })}`,  // canonical size rendering; limit stays the single source
+    );
   }
   const entries = readZipDirectory(bytes);
   const byName = new Map(entries.map((entry) => [entry.name, entry]));
@@ -341,7 +344,9 @@ export async function parseXlsxMatrix(bytes: Uint8Array): Promise<string[][]> {
 
 export async function parseOfficeImportFile(file: File): Promise<string[][]> {
   if (file.size > OFFICE_IMPORT_MAX_FILE_BYTES) {
-    throw new Error('حجم الملف يتجاوز 5 ميجابايت');
+    throw new Error(
+      `حجم الملف يتجاوز ${formatFileSize(OFFICE_IMPORT_MAX_FILE_BYTES, { unitLabels: 'arabic', fractionDigits: 0 })}`,  // canonical size rendering; limit stays the single source
+    );
   }
   const lowerName = file.name.toLowerCase();
   if (lowerName.endsWith('.csv')) {

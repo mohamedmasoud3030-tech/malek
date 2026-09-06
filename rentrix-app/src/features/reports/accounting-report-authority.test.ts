@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ReconciliationRow } from '@/features/accounting/wp05Services';
+import type { ReconciliationRow } from '@/features/accounting/reports/accountingReportsFacade';
 import {
   isAccountingStatementOutputReady,
   summarizeReconciliationReadiness,

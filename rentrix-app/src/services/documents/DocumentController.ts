@@ -1,6 +1,5 @@
 import { documentEngine } from './DocumentEngine';
 import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
-import type { DocumentRequest } from './types';
 
 /**
  * Execution coordinator for document output. It owns no layout logic: the
@@ -37,19 +36,6 @@ export const DocumentController = {
     return DocumentRenderer.buildDocumentPdfFile(model);
   },
 
-  /** Compatibility path for the historical `{ type, payload }` request shape. */
-  async print(request: DocumentRequest): Promise<void> {
-    const model = documentEngine.build(request);
-    const { DocumentRenderer } = await import('./DocumentRenderer');
-    await DocumentRenderer.printDocument(model);
-  },
-
-  /** Compatibility path: renders and downloads a real application/pdf file. */
-  async downloadPdf(request: DocumentRequest): Promise<void> {
-    const model = documentEngine.build(request);
-    const { DocumentRenderer } = await import('./DocumentRenderer');
-    await DocumentRenderer.downloadDocumentPdf(model);
-  },
 };
 
 export type { CanonicalDocumentPayloadMap } from './documentPayloads';

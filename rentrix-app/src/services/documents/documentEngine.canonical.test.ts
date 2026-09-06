@@ -1,45 +1,22 @@
 /**
  * Canonical engine behavior tests.
  *
- * Pins the truthfulness and parity rules of `documentEngine.buildDocument`
- * and the legacy compatibility `build` path:
+ * Pins the truthfulness rules of `documentEngine.buildDocument` — the only
+ * document-building contract:
  *  - real business references shown, UUID fragments never;
  *  - invoice amounts pass through unchanged (no engine recalculation);
- *  - legacy DB-shaped requests and canonical requests produce the same
- *    truthful model for the same underlying data (adapter parity).
+ *  - status wording comes from the registry only.
  */
 import { describe, expect, it } from 'vitest';
 import { DocumentDataError, documentEngine } from './DocumentEngine';
 import type { DocumentCompanySettings } from './companyIdentity';
 import { collectDocumentTextChunks } from './DocumentRenderer';
-import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
 
 const settings: DocumentCompanySettings = {
   companyName: 'شركة الأفق لإدارة الأملاك',
   currency: 'OMR',
   currencySymbol: 'ر.ع',
   documentPrefixes: { invoice: 'INV', receipt: 'REC' },
-};
-
-const db = {
-  settings: { company: { companyName: settings.companyName, defaultCurrency: 'OMR' } },
-  contracts: [
-    {
-      id: 'c0ffee00-0000-4000-8000-000000000001',
-      tenant_id: 'tenant-1',
-      unit_id: 'unit-1',
-      property_id: 'property-1',
-      start_date: '2026-01-01',
-      end_date: '2026-12-31',
-      rent_amount: 1200,
-      payment_cycle: 'monthly',
-      status: 'draft',
-      notes: 'شرط خاص',
-    } as unknown as Contract,
-  ],
-  tenants: [{ id: 'tenant-1', full_name: 'أحمد بن سالم', national_id: 'ID-777', phone: '90000000' } as unknown as Person],
-  units: [{ id: 'unit-1', property_id: 'property-1', unit_number: 'B-12' } as unknown as Unit],
-  properties: [{ id: 'property-1', title: 'برج الياسمين' } as unknown as Property],
 };
 
 describe('canonical buildDocument — reference truthfulness', () => {
@@ -78,28 +55,19 @@ describe('canonical buildDocument — reference truthfulness', () => {
     expect(model.header.documentNo).toBeNull();
   });
 
-  it('legacy DB-shaped requests no longer expose shortened UUIDs as document numbers', () => {
-    const invoiceModel = documentEngine.build({
-      type: 'invoice',
-      payload: {
-        invoice: {
-          id: 'deadbeef-0000-4000-8000-0000000000aa',
-          contract_id: db.contracts[0].id,
-          issue_date: '2026-07-01',
-          due_date: '2026-07-31',
-          amount: 1200,
-          paid_amount: 0,
-          status: 'UNPAID',
-          notes: null,
-        } as unknown as Invoice,
-        db,
-      },
+  it('never lets a UUID reach the document number or file name through any reference field', () => {
+    const invoiceModel = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: { reference: 'deadbeef-0000-4000-8000-0000000000aa', amount: 1200, dueDate: '2026-07-31', status: 'UNPAID' },
     });
     expect(invoiceModel.header.documentNo).toBeNull();
     expect(collectDocumentTextChunks(invoiceModel).join(' ')).not.toContain('deadbeef');
     expect(invoiceModel.fileName).not.toContain('deadbeef');
 
-    const contractModel = documentEngine.build({ type: 'contract', payload: { contract: db.contracts[0], db } });
+    const contractModel = documentEngine.buildDocument('contract', {
+      settings,
+      payload: { reference: 'c0ffee00-0000-4000-8000-000000000001', status: 'draft', rentAmount: 1200 },
+    });
     expect(contractModel.header.documentNo).toBeNull();
     expect(collectDocumentTextChunks(contractModel).join(' ')).not.toContain('c0ffee00');
   });
@@ -165,7 +133,7 @@ describe('canonical buildDocument — financial pass-through', () => {
     expect(flatPaid).not.toContain('المبلغ المتبقي');
   });
 
-  it('preserves the legacy invoices contract: no VAT line ⇒ stored amount is the billed total', () => {
+  it('preserves the invoices-table contract: no VAT line ⇒ stored amount is the billed total', () => {
     const model = documentEngine.buildDocument('invoice', {
       settings,
       payload: { amount: 100, description: 'إيجار' },
@@ -173,26 +141,13 @@ describe('canonical buildDocument — financial pass-through', () => {
     expect(model.tables[0].totals).toEqual(['إجمالي المستحق السداد', '100.000 ر.ع']);
   });
 
-  it('legacy invoice path passes amount/paid through and omits unsupported VAT/remaining rows', () => {
-    const model = documentEngine.build({
-      type: 'invoice',
-      payload: {
-        invoice: {
-          id: 'inv-x',
-          contract_id: db.contracts[0].id,
-          issue_date: null,
-          due_date: '2026-07-31',
-          amount: 100,
-          paid_amount: 40,
-          tax_amount: 5,
-          status: 'PARTIALLY_PAID',
-          notes: null,
-        } as unknown as Invoice,
-        db,
-      },
+  it('passes amount/paid through and omits VAT/remaining rows that the caller did not supply', () => {
+    const model = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: { dueDate: '2026-07-31', amount: 100, paidAmount: 40, status: 'PARTIALLY_PAID' },
     });
-    // Legacy DB payloads have no authoritative VAT line nor remaining
-    // balance field; the missing values are omitted, never invented.
+    // No authoritative VAT line nor remaining balance was supplied; the
+    // missing values are omitted, never invented.
     expect(model.tables[0].totals).toEqual(['إجمالي المستحق السداد', '100.000 ر.ع']);
     const flat = model.tables[0].rows.flat().join(' | ');
     expect(flat).toContain('40.000 ر.ع');
@@ -212,9 +167,8 @@ describe('canonical buildDocument — financial pass-through', () => {
   });
 });
 
-describe('adapter parity — legacy and canonical paths agree on truth', () => {
-  it('contract: legacy DB request vs canonical payload carry the same truthful content', () => {
-    const legacy = documentEngine.build({ type: 'contract', payload: { contract: db.contracts[0], db } });
+describe('canonical contract wording', () => {
+  it('draft contracts carry their truthful unsigned wording and full tenant context', () => {
     const canonical = documentEngine.buildDocument('contract', {
       settings,
       payload: {
@@ -232,12 +186,13 @@ describe('adapter parity — legacy and canonical paths agree on truth', () => {
       },
     });
 
-    expect(legacy.header.title).toBe(canonical.header.title);
-    expect(legacy.header.title).toContain('مسودة');
-    expect(legacy.header.title).toContain('غير موقّع');
-    expect(legacy.tables[0].rows).toEqual(canonical.tables[0].rows);
-    expect(legacy.kpis).toEqual(canonical.kpis);
-    expect(legacy.footer.signatures).toEqual(canonical.footer.signatures);
+    expect(canonical.header.title).toContain('مسودة');
+    expect(canonical.header.title).toContain('غير موقّع');
+    const text = collectDocumentTextChunks(canonical).join(' | ');
+    expect(text).toContain('أحمد بن سالم');
+    expect(text).toContain('ID-777');
+    expect(text).toContain('B-12');
+    expect(canonical.footer.signatures.length).toBeGreaterThan(0);
   });
 
   it('every canonical model footer carries registry-owned signature roles (no approval claims)', () => {

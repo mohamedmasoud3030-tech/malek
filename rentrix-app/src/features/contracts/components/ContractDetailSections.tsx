@@ -1,6 +1,4 @@
-import { CalendarDays, ShieldAlert, WalletCards } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
+import { CalendarDays } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -66,14 +64,6 @@ export function ContractOverviewSection({ contract, settings }: Readonly<{ contr
       <CardContent><DetailFields fields={fields} /></CardContent>
     </Card>
   );
-}
-
-export function ContractLifecycleSection({ contract, settings, renewalAllowed, onRenew, canTerminate, onTerminate }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract; renewalAllowed: boolean; onRenew: () => void; canTerminate: boolean; onTerminate: () => void }>) {
-  return <Card className="overflow-hidden border-primary/20 bg-primary/5"><CardHeader className="bg-background/80"><CardTitle className="flex items-center gap-2"><ShieldAlert className="size-5 text-primary" />إجراءات التجديد والإنهاء</CardTitle><CardDescription>{getExpiryDescription(settings, contract)}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6"><p className="text-sm text-muted-foreground">{contract.renewed_from ? 'هذا العقد مجدد من عقد سابق.' : 'لا يوجد عقد سابق مرتبط بهذا العقد.'}</p><div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">{renewalAllowed ? <Button variant="secondary" className="min-h-11" onClick={onRenew}>تجديد العقد</Button> : null}{canTerminate ? <Button variant="destructive" className="min-h-11" onClick={onTerminate}>إنهاء العقد بسبب</Button> : <Button variant="secondary" className="min-h-11" asChild><Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }}>تعديل الحالة وسبب الإلغاء</Link></Button>}</div></CardContent></Card>;
-}
-
-export function ContractFinancialTimelineSection({ contract, settings }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract }>) {
-  return <Card><CardHeader><CardTitle className="flex items-center gap-2"><WalletCards className="size-5 text-primary" />الخط الزمني المالي</CardTitle><CardDescription>ملخص من بيانات العقد الحالية.</CardDescription></CardHeader><CardContent className="pt-6"><DetailFields columns={3} fields={[{ label: 'قيمة الإيجار', value: formatContractMoney(settings, contract.rent_amount) }, { label: 'الوحدة المؤجرة', value: contract.units?.unit_number }, { label: 'العقار', value: contract.properties?.title }]} /></CardContent></Card>;
 }
 
 export function ContractTimelineSection({ contract, settings }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract }>) {

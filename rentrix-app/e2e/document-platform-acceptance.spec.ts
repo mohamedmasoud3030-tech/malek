@@ -274,20 +274,56 @@ function mobileInvoiceCard(page: Page): Locator {
     .first();
 }
 
+/**
+ * Both registers expose invoice print/PDF through the shared `ActionMenu`, which
+ * renders as a portal-level `role="menu"`: desktop through the invoice row's
+ * «إجراءات الفاتورة» trigger, mobile through the card's own overflow trigger
+ * named after the invoice («المزيد حول فاتورة بلا مرجع …»). A card face never
+ * carries a print or download button, so every item is asserted inside the menu
+ * the trigger references — which keeps each assertion on this invoice's row.
+ */
+function invoiceActionsMenu(page: Page): Locator {
+  return page.getByRole('menu');
+}
+
 function invoicePrintAction(page: Page): Locator {
-  return isInvoiceMobile(page)
-    ? mobileInvoiceCard(page)
-        .getByRole('button', { name: /^طباعة/ })
-        .first()
-    : page.getByRole('menuitem', { name: 'طباعة', exact: true }).first();
+  return invoiceActionsMenu(page).getByRole('menuitem', {
+    name: 'طباعة',
+    exact: true,
+  });
 }
 
 function invoicePdfAction(page: Page): Locator {
-  return isInvoiceMobile(page)
-    ? mobileInvoiceCard(page)
-        .getByRole('button', { name: /^تنزيل/ })
-        .first()
-    : page.getByRole('menuitem', { name: 'PDF', exact: true }).first();
+  return invoiceActionsMenu(page).getByRole('menuitem', {
+    name: 'PDF',
+    exact: true,
+  });
+}
+
+function mobileInvoiceOverflowTrigger(page: Page): Locator {
+  return mobileInvoiceCard(page).getByRole('button', {
+    name: new RegExp(`^المزيد حول ${INVOICE_IDENTITY}`),
+  });
+}
+
+/**
+ * Opens the invoice card's own overflow menu and returns the menu the trigger
+ * references through `aria-controls`, after proving it is the only open menu,
+ * so every item asserted afterwards belongs to this invoice and not to another
+ * card or a stale menu.
+ */
+async function openMobileInvoiceOverflowMenu(page: Page): Promise<Locator> {
+  const trigger = mobileInvoiceOverflowTrigger(page);
+  await expect(trigger).toBeVisible({ timeout: 15_000 });
+  await trigger.scrollIntoViewIfNeeded();
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true')
+    await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  const menuId = await trigger.getAttribute('aria-controls');
+  expect(menuId, 'overflow trigger must reference its menu').toBeTruthy();
+  await expect(page.locator(`[role="menu"][id="${menuId}"]`)).toBeVisible();
+  await expect(page.getByRole('menu')).toHaveCount(1);
+  return invoiceActionsMenu(page);
 }
 
 async function gotoInvoicesRegister(page: Page): Promise<Locator> {
@@ -311,28 +347,24 @@ async function gotoInvoicesRegister(page: Page): Promise<Locator> {
 }
 
 async function openInvoiceDocumentActions(page: Page): Promise<void> {
-  if (!isInvoiceMobile(page)) {
-    const alreadyOpen = page
-      .getByRole('menuitem', { name: 'طباعة', exact: true })
-      .first();
-    if (await alreadyOpen.isVisible().catch(() => false)) return;
-  }
+  const printOption = invoicePrintAction(page);
+  if (await printOption.isVisible().catch(() => false)) return;
 
   if (isInvoiceMobile(page)) {
-    const card = mobileInvoiceCard(page);
-    const outerTrigger = card.locator('[data-entity-table-mobile-actions]');
-    if ((await outerTrigger.getAttribute('aria-expanded')) !== 'true')
-      await outerTrigger.click();
-    const outerPanel = card.locator('[data-entity-table-mobile-actions-panel]');
-    await expect(outerPanel).toBeVisible();
+    // The invoice register supplies structured mobile-card actions, so the card
+    // keeps its secondary operations in its own overflow menu — the register
+    // never renders the actions-column disclosure on a card face.
+    await openMobileInvoiceOverflowMenu(page);
   } else {
+    // Bound to the row that carries the invoice under test. The register labels
+    // every row's menu the same way, so containment is what makes this specific.
     await visibleInvoiceRegister(page)
+      .locator('tr', { hasText: INVOICE_IDENTITY })
       .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
-      .first()
       .click();
   }
 
-  await expect(invoicePrintAction(page)).toBeVisible({ timeout: 15_000 });
+  await expect(printOption).toBeVisible({ timeout: 15_000 });
   await expect(invoicePdfAction(page)).toBeVisible({ timeout: 15_000 });
 }
 
@@ -354,28 +386,30 @@ async function openContractDocumentActions(page: Page): Promise<void> {
 
 async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
   const register = visibleInvoiceRegister(page);
+  // Collection stays available while the company identity is unconfirmed and
+  // the document actions are withheld. Both facts are only observable inside the
+  // open menu, so the check opens it — on mobile the card's own overflow menu,
+  // on desktop the row's «إجراءات الفاتورة» menu, bound to this invoice's row.
+  let menu: Locator;
   if (isInvoiceMobile(page)) {
-    const card = mobileInvoiceCard(page);
-    await expect(
-      card.getByRole('button', { name: /^تحصيل/ }).first(),
-    ).toBeVisible();
-    await expect(card.getByRole('button', { name: /^طباعة/ })).toHaveCount(0);
-    await expect(card.getByRole('button', { name: /^تنزيل/ })).toHaveCount(0);
+    menu = await openMobileInvoiceOverflowMenu(page);
   } else {
     const actions = register
-      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true })
-      .first();
+      .locator('tr', { hasText: INVOICE_IDENTITY })
+      .getByRole('button', { name: 'إجراءات الفاتورة', exact: true });
     await expect(actions).toBeVisible();
     await actions.click();
-    await expect(
-      page.getByRole('menuitem', { name: 'تحصيل', exact: true }),
-    ).toBeVisible();
+    menu = invoiceActionsMenu(page);
   }
+
   await expect(
-    page.getByRole('menuitem', { name: 'طباعة', exact: true }),
+    menu.getByRole('menuitem', { name: 'تحصيل', exact: true }),
+  ).toBeVisible({ timeout: 15_000 });
+  await expect(
+    menu.getByRole('menuitem', { name: 'طباعة', exact: true }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole('menuitem', { name: 'PDF', exact: true }),
+    menu.getByRole('menuitem', { name: 'PDF', exact: true }),
   ).toHaveCount(0);
 }
 
@@ -463,6 +497,15 @@ test.describe('الفاتورة — invoice acceptance', () => {
     const [popup] = popups;
     await popup.waitForLoadState('domcontentloaded');
     await popup.close();
+
+    // Selecting an item unmounts the menu synchronously, so the second click of
+    // a double-tap used to land on the invoice card underneath and open its quick
+    // view. The shared click shield swallows exactly that follow-up click, so the
+    // register has to come back clean — this is the browser-side proof of it, and
+    // it fails the moment the shield is removed.
+    await expect(
+      page.getByRole('dialog').filter({ hasText: INVOICE_IDENTITY }),
+    ).toHaveCount(0);
 
     await openInvoiceDocumentActions(page);
     const downloadPromise = page.waitForEvent('download', { timeout: 120_000 });
@@ -839,3 +882,4 @@ test.describe('الجوال — mobile acceptance', () => {
     ).toBeVisible();
   });
 });
+

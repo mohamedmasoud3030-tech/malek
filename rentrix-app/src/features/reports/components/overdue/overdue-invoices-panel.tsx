@@ -10,15 +10,18 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from '@/features/financials/components/financials-formatters';
+import { getAgingBucketKeyFromDaysOverdue, getAgingBucketLabel } from '@/features/financials/reports/aging-buckets';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 
+/**
+ * Overdue rows are already `due_date <= asOf` (arrears service), so a row on
+ * day 0 is still in arrears: it labels as the first overdue cohort, exactly as
+ * the Money arrears table does — one aging vocabulary across the product.
+ */
 export function getAgingLabel(daysOverdue: number) {
-  if (daysOverdue > 90) return 'أكثر من 90 يوم';
-  if (daysOverdue > 60) return '61–90 يوم';
-  if (daysOverdue > 30) return '31–60 يوم';
-  return '1–30 يوم';
+  return getAgingBucketLabel(getAgingBucketKeyFromDaysOverdue(Math.max(1, daysOverdue)));
 }
 
 type ArrearsSort = 'oldest' | 'amount_desc';

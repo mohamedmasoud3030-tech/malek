@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { MONEY_STEP } from '@/lib/money';
 import {
   Archive,
@@ -9,7 +8,7 @@ import {
   Edit,
   Undo2,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ActionMenu } from "@/components/ui/action-menu";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { RegisterMetricStrip } from "@/components/layout/register-summary";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { formatMoney } from "@/hooks/useCompanyFormatters";
+import { useCompanyFormatters } from "@/hooks/useCompanyFormatters";
 import { CommissionSourceSelector } from "./CommissionSourceSelector";
 import { commissionStatusLabels, commissionTypeLabels, commissionStatusTone, commissionSourceTypeOptions } from "../labels";
 import type {
@@ -32,11 +31,6 @@ import type {
   CommissionFormValues,
   CommissionRecord,
 } from "../types";
-
-function money(value: number | null) {
-  if (value == null) return "—";
-  return formatMoney(value);
-}
 
 function formatSourceLabel(type: string | null, sourceId: string | null): string {
   if (!sourceId) return "بدون مصدر محدد";
@@ -81,6 +75,8 @@ type Props = Readonly<{
  * workspace shell so this component renders identically standalone or embedded.
  */
 export function CommissionsView(props: Props) {
+  const { money: formatMoney } = useCompanyFormatters();
+  const money = useCallback((value: number | null | undefined) => (value == null ? "—" : formatMoney(value)), [formatMoney]);
   const {
     rows,
     filters,
@@ -211,6 +207,7 @@ export function CommissionsView(props: Props) {
               onArchiveClick={setArchiveCandidate}
               onPayClick={onPayAtomic ? setPayCandidate : undefined}
               onReverseClick={onReverseAtomic ? setReverseCandidate : undefined}
+              money={money}
             />
           </div>
         </section>
@@ -359,7 +356,9 @@ function CommissionRows({
   onArchiveClick,
   onPayClick,
   onReverseClick,
+  money,
 }: Readonly<{
+  money: (value: number | null | undefined) => string;
   rows: CommissionRecord[];
   isArchiving: boolean;
   onEdit: (row: CommissionRecord) => void;
@@ -402,7 +401,7 @@ function CommissionRows({
       ),
     },
     { key: "actions", priority: 'actions' as const, header: "إجراءات", render: actionsFor },
-  ], [actionsFor]);
+  ], [actionsFor, money]);
 
   return (
     <EntityTable

@@ -57,4 +57,69 @@ describe('ActionMenu keyboard contract', () => {
     expect(edit).toHaveBeenCalledTimes(1);
     expect(archive).not.toHaveBeenCalled();
   });
+
+  it('shields the follow-up click of a double-click from whatever the menu was covering', () => {
+    vi.useFakeTimers();
+    try {
+      const print = vi.fn();
+      const covered = vi.fn();
+      act(() => root.render(
+        <div>
+          <button type="button" data-covered onClick={covered}>معاينة سريعة</button>
+          <ActionMenu items={[{ id: 'print', label: 'طباعة', onSelect: print }]} />
+        </div>,
+      ));
+      const trigger = container.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
+      const underlying = container.querySelector<HTMLButtonElement>('[data-covered]')!;
+
+      act(() => trigger.click());
+      const item = document.querySelector<HTMLButtonElement>('[role="menuitem"]')!;
+      act(() => item.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })));
+      expect(print).toHaveBeenCalledTimes(1);
+      expect(document.querySelector('[role="menu"]')).toBeNull();
+
+      // Second click of the same sequence lands where the menu used to be.
+      act(() => underlying.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 2 })));
+      expect(covered).not.toHaveBeenCalled();
+      expect(print).toHaveBeenCalledTimes(1);
+
+      // A deliberate, separate click afterwards is never swallowed.
+      act(() => underlying.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })));
+      expect(covered).toHaveBeenCalledTimes(1);
+
+      // The shield also expires on its own when no follow-up click arrives.
+      act(() => trigger.click());
+      act(() => document.querySelector<HTMLButtonElement>('[role="menuitem"]')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })));
+      act(() => { vi.advanceTimersByTime(700); });
+      act(() => underlying.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 2 })));
+      expect(covered).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('opens upward when the trigger sits too close to the bottom of the viewport', () => {
+    const originalInnerHeight = window.innerHeight;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+    const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: 560, bottom: 600, left: 100, right: 144, width: 44, height: 40, x: 100, y: 560, toJSON: () => ({}),
+    } as DOMRect);
+    const heightSpy = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(180);
+    try {
+      act(() => root.render(<ActionMenu items={[{ id: 'a', label: 'أ', onSelect: vi.fn() }, { id: 'b', label: 'ب', onSelect: vi.fn() }]} />));
+      const trigger = container.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
+      act(() => trigger.click());
+      const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
+      // Placement is owned by the shared `resolveActionMenuPlacement` contract,
+      // which anchors by `top`: the flipped menu's bottom edge sits four pixels
+      // above the trigger (560 - 4 - 180 = 376). An implementation that never
+      // flipped would report 604px here, so the failure mode stays caught.
+      expect(menu.style.top).toBe('376px');
+      expect(menu.style.bottom).toBe('');
+    } finally {
+      rectSpy.mockRestore();
+      heightSpy.mockRestore();
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: originalInnerHeight });
+    }
+  });
 });

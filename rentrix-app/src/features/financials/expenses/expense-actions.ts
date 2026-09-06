@@ -16,7 +16,6 @@ function expenseDocumentPayload(expense: Expense, property: Property | undefined
     amount: Number(expense.amount ?? 0),
     description: expense.description,
     propertyTitle: property?.title ?? null,
-    kind: 'expense' as const,
   };
 }
 

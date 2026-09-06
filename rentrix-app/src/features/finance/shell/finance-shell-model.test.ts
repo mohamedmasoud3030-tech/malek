@@ -13,15 +13,15 @@ const admin: AuthorizationContext = { userId: 'u-admin', email: null, role: 'ADM
 const user: AuthorizationContext = { userId: 'u-user', email: null, role: 'USER' };
 
 describe('canonical Money workspace route model', () => {
-  it('keeps six finance capabilities with five routine sections and the legacy overview hidden', () => {
+  it('keeps exactly five routine Money sections and no hidden legacy overview section', () => {
     expect(FINANCE_SECTIONS.map((section) => [section.id, section.label, section.showInPrimaryNavigation])).toEqual([
       ['collections', 'التحصيل', true],
       ['fees', 'دخل المكتب', true],
       ['expenses', 'المصروفات', true],
       ['funds', 'أموال الملاك', true],
       ['banking', 'البنوك', true],
-      ['overview', 'وضع المال', false],
     ]);
+    expect(FINANCE_VIEWS.some((view) => view.id === ('overview' as string))).toBe(false);
     const sectionIds = new Set(FINANCE_SECTIONS.map((section) => section.id));
     for (const view of FINANCE_VIEWS) expect(sectionIds.has(view.sectionId)).toBe(true);
   });
@@ -56,8 +56,7 @@ describe('canonical Money workspace route model', () => {
     expect(userViews).toEqual(expect.arrayContaining(['invoices', 'receipts']));
     expect(userViews).not.toContain('commissions');
     expect(userViews).not.toContain('arrears');
-    // A plain USER only holds the collections basics; the hidden legacy
-    // overview section never surfaces in primary navigation for anyone.
+    // A plain USER only holds the collections basics.
     expect(getPermittedSections(user).map((section) => section.id)).toEqual(['collections']);
     expect(getPermittedSections(admin).map((section) => section.id)).toEqual([
       'collections', 'fees', 'expenses', 'funds', 'banking',

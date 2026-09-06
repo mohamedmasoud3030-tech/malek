@@ -1,4 +1,4 @@
-import type { UserRole } from '@/domain/types';
+import type { AuthorizationRole as UserRole } from '@/features/auth/permissions';
 
 /**
  * The six-role engine remains an internal compatibility/security primitive.

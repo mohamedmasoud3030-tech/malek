@@ -17,7 +17,6 @@ const optionalDailyReferenceRate = z.preprocess(
 export const unitStatusValues = ['available', 'occupied', 'maintenance', 'reserved'] as const;
 export const unitManualStatusValues = ['available', 'reserved'] as const;
 export type UnitStatus = (typeof unitStatusValues)[number];
-export type UnitManualStatus = (typeof unitManualStatusValues)[number];
 
 export const unitStatusLabels: Record<UnitStatus, string> = {
   available: 'متاحة',
