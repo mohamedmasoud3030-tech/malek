@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
+import { LoadingState } from '@/components/ui/loading-state';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Input } from '@/components/ui/input';
@@ -296,7 +297,9 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
           </div>
         ) : null}
 
-        {data ? (
+        {isLoading ? (
+          <LoadingState variant="section" label="جارٍ تحميل ملخص الاستحقاقات" />
+        ) : data ? (
           <RegisterMetricStrip
             aria-label="ملخص الاستحقاقات"
             items={[
