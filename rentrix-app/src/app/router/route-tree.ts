@@ -188,7 +188,7 @@ const landDetailRoute = createRoute({
   path: '/lands/$landId',
   beforeLoad: requirePermission('lands.view'),
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.lands.$landId'),
+    () => import('@/features/lands/land-detail-route'),
     'LandDetailRouteComponent',
   ),
   staticData: { title: 'ملف الأرض' },
@@ -220,7 +220,7 @@ const ownerEditRoute = createRoute({
   path: '/owners/$ownerId/edit',
   beforeLoad: requirePermission('owners.hub.view'),
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.owners.$ownerId.edit'),
+    () => import('@/features/owners/owner-edit-route'),
     'OwnerEditRouteComponent',
   ),
   staticData: { title: 'تعديل مالك' },
@@ -288,7 +288,7 @@ const personNewRoute = createRoute({
   path: '/people/new',
   beforeLoad: requirePermission('contracts.create'),
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.people.new'),
+    () => import('@/features/people/person-new-route'),
     'PersonNewRouteComponent',
   ),
   staticData: { title: 'إضافة شخص' },
@@ -298,7 +298,7 @@ const personEditRoute = createRoute({
   path: '/people/$personId/edit',
   beforeLoad: requirePermission('contracts.edit'),
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.people.$personId.edit'),
+    () => import('@/features/people/person-edit-route'),
     'PersonEditRouteComponent',
   ),
   staticData: { title: 'تعديل شخص' },
@@ -531,7 +531,7 @@ const serviceProviderNewRoute = createRoute({
   path: '/service-providers/new',
   beforeLoad: requirePermission('service_providers.write'),
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.service-providers.new'),
+    () => import('@/features/service-providers/service-provider-new-route'),
     'ServiceProviderNewRouteComponent',
   ),
   staticData: { title: 'إضافة مزود خدمة' },
@@ -551,7 +551,7 @@ const serviceProviderEditRoute = createRoute({
   path: '/service-providers/$providerId/edit',
   beforeLoad: requirePermission('service_providers.write'),
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.service-providers.$providerId.edit'),
+    () => import('@/features/service-providers/service-provider-edit-route'),
     'ServiceProviderEditRouteComponent',
   ),
   staticData: { title: 'تعديل مزود الخدمة' },
@@ -560,7 +560,7 @@ const maintenanceRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/maintenance',
   component: lazyRouteComponent(
-    () => import('@/routes/_protected.maintenance'),
+    () => import('@/features/operations-hub/maintenance-route'),
     'MaintenanceRouteComponent',
   ),
   staticData: { title: 'التشغيل والصيانة' },

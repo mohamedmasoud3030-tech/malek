@@ -199,6 +199,7 @@ export function PropertyAnalyticsSection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="property-analytics"
         items={[
           {
@@ -309,6 +310,7 @@ export function PropertyAnalyticsSection({
       <div className="grid gap-3 sm:grid-cols-2">
         {scope.occupancyRate != null ? (
           <ReportProgress
+            isLoading={isLoading}
             label="نسبة الإشغال"
             value={scope.occupancyRate}
             helper={`${metricCount(scope.occupied)} من ${metricCount(scope.units)} وحدة (مشغولة + شاغرة + غير قابلة للتأجير)`}
@@ -323,6 +325,7 @@ export function PropertyAnalyticsSection({
         ) : null}
         {highestExpenseShare != null && highestExpenseProperty ? (
           <ReportProgress
+            isLoading={isLoading}
             label="تركيز المصروفات في أعلى عقار"
             value={highestExpenseShare}
             helper={`${highestExpenseProperty.propertyTitle ?? highestExpenseProperty.propertyId} · ${formatMoney(highestExpenseProperty.total)}`}
@@ -338,19 +341,25 @@ export function PropertyAnalyticsSection({
       </div>
 
       <ReportInsightNote title="ما الذي يحتاج انتباهًا؟">
-        <ul className="list-inside list-disc space-y-1">
-          {insightRows.map((insight) => (
-            <li key={insight.key} data-insight-tone={insight.tone}>
-              {insight.text}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-xs">
-          أولوية المتابعة ترتيب تشغيلي محسوب من ضغط المتأخرات والشغور والصيانة
-          المفتوحة وعبء المصروفات؛ ليست احتمال تعثر ولا بديلًا عن القوائم
-          المحاسبية. تكلفة الصيانة غير المرحّلة ضغط تشغيلي وليست مصروفًا ماليًا.
-          قيمة الإيجار المرجعية للشواغر ليست إيرادًا ولا ذمة مدينة.
-        </p>
+        {isLoading ? (
+          'جارٍ تحميل مؤشرات انتباه الأداء العقاري.'
+        ) : (
+          <>
+            <ul className="list-inside list-disc space-y-1">
+              {insightRows.map((insight) => (
+                <li key={insight.key} data-insight-tone={insight.tone}>
+                  {insight.text}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs">
+              أولوية المتابعة ترتيب تشغيلي محسوب من ضغط المتأخرات والشغور والصيانة
+              المفتوحة وعبء المصروفات؛ ليست احتمال تعثر ولا بديلًا عن القوائم
+              المحاسبية. تكلفة الصيانة غير المرحّلة ضغط تشغيلي وليست مصروفًا ماليًا.
+              قيمة الإيجار المرجعية للشواغر ليست إيرادًا ولا ذمة مدينة.
+            </p>
+          </>
+        )}
       </ReportInsightNote>
 
       <ReportPanel

@@ -37,9 +37,10 @@ describe('R11 — legacy disposition register', () => {
     expect(archGuard).not.toMatch(/\['communication',\s*new Set\(\[[^\]]+\]\)/);
   });
 
-  it('retired legacy deep links are redirect-only in the canonical finance shell model', () => {
+  it('retired legacy finance deep links resolve only through the canonical finance shell model', () => {
     const shell = readFileSync(join(ROOT, 'src', 'features', 'finance', 'shell', 'financeShellModel.ts'), 'utf8');
-    expect(shell).toContain('isLegacyCommissionsLink');
     expect(shell).toContain("sec === 'commissions' || vi === 'commissions'");
+    expect(shell).toContain("vi === 'fixed_monthly_accruals'");
+    expect(shell).not.toContain('isLegacyCommissionsLink');
   });
 });

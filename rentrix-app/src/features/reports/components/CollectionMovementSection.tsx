@@ -144,6 +144,7 @@ export function CollectionMovementSection({
       >
         <div className="px-4 py-3 sm:px-5">
           <ReportSummaryStrip
+            isLoading={isLoading}
             dataReportSummary="collection-movement"
             items={[
               {
@@ -225,11 +226,13 @@ export function CollectionMovementSection({
         <div className="space-y-4">
           <ReceiptLinksPanel rows={receiptRows} isLoading={isLoading} />
           <ReportInsightNote title="قراءة الحركة">
-            {!hasMovement
-              ? 'لا توجد دفعات أو إيصالات في هذه الفترة؛ وسّع النطاق الزمني أو راجع فلاتر النطاق.'
-              : busiestDay
-                ? `أعلى حركة سُجلت يوم ${formatDate(busiestDay.paymentDate)} بقيمة ${formatMoney(busiestDay.totalPaid)}${methodRows[0] ? `، وأكثر طرق السداد استخدامًا ${formatPaymentMethodLabel(methodRows[0][0])}` : ''}. مؤشرات الفوترة والكفاءة التنفيذية تبقى في ملخص التحصيل.`
-                : 'لا يوجد جدول تحصيل يومي ضمن الفترة، لكن توجد إيصالات معروضة أدناه.'}
+            {isLoading
+              ? 'جارٍ تحميل حركة التحصيل المعتمدة.'
+              : !hasMovement
+                ? 'لا توجد دفعات أو إيصالات في هذه الفترة؛ وسّع النطاق الزمني أو راجع فلاتر النطاق.'
+                : busiestDay
+                  ? `أعلى حركة سُجلت يوم ${formatDate(busiestDay.paymentDate)} بقيمة ${formatMoney(busiestDay.totalPaid)}${methodRows[0] ? `، وأكثر طرق السداد استخدامًا ${formatPaymentMethodLabel(methodRows[0][0])}` : ''}. مؤشرات الفوترة والكفاءة التنفيذية تبقى في ملخص التحصيل.`
+                  : 'لا يوجد جدول تحصيل يومي ضمن الفترة، لكن توجد إيصالات معروضة أدناه.'}
           </ReportInsightNote>
         </div>
       </ReportColumns>

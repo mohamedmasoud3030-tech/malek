@@ -29,10 +29,11 @@ const FINANCIAL_DIRS = [
  * Baseline: current as-any debt per file with a SPECIFIC justification each.
  * Numbers may only DECREASE. A file not listed here has a baseline of 0.
  *
- * R10 cleanup already removed 19 casts in wp05Services, 8 RPC-name casts in
- * deposit-service, 6 in owner-settlements-service RPC calls, 2 in
- * receiptService void RPCs and 1 in maintenance-service — all were covered
- * by the regenerated Database types. The remaining entries are live-schema
+ * R10 cleanup removed the browser-side WP-05 wrapper (its cast debt went with
+ * the unreachable layer), 8 RPC-name casts in deposit-service, 6 in
+ * owner-settlements-service RPC calls, 2 in receiptService void RPCs and 1 in
+ * maintenance-service — all were covered by the regenerated Database types.
+ * The remaining entries are live-schema
  * compatibility reads (tables whose live column shape predates the generated
  * types), each to be retired when the corresponding read model lands.
  */

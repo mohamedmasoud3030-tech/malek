@@ -405,6 +405,7 @@ export function MaintenanceReportSection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="maintenance"
         items={[
           {
@@ -439,8 +440,10 @@ export function MaintenanceReportSection({
       />
 
       <ReportInsightNote title="قراءة التشغيل">
-        {urgentActiveCount > 0
-          ? `يوجد ${formatLatinNumber(urgentActiveCount, 'ar')} طلبات عاجلة فعالة${urgentActiveRatio !== null ? ` (${Math.round(urgentActiveRatio)}% من الحمل الفعال)` : ''}؛ راجع الإسناد والجدولة قبل الطلبات العادية.`
+        {isLoading
+          ? 'جارٍ تحميل ملخص الصيانة المعتمد.'
+          : urgentActiveCount > 0
+            ? `يوجد ${formatLatinNumber(urgentActiveCount, 'ar')} طلبات عاجلة فعالة${urgentActiveRatio !== null ? ` (${Math.round(urgentActiveRatio)}% من الحمل الفعال)` : ''}؛ راجع الإسناد والجدولة قبل الطلبات العادية.`
           : attentionSummary.stalled + attentionSummary.scheduleMissed > 0
             ? `عدة طلبات توقفت عن التقدم أو تجاوزت مواعيد زياراتها (${formatLatinNumber(attentionSummary.stalled + attentionSummary.scheduleMissed, 'ar')} حالة)؛ أعِد جدولتها أو أغلقها صراحة قبل فتح أعمال جديدة.`
             : attentionSummary.awaitingClosure > 0
@@ -455,6 +458,7 @@ export function MaintenanceReportSection({
       <div className="grid gap-3 sm:grid-cols-3">
         {completionRate !== null ? (
           <ReportProgress
+            isLoading={isLoading}
             label="معدل الإنجاز"
             value={completionRate}
             helper={`${formatLatinNumber(completedCount, 'ar')} منجز من ${formatLatinNumber(actionableCount, 'ar')} غير ملغى`}
@@ -466,6 +470,12 @@ export function MaintenanceReportSection({
                   : 'critical'
             }
           />
+        ) : isLoading ? (
+          <ReportState
+            isLoading
+            title="جارٍ تحميل مؤشر الإنجاز"
+            message=""
+          />
         ) : (
           <ReportState
             title="معدل الإنجاز غير متاح"
@@ -473,6 +483,7 @@ export function MaintenanceReportSection({
           />
         )}
         <ReportProgress
+          isLoading={isLoading}
           label="تغطية الإسناد"
           value={assignmentCoverage}
           helper={`${formatLatinNumber(assignedCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
@@ -485,6 +496,7 @@ export function MaintenanceReportSection({
           }
         />
         <ReportProgress
+          isLoading={isLoading}
           label="تغطية الجدولة"
           value={schedulingCoverage}
           helper={`${formatLatinNumber(scheduledCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}

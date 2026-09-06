@@ -87,6 +87,7 @@ export function ExpiringContractsSection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="expiring-income-risk"
         items={[
           { label: 'عقود تنتهي قريبًا', value: formatLatinNumber(expiringRows.length, 'ar'), detail: urgentCount > 0 ? `${formatLatinNumber(urgentCount, 'ar')} عاجل (≤15 يوم)` : 'لا يوجد عاجل', tone: urgentCount > 0 ? 'critical' : expiringRows.length > 0 ? 'warning' : undefined },
