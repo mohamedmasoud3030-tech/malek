@@ -40,7 +40,7 @@ vi.mock('@/features/owners/components/owner-form-dialog', () => ({
   },
 }));
 
-import { OwnerEditRouteComponent } from '@/routes/_protected.owners.$ownerId.edit';
+import { OwnerEditRouteComponent } from './owner-edit-route';
 
 describe('owner edit route — route-native context preservation', () => {
   let host: HTMLDivElement;

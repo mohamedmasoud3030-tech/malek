@@ -256,6 +256,7 @@ export function CollectionsSection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="collections"
         items={[
           {
@@ -287,8 +288,10 @@ export function CollectionsSection({
       />
 
       <ReportInsightNote title="قراءة التحصيل">
-        {!isCollectionRateAvailable
-          ? 'تعذر تحميل مؤشر كفاءة التحصيل المعتمد حاليًا؛ تبقى تفاصيل التحصيل متاحة دون افتراض نسبة بديلة.'
+        {isLoading
+          ? 'جارٍ تحميل مؤشر كفاءة التحصيل المعتمد.'
+          : !isCollectionRateAvailable
+            ? 'تعذر تحميل مؤشر كفاءة التحصيل المعتمد حاليًا؛ تبقى تفاصيل التحصيل متاحة دون افتراض نسبة بديلة.'
           : collectionRate! < 65
             ? 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.'
             : dominantMethodShare > 85
@@ -299,6 +302,7 @@ export function CollectionsSection({
       <div className="grid gap-3 lg:grid-cols-2">
         {isCollectionRateAvailable ? (
           <ReportProgress
+            isLoading={isLoading}
             label="نسبة التحصيل من الفواتير"
             value={collectionRate!}
             helper={
@@ -314,6 +318,12 @@ export function CollectionsSection({
                   : 'critical'
             }
           />
+        ) : isLoading ? (
+          <ReportState
+            isLoading
+            title="جارٍ تحميل مؤشر كفاءة التحصيل"
+            message=""
+          />
         ) : (
           <ReportState
             title="كفاءة التحصيل غير متاحة"
@@ -321,6 +331,7 @@ export function CollectionsSection({
           />
         )}
         <ReportProgress
+          isLoading={isLoading}
           label="تركيز طريقة السداد الأولى"
           value={dominantMethodShare}
           helper={

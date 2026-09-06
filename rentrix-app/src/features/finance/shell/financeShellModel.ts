@@ -137,8 +137,6 @@ export interface FinancialsSearch {
 export type ResolvedFinanceLocation = Readonly<{
   resolvedSectionId: FinanceSectionId;
   resolvedViewId: FinanceViewId;
-  /** @deprecated Kept for old callers. Commissions now resolve into Income. */
-  isLegacyCommissionsLink: boolean;
 }>;
 
 /** Resolve raw ?section=&view= to one coherent, permitted Money location. */
@@ -193,5 +191,5 @@ export function resolveFinanceLocation(
     }
   }
 
-  return { resolvedSectionId: sId, resolvedViewId: vId, isLegacyCommissionsLink: false };
+  return { resolvedSectionId: sId, resolvedViewId: vId };
 }

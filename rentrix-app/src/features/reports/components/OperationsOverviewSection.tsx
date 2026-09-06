@@ -152,6 +152,7 @@ export function OperationsOverviewSection({
       >
         <div className="px-4 pt-3 pb-4 sm:px-5">
           <ReportSummaryStrip
+            isLoading={isLoading}
             dataReportSummary="operations-overview"
             items={[
               {
@@ -197,7 +198,7 @@ export function OperationsOverviewSection({
       </ReportPanel>
 
       <ReportInsightNote title="قراءة العمليات">
-        {insightBody}
+        {isLoading ? 'جارٍ تحميل مؤشرات التكلفة التشغيلية المعتمدة.' : insightBody}
       </ReportInsightNote>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -323,6 +324,7 @@ export function OperationsOverviewSection({
               <div className="space-y-3 p-4 pt-3 sm:px-5">
                 {urgencyRatio !== null && (
                   <ReportProgress
+                    isLoading={isLoading}
                     label="ضغط الأولوية العاجلة"
                     value={urgencyRatio}
                     helper={
@@ -341,6 +343,7 @@ export function OperationsOverviewSection({
                 )}
                 {completionRatio !== null && (
                   <ReportProgress
+                    isLoading={isLoading}
                     label="معدل إنجاز الطلبات"
                     value={completionRatio}
                     helper={`${formatLatinNumber(completedRequests, 'ar')} منجز من ${formatLatinNumber(actionableRequests, 'ar')} غير ملغى`}

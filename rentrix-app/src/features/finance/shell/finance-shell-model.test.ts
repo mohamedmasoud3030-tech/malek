@@ -31,7 +31,7 @@ describe('canonical Money workspace route model', () => {
       sectionId: 'fees', permission: 'commissions.view', label: 'العمولات',
     });
     expect(resolveFinanceLocation('commissions', '', admin)).toMatchObject({
-      resolvedSectionId: 'fees', resolvedViewId: 'commissions', isLegacyCommissionsLink: false,
+      resolvedSectionId: 'fees', resolvedViewId: 'commissions',
     });
   });
 

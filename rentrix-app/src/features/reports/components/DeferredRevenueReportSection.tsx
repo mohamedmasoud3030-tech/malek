@@ -19,6 +19,7 @@ import {
   ReportProgress,
   ReportState,
 } from '@/components/ui/report-section-primitives';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatLatinNumber } from '@/lib/formatters';
 
 export function DeferredRevenueReportSection({
@@ -132,12 +133,24 @@ export function DeferredRevenueReportSection({
 
   return (
     <div className="space-y-4">
-      <ResponsiveCardGrid>
-        <KpiCard label="تحصيلات مقدمة موثقة" value={formatMoney(schedule.totalUpfrontCollections)} icon={WalletCards} sub={`${formatLatinNumber(audit.candidateReceiptsCount, 'ar')} إيصالات`} />
-        <KpiCard label="اعتراف الشهر الحالي" value={formatMoney(schedule.totalRecognizedRevenueCurrentMonth)} icon={CalendarRange} sub={`حتى ${asOf}`} />
-        <KpiCard label="معترف به حتى التاريخ" value={formatMoney(schedule.totalRecognizedRevenueToDate)} icon={Scale} sub={`${formatLatinNumber(audit.candidateContractsCount, 'ar')} عقود`} />
-        <KpiCard label="التزام مؤجل متبقٍ" value={formatMoney(schedule.totalDeferredLiability)} icon={Link2} sub="سيُعترف به خلال مدد العقود" />
-      </ResponsiveCardGrid>
+      {isLoading ? (
+        <ResponsiveCardGrid>
+          {[0, 1, 2, 3].map((index) => (
+            <div key={index} className="rounded-2xl border border-border/60 bg-card p-4 shadow-card" role="status" aria-live="polite" aria-label="جارٍ تحميل مقاييس الإيراد المؤجل">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="mt-2 h-7 w-32" />
+              <Skeleton className="mt-2 h-3 w-20" />
+            </div>
+          ))}
+        </ResponsiveCardGrid>
+      ) : (
+        <ResponsiveCardGrid>
+          <KpiCard label="تحصيلات مقدمة موثقة" value={formatMoney(schedule.totalUpfrontCollections)} icon={WalletCards} sub={`${formatLatinNumber(audit.candidateReceiptsCount, 'ar')} إيصالات`} />
+          <KpiCard label="اعتراف الشهر الحالي" value={formatMoney(schedule.totalRecognizedRevenueCurrentMonth)} icon={CalendarRange} sub={`حتى ${asOf}`} />
+          <KpiCard label="معترف به حتى التاريخ" value={formatMoney(schedule.totalRecognizedRevenueToDate)} icon={Scale} sub={`${formatLatinNumber(audit.candidateContractsCount, 'ar')} عقود`} />
+          <KpiCard label="التزام مؤجل متبقٍ" value={formatMoney(schedule.totalDeferredLiability)} icon={Link2} sub="سيُعترف به خلال مدد العقود" />
+        </ResponsiveCardGrid>
+      )}
 
       <ReportColumns>
         <ReportPanel
@@ -192,6 +205,7 @@ export function DeferredRevenueReportSection({
           >
             <div className="space-y-3 p-4">
               <ReportProgress
+                isLoading={isLoading}
                 label="تغطية ربط الإيصالات"
                 value={linkCoverage}
                 helper={`${formatLatinNumber(audit.linkedReceiptsCount, 'ar')} من ${formatLatinNumber(audit.postedReceiptsCount, 'ar')} إيصالات منشورة`}

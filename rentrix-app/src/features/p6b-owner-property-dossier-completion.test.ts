@@ -103,7 +103,7 @@ describe('P6b — owner and property operational dossiers (closeout)', () => {
   });
 
   it('keeps the owner edit route context-aware (register / dossier / direct fallback)', () => {
-    const editRoute = read('../routes/_protected.owners.$ownerId.edit.tsx');
+    const editRoute = read('./owners/owner-edit-route.tsx');
     expect(editRoute).toContain('useBackgroundLocation');
     expect(editRoute).toContain("backgroundPath.startsWith('/owners/')");
     expect(editRoute).toContain('backgroundIsOwnerDossier ? <OwnerDetailPage /> : <OwnersWorkspace />');

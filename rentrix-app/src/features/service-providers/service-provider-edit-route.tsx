@@ -1,6 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useBackgroundLocation } from '@/app/router/background-location';
-import { OperationsHubWorkspace } from '@/features/operations-hub/operations-hub-workspace';
 import { ServiceProviderFormDialog } from '@/features/service-providers/components/service-provider-form-dialog';
 import { ServiceProviderDetailPage } from '@/features/service-providers/service-provider-detail-page';
 import { ServiceProvidersWorkspace } from '@/features/service-providers/service-providers-page';
@@ -18,8 +17,7 @@ export function ServiceProviderEditRouteComponent() {
   };
 
   let backgroundContent = <ServiceProvidersWorkspace />;
-  if (background?.pathname === '/maintenance') backgroundContent = <OperationsHubWorkspace defaultSection="service_providers" mode="standalone" />;
-  else if (background?.pathname.startsWith('/service-providers/') && providerId) backgroundContent = <ServiceProviderDetailPage />;
+  if (background?.pathname.startsWith('/service-providers/') && providerId) backgroundContent = <ServiceProviderDetailPage />;
 
   return (
     <>

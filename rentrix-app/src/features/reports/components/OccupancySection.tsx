@@ -178,6 +178,7 @@ export function OccupancySection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="occupancy"
         items={[
           {
@@ -220,8 +221,10 @@ export function OccupancySection({
       />
 
       <ReportInsightNote title="تغير الإشغال مقارنة بالشهر السابق">
-        {!historyComplete
-          ? 'تعذر اكتمال تاريخ العقود؛ لن نحسب تغيرًا تاريخيًا من بيانات ناقصة.'
+        {isLoading
+          ? 'جارٍ تحميل بيانات الإشغال المعتمدة.'
+          : !historyComplete
+            ? 'تعذر اكتمال تاريخ العقود؛ لن نحسب تغيرًا تاريخيًا من بيانات ناقصة.'
           : `الإشغال الآن ${formatLatinNumber(roundedOccupancyRate, 'ar')}% مقابل ${formatLatinNumber(Math.round(vacancyAnalytics.previousMonthOccupancyRate), 'ar')}% في ${date(vacancyAnalytics.previousMonthEnd)}؛ التغير ${occupancyChangeLabel}.`}
       </ReportInsightNote>
 

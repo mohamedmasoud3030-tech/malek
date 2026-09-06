@@ -247,6 +247,7 @@ export function OverviewSection({
       >
         <div className="px-4 pb-4 pt-3 sm:px-5">
           <ReportSummaryStrip
+            isLoading={isLoading}
             dataReportSummary="office-overview"
             items={summaryItems}
           />
@@ -284,6 +285,7 @@ export function OverviewSection({
         <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
           {healthRatios.map((insight) => (
             <ReportProgress
+              isLoading={isLoading}
               key={insight.label}
               label={insight.label}
               value={insight.value}

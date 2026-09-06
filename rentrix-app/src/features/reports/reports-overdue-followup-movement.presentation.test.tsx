@@ -99,6 +99,23 @@ describe('Overdue report — authoritative arrears semantics', () => {
     expect(markup).toContain('تحليل المتأخرات');
   });
 
+  it('never presents authoritative-summary exhaustion as an error while genuinely loading', () => {
+    const markup = renderToStaticMarkup(
+      <OverdueSection
+        rows={[]}
+        agedReport={agedReport as never}
+        summary={undefined}
+        canExportReports
+        isLoading
+      />,
+    );
+    expect(markup).not.toContain('ملخص المتأخرات المعتمد غير متاح');
+    expect(markup).not.toContain('تعذر تحميل ملخص المتأخرات المعتمد');
+    expect(markup).toContain('جارٍ تحميل ملخص المتأخرات المعتمد');
+    expect(markup).not.toContain('متوسط عمر المتأخر');
+    expect(markup).not.toContain('تركيز الذمم القديمة');
+  });
+
   it('never presents the current (not-yet-due) bucket as overdue', () => {
     const markup = renderToStaticMarkup(
       <OverdueSection

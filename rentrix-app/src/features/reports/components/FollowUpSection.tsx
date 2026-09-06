@@ -107,6 +107,7 @@ export function FollowUpSection({
     <div className="space-y-3">
       {queue.length > 0 ? (
         <ReportSummaryStrip
+          isLoading={isLoading}
           dataReportSummary="follow-up"
           items={[
             {

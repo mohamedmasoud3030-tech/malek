@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const sourceRoot = resolve(import.meta.dirname, '../..');
-const route = readFileSync(resolve(sourceRoot, 'routes/_protected.maintenance.tsx'), 'utf8');
+const route = readFileSync(resolve(sourceRoot, 'features/operations-hub/maintenance-route.tsx'), 'utf8');
 const hub = readFileSync(resolve(sourceRoot, 'features/operations-hub/operations-hub-workspace.tsx'), 'utf8');
 const workspace = readFileSync(resolve(import.meta.dirname, 'components/maintenance-workspace.tsx'), 'utf8');
 const controller = readFileSync(resolve(import.meta.dirname, 'useMaintenancePageController.ts'), 'utf8');
