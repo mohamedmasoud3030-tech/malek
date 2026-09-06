@@ -16,8 +16,11 @@ import { SectionCard } from './components/settings-section-card';
 import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
 import { getCompanySettingsPreviewModel } from './settingsForm';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
-import { settingsSectionRegistry, type SettingsSectionDefinition } from './registry/sectionRegistry';
-import { settingsSections, type SettingsSectionId } from './registry/sectionRegistry';
+import {
+  settingsSectionRegistry,
+  type SettingsSectionDefinition,
+  type SettingsSectionId,
+} from './registry/sectionRegistry';
 import type { SettingsSectionRenderProps } from './registry/types';
 import { useSettingsPageController } from './useSettingsPageController';
 
@@ -26,7 +29,6 @@ export function preventSettingsUnload(event: BeforeUnloadEvent) {
   event.returnValue = '';
 }
 
-export { settingsSections };
 export type SettingsWorkspaceVariant = 'standalone' | 'embedded';
 type SettingsWorkspaceProps = Readonly<{
   variant?: SettingsWorkspaceVariant;

@@ -33,7 +33,7 @@ describe('SettingsPage workflow helpers', () => {
   });
 
   it('registers cost centers as a settings section', async () => {
-    const { settingsSections } = await import('./settings-page');
+    const { settingsSections } = await import('./registry/sectionRegistry');
 
     expect(settingsSections.map((section) => section.id)).toContain('cost-centers');
     expect(settingsSections.map((section) => section.label)).toContain('مراكز التكلفة');
