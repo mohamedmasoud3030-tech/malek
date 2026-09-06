@@ -47,38 +47,48 @@ export function OwnerDetailView({
   isRefreshing?: boolean;
 }>) {
   if (state.status === 'loading') {
-    return <AsyncContentState status="loading">{null}</AsyncContentState>;
+    // Keep the canonical page shell mounted while the dossier is in flight so
+    // the initial DOM and the loaded DOM share the same container chrome.
+    return (
+      <PageLayout dir="rtl" size="wide">
+        <AsyncContentState status="loading">{null}</AsyncContentState>
+      </PageLayout>
+    );
   }
   if (state.status === 'error') {
     return (
-      <AsyncContentState
-        status="error"
-        error={state.error}
-        errorTitle="تعذر تحميل ملف المالك"
-        errorFallbackMessage="تعذر تحميل ملف المالك."
-        errorAction={
-          <Button
-            type="button"
-            loading={isRefreshing}
-            onClick={onRetry ?? (() => globalThis.location.reload())}
-          >
-            إعادة المحاولة
-          </Button>
-        }
-      >
-        {null}
-      </AsyncContentState>
+      <PageLayout dir="rtl" size="wide">
+        <AsyncContentState
+          status="error"
+          error={state.error}
+          errorTitle="تعذر تحميل ملف المالك"
+          errorFallbackMessage="تعذر تحميل ملف المالك."
+          errorAction={
+            <Button
+              type="button"
+              loading={isRefreshing}
+              onClick={onRetry ?? (() => globalThis.location.reload())}
+            >
+              إعادة المحاولة
+            </Button>
+          }
+        >
+          {null}
+        </AsyncContentState>
+      </PageLayout>
     );
   }
   if (state.status === 'unavailable') {
     return (
-      <AsyncContentState
-        status="empty"
-        emptyTitle="ملف المالك غير متاح بأمان"
-        emptyDescription={state.reason}
-      >
-        {null}
-      </AsyncContentState>
+      <PageLayout dir="rtl" size="wide">
+        <AsyncContentState
+          status="empty"
+          emptyTitle="ملف المالك غير متاح بأمان"
+          emptyDescription={state.reason}
+        >
+          {null}
+        </AsyncContentState>
+      </PageLayout>
     );
   }
 

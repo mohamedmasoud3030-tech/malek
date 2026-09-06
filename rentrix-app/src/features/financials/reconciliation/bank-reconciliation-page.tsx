@@ -444,7 +444,12 @@ function SuggestedMatches({
   isInteractive: boolean;
   onUse: (candidate: BankMatchCandidate) => void;
 }>) {
-  if (isLoading) return <p className="text-sm text-muted-foreground">جارٍ تحميل الاقتراحات...</p>;
+  if (isLoading)
+    return (
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+        جارٍ تحميل الاقتراحات...
+      </p>
+    );
   if (candidates.length === 0) return <p className="text-sm text-muted-foreground">لا توجد اقتراحات تلقائية بنفس التاريخ والمبلغ.</p>;
 
   return (

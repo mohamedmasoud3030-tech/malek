@@ -45,9 +45,18 @@ export function ServiceProviderDetailPage() {
   const [activeSection, setActiveSection] = useState<ProviderSection>('overview');
 
   if (!providerId) {
-    return <AsyncContentState status="empty" emptyTitle="ملف مزود الخدمة غير متاح" emptyDescription="معرف مزود الخدمة غير موجود في الرابط.">{null}</AsyncContentState>;
+    return (
+      <PageLayout dir="rtl" size="wide">
+        <AsyncContentState status="empty" emptyTitle="ملف مزود الخدمة غير متاح" emptyDescription="معرف مزود الخدمة غير موجود في الرابط.">{null}</AsyncContentState>
+      </PageLayout>
+    );
   }
-  if (!dossierQuery.data && dossierQuery.isLoading) return <AsyncContentState status="loading">{null}</AsyncContentState>;
+  if (!dossierQuery.data && dossierQuery.isLoading)
+    return (
+      <PageLayout dir="rtl" size="wide">
+        <AsyncContentState status="loading">{null}</AsyncContentState>
+      </PageLayout>
+    );
   if (!dossierQuery.data) {
     return (
       <AsyncContentState

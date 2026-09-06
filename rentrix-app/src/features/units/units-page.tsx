@@ -17,7 +17,6 @@ import {
 import { ListPage } from "@/components/layout/list-page";
 import { RegisterMetricStrip } from "@/components/layout/register-summary";
 import { ActionMenu } from "@/components/ui/action-menu";
-import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { DataTableColumnsMenu } from "@/components/ui/data-table";
 import { EntityForm } from "@/components/ui/entity-form";
@@ -56,7 +55,9 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const canEditUnit = canAccess("properties.edit");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   const [previewUnit, setPreviewUnit] = useState<Unit | null>(null);
-  if (ctrl.isLoading) return <LoadingState variant="route" />;
+  // The page shell stays mounted while the register loads: the table owns its
+  // own loading rhythm (EntityTable isLoading), so the route never swaps the
+  // whole scaffold for a bare spinner (initial DOM === loaded DOM chrome).
 
   const openPreview = (unit: Unit) => setPreviewUnit(unit);
   const closePreview = () => setPreviewUnit(null);
@@ -175,7 +176,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         embedded={embedded}
         dir="rtl"
         title="الوحدات"
-        count={formatNumber(totalUnits)}
+        count={ctrl.isLoading ? undefined : formatNumber(totalUnits)}
         primaryAction={primaryAction}
         backTo={embedded ? undefined : "/properties"}
         backLabel={embedded ? undefined : "العقارات"}
@@ -241,10 +242,13 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
           <RegisterMetricStrip
             aria-label="ملخص تشغيل الوحدات"
             items={[
-              { id: 'occupancy', label: 'الإشغال', value: `${formatNumber(occupancyRate)}%`, hint: `${formatNumber(ctrl.kpis.occupiedCount)} مشغولة`, icon: CircleGauge },
-              { id: 'available', label: 'متاحة', value: formatNumber(ctrl.kpis.availableCount), icon: Home, tone: 'success', hideWhenEmpty: true },
-              { id: 'maintenance', label: 'صيانة', value: formatNumber(maintenanceCount), icon: Wrench, tone: 'warning', hideWhenEmpty: true },
-              { id: 'rent', label: 'الإيجار المتوقع', value: formatMoney(ctrl.kpis.expectedRent), icon: Building2 },
+              // While the register is in flight the strip renders its slots with
+              // neutral placeholders instead of resolved 0 values — a first paint
+              // of "0%" that jumps to the real rate reads as a loaded-but-empty lie.
+              { id: 'occupancy', label: 'الإشغال', value: ctrl.isLoading ? '—' : `${formatNumber(occupancyRate)}%`, hint: ctrl.isLoading ? undefined : `${formatNumber(ctrl.kpis.occupiedCount)} مشغولة`, icon: CircleGauge },
+              { id: 'available', label: 'متاحة', value: ctrl.isLoading ? '—' : formatNumber(ctrl.kpis.availableCount), icon: Home, tone: 'success', hideWhenEmpty: !ctrl.isLoading },
+              { id: 'maintenance', label: 'صيانة', value: ctrl.isLoading ? '—' : formatNumber(maintenanceCount), icon: Wrench, tone: 'warning', hideWhenEmpty: !ctrl.isLoading },
+              { id: 'rent', label: 'الإيجار المتوقع', value: ctrl.isLoading ? '—' : formatMoney(ctrl.kpis.expectedRent), icon: Building2 },
             ]}
           />
         </section>
