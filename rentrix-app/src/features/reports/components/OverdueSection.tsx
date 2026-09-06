@@ -289,6 +289,7 @@ export function OverdueSection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="overdue"
         items={[
           {
@@ -347,6 +348,7 @@ export function OverdueSection({
           {hasArrearsSummary ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <ReportProgress
+                isLoading={isLoading}
                 label="تركيز الذمم القديمة"
                 value={over90Share}
                 helper="حصة الذمم التي تجاوزت 90 يومًا من إجمالي المتأخر"
@@ -359,6 +361,7 @@ export function OverdueSection({
                 }
               />
               <ReportProgress
+                isLoading={isLoading}
                 label="أكبر انكشاف عقد"
                 value={topExposureShare}
                 helper={
@@ -375,6 +378,12 @@ export function OverdueSection({
                 }
               />
             </div>
+          ) : isLoading ? (
+            <ReportState
+              isLoading
+              title="جارٍ تحميل ملخص المتأخرات المعتمد"
+              message=""
+            />
           ) : (
             <ReportState
               title="ملخص المتأخرات المعتمد غير متاح"
@@ -382,8 +391,10 @@ export function OverdueSection({
             />
           )}
           <ReportInsightNote title="أولوية المتابعة">
-            {!hasArrearsSummary
-              ? 'تعذر تحميل ملخص المتأخرات المعتمد؛ استخدم الجدول التفصيلي مع الترتيب حسب العمر أو الرصيد إلى حين توفر الملخص.'
+            {isLoading
+              ? 'جارٍ تحميل الملخص المعتمد للذمم المتأخرة.'
+              : !hasArrearsSummary
+                ? 'تعذر تحميل ملخص المتأخرات المعتمد؛ استخدم الجدول التفصيلي مع الترتيب حسب العمر أو الرصيد إلى حين توفر الملخص.'
               : over90Share >= 40
                 ? 'الذمم القديمة تمثل حصة مرتفعة من المتأخرات؛ ابدأ بالعقود التي تجاوزت 90 يومًا ثم رتّب الباقي حسب الرصيد.'
                 : topExposureShare >= 35

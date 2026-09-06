@@ -129,7 +129,23 @@ export function ReportPanelSkeleton({ className, ariaLabel = 'جارٍ تحمي�
   return <div className={cn('space-y-3 p-4 sm:p-5', className)} role="status" aria-live="polite" aria-label={ariaLabel}><Skeleton className="h-4 w-36" /><Skeleton className="h-16 w-full rounded-xl" /><Skeleton className="h-16 w-full rounded-xl" /><Skeleton className="h-16 w-4/5 rounded-xl" /></div>;
 }
 
-export function ReportState({ kind = 'empty', title, message, className }: Readonly<{ kind?: 'empty' | 'error'; title?: string; message: string; className?: string }>) {
+export function ReportState({ kind = 'empty', title, message, className, isLoading = false }: Readonly<{ kind?: 'empty' | 'error'; title?: string; message: string; className?: string; isLoading?: boolean }>) {
+  if (isLoading) {
+    return (
+      <div
+        className={cn('flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-5 text-center text-sm sm:min-h-32', 'border-border/70 bg-muted/20', className)}
+        role="status"
+        aria-live="polite"
+        aria-label={title ?? 'جارٍ تحميل الحالة'}
+      >
+        <Skeleton className="size-10 rounded-xl" />
+        <div className="max-w-xl space-y-2">
+          <Skeleton className="mx-auto h-4 w-48" />
+          <Skeleton className="mx-auto h-3 w-64" />
+        </div>
+      </div>
+    );
+  }
   const Icon = kind === 'error' ? AlertCircle : Inbox;
   return <div className={cn('flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-5 text-center text-sm sm:min-h-32', kind === 'error' ? 'border-destructive/40 bg-destructive/10 text-destructive' : 'border-border/70 bg-muted/20 text-muted-foreground', className)} role={kind === 'error' ? 'alert' : 'status'}><span className={cn('grid size-10 place-items-center rounded-xl', kind === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-background text-muted-foreground shadow-sm')}><Icon className="size-5" aria-hidden="true" /></span><div className="max-w-xl">{title ? <p className="font-bold text-foreground">{title}</p> : null}<p className={cn('leading-6', title && 'mt-1')}>{message}</p></div></div>;
 }
@@ -357,7 +373,21 @@ export function ReportColumns({ children, className }: Readonly<{ children: Reac
   return <div className={cn('grid gap-4 lg:grid-cols-2', className)}>{children}</div>;
 }
 
-export function ReportProgress({ label, value, helper, tone = 'neutral' }: Readonly<{ label: string; value: number; helper?: string; tone?: 'good' | 'warning' | 'critical' | 'neutral' }>) {
+export function ReportProgress({ label, value, helper, tone = 'neutral', isLoading = false }: Readonly<{ label: string; value: number; helper?: string; tone?: 'good' | 'warning' | 'critical' | 'neutral'; isLoading?: boolean }>) {
+  if (isLoading) {
+    return (
+      <div data-report-visual role="status" aria-live="polite" aria-label={`جارٍ تحميل ${label}`} className="rounded-xl border border-border/60 bg-background p-3.5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-1 h-3 w-36" />
+          </div>
+          <Skeleton className="h-7 w-12 rounded-lg" />
+        </div>
+        <Skeleton className="mt-3 h-2 w-full rounded-full" />
+      </div>
+    );
+  }
   const boundedValue = Math.max(0, Math.min(100, value));
   return <div data-report-visual className="rounded-xl border border-border/60 bg-background p-3.5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold">{label}</p>{helper ? <p className="mt-1 text-xs leading-4 text-muted-foreground">{helper}</p> : null}</div><span className={cn('rounded-lg px-2 py-1 text-xs font-extrabold tabular-nums', tone === 'good' && 'bg-success/10 text-success', tone === 'warning' && 'bg-warning/10 text-warning', tone === 'critical' && 'bg-danger/10 text-danger', tone === 'neutral' && 'bg-muted text-muted-foreground')} dir="ltr">{Math.round(boundedValue)}%</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-muted"><div className={cn('h-full rounded-full transition-[width] duration-500', tone === 'good' && 'bg-success', tone === 'warning' && 'bg-warning', tone === 'critical' && 'bg-danger', tone === 'neutral' && 'bg-primary')} style={{ width: `${boundedValue}%` }} /></div></div>;
 }

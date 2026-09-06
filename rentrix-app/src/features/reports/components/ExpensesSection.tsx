@@ -157,6 +157,7 @@ export function ExpensesSection({
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="expenses"
         items={[
           {
@@ -191,8 +192,10 @@ export function ExpensesSection({
       />
 
       <ReportInsightNote title="قراءة المصروفات">
-        {topCategoryShare > 60
-          ? 'معظم المصروفات متركزة في تصنيف واحد؛ راجع تفاصيل هذا التصنيف والتكرار قبل اعتماد الفترة.'
+        {isLoading
+          ? 'جارٍ تحميل تحليل المصروفات المعتمد.'
+          : topCategoryShare > 60
+            ? 'معظم المصروفات متركزة في تصنيف واحد؛ راجع تفاصيل هذا التصنيف والتكرار قبل اعتماد الفترة.'
           : topPropertyShare > 65
             ? 'عقار واحد يتحمل الحصة الأكبر من المصروفات؛ راجع الصيانة والخدمات المرتبطة به.'
             : 'المصروفات موزعة نسبيًا بين التصنيفات والعقارات دون تركّز حاد.'}
@@ -200,6 +203,7 @@ export function ExpensesSection({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
+          isLoading={isLoading}
           label="تركيز أكبر تصنيف"
           value={topCategoryShare}
           helper={
@@ -216,6 +220,7 @@ export function ExpensesSection({
           }
         />
         <ReportProgress
+          isLoading={isLoading}
           label="تركيز أكبر عقار"
           value={topPropertyShare}
           helper={

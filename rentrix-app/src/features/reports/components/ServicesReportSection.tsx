@@ -439,6 +439,7 @@ export function ServicesReportSection({
   return (
     <div className="space-y-3" data-services-report>
       <ReportSummaryStrip
+        isLoading={isLoading}
         dataReportSummary="services"
         items={[
           {
@@ -473,41 +474,45 @@ export function ServicesReportSection({
       />
 
       <ReportInsightNote title="قراءة الخدمات">
-        {obligationsSummary.overdueCount > 0
-          ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير متأخرة بمبلغ ${money(obligationsSummary.overdueAmount, currency)} — رتّب سدادها مع الجهة المسؤولة عنها أولًا، فالتأخر يتراكم على العقار لا على التقرير.`
-          : obligationsSummary.dueSoonCount > 0
-            ? `${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} فواتير تستحق قريبًا بمبلغ ${money(obligationsSummary.dueSoonAmount, currency)}؛ جهّز السداد أو اتفاق التحميل قبل استحقاقها.`
+        {isLoading
+          ? 'جارٍ تحميل ملخص الخدمات والمرافق المعتمد.'
+          : obligationsSummary.overdueCount > 0
+            ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير متأخرة بمبلغ ${money(obligationsSummary.overdueAmount, currency)} — رتّب سدادها مع الجهة المسؤولة عنها أولًا، فالتأخر يتراكم على العقار لا على التقرير.`
+            : obligationsSummary.dueSoonCount > 0
+              ? `${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} فواتير تستحق قريبًا بمبلغ ${money(obligationsSummary.dueSoonAmount, currency)}؛ جهّز السداد أو اتفاق التحميل قبل استحقاقها.`
             : unpaidWithoutProof > 0
               ? `${formatLatinNumber(unpaidWithoutProof, 'ar')} فواتير غير مسددة بدون إثبات دفع مرتبط؛ أكمل الإثباتات لتوثيق التحميل على الجهة الصحيحة.`
               : 'لا توجد متأخرات في النطاق — الالتزامات المسجلة مسددة أو مجدولة ضمن النافذة القريبة.'}
       </ReportInsightNote>
 
-      {paymentProgress !== null && overdueShare !== null && (
+      {(isLoading || (paymentProgress !== null && overdueShare !== null)) && (
         <div className="grid gap-3 sm:grid-cols-2">
           <ReportProgress
+            isLoading={isLoading}
             label="نسبة السداد من المستحق"
-            value={paymentProgress}
+            value={paymentProgress ?? 0}
             helper={`${money(totalPaid, currency)} من ${money(totalBilled, currency)}`}
             tone={
-              paymentProgress >= 90
+              (paymentProgress ?? 0) >= 90
                 ? 'good'
-                : paymentProgress >= 60
+                : (paymentProgress ?? 0) >= 60
                   ? 'warning'
                   : 'critical'
             }
           />
           <ReportProgress
+            isLoading={isLoading}
             label="حصة المتأخر من المستحق"
-            value={overdueShare}
+            value={overdueShare ?? 0}
             helper={
               obligationsSummary.overdueCount > 0
                 ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير بعد موعدها`
                 : 'لا فواتير متأخرة'
             }
             tone={
-              overdueShare <= 0
+              (overdueShare ?? 0) <= 0
                 ? 'good'
-                : overdueShare <= 25
+                : (overdueShare ?? 0) <= 25
                   ? 'warning'
                   : 'critical'
             }
