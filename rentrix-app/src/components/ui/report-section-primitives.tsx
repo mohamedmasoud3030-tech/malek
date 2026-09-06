@@ -377,8 +377,51 @@ export type ReportSummaryItem = Readonly<{
  * Compact contextual executive strip. One report, a handful of relevant figures,
  * no dashboard card grid. Reads as a single quiet line under the report header;
  * on mobile it collapses to a horizontally scrollable row.
+ *
+ * `isLoading` renders the same skeleton rhythm `ReportPanel` already uses
+ * while the authoritative summary is in flight, instead of the strip showing
+ * a placeholder value (e.g. "—" or "غير متاحة") that reads as an already
+ * resolved, empty or unavailable result while sibling detail panels in the
+ * same section are still visibly loading.
  */
-export function ReportSummaryStrip({ items, className, dataReportSummary }: Readonly<{ items: readonly ReportSummaryItem[]; className?: string; dataReportSummary?: string }>) {
+export function ReportSummaryStrip({
+  items,
+  className,
+  dataReportSummary,
+  isLoading = false,
+}: Readonly<{
+  items: readonly ReportSummaryItem[];
+  className?: string;
+  dataReportSummary?: string;
+  isLoading?: boolean;
+}>) {
+  if (isLoading) {
+    return (
+      <div
+        data-report-summary={dataReportSummary}
+        data-report-summary-loading=""
+        role="status"
+        aria-live="polite"
+        aria-label="جارٍ تحميل ملخص التقرير"
+        className={cn('no-scrollbar -mx-1 flex items-stretch gap-x-1 overflow-x-auto overscroll-x-contain px-1 sm:mx-0 sm:flex-wrap sm:gap-x-0 sm:overflow-visible sm:px-0', className)}
+      >
+        {items.map((item, index) => (
+          <div
+            key={item.label}
+            className={cn(
+              'min-w-max shrink-0 border-border/60 px-1 py-1 sm:px-3 sm:py-0',
+              'sm:border-e sm:last:border-e-0',
+              index > 0 && 'border-s sm:border-s-0',
+            )}
+          >
+            <p className="text-[11px] font-bold leading-4 text-muted-foreground sm:text-xs">{item.label}</p>
+            <Skeleton className="mt-1 h-4 w-16 rounded-md" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div
       data-report-summary={dataReportSummary}
@@ -404,5 +447,3 @@ export function ReportSummaryStrip({ items, className, dataReportSummary }: Read
     </div>
   );
 }
-
-
