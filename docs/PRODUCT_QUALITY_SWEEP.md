@@ -331,3 +331,25 @@ only the placeholder hosts in its realtime console filter. CI resolves both cons
 `VITE_SUPABASE_URL=https://e2e.invalid.supabase.local` and
 `VITE_SUPABASE_ANON_KEY=e2e-browser-public-key` (a host that is configured for the app yet
 substring-matched by the filter), and that is the env the local browser battery must use.
+
+### Integrated-branch gate results
+
+Run on `integrate/phase8-and-finance-canonical` with the CI browser env above, serialized
+(two vCPUs / 2 GB), after every reconciliation step:
+
+| Gate | Result |
+| --- | --- |
+| `chromium-mobile`, full project | 92 passed, 0 failed, 83 skipped |
+| `chromium-desktop`, full project | 159 passed, 0 failed, 16 skipped |
+| `chromium-tablet`, full project | 80 passed, 0 failed, 95 skipped |
+| document acceptance, mobile + desktop | 20 passed, 0 failed, 6 skipped |
+| Vitest (app suite) | 508 files, 3527 tests, 0 failed |
+| `tsc -p tsconfig.json --noEmit` | clean |
+| `check:architecture` / `check:enterprise-freeze` | clean / PASS |
+| `scripts/check-doc-links.mjs` | PASS (10 files) |
+| `pnpm build` (PWA precache 28 entries, 430 KiB) | clean |
+
+The separate test-project typecheck (`tsconfig.test.json`) still cannot run in this
+sandbox — it aborts under the memory cap, a limit recorded before this phase; the test
+files are executed by Vitest and type-checked as part of the app project where they are
+imported, so no gate was skipped silently, only this one redundant check.
