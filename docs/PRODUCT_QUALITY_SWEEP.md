@@ -349,7 +349,7 @@ Run on `integrate/phase8-and-finance-canonical` with the CI browser env above, s
 | `scripts/check-doc-links.mjs` | PASS (10 files) |
 | `pnpm build` (PWA precache 28 entries, 430 KiB) | clean |
 
-The separate test-project typecheck (`tsconfig.test.json`) still cannot run in this
-sandbox — it aborts under the memory cap, a limit recorded before this phase; the test
-files are executed by Vitest and type-checked as part of the app project where they are
-imported, so no gate was skipped silently, only this one redundant check.
+`tsc -p tsconfig.test.json --noEmit` was also run against the integrated tree after the
+gates above had released memory (it had aborted under the sandbox heap cap earlier in this
+phase, which was contention, not a code condition): clean, with every test, spec and
+fixture file in the repository included.
