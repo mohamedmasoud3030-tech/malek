@@ -238,7 +238,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           </>
         )}
       >
-        <ContractKpiGrid attention={contractAttention} companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
+        <ContractKpiGrid attention={contractAttention} companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} isLoading={contractsQuery.isLoading} />
 
         <ContractResults
           attentionByContractId={contractAttention.attentionByContractId}

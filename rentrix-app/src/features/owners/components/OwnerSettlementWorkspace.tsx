@@ -21,6 +21,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
@@ -356,6 +357,9 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
 
       {/* Canonical register summary: one compact strip, the same pattern used
           by invoices, receipts, deposits, and accruals — not a KPI-card wall. */}
+      {listStatus === 'loading' ? (
+        <LoadingState variant="section" label="جارٍ تحميل ملخص التسويات" />
+      ) : (
       <RegisterMetricStrip
         aria-label="ملخص تسويات الملاك"
         items={[
@@ -365,6 +369,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
           { id: 'outstanding', label: 'صافي مستحقات الملاك', value: formatMoney(totals.outstandingNet), icon: BadgeCheck, tone: totals.outstandingNet > 0 ? 'warning' : 'default', hint: 'مسودات ومعتمدة لم تُصرف بعد' },
         ]}
       />
+      )}
 
       <SettlementSupervisionBanner
         settlements={settlements}

@@ -13,6 +13,7 @@ import { EntityTable, EntityTableViewModeProvider, type ColumnDef } from '@/comp
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -519,38 +520,42 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       {mode === 'embedded' ? <div className="flex flex-wrap justify-end gap-2">{headerActions}</div> : null}
       {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
 
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard
-          label="العدادات المسجلة"
-          value={formatLatinNumber(meters.length, 'ar')}
-          icon={Zap}
-          accent="primary"
-          sub={
-            meterCoverageSummary.needingAttention > 0
-              ? `${formatLatinNumber(meterCoverageSummary.needingAttention, 'ar')} عداد بلا فوترة محدثة`
-              : 'كل العدادات مغطاة بفواتير حديثة'
-          }
-        />
-        <KpiCard label="إجمالي الفواتير" value={money(totalBilled)} icon={Activity} accent="sky" sub={`المسدد ${money(totalPaid)}`} />
-        <KpiCard
-          label="المتبقي"
-          value={money(obligationsSummary.outstandingAmount)}
-          icon={CheckCircle2}
-          accent="emerald"
-          sub={`${formatLatinNumber(obligationsSummary.outstandingCount, 'ar')} مطالبة غير مسددة`}
-        />
-        <KpiCard
-          label="مطالبات متأخرة"
-          value={money(obligationsSummary.overdueAmount)}
-          icon={AlertCircle}
-          accent="rose"
-          sub={
-            obligationsSummary.overdueCount > 0
-              ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فاتورة تجاوزت الاستحقاق`
-              : `لا توجد متأخرات — ${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} تستحق خلال أسبوع`
-          }
-        />
-      </ResponsiveCardGrid>
+      {isLoading ? (
+        <LoadingState variant="cards" rows={4} label="جارٍ تحميل مؤشرات المرافق" />
+      ) : (
+        <ResponsiveCardGrid desktopColumns={4}>
+          <KpiCard
+            label="العدادات المسجلة"
+            value={formatLatinNumber(meters.length, 'ar')}
+            icon={Zap}
+            accent="primary"
+            sub={
+              meterCoverageSummary.needingAttention > 0
+                ? `${formatLatinNumber(meterCoverageSummary.needingAttention, 'ar')} عداد بلا فوترة محدثة`
+                : 'كل العدادات مغطاة بفواتير حديثة'
+            }
+          />
+          <KpiCard label="إجمالي الفواتير" value={money(totalBilled)} icon={Activity} accent="sky" sub={`المسدد ${money(totalPaid)}`} />
+          <KpiCard
+            label="المتبقي"
+            value={money(obligationsSummary.outstandingAmount)}
+            icon={CheckCircle2}
+            accent="emerald"
+            sub={`${formatLatinNumber(obligationsSummary.outstandingCount, 'ar')} مطالبة غير مسددة`}
+          />
+          <KpiCard
+            label="مطالبات متأخرة"
+            value={money(obligationsSummary.overdueAmount)}
+            icon={AlertCircle}
+            accent="rose"
+            sub={
+              obligationsSummary.overdueCount > 0
+                ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فاتورة تجاوزت الاستحقاق`
+                : `لا توجد متأخرات — ${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} تستحق خلال أسبوع`
+            }
+          />
+        </ResponsiveCardGrid>
+      )}
 
       <FilterBar
         searchValue={searchQuery}

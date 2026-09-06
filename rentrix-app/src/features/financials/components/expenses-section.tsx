@@ -10,6 +10,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
+import { LoadingState } from '@/components/ui/loading-state';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -219,15 +220,19 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
 
   return (
     <div className="min-w-0 space-y-2.5 sm:space-y-3">
-        <RegisterMetricStrip
-          aria-label="ملخص المصروفات"
-          items={[
-            { id: 'count', label: 'المصروفات', value: summary.visibleCount, icon: ReceiptText, hideWhenEmpty: true },
-            { id: 'total', label: 'الإجمالي', value: formatMoney(summary.visibleAmount), icon: WalletCards },
-            { id: 'properties', label: 'العقارات', value: summary.byPropertyCount, icon: Building2, hideWhenEmpty: true },
-            { id: 'categories', label: 'التصنيفات', value: summary.byCategoryCount, icon: Tags, hideWhenEmpty: true },
-          ]}
-        />
+        {isLoading ? (
+          <LoadingState variant="section" label="جارٍ تحميل ملخص المصروفات" />
+        ) : (
+         <RegisterMetricStrip
+           aria-label="ملخص المصروفات"
+           items={[
+             { id: 'count', label: 'المصروفات', value: summary.visibleCount, icon: ReceiptText, hideWhenEmpty: true },
+             { id: 'total', label: 'الإجمالي', value: formatMoney(summary.visibleAmount), icon: WalletCards },
+             { id: 'properties', label: 'العقارات', value: summary.byPropertyCount, icon: Building2, hideWhenEmpty: true },
+             { id: 'categories', label: 'التصنيفات', value: summary.byCategoryCount, icon: Tags, hideWhenEmpty: true },
+           ]}
+         />
+        )}
 
         <FilterBar
           filters={(

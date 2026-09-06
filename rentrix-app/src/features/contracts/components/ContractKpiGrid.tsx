@@ -7,6 +7,7 @@ import type { ContractListItem } from '../services/contractService';
 import { isExpiringSoon } from '../hooks/useContractFilters';
 import type { ContractAttentionState } from '../useContractAttention';
 import { formatCount } from '@/lib/formatters';
+import { LoadingState } from '@/components/ui/loading-state';
 
 
 /**
@@ -79,6 +80,7 @@ export function ContractKpiGrid({
   contracts,
   filteredContracts,
   totalCount,
+  isLoading = false,
 }: {
   /** Operational attention state (see `useContractAttention`). Optional for static fixtures. */
   attention?: ContractAttentionState;
@@ -97,6 +99,11 @@ export function ContractKpiGrid({
   filteredContracts: ContractListItem[];
   /** Server-side total count, independent of any client filter. */
   totalCount: number;
+  /**
+   * While the register query is in flight the strip renders its loading frame
+   * instead of `?? 0` derivations, so counters never read as resolved zeros.
+   */
+  isLoading?: boolean;
 }) {
   // @scope unfiltered page — expiry warnings persist through search filters.
   const listSummary = summarizeContracts(contracts);
@@ -124,6 +131,9 @@ export function ContractKpiGrid({
         label="عقود تحتاج متابعة"
         description={buildAttentionDescription(attention, companySettings)}
       />
+      {isLoading ? (
+        <LoadingState variant="section" label="جارٍ تحميل ملخص العقود" />
+      ) : (
       <RegisterMetricStrip
         aria-label="ملخص دورة العقود"
         items={[
@@ -164,6 +174,7 @@ export function ContractKpiGrid({
           },
         ]}
       />
+      )}
     </section>
   );
 }

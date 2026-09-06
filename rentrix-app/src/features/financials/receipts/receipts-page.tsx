@@ -2,6 +2,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Ban, Clock3, Eye, Printer, ReceiptText, ShieldCheck, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { LoadingState } from '@/components/ui/loading-state';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
@@ -253,6 +254,9 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       // tab; the standalone compatibility entry still needs its back action.
       secondaryActions={embedded ? undefined : <Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
     >
+      {receiptsQuery.isLoading ? (
+        <LoadingState variant="section" label="جارٍ تحميل ملخص الإيصالات" />
+      ) : (
       <RegisterMetricStrip
         aria-label="ملخص الإيصالات"
         items={[
@@ -261,6 +265,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
           { id: 'today', label: 'تحصيل اليوم', value: formatMoney(todayCollectedAmount), hint: `${formatLatinNumber(todayReceiptCount, 'ar')} إيصال`, icon: Wallet, hideWhenEmpty: true },
         ]}
       />
+      )}
 
       <FilterBar
         searchValue={query}
