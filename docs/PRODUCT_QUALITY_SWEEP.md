@@ -273,3 +273,61 @@ not residue; a repo-wide file-level orphan scan after these deletions returns no
 (`import.meta.glob` is not used for runtime discovery anywhere in the app, so no file is
 reachable only through a glob).
 
+
+## Phase 9 — integrating this branch with the parallel Finance sweep
+
+Two branches were developed on top of the same `main` (`c5ad6791`) by two agents: the
+Phase 8 quality closure (menu reachability, one file-size formatter, retired marketing
+surface, property-wizard DOM coverage) and `arena/01a0713a-malek` (PR #1806, four passes
+of Finance/report duplicate elimination, whose head `7831f60` also merged `main` into
+itself). They were **not** disjoint: both touched nine files, and Git reported only six
+conflicts. The overlap map was built from `git diff --name-only` on each side against
+current `main` before anything was merged, and every shared file was then read, not
+auto-resolved.
+
+Four responsibilities were solved twice, in parallel, with different code. Each kept one
+canonical implementation:
+
+| Responsibility | Outcome |
+| --- | --- |
+| File-size formatting | `lib/formatters.ts` `formatFileSize` (this sweep) wins: it covers B–TB, promotes when rounding reaches the next base, returns `null` when there is nothing to display, and can render Arabic unit words. The Finance variant (KB/MB only, `'—'` for missing) was auto-merged **alongside** it in the same file — a duplicate definition Git did not report — and is removed. Its two deliberate strengths are absorbed: a second decimal above the megabyte (`2.25 MB`, not `2.3 MB`) and the pinned `'en'` locale no-op. |
+| Menu reachability | `resolveActionMenuPlacement` (flip above, cap to the room that exists, horizontal clamp, reposition on scroll/resize) wins over the in-component `bottom`-anchor variant, because it is unit-tested and also handles the case where neither side fits. The Finance fallback `max-h-[calc(100dvh-1rem)]` replaces the `80vh` guess: mobile browser toolbars are dynamic. |
+| Double-tap fall-through | The Finance fix is kept: selecting an item unmounts the menu synchronously, so the second click of a double-tap landed on the invoice card underneath. It moved out of `action-menu.tsx` into `components/ui/menu-click-shield.ts`, because the property belongs to any menu that dismisses itself on activation — the mobile quick-add sheet had the same shape. Their unit test is the contract; the browser step that used to *work around* the fall-through now asserts the shield holds. |
+| Acceptance spec helpers | Union. Their `aria-controls`-bound menu resolution, `aria-expanded` idempotency and "exactly one open menu" proof, with this sweep's row containment for the desktop trigger, menu-scoped item locators with no `.first()`, and a non-vacuous withheld check. The card-face `toHaveCount(0)` lines stay removed: the register never renders those buttons, so they could never fail. |
+
+Preserved from the Finance branch, untouched: the statement line-type ledger,
+`reports/documents/report-cells.ts`, `lib/maintenanceStatus.ts` owning status/priority
+labels, the `communication-schema` / `land-schema` label de-duplication, and its
+dead-export and unreferenced-fixture removals (re-verified here: `QuickAction`,
+`QuickActionBar` and `MobileActionGrid` have no consumer, and no live import points at
+any deleted fixture). Nothing from either branch was dropped, and no test was weakened to
+reach green — the single retargeted assertion (their `style.bottom === '44px'` placement
+pin) was rewritten to the equivalent geometry of the winning implementation, with the
+failure mode it guards against named in the comment.
+
+### Two findings deliberately left open
+
+- `features/financials/invoice-list-section.tsx` labels the desktop row menu
+  `إجراءات ${invoice.reference ?? 'الفاتورة'}`, so the label is only row-specific when a
+  reference exists. The acceptance contract is specific anyway (the trigger is bound to
+  the `<tr>` containing the invoice), and the copy belongs to the Finance sweep, so it was
+  not rewritten during integration.
+- `app/layout/notifications-menu.tsx` carries a fourth arrow/Escape/focus-restore
+  implementation. It was **not** folded into `menu-keyboard.ts`: its panel is
+  `role="dialog"` with a `role="status"` block and an error `role="alert"` among its
+  children, and the shared hook's semantics (wrapping `[role=menuitem]`, Tab closes) would
+  change both the ARIA contract and the keyboard behavior of a live surface. That is a
+  follow-up accessibility task, not an integration step.
+
+### Validation environment note
+
+`login-flow`, `login-simplification` and part of `readiness-smoke` drive the **real**
+login form, which `lib/runtime-diagnostics.ts` disables whenever Supabase public config is
+missing *or placeholder* (`example.supabase.co`, `invalid.supabase.local`,
+`test-anon-key`, `invalid-anon-key`). `playwright.config.ts`'s built-in dev-server fallback
+uses exactly those placeholders, so those specs fail on any branch — including `main`,
+verified by running them at `c5ad6791`. The document acceptance suite simultaneously tolerates
+only the placeholder hosts in its realtime console filter. CI resolves both constraints with
+`VITE_SUPABASE_URL=https://e2e.invalid.supabase.local` and
+`VITE_SUPABASE_ANON_KEY=e2e-browser-public-key` (a host that is configured for the app yet
+substring-matched by the filter), and that is the env the local browser battery must use.
