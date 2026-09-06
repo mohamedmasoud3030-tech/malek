@@ -48,7 +48,10 @@ describe('Services workspace contract', () => {
 
   it('preserves state in one Services composition layer', () => {
     const component = readFileSync(resolve(import.meta.dirname, './operations-hub-workspace.tsx'), 'utf8');
-    expect(component).toContain("title ?? activeSectionDefinition.label");
+    // Page identity is hub-owned via the active section — the retired
+    // hub-inside-hub `title` override must not come back.
+    expect(component).toContain('title={activeSectionDefinition.label}');
+    expect(component).not.toContain('title?:');
     expect(component).toContain('mountedSections');
     expect(component).toContain("to: '/maintenance'");
     expect(component).not.toContain('AutomationWorkspace');

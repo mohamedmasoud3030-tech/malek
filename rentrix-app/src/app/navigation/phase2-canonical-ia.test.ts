@@ -77,7 +77,10 @@ describe('Task-centric canonical IA', () => {
     expect(servicesSectionsSource).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).not.toContain("| 'automation'");
     expect(servicesSource).not.toContain('AutomationWorkspace');
-    expect(servicesSource).toContain('title={title ?? activeSectionDefinition.label}');
+    // The hub always owns its page identity (derived from the active section);
+    // hub-inside-hub title overrides were removed as dead surface.
+    expect(servicesSource).toContain('title={activeSectionDefinition.label}');
+    expect(servicesSource).not.toContain('title?:');
   });
 
   it('treats Automation as a guarded settings deep link, not routine navigation', () => {

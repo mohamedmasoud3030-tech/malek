@@ -22,27 +22,6 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
   const controller = useOwnersPageController();
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultOwnerColumns]);
 
-  if (controller.isLoading || controller.hasLoadError) {
-    return (
-      <AsyncContentState
-        status={controller.isLoading ? 'loading' : 'error'}
-        error={controller.firstLoadError}
-        errorTitle="تعذر تحميل مساحة عمل الملاك"
-        errorFallbackMessage={getOwnerPageErrorMessage(
-          controller.firstLoadError,
-          'حدث خطأ غير متوقع أثناء تحميل الملاك والعقارات المرتبطة.',
-        )}
-        errorAction={(
-          <Button type="button" onClick={controller.retryOwnerWorkspace}>
-            إعادة المحاولة
-          </Button>
-        )}
-      >
-        {null}
-      </AsyncContentState>
-    );
-  }
-
   const totalProperties =
     controller.summary.linkedPropertiesCount +
     controller.summary.propertiesWithoutLinkedOwner;
@@ -58,7 +37,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
         viewModeStorageKey="malek:list-page:owners"
         dir="rtl"
         title="الملاك"
-        count={controller.summary.totalOwners}
+        count={controller.isLoading ? undefined : controller.summary.totalOwners}
         primaryAction={(
           <Button className="min-h-11" onClick={controller.openCreateForm}>
             <Plus className="me-2 size-4" />
@@ -78,23 +57,45 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
           />
         )}
       >
-        <RegisterMetricStrip
-          aria-label="ملخص الملاك"
-          items={[
-            { id: 'active', label: 'نشطون', value: formatCount(controller.summary.activeOwners), icon: Users, tone: 'success' },
-            { id: 'coverage', label: 'تغطية الربط', value: `${formatCount(linkedCoverage)}%`, hint: `${formatCount(controller.summary.linkedPropertiesCount)} عقار`, icon: Building2 },
-            { id: 'unlinked', label: 'بلا مالك', value: formatCount(controller.summary.propertiesWithoutLinkedOwner), icon: Building2, tone: 'warning', hideWhenEmpty: true },
-          ]}
-        />
+        {controller.isLoading || controller.hasLoadError ? (
+          <AsyncContentState
+            status={controller.isLoading ? 'loading' : 'error'}
+            error={controller.firstLoadError}
+            errorTitle="تعذر تحميل مساحة عمل الملاك"
+            errorFallbackMessage={getOwnerPageErrorMessage(
+              controller.firstLoadError,
+              'حدث خطأ غير متوقع أثناء تحميل الملاك والعقارات المرتبطة.',
+            )}
+            errorAction={(
+              <Button type="button" onClick={controller.retryOwnerWorkspace}>
+                إعادة المحاولة
+              </Button>
+            )}
+          >
+            {null}
+          </AsyncContentState>
+        ) : (
+          <>
+            <RegisterMetricStrip
+              aria-label="ملخص الملاك"
+              items={[
+                { id: 'active', label: 'نشطون', value: formatCount(controller.summary.activeOwners), icon: Users, tone: 'success' },
+                { id: 'coverage', label: 'تغطية الربط', value: `${formatCount(linkedCoverage)}%`, hint: `${formatCount(controller.summary.linkedPropertiesCount)} عقار`, icon: Building2 },
+                { id: 'unlinked', label: 'بلا مالك', value: formatCount(controller.summary.propertiesWithoutLinkedOwner), icon: Building2, tone: 'warning', hideWhenEmpty: true },
+              ]}
+            />
 
-        <section data-owner-register className="min-w-0 space-y-2.5">
-          <OwnerWorkspaceTable
-            rows={controller.filteredOwnerRows}
-            visibleColumnKeys={visibleColumnKeys}
-            onCreateOwner={controller.openCreateForm}
-            onEditOwner={controller.openEditForm}
-          />
-        </section>
+            <section data-owner-register className="min-w-0 space-y-2.5">
+              <OwnerWorkspaceTable
+                rows={controller.filteredOwnerRows}
+                visibleColumnKeys={visibleColumnKeys}
+                onCreateOwner={controller.openCreateForm}
+                onEditOwner={controller.openEditForm}
+              />
+            </section>
+
+                  </>
+        )}
       </ListPage>
 
       <OwnerFormDialog

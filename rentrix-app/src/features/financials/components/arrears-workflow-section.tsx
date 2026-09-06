@@ -43,7 +43,11 @@ export function ArrearsWorkflowSection({
 }: ArrearsWorkflowSectionProps) {
   const overdueRows = overdueReport?.rows ?? [];
   const filteredRows = filterOverdueInvoiceRows(overdueRows, search, bucketFilter);
-  const canShowReportContent = !isError;
+  // Report-derived summaries must not render before their queries settle:
+  // with `?? 0` fallbacks the strip would show resolved-looking zero values
+  // next to the loading skeleton and then flicker when data arrives. The
+  // section-level LoadingState owns the loading frame; chrome stays mounted.
+  const canShowReportContent = !isError && !isLoading;
   const canShowRows = !isLoading && !isError;
   const hasOverdueRows = overdueRows.length > 0;
   const hasFilteredRows = filteredRows.length > 0;
