@@ -1,13 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import { Activity, FileText, MapPinned, WalletCards } from 'lucide-react';
 import { useState } from 'react';
+import { AsyncContentState } from '@/components/async-content-state';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
-import { ErrorState } from '@/components/ui/error-state';
-import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,9 +29,20 @@ export function LandDossierContent({ landId, section }: Readonly<{ landId: strin
   const companyFormatters = useCompanyFormatters();
   const query = useLandDossier(landId, canAccess('commissions.view'), canAccess('communication.view'));
   const dossier = query.data;
-  if (query.isLoading) return <LoadingState label="جارٍ تحميل ملف الأرض" />;
-  if (query.isError) return <ErrorState title="تعذر تحميل ملف الأرض" error={query.error} onRetry={() => { void query.refetch(); }} />;
-  if (!dossier) return null;
+  if (!dossier) {
+    return (
+      <AsyncContentState
+        status={query.isLoading ? 'loading' : query.isError ? 'error' : 'empty'}
+        error={query.error}
+        errorTitle="تعذر تحميل ملف الأرض"
+        errorAction={<Button onClick={() => { void query.refetch(); }}>إعادة المحاولة</Button>}
+        emptyTitle="ملف الأرض غير متاح"
+        emptyDescription="ربما تم حذف الأرض أو لا تملك صلاحية الوصول إليها."
+      >
+        {null}
+      </AsyncContentState>
+    );
+  }
   const land = dossier.land;
   const ownerName = dossier.owner?.display_name?.trim() || dossier.owner?.full_name?.trim() || 'غير مرتبط بمالك';
   return (

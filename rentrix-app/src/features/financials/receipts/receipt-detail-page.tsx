@@ -2,13 +2,12 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Printer, Share2, Copy, ExternalLink, Download } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { DataErrorScreen } from '@/components/data-error-screen';
+import { AsyncContentState } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -119,24 +118,16 @@ export function ReceiptDetailPage() {
     });
   }, [receipt]);
 
-  if (!receipt && receiptQuery.isLoading) {
-    return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
-        <ReceiptPageHeader />
-        <LoadingState variant="route" label="جارٍ تحميل بيانات الإيصال..." />
-      </PageLayout>
-    );
-  }
-
   if (!receipt) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide">
-        <ReceiptPageHeader description="تعذر تحميل بيانات الإيصال." />
-        <DataErrorScreen
-          title="تعذر تحميل الإيصال"
-          fallbackMessage="حدث خطأ أثناء تحميل بيانات الإيصال."
+        <ReceiptPageHeader description={receiptQuery.isLoading ? undefined : 'تعذر تحميل بيانات الإيصال.'} />
+        <AsyncContentState
+          status={receiptQuery.isLoading ? 'loading' : 'error'}
           error={receiptQuery.error}
-          action={(
+          errorTitle="تعذر تحميل الإيصال"
+          errorFallbackMessage="حدث خطأ أثناء تحميل بيانات الإيصال."
+          errorAction={(
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => void receiptQuery.refetch()}>إعادة المحاولة</Button>
               <Button asChild variant="secondary">
@@ -147,7 +138,9 @@ export function ReceiptDetailPage() {
               </Button>
             </div>
           )}
-        />
+        >
+          {null}
+        </AsyncContentState>
       </PageLayout>
     );
   }

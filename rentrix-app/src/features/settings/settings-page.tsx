@@ -1,10 +1,9 @@
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
-import { RefreshCcw } from 'lucide-react';
 import { EntityForm } from "@/components/ui/entity-form";
+import { AsyncContentState } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -163,15 +162,15 @@ export function SettingsWorkspace({
     return (
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
         {variant === 'embedded' ? null : <SettingsHero companyName="—" hasUnsavedChanges={false} />}
-        <Card role="alert">
-          <CardHeader>
-            <CardTitle>تعذر تحميل إعدادات الشركة</CardTitle>
-            <p className="text-sm text-muted-foreground">تعذر جلب الإعدادات المحفوظة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة؛ لن يتم تغيير أي إعداد قبل نجاح التحميل.</p>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleRetryLoad}><RefreshCcw className="size-4" aria-hidden="true" />إعادة المحاولة</Button>
-          </CardContent>
-        </Card>
+        <AsyncContentState
+          status="error"
+          error={companySettingsQuery.error}
+          errorTitle="تعذر تحميل إعدادات الشركة"
+          errorFallbackMessage="تعذر جلب الإعدادات المحفوظة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة؛ لن يتم تغيير أي إعداد قبل نجاح التحميل."
+          errorAction={<Button onClick={handleRetryLoad}>إعادة المحاولة</Button>}
+        >
+          {null}
+        </AsyncContentState>
       </SettingsVariantShell>
     );
   }
@@ -180,16 +179,7 @@ export function SettingsWorkspace({
     return (
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
         {variant === 'embedded' ? null : <SettingsHero companyName="…" hasUnsavedChanges={false} />}
-        <Card>
-          <CardHeader><CardTitle>إعدادات الشركة</CardTitle><p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p></CardHeader>
-          <CardContent>
-            <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="جارٍ تحميل ملخص جاهزية الإعدادات">
-              <Skeleton className="h-20 rounded-xl" />
-              <Skeleton className="h-20 rounded-xl" />
-              <Skeleton className="h-20 rounded-xl" />
-            </ResponsiveCardGrid>
-          </CardContent>
-        </Card>
+        <AsyncContentState status="loading">{null}</AsyncContentState>
       </SettingsVariantShell>
     );
   }

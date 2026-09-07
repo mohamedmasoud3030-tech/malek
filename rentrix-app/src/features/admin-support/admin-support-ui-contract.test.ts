@@ -24,7 +24,7 @@ describe("admin/support UI safety contract", () => {
     expect(page).toContain('lang="ar"');
     expect(page).toContain("<PageLayout");
     expect(page).toContain("<AccessDenied");
-    expect(page).toContain("<LoadingState");
+    expect(page).toContain("<AsyncContentState");
     expect(loadingState).toContain('role="status"');
     expect(page).toContain('aria-labelledby="support-queue-title"');
     expect(page).toContain("سبب داخلي إلزامي");

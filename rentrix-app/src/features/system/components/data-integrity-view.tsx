@@ -1,15 +1,14 @@
 import { CheckCircle2, ListChecks, TriangleAlert } from 'lucide-react';
-import { DataErrorScreen } from '@/components/data-error-screen';
+import { AsyncContentState } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
-import type { DataIntegrityResult } from '../types';
+import type { DataIntegrityCheck, DataIntegrityResult } from '../types';
 
 export type DataIntegrityViewState =
   | Readonly<{ status: 'loading' }>
@@ -25,32 +24,74 @@ type DataIntegrityViewProps = Readonly<{
 export function DataIntegrityView({ state, onRetry, isRefreshing = false }: DataIntegrityViewProps) {
   const companySettings = useCompanySettingsContract();
 
-  if (state.status === 'loading') return <LoadingState variant="route" />;
-
   const retryAction = onRetry ? (
     <Button variant="secondary" size="sm" loading={isRefreshing} onClick={onRetry}>
       إعادة الفحص
     </Button>
   ) : undefined;
 
-  if (state.status === 'error') {
-    return <DataErrorScreen title="تعذر تشغيل فحص سلامة البيانات" fallbackMessage="لم يتم تنفيذ أي تغييرات على البيانات. أعد المحاولة لاحقاً." error={state.error} action={retryAction} />;
-  }
-
-  if (state.result.status === 'unavailable') {
+  // The "unavailable" result is a safety-first refusal to guess at data
+  // integrity (e.g. an unverified schema), not an ordinary empty list — it
+  // keeps the louder role="alert" treatment the generic empty state doesn't
+  // use by default.
+  if (state.status === 'ready' && state.result.status === 'unavailable') {
     return <EmptyState title="فحص سلامة البيانات غير متاح" description={state.result.reason} role="alert" ariaLive="assertive" action={retryAction} />;
   }
 
-  if (state.result.snapshot.checks.length === 0) {
-    return <EmptyState title="لا توجد فحوصات مفعلة" description="لا توجد قواعد سلامة بيانات مدعومة في مخطط التشغيل الحالي." />;
-  }
+  const checks = state.status === 'ready' && state.result.status === 'available' ? state.result.snapshot.checks : [];
+  const status = state.status === 'loading'
+    ? ('loading' as const)
+    : state.status === 'error'
+      ? ('error' as const)
+      : checks.length === 0
+        ? ('empty' as const)
+        : ('ready' as const);
 
-  const issueCount = state.result.snapshot.checks.reduce((total, check) => total + check.count, 0);
-  const checkedAt = formatCompanyDateTime(companySettings, state.result.snapshot.checkedAt);
+  return (
+    <AsyncContentState
+      status={status}
+      error={state.status === 'error' ? state.error : undefined}
+      errorTitle="تعذر تشغيل فحص سلامة البيانات"
+      errorFallbackMessage="لم يتم تنفيذ أي تغييرات على البيانات. أعد المحاولة لاحقاً."
+      errorAction={retryAction}
+      emptyTitle="لا توجد فحوصات مفعلة"
+      emptyDescription="لا توجد قواعد سلامة بيانات مدعومة في مخطط التشغيل الحالي. راجع مخطط التشغيل عند إضافة قواعد جديدة."
+    >
+      {state.status === 'ready' && state.result.status === 'available' ? (
+        <DataIntegrityReadyContent
+          result={state.result}
+          refreshError={state.refreshError}
+          onRetry={onRetry}
+          isRefreshing={isRefreshing}
+          checks={checks}
+          companySettings={companySettings}
+        />
+      ) : null}
+    </AsyncContentState>
+  );
+}
+
+function DataIntegrityReadyContent({
+  result,
+  refreshError,
+  onRetry,
+  isRefreshing,
+  checks,
+  companySettings,
+}: Readonly<{
+  result: Extract<DataIntegrityResult, { status: 'available' }>;
+  refreshError: unknown;
+  onRetry?: () => void;
+  isRefreshing: boolean;
+  checks: readonly DataIntegrityCheck[];
+  companySettings: ReturnType<typeof useCompanySettingsContract>;
+}>) {
+  const issueCount = checks.reduce((total, check) => total + check.count, 0);
+  const checkedAt = formatCompanyDateTime(companySettings, result.snapshot.checkedAt);
 
   return (
     <section className="space-y-4">
-      {state.refreshError ? (
+      {refreshError ? (
         <DataRefreshAlert
           title="تعذر تحديث الفحص"
           description="النتائج أدناه من آخر فحص مكتمل، وليست تأكيداً للحالة الحالية. تحقق من الاتصال ثم أعد الفحص."
@@ -64,7 +105,7 @@ export function DataIntegrityView({ state, onRetry, isRefreshing = false }: Data
         <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="ملخص سلامة البيانات">
           <KpiCard
             label="الفحوصات"
-            value={state.result.snapshot.checks.length}
+            value={checks.length}
             icon={ListChecks}
             accent="sky"
             compact
@@ -87,7 +128,7 @@ export function DataIntegrityView({ state, onRetry, isRefreshing = false }: Data
       </div>
 
       <ResponsiveCardGrid desktopColumns={2} gap="md" aria-label="نتائج فحوصات سلامة البيانات">
-        {state.result.snapshot.checks.map((check) => {
+        {checks.map((check) => {
           const Icon = check.count > 0 ? TriangleAlert : CheckCircle2;
           return (
             <Card key={check.id} className={check.count > 0 ? 'border-warning/40 bg-warning/10' : undefined}>
