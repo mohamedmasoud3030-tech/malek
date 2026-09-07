@@ -101,7 +101,7 @@ export function CommunicationWorkspace({ embedded = false }: CommunicationWorksp
       workspaceName="communication"
       dir="rtl"
       lang="ar"
-      title="مركز التواصل"
+      title="التواصل"
       description="سجل تشغيلي للتواصل مع الأطراف، مع معاينات محلية آمنة للبريد وواتساب دون روابط تسليم أو مزود خارجي حي."
       primaryAction={createAction}
     >

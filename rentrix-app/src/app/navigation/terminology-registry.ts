@@ -8,8 +8,8 @@
 export const navigationLabels: Readonly<Record<string, string>> = {
   // Task-centric primary IA
   today: 'اليوم',
-  portfolio: 'المحفظة',
-  leasing: 'التأجير',
+  portfolio: 'العقارات',
+  leasing: 'العقود',
   money: 'المال',
 
   // Route/entity terminology kept for secondary workspaces and compatibility
@@ -18,7 +18,7 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   owners: 'الملاك',
   tenants: 'المستأجرون',
   contracts: 'العقود',
-  services: 'الخدمات',
+  services: 'الصيانة',
   maintenance: 'الصيانة',
   serviceProviders: 'مزودو الخدمات',
   financials: 'المالية',
@@ -30,7 +30,7 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   adminSupport: 'عمليات الدعم والتحقيق',
   costCenters: 'مراكز التكلفة',
   systemSettings: 'إعدادات النظام',
-  peopleDirectory: 'جهات التعامل',
+  peopleDirectory: 'الأشخاص',
   units: 'الوحدات',
   lands: 'الأراضي',
   commissions: 'العمولات',
@@ -51,7 +51,7 @@ export const workspaceLabels: Record<string, string> = {
   owners: 'الملاك',
   units: 'الوحدات',
   lands: 'الأراضي',
-  people: 'جهات التعامل',
+  people: 'الأشخاص',
   tenants: 'المستأجرون',
   leads: 'العملاء المحتملون',
   communication: 'التواصل',

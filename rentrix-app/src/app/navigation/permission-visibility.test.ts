@@ -107,7 +107,7 @@ describe('permission visibility — task-centric IA must not widen access', () =
     expect(workspaceChildNavItems['/properties'].length).toBe(3);
     expect(workspaceChildNavItems['/contracts'].length).toBe(4);
     expect(workspaceChildNavItems['/financials'].length).toBe(4);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(4);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(3);
     expect(workspaceChildNavItems['/reports'].length).toBe(0);
     expect(workspaceChildNavItems['/settings'].length).toBe(3);
     expect(workspaceChildNavItems['/people']).toBeUndefined();

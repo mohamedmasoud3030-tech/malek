@@ -40,7 +40,7 @@ describe('task-centric app navigation', () => {
       '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
     ]);
     expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
-      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير', 'الإعدادات',
+      'اليوم', 'العقارات', 'العقود', 'المال', 'الصيانة', 'التقارير', 'الإعدادات',
     ]);
   });
 
@@ -81,9 +81,10 @@ describe('task-centric app navigation', () => {
 
   it('reveals Services registers: maintenance, utilities, service providers and documents vault', () => {
     const services = workspaceChildNavItems['/maintenance'];
-    expect(services.map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities', 'serviceProviders', 'documentsVault']);
+    // The maintenance self-child was removed: the parent link already lands on
+    // the default maintenance section, so a duplicate row added nothing.
+    expect(services.map(([, labelKey]) => labelKey)).toEqual(['utilities', 'serviceProviders', 'documentsVault']);
     expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'maintenance', permission: 'maintenance.view', search: { section: 'maintenance' } },
       { labelKey: 'utilities', permission: 'maintenance.view', search: { section: 'utilities' } },
       { labelKey: 'serviceProviders', permission: 'service_providers.view', search: undefined },
       { labelKey: 'documentsVault', permission: undefined, search: { section: 'documents_vault' } },

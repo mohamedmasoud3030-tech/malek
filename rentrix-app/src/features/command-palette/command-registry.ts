@@ -40,25 +40,25 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     keywords: ['اليوم', 'الرئيسية', 'لوحة التحكم', 'المطلوب الآن', 'dashboard', 'home'], icon: LayoutDashboard,
   },
   {
-    id: 'properties', title: 'المحفظة — العقارات', category: 'navigation', canonicalRoute: '/properties', permission: null,
+    id: 'properties', title: 'العقارات', category: 'navigation', canonicalRoute: '/properties', permission: null,
     keywords: ['المحفظة', 'العقارات', 'عقار', 'مباني', 'properties', 'portfolio'], icon: Building2,
   },
   {
-    id: 'units', title: 'المحفظة — الوحدات', category: 'navigation', canonicalRoute: '/properties',
+    id: 'units', title: 'العقارات — الوحدات', category: 'navigation', canonicalRoute: '/properties',
     search: { section: 'units' }, permission: null,
     keywords: ['الوحدات', 'وحدة', 'الشقق', 'الإشغال', 'units'], icon: DoorOpen,
   },
   {
-    id: 'owners', title: 'المحفظة — الملاك', category: 'navigation', canonicalRoute: '/properties',
+    id: 'owners', title: 'العقارات — الملاك', category: 'navigation', canonicalRoute: '/properties',
     search: { section: 'owners' }, permission: 'owners.hub.view',
     keywords: ['الملاك', 'المالك', 'أصحاب الأملاك', 'owners'], icon: UserRoundCog,
   },
   {
-    id: 'contracts', title: 'التأجير — العقود', category: 'navigation', canonicalRoute: '/contracts', permission: null,
+    id: 'contracts', title: 'العقود', category: 'navigation', canonicalRoute: '/contracts', permission: null,
     keywords: ['التأجير', 'العقود', 'عقد إيجار', 'contracts', 'leases'], icon: FileText,
   },
   {
-    id: 'tenants', title: 'التأجير — المستأجرون', category: 'navigation', canonicalRoute: '/contracts',
+    id: 'tenants', title: 'العقود — المستأجرون', category: 'navigation', canonicalRoute: '/contracts',
     search: { workspace: 'tenants' }, permission: null,
     keywords: ['المستأجرون', 'المستأجر', 'tenants'], icon: KeyRound,
   },
@@ -87,12 +87,12 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     keywords: ['المصروفات', 'المصاريف', 'التكاليف', 'expenses', 'payables'], icon: WalletCards,
   },
   {
-    id: 'maintenance', title: 'الخدمات — الصيانة', category: 'operational', canonicalRoute: '/maintenance',
+    id: 'maintenance', title: 'الصيانة', category: 'operational', canonicalRoute: '/maintenance',
     search: { section: 'maintenance' }, permission: 'maintenance.view',
     keywords: ['الخدمات', 'الصيانة', 'الأعطال', 'طلبات الصيانة', 'maintenance', 'services'], icon: Wrench,
   },
   {
-    id: 'utilities', title: 'الخدمات — المرافق والعدادات', category: 'operational', canonicalRoute: '/maintenance',
+    id: 'utilities', title: 'الصيانة — المرافق والعدادات', category: 'operational', canonicalRoute: '/maintenance',
     search: { section: 'utilities' }, permission: null,
     keywords: ['المرافق', 'العدادات', 'الكهرباء', 'المياه', 'utilities', 'meters'], icon: Zap,
   },

@@ -127,7 +127,7 @@ export function LeadsView(props: Props) {
       dir="rtl"
       lang="ar"
       title="العملاء المحتملون"
-      description="تسجيل مصادر العملاء وحالة المتابعة وربط التحويل لاحقاً بجهات التعامل المناسبة."
+      description="تسجيل مصادر العملاء وحالة المتابعة وربط التحويل لاحقاً بالأشخاص المناسبين."
       count={isLoading ? "..." : rows.length}
       primaryAction={
         <Button onClick={onCreate}>
