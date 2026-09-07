@@ -61,9 +61,14 @@ export function PwaInstallPrompt() {
       data-pwa-install-prompt
       role="region"
       aria-label={`تثبيت تطبيق ${APP_BRAND_NAME}`}
-      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[var(--mobile-dock-clearance,5.25rem)] pt-2 lg:pb-6"
+      /* pointer-events-none on the full-width container + pointer-events-auto
+         on the card itself: the banner must never intercept touches aimed at
+         the page beneath it (a full-width fixed hit-area was observed blocking
+         the login submit button on iPhone/Safari). The container keeps
+         positioning only; the card is the single interactive hit target. */
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[var(--mobile-dock-clearance,5.25rem)] pt-2 lg:pb-6"
     >
-      <div className="flex w-full max-w-md items-start gap-3 rounded-2xl border border-border bg-card p-3.5 text-card-foreground shadow-elevated">
+      <div className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-2xl border border-border bg-card p-3.5 text-card-foreground shadow-elevated">
         <div aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted">
           <MalikMark className="size-7" />
         </div>
