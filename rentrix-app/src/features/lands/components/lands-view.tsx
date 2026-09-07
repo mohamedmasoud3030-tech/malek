@@ -14,9 +14,9 @@ import { WriteErrorCard } from '@/components/ui/error-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useOwnerOptions } from '@/hooks/use-owner-options';
@@ -151,16 +151,16 @@ export function LandsView({
       )}
       primaryAction={<Button onClick={onCreate}><Plus className="size-4" />إضافة أرض</Button>}
     >
-      <ResponsiveCardGrid desktopColumns={4}>
-        {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-24 rounded-2xl sm:h-28" />) : (
-          <>
-            <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
-            <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قابلة للتعامل" />
-            <KpiCard label="محجوزة" value={rows.filter((row) => row.status === 'reserved').length} icon={Tag} accent="amber" sub="قيد التفاوض" />
-            <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات" />
-          </>
-        )}
-      </ResponsiveCardGrid>
+      {isLoading ? (
+        <LoadingState variant="cards" rows={4} label="جارٍ تحميل مؤشرات الأراضي" />
+      ) : (
+        <ResponsiveCardGrid desktopColumns={4}>
+          <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
+          <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قابلة للتعامل" />
+          <KpiCard label="محجوزة" value={rows.filter((row) => row.status === 'reserved').length} icon={Tag} accent="amber" sub="قيد التفاوض" />
+          <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات" />
+        </ResponsiveCardGrid>
+      )}
 
       <FilterBar
         searchValue={filters.query}

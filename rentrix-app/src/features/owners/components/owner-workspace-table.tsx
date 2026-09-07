@@ -130,8 +130,6 @@ export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, on
             },
           ]}
           keyOf={(row) => row.owner.id}
-          emptyTitle="لا يوجد ملاك"
-          emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
         />
       ) : emptyState}
 

@@ -21,6 +21,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { EntityForm } from "@/components/ui/entity-form";
 import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/ui/kpi-card";
+import { LoadingState } from "@/components/ui/loading-state";
 import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -136,40 +137,44 @@ export function LeadsView(props: Props) {
       }
     >
 
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard
-          label="إجمالي العملاء"
-          value={rows.length}
-          icon={Users}
-          accent="primary"
-          sub="كل العملاء المحتملين المسجلين"
-        />
-        <KpiCard
-          label="قيد المتابعة"
-          value={followUpLeads}
-          icon={UsersRound}
-          accent="amber"
-          sub="جديد أو تم التواصل معه"
-          trend={followUpLeads > 0 ? "neutral" : undefined}
-          trendValue={followUpLeads > 0 ? String(followUpLeads) : undefined}
-        />
-        <KpiCard
-          label="عملاء مؤهلون"
-          value={qualifiedLeads}
-          icon={UserCheck}
-          accent="emerald"
-          sub="جاهزون للخطوة التالية"
-          trend={qualifiedLeads > 0 ? "up" : "neutral"}
-          trendValue={String(qualifiedLeads)}
-        />
-        <KpiCard
-          label="تم تحويلهم"
-          value={convertedLeads}
-          icon={CheckCircle2}
-          accent="sky"
-          sub="سجلات انتقلت لمسار التعامل"
-        />
-      </ResponsiveCardGrid>
+      {isLoading ? (
+        <LoadingState variant="cards" rows={4} label="جارٍ تحميل مؤشرات العملاء المحتملين" />
+      ) : (
+        <ResponsiveCardGrid desktopColumns={4}>
+          <KpiCard
+            label="إجمالي العملاء"
+            value={rows.length}
+            icon={Users}
+            accent="primary"
+            sub="كل العملاء المحتملين المسجلين"
+          />
+          <KpiCard
+            label="قيد المتابعة"
+            value={followUpLeads}
+            icon={UsersRound}
+            accent="amber"
+            sub="جديد أو تم التواصل معه"
+            trend={followUpLeads > 0 ? "neutral" : undefined}
+            trendValue={followUpLeads > 0 ? String(followUpLeads) : undefined}
+          />
+          <KpiCard
+            label="عملاء مؤهلون"
+            value={qualifiedLeads}
+            icon={UserCheck}
+            accent="emerald"
+            sub="جاهزون للخطوة التالية"
+            trend={qualifiedLeads > 0 ? "up" : "neutral"}
+            trendValue={String(qualifiedLeads)}
+          />
+          <KpiCard
+            label="تم تحويلهم"
+            value={convertedLeads}
+            icon={CheckCircle2}
+            accent="sky"
+            sub="سجلات انتقلت لمسار التعامل"
+          />
+        </ResponsiveCardGrid>
+      )}
 
       <FilterBar
         searchValue={filters.query}
@@ -465,6 +470,23 @@ function LeadRows({
       columns={columns}
       keyOf={(row) => row.id}
       aria-label="قائمة العملاء المحتملين"
+      mobileBadgeKey="status"
+      mobileCardSecondaryToOverflow
+      mobilePrimaryMetaKeys={['source', 'budget']}
+      mobileCardPrimaryAction={(row) => ({
+        label: 'تعديل',
+        icon: Edit,
+        variant: 'default' as const,
+        ariaLabel: `تعديل ${row.name || 'العميل المحتمل'}`,
+        onClick: () => onEdit(row),
+      })}
+      mobileCardActions={(row) => [{
+        label: 'أرشفة',
+        icon: Archive,
+        variant: 'danger' as const,
+        ariaLabel: `أرشفة ${row.name || 'العميل المحتمل'}`,
+        onClick: () => onArchiveClick(row),
+      }]}
     />
   );
 }
