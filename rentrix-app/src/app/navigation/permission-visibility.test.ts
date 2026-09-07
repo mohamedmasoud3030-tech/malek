@@ -113,14 +113,24 @@ describe('permission visibility — task-centric IA must not widen access', () =
     expect(workspaceChildNavItems['/people']).toBeUndefined();
     expect(workspaceChildNavItems['/lands']).toBeUndefined();
     expect(workspaceChildNavItems['/commissions']).toBeUndefined();
-    // Every disclosed child carries the same permission its destination enforces.
-    const gated: Array<[string, string | null]> = [
-      ...workspaceChildNavItems['/contracts'].map((i) => [i[0], i[3]] as [string, string | null]),
-      ...workspaceChildNavItems['/maintenance'].map((i) => [i[0], i[3]] as [string, string | null]),
-      ...workspaceChildNavItems['/settings'].map((i) => [i[0], i[3]] as [string, string | null]),
+    // Every disclosed child carries the same permission its destination
+    // enforces. NavItem order: [to, labelKey, description, Icon, permission,
+    // search] — the gate lives at index 4. documentsVault is the one
+    // authenticated-only register (its enforcement is RLS at the data layer,
+    // no navigation gate); everything else must declare its gate here.
+    const gated: Array<[string, string, string | null]> = [
+      ...['/contracts', '/maintenance', '/settings'].flatMap((root) =>
+        (workspaceChildNavItems[root] ?? []).map(
+          (item) => [root, item[1], item[4] ?? null] as [string, string, string | null],
+        ),
+      ),
     ];
-    for (const [to, permission] of gated) {
-      expect(Array.isArray(permission) ? true : permission !== undefined, `${to} must declare a permission gate`).toBe(true);
+    for (const [root, labelKey, permission] of gated) {
+      const authenticatedOnly = labelKey === 'documentsVault';
+      expect(
+        authenticatedOnly || permission !== null,
+        `${root}/${labelKey} must declare a permission gate`,
+      ).toBe(true);
     }
   });
 });
