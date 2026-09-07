@@ -102,14 +102,25 @@ describe('permission visibility — task-centric IA must not widen access', () =
   });
 
   it('pins progressive-disclosure workspace membership', () => {
-    expect(workspaceChildNavItems['/properties'].length).toBe(2);
-    expect(workspaceChildNavItems['/contracts'].length).toBe(1);
-    expect(workspaceChildNavItems['/financials'].length).toBe(3);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(2);
+    // Registers stay OUT of the global primary groups and are disclosed as
+    // permission-gated children of their owning workspace.
+    expect(workspaceChildNavItems['/properties'].length).toBe(3);
+    expect(workspaceChildNavItems['/contracts'].length).toBe(4);
+    expect(workspaceChildNavItems['/financials'].length).toBe(4);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(4);
     expect(workspaceChildNavItems['/reports'].length).toBe(0);
-    expect(workspaceChildNavItems['/settings'].length).toBe(2);
+    expect(workspaceChildNavItems['/settings'].length).toBe(3);
     expect(workspaceChildNavItems['/people']).toBeUndefined();
     expect(workspaceChildNavItems['/lands']).toBeUndefined();
     expect(workspaceChildNavItems['/commissions']).toBeUndefined();
+    // Every disclosed child carries the same permission its destination enforces.
+    const gated: Array<[string, string | null]> = [
+      ...workspaceChildNavItems['/contracts'].map((i) => [i[0], i[3]] as [string, string | null]),
+      ...workspaceChildNavItems['/maintenance'].map((i) => [i[0], i[3]] as [string, string | null]),
+      ...workspaceChildNavItems['/settings'].map((i) => [i[0], i[3]] as [string, string | null]),
+    ];
+    for (const [to, permission] of gated) {
+      expect(Array.isArray(permission) ? true : permission !== undefined, `${to} must declare a permission gate`).toBe(true);
+    }
   });
 });
