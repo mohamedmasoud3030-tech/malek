@@ -64,7 +64,7 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
             )}
           />
         }
-        className="min-w-0 border-primary/20 bg-gradient-to-br from-primary/[0.045] via-card to-card"
+        className="min-w-0"
       >
         <div className="p-3 sm:p-4">
           {chartIsLoading ? (

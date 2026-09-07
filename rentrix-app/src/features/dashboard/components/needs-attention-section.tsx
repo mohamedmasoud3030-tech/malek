@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { AlertCircle, CheckCircle2, ShieldQuestion } from 'lucide-react';
+import { AlertCircle, AlertOctagon, CheckCircle2, Clock3, Info, ShieldQuestion } from 'lucide-react';
 import { ReportList, ReportListRow, ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
 import { cn } from '@/lib/utils';
 import type { NeedsAttentionItem, NeedsAttentionSignal } from '../needs-attention-signal';
@@ -41,10 +41,10 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
   const hiddenCount = signal.totalCount - visibleItems.length;
   const dangerCount = signal.items.reduce((count, item) => count + (item.severity === 'danger' ? 1 : 0), 0);
   const panelClassName = dangerCount > 0
-    ? 'border-danger/25 bg-gradient-to-b from-danger-bg/35 via-card to-card shadow-[0_12px_34px_-28px_hsl(var(--color-danger-text))]'
+    ? 'border-danger/30 bg-card'
     : isPartial || signal.totalCount > 0
-      ? 'border-warning/25 bg-gradient-to-b from-warning-bg/30 via-card to-card'
-      : 'border-success/20 bg-gradient-to-b from-success-bg/20 via-card to-card';
+      ? 'border-warning/30 bg-card'
+      : 'border-success/25 bg-card';
 
   return (
     <ReportPanel
@@ -101,6 +101,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
             {visibleItems.map((item) => {
               const tone = severityTone[item.severity];
               const ariaLabel = `${item.title} — ${item.meta}`;
+              const SeverityIcon = tone === 'danger' ? AlertOctagon : tone === 'warning' ? Clock3 : Info;
               const row = (
                 <ReportListRow
                   dense
@@ -115,7 +116,7 @@ export const NeedsAttentionSection = memo(function NeedsAttentionSection({ signa
                       )}
                       aria-hidden="true"
                     >
-                      <ShieldQuestion className="size-3.5" />
+                      <SeverityIcon className="size-3.5" />
                     </span>
                   }
                 />

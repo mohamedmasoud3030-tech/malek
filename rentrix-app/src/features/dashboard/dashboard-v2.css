@@ -1,17 +1,19 @@
-/* MALEK Today workspace density contract.
-   The dashboard is a decision surface, not a vertical card train.
-   This layer implements runtime-audit hierarchy fixes only; LENA-world identity
-   does not decorate routine MALEK operational screens. */
+/* MALEK Today workspace — calm, professional command center.
+   Design rules applied here:
+   1. The Office Pulse is ONE surface: four stat cells divided by hairlines,
+      not a wrapper card containing four bordered cards.
+   2. «Needs attention» is distinguished by one tinted border + icon only —
+      no glow, no gradient page furniture.
+   3. All other panels share the neutral report surface; tints appear only
+      in icon tiles and text, never as panel-wide fills or gradients. */
 
 [data-dashboard-page] {
   --dashboard-section-gap: 0.85rem;
-  --dashboard-cluster-gap: 0.5rem;
 }
 
 @media (min-width: 1024px) {
   [data-dashboard-page] {
     --dashboard-section-gap: 1rem;
-    --dashboard-cluster-gap: 0.625rem;
   }
 }
 
@@ -22,34 +24,81 @@
   contain: layout style;
 }
 
-[data-dashboard-page] [data-dashboard-priority='primary'] [data-dashboard-group-header] {
-  border-color: hsl(var(--primary) / 0.16);
+/* ------------------------------------------------------------------ *
+ * Office Pulse — unified KPI strip
+ * ------------------------------------------------------------------ */
+
+[data-dashboard-office-pulse] [data-responsive-card-grid] {
+  gap: 0;
 }
 
-/* Needs Attention is structurally distinct because it is the daily decision queue.
-   Emphasis uses the canonical warning tokens only. */
-[data-dashboard-page] [data-dashboard-priority='attention'] {
-  border-inline-start: 3px solid hsl(var(--warning-text) / 0.58);
-  padding-inline-start: 0.75rem;
+/* The pulse cells sit directly on the shared surface: remove each card's
+   own border, top accent rule, shadow and rounded corners. */
+[data-dashboard-office-pulse] .dashboard-pulse-card {
+  border: 0;
   border-radius: 0;
-  background: linear-gradient(
-    to left,
-    transparent,
-    hsl(var(--warning-bg) / 0.12)
-  );
+  box-shadow: none;
+  background: transparent;
+  padding: 1rem 1.1rem;
+}
+
+[data-dashboard-office-pulse] .dashboard-pulse-card::before {
+  display: none;
+}
+
+/* Hairline dividers between cells (RTL-safe: logical inline border).
+   Mobile 2×2 grid: divider on the start of the right column and under
+   the top row; desktop 4-in-a-row: divider at every cell start except
+   the first. */
+[data-dashboard-office-pulse] .dashboard-pulse-card {
+  border-inline-start: 1px solid hsl(var(--border) / 0.7);
+  border-top: 1px solid hsl(var(--border) / 0.7);
+}
+
+[data-dashboard-office-pulse] .dashboard-pulse-card:first-child,
+[data-dashboard-office-pulse] .dashboard-pulse-card:nth-child(2) {
+  border-top: 0;
+}
+
+[data-dashboard-office-pulse] .dashboard-pulse-card:nth-child(odd) {
+  border-inline-start: 0;
+}
+
+@media (min-width: 1024px) {
+  [data-dashboard-office-pulse] .dashboard-pulse-card:nth-child(2) {
+    border-top: 1px solid hsl(var(--border) / 0.7);
+  }
+  [data-dashboard-office-pulse] .dashboard-pulse-card {
+    border-top: 0;
+    border-inline-start: 1px solid hsl(var(--border) / 0.7);
+  }
+  [data-dashboard-office-pulse] .dashboard-pulse-card:first-child {
+    border-inline-start: 0;
+  }
+}
+
+/* Subtle, quiet hover — a wash, not a raised card. */
+[data-dashboard-office-pulse] .dashboard-pulse-card:hover {
+  background: hsl(var(--muted) / 0.35);
+}
+
+[data-dashboard-office-pulse] .dashboard-pulse-card .kpi-card__icon {
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Needs attention — distinguished but calm
+ * ------------------------------------------------------------------ */
+
+[data-dashboard-page] [data-dashboard-priority='attention'] {
+  padding-inline-start: 0.625rem;
+  border-radius: 0;
+  border-inline-start: 3px solid hsl(var(--warning-text) / 0.45);
   outline: 0;
 }
 
-[dir='ltr'] [data-dashboard-page] [data-dashboard-priority='attention'] {
-  background: linear-gradient(
-    to right,
-    hsl(var(--warning-bg) / 0.12),
-    transparent
-  );
-}
-
-[data-dashboard-page] [data-dashboard-priority='attention'] [data-dashboard-group-header] {
-  border-color: hsl(var(--warning-text) / 0.22);
+[data-dashboard-page][data-has-danger='true'] [data-dashboard-priority='attention'] {
+  border-inline-start-color: hsl(var(--danger-text) / 0.55);
 }
 
 [data-dashboard-page] [data-dashboard-group-header] {
@@ -58,4 +107,14 @@
 
 [data-dashboard-page] :where([data-component-card], [data-kpi-card]) {
   min-width: 0;
+}
+
+/* Numbers carry dir="ltr" for bidi correctness; inside the RTL pulse strip
+   they must still sit on the reading-start side with their Arabic label. */
+[dir='rtl'] [data-dashboard-office-pulse] .dashboard-pulse-card [dir='ltr'] {
+  text-align: right;
+}
+
+[dir='ltr'] [data-dashboard-office-pulse] .dashboard-pulse-card [dir='ltr'] {
+  text-align: left;
 }

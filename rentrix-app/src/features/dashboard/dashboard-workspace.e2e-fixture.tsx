@@ -1,7 +1,6 @@
 import './dashboard-v2.css';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { SectionHeader } from '@/components/ui/section-header';
 import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { CollectionsSection } from './components/collections-section';
@@ -123,35 +122,46 @@ export function DashboardWorkspaceE2EFixture() {
       <div className="px-3 py-4 sm:px-6 lg:px-8">
         <PageLayout>
           <PageHeader title="اليوم" />
-          <div className="grid min-w-0 gap-5">
-            <section aria-label="الحالات التي تحتاج انتباهاً" data-dashboard-section="needs-attention">
-              <SectionHeader eyebrow="1 · أولويات" title="يحتاج انتباهك" />
-              <NeedsAttentionSection signal={fixtureNeedsAttention} isLoading={false} />
-            </section>
-            <section aria-label="نبض المكتب" data-dashboard-section="office-pulse">
-              <SectionHeader eyebrow="2 · الآن" title="نبض المكتب" />
-              <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
-            </section>
-            <section aria-label="التحصيل والمتأخرات" data-dashboard-section="collections">
-              <SectionHeader eyebrow="3 · تحصيل" title="التحصيل والمتأخرات" />
-              <CollectionsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
-            </section>
-            <section aria-label="الإشغال والشغور" data-dashboard-section="occupancy">
-              <SectionHeader eyebrow="4 · المحفظة" title="الإشغال والشغور" />
-              <OccupancySection snapshot={fixtureSnapshot} analytics={fixtureVacancyAnalytics} isLoading={false} settings={fixtureSettings} />
-            </section>
-            <section aria-label="الأداء المالي" data-dashboard-section="financial-performance">
-              <SectionHeader eyebrow="5 · الأداء المالي" title="أداء المكتب" />
-              <FinancialPerformanceSection
-                settings={fixtureSettings}
-                window="six_months"
-                onWindowChange={() => undefined}
-                chartRows={fixtureChartRows}
-                chartIsLoading={false}
-                chartIsError={false}
-                onChartRetry={() => undefined}
-              />
-            </section>
+          <div data-dashboard-page className="space-y-3 lg:space-y-4">
+            <div className="grid min-w-0 grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-12 xl:items-start">
+              <div className="min-w-0 xl:col-span-12">
+                <section aria-label="الحالات التي تحتاج انتباهاً" data-dashboard-section="needs-attention" data-dashboard-priority="attention">
+                  <NeedsAttentionSection signal={fixtureNeedsAttention} isLoading={false} />
+                </section>
+              </div>
+
+              <div className="min-w-0 xl:col-span-12">
+                <section aria-label="نبض المكتب" data-dashboard-section="office-pulse" data-dashboard-priority="primary">
+                  <OfficePulse snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+                </section>
+              </div>
+
+              <div className="min-w-0 xl:col-span-5">
+                <section aria-label="التحصيل والمتأخرات" data-dashboard-section="collections">
+                  <CollectionsSection snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+                </section>
+              </div>
+
+              <div className="min-w-0 xl:col-span-7">
+                <section aria-label="الإشغال والشغور" data-dashboard-section="occupancy">
+                  <OccupancySection snapshot={fixtureSnapshot} analytics={fixtureVacancyAnalytics} isLoading={false} settings={fixtureSettings} />
+                </section>
+              </div>
+
+              <div className="min-w-0 xl:col-span-12">
+                <section aria-label="الأداء المالي" data-dashboard-section="financial-performance">
+                  <FinancialPerformanceSection
+                    settings={fixtureSettings}
+                    window="six_months"
+                    onWindowChange={() => undefined}
+                    chartRows={fixtureChartRows}
+                    chartIsLoading={false}
+                    chartIsError={false}
+                    onChartRetry={() => undefined}
+                  />
+                </section>
+              </div>
+            </div>
           </div>
         </PageLayout>
       </div>

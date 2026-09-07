@@ -219,7 +219,7 @@ export function DashboardPage() {
         showTodayContext
       />
 
-      <div data-dashboard-page className="space-y-3 lg:space-y-4">
+      <div data-dashboard-page data-has-danger={needsAttention.items.some((item) => item.severity === 'danger')} className="space-y-3 lg:space-y-4">
         {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
