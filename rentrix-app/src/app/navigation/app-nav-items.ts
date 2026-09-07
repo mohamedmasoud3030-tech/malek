@@ -83,7 +83,6 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/commissions', 'commissions', 'عمولات الوسطاء والتشغيل', Percent, 'commissions.view'],
   ],
   '/maintenance': [
-    ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view', { section: 'maintenance' }],
     ['/maintenance', 'utilities', 'المرافق والعدادات', Gauge, 'maintenance.view', { section: 'utilities' }],
     ['/service-providers', 'serviceProviders', 'مزودو الخدمات ومهامهم', HardHat, 'service_providers.view'],
     ['/maintenance', 'documentsVault', 'المستندات التشغيلية', FolderKanban, undefined, { section: 'documents_vault' }],

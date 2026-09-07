@@ -46,7 +46,7 @@ const OCCUPANCY_REPORT: AiNavigationTarget = {
   search: { view: 'occupancy' },
 };
 const COMMUNICATION_CENTER: AiNavigationTarget = {
-  label: 'فتح مركز التواصل',
+  label: 'فتح التواصل',
   to: '/communication',
 };
 const MAINTENANCE_WORKSPACE: AiNavigationTarget = {

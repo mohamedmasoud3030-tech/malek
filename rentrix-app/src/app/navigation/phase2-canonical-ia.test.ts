@@ -71,9 +71,9 @@ describe('Task-centric canonical IA', () => {
 
   it('keeps Services routine navigation to maintenance and utilities only', () => {
     const children = workspaceChildNavItems['/maintenance'];
-    expect(children).toHaveLength(4);
-    expect(children.filter(([to]) => to === '/maintenance')).toHaveLength(3);
-    expect(children.map(([, , , , , search]) => search?.section)).toEqual(['maintenance', 'utilities', undefined, 'documents_vault']);
+    expect(children).toHaveLength(3);
+    expect(children.filter(([to]) => to === '/maintenance')).toHaveLength(2);
+    expect(children.map(([, , , , , search]) => search?.section)).toEqual(['utilities', undefined, 'documents_vault']);
     expect(servicesSectionsSource).toMatch(/id: 'service_providers'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).not.toContain("| 'automation'");
@@ -122,7 +122,7 @@ describe('Task-centric canonical IA', () => {
     expect(primaryItems).toHaveLength(7);
     expect(navGroups).toHaveLength(2);
     expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
-      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير', 'الإعدادات',
+      'اليوم', 'العقارات', 'العقود', 'المال', 'الصيانة', 'التقارير', 'الإعدادات',
     ]);
     expect(getAllNavItems().length).toBeGreaterThan(7);
     expect(mobileNavItems).toHaveLength(0);

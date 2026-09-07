@@ -252,7 +252,7 @@ const peopleRoute = createRoute({
     () => import('@/features/people/people-list-page'),
     'PeopleListPage',
   ),
-  staticData: { title: 'جهات التعامل' },
+  staticData: { title: 'الأشخاص' },
 });
 const leadsRoute = createRoute({
   getParentRoute: () => protectedRoute,
@@ -563,7 +563,7 @@ const maintenanceRoute = createRoute({
     () => import('@/features/operations-hub/maintenance-route'),
     'MaintenanceRouteComponent',
   ),
-  staticData: { title: 'التشغيل والصيانة' },
+  staticData: { title: 'الصيانة' },
 });
 
 const landingRoute = createRoute({

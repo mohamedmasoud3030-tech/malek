@@ -72,7 +72,7 @@ beforeEach(() => { currentRole = 'ADMIN'; });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe('Services workspace', () => {
-  it('renders one shell titled الخدمات with two routine operational tabs', async () => {
+  it('renders one shell titled الصيانة with two routine operational tabs', async () => {
     const { container } = renderServices();
     await screen.findByTestId('maintenance-body');
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);

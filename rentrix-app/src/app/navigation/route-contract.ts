@@ -70,7 +70,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/contracts/$contractId/edit', titleAr: 'تعديل عقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.edit' },
   { canonical: '/tenants', titleAr: 'المستأجرون', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/tenants/$tenantId', titleAr: 'ملف المستأجر', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
-  { canonical: '/people', titleAr: 'جهات التعامل', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
+  { canonical: '/people', titleAr: 'الأشخاص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/people/$personId', titleAr: 'ملف الشخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/people/new', titleAr: 'إضافة شخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.create' },
   { canonical: '/people/$personId/edit', titleAr: 'تعديل شخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.edit' },

@@ -49,9 +49,9 @@ describe('Visual Wave 1 — drawer navigation interaction', () => {
       root.render(<NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />);
     });
     // The canonical label template is «طي/توسيع» + the registry's section name
-    // (المحفظة = the portfolio workspace) — verb-first, state-aware, consistent
-    // with «توسيع التأجير», «توسيع المال», «توسيع الخدمات»…
-    const toggle = host.querySelector<HTMLButtonElement>('button[aria-label="طي المحفظة"]');
+    // (العقارات = the portfolio workspace) — verb-first, state-aware, consistent
+    // with «توسيع العقود», «توسيع المال», «توسيع الصيانة»…
+    const toggle = host.querySelector<HTMLButtonElement>('button[aria-label="طي العقارات"]');
     expect(toggle?.tagName).toBe('BUTTON');
     expect(toggle?.getAttribute('aria-expanded')).toBe('true');
     const controlledId = toggle?.getAttribute('aria-controls');
@@ -59,7 +59,7 @@ describe('Visual Wave 1 — drawer navigation interaction', () => {
     expect(host.querySelector(`#${controlledId}`)?.hasAttribute('hidden')).toBe(false);
     act(() => { toggle?.click(); });
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
-    expect(toggle?.getAttribute('aria-label')).toBe('توسيع المحفظة');
+    expect(toggle?.getAttribute('aria-label')).toBe('توسيع العقارات');
     expect(host.querySelector(`#${controlledId}`)?.hasAttribute('hidden')).toBe(true);
   });
 

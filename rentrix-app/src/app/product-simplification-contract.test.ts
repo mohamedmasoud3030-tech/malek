@@ -113,8 +113,9 @@ describe('production product simplification contract', () => {
         .map((section) => section.id),
     ).toEqual(['service_providers', 'documents_vault']);
     expect(
+      // The maintenance self-child was folded into the parent link (same default view).
       workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey),
-    ).toEqual(['maintenance', 'utilities', 'serviceProviders', 'documentsVault']);
+    ).toEqual(['utilities', 'serviceProviders', 'documentsVault']);
   });
 
   it('keeps Reports task-first as five canonical products while specialist bodies remain reachable inside their product', () => {

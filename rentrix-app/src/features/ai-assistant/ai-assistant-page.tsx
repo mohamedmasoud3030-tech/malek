@@ -591,7 +591,7 @@ export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
               <Bot className="size-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold">المساعد الذكي</p>
+              <h1 className="text-sm font-bold">المساعد الذكي</h1>
               <p className="truncate text-xs text-muted-foreground">طبقة تشغيل ذكية داخل {APP_BRAND_NAME}</p>
             </div>
           </div>

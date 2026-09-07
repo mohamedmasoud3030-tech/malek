@@ -33,7 +33,7 @@ export const leasingHubSections: readonly LeasingHubSection[] = [
   },
   {
     id: 'people',
-    label: 'جهات التعامل',
+    label: 'الأشخاص',
     icon: Users,
     description: 'دليل الأطراف التي تدخل في دورة التأجير والتعامل.',
     permission: null,
