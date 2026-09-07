@@ -56,7 +56,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const canEditUnit = canAccess("properties.edit");
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => [...defaultUnitRegisterColumns]);
   const [previewUnit, setPreviewUnit] = useState<Unit | null>(null);
-  if (ctrl.isLoading) return <LoadingState variant="route" />;
 
   const openPreview = (unit: Unit) => setPreviewUnit(unit);
   const closePreview = () => setPreviewUnit(null);
@@ -168,6 +167,13 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       ),
     },
   ], [canEditUnit, ctrl, formatMoney]);
+
+  // Hooks-order guard (React error #310): this early return used to sit above
+  // the `columns` useMemo, so the hook count changed when isLoading flipped
+  // true→false and the portfolio hub's Units section crashed at runtime
+  // (live-QA repro: /properties?section=units always errored). It must stay
+  // after every hook in this component.
+  if (ctrl.isLoading) return <LoadingState variant="route" />;
 
   return (
     <>
