@@ -146,7 +146,9 @@ export function InvoiceListSection({
       render: (invoice) => (
         <div className="min-w-0">
           <p className="font-black tabular-nums">{invoice.reference ?? 'فاتورة بلا مرجع'}</p>
-          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">إصدار {formatDate(invoice.issue_date)}</p>
+          <p className="mt-0.5 text-[11px] font-semibold text-muted-foreground">
+            إصدار <span dir="ltr" className="whitespace-nowrap tabular-nums">{formatDate(invoice.issue_date)}</span>
+          </p>
         </div>
       ),
     },
