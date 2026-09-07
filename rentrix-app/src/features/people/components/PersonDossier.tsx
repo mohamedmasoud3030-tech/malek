@@ -8,6 +8,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
+import { AsyncContentState } from '@/components/async-content-state';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -15,8 +16,6 @@ import { Button } from '@/components/ui/button';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { PreviewFacts } from '@/components/ui/quick-preview';
-import { ErrorState } from '@/components/ui/error-state';
-import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
@@ -58,19 +57,28 @@ export function PersonDossierContent({
   );
   const dossier = dossierQuery.data;
 
-  if (dossierQuery.isLoading)
-    return <LoadingState label="جارٍ تحميل ملف الشخص" />;
-  if (dossierQuery.isError)
+  if (!dossier) {
     return (
-      <ErrorState
-        title="تعذر تحميل ملف الشخص"
+      <AsyncContentState
+        status={dossierQuery.isLoading ? 'loading' : dossierQuery.isError ? 'error' : 'empty'}
         error={dossierQuery.error}
-        onRetry={() => {
-          void dossierQuery.refetch();
-        }}
-      />
+        errorTitle="تعذر تحميل ملف الشخص"
+        errorAction={
+          <Button
+            onClick={() => {
+              void dossierQuery.refetch();
+            }}
+          >
+            إعادة المحاولة
+          </Button>
+        }
+        emptyTitle="ملف الشخص غير متاح"
+        emptyDescription="ربما تم حذف الشخص أو لا تملك صلاحية الوصول إليه."
+      >
+        {null}
+      </AsyncContentState>
     );
-  if (!dossier) return null;
+  }
 
   const outstanding = dossier.invoices.reduce(
     (sum, invoice) =>

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Search, ShieldCheck } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
-import { DataErrorScreen } from '@/components/data-error-screen';
+import { AsyncContentState } from '@/components/async-content-state';
 import { EmptyState } from '@/components/ui/state-surfaces';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -109,25 +108,19 @@ export function AdminSupportOperationsPage() {
       toast.error(error instanceof Error ? error.message : 'تعذر إنشاء المقترح.'),
   });
 
-  if (snapshotQuery.isPending) {
+  if (!snapshotQuery.data) {
     return (
       <PageLayout dir="rtl" lang="ar" size="wide">
         <SupportPageHeader />
-        <LoadingState variant="route" label="جارٍ تحميل أدوات عمليات الدعم الآمنة..." />
-      </PageLayout>
-    );
-  }
-
-  if (snapshotQuery.isError) {
-    return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
-        <SupportPageHeader />
-        <DataErrorScreen
-          title="تعذر تحميل عمليات الدعم"
-          fallbackMessage="تعذر الوصول إلى بيانات الدعم. تحقق من الاتصال ثم أعد المحاولة."
+        <AsyncContentState
+          status={snapshotQuery.isPending ? 'loading' : 'error'}
           error={snapshotQuery.error}
-          action={<Button onClick={() => void snapshotQuery.refetch()}>إعادة المحاولة</Button>}
-        />
+          errorTitle="تعذر تحميل عمليات الدعم"
+          errorFallbackMessage="تعذر الوصول إلى بيانات الدعم. تحقق من الاتصال ثم أعد المحاولة."
+          errorAction={<Button onClick={() => void snapshotQuery.refetch()}>إعادة المحاولة</Button>}
+        >
+          {null}
+        </AsyncContentState>
       </PageLayout>
     );
   }
