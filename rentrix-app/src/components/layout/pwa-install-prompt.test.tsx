@@ -154,6 +154,20 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
     expect(interactiveOutsideCard).toHaveLength(0);
   });
 
+  it('stacks above the floating dock instead of covering it on phones', () => {
+    // Live-QA regression: with the bare dock clearance the tall iOS card
+    // overlapped the dock pill by its full height (390x72px) on every page,
+    // sandwiching real row-action buttons between banner and dock.
+    pwaInstallMock.getDeferredInstallPrompt.mockReturnValue({} as object);
+
+    const banner = render();
+
+    expect(banner).not.toBeNull();
+    const cls = banner?.getAttribute('class') ?? '';
+    expect(cls).toContain('pb-[calc(var(--mobile-dock-clearance,5.25rem)+4.5rem)]');
+    expect(cls).not.toContain('pb-[var(--mobile-dock-clearance,5.25rem)]');
+  });
+
   it('stays hidden on auth surfaces — the banner must never block signing in', () => {
     // Live-QA regression (iPhone/Safari): the tall iOS-guidance card sat
     // exactly over the login submit button. Install nudging is worthless
