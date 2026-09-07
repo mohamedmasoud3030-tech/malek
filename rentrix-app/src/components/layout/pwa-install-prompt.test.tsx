@@ -124,4 +124,26 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
     expect(banner?.textContent).toContain('فهمت');
     expect(banner?.textContent).not.toContain('تثبيت التطبيق');
   });
+
+  it('never intercepts touches aimed at the page beneath the banner', () => {
+    // Live-QA regression (iPhone/Safari): the full-width fixed container acted
+    // as a hit area and swallowed taps on the login submit button. The
+    // container must opt out of hit-testing; only the card receives touches.
+    pwaInstallMock.getDeferredInstallPrompt.mockReturnValue({} as object);
+
+    const banner = render();
+
+    expect(banner).not.toBeNull();
+    expect(banner?.classList.contains('pointer-events-none')).toBe(true);
+
+    const card = banner?.firstElementChild as HTMLElement | null;
+    expect(card).not.toBeNull();
+    expect(card?.classList.contains('pointer-events-auto')).toBe(true);
+
+    // Every interactive control must live inside the touch-transparent-in /
+    // pointer-events-auto card subtree — never on the outer container.
+    const interactiveOutsideCard = [...(banner?.querySelectorAll('button, a') ?? [])]
+      .filter((el) => !card?.contains(el));
+    expect(interactiveOutsideCard).toHaveLength(0);
+  });
 });
