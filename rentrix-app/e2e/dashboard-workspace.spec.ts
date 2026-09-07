@@ -250,18 +250,30 @@ for (const viewport of viewportMatrix) {
       await openDashboardRoute(page, theme);
 
       const sections = page.locator('[data-dashboard-section]');
-      await expect(sections).toHaveCount(5);
+      await expect(sections).toHaveCount(4);
       expect(await sections.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-dashboard-section')))).toEqual([
-        'needs-attention', 'office-pulse', 'collections', 'occupancy', 'financial-performance',
+        'office-pulse', 'collections', 'occupancy', 'financial-performance',
       ]);
 
-      for (const removed of ['maintenance', 'upcoming-contracts', 'property-health', 'owner-obligations', 'finance-exceptions']) {
+      // The daily action queue left the dashboard top — it lives in the bell now.
+      for (const removed of ['maintenance', 'upcoming-contracts', 'property-health', 'owner-obligations', 'finance-exceptions', 'needs-attention']) {
         await expect(page.locator(`[data-dashboard-section="${removed}"]`)).toHaveCount(0);
       }
-      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toHaveAttribute('data-dashboard-priority', 'attention');
       await expect(page.locator('[data-dashboard-office-pulse] [data-kpi-card]')).toHaveCount(4);
-      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('طلب صيانة عاجل يحتاج تدخلاً');
-      await expect(page.locator('[data-dashboard-section="needs-attention"]')).toContainText('حركة بنكية غير مطابقة');
+      await expect(page.locator('[data-dashboard-page]')).not.toContainText('طلب صيانة عاجل يحتاج تدخلاً');
+
+      // …and the priorities are reachable inside the notifications bell.
+      const bell = page.getByRole('button', { name: /الإشعارات/ }).first();
+      await bell.click();
+      const priorities = page.locator('[data-notification-priorities]');
+      await expect(priorities).toBeVisible();
+      await expect(priorities).toContainText('طلب صيانة عاجل يحتاج تدخلاً');
+      await expect(priorities).toContainText('حركة بنكية غير مطابقة');
+      await expect(priorities.locator('[data-notification-priority-link]')).not.toHaveCount(0);
+      // Close the bell (on phones the dock trigger sits behind the scrim).
+      await page.keyboard.press('Escape');
+      await expect(priorities).toHaveCount(0);
+
       await assertNoHorizontalOverflow(page);
       await page.screenshot({ path: testInfo.outputPath(`dashboard-compact-${viewport.name}-${theme}.png`), fullPage: true });
     });
@@ -272,8 +284,7 @@ test('dashboard empty/error/stale states remain honest after consolidation', asy
   await page.setViewportSize({ width: 375, height: 812 });
 
   await openDashboardRoute(page, 'light', 'empty');
-  await expect(page.getByText('كل شيء تحت السيطرة')).toBeVisible();
-  await expect(page.locator('[data-dashboard-section]')).toHaveCount(5);
+  await expect(page.locator('[data-dashboard-section]')).toHaveCount(4);
 
   await page.context().clearCookies();
   await page.goto('/login', { waitUntil: 'domcontentloaded' });

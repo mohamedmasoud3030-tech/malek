@@ -60,21 +60,22 @@ describe('page-by-page data refresh reliability', () => {
   });
 
   it('keeps the command center honest when only supporting reads fail', () => {
-    const dashboard = source('../features/dashboard/dashboard-page.tsx');
-    const attention = source(
-      '../features/dashboard/components/needs-attention-section.tsx',
-    );
+    const hook = source('../features/dashboard/use-dashboard-priorities.ts');
+    const bell = source('../app/layout/notifications-menu.tsx');
 
-    expect(dashboard).not.toContain(
+    // Failing supporting reads never silently collapse a signal to an empty
+    // "all clear" — completeness is carried on the signal and surfaced honestly
+    // by the notifications bell that now owns the priority queue.
+    expect(hook).not.toContain(
       'utilityBillsQuery.isError ? EMPTY_UTILITY_OBLIGATIONS_SIGNAL',
     );
-    expect(dashboard).not.toContain(
+    expect(hook).not.toContain(
       'maintenanceQuery.isError\n      ? EMPTY_MAINTENANCE_FOLLOW_UP_SIGNAL',
     );
-    expect(dashboard).toContain('isComplete: attentionSourcesComplete');
-    expect(dashboard).toContain('بعض مؤشرات لوحة التحكم غير متاحة');
-    expect(attention).toContain('تعذر اكتمال قائمة الأولويات');
-    expect(attention).toContain('بعض المصادر غير متاحة');
+    expect(hook).toContain('isComplete: sourcesComplete');
+    expect(bell).toContain('priorities.isComplete === false');
+    expect(bell).toContain('تعذر اكتمال قائمة الأولويات');
+    expect(bell).toContain('بعض المصادر غير متاحة');
   });
 
   it('isolates owner ready-state hooks in a stable child component', () => {

@@ -94,7 +94,8 @@ describe('owners canonical list contract', () => {
 describe('dashboard queue error honesty', () => {
   it('keeps authoritative errors honest without restoring removed duplicate detail sections', () => {
     const collections = read('features/dashboard/components/collections-section.tsx');
-    const needsAttention = read('features/dashboard/components/needs-attention-section.tsx');
+    const bell = read('app/layout/notifications-menu.tsx');
+    const hook = read('features/dashboard/use-dashboard-priorities.ts');
     const page = read('features/dashboard/dashboard-page.tsx');
 
     // Snapshot failure is owned by ONE boundary — the page alert. Sections must
@@ -102,12 +103,14 @@ describe('dashboard queue error honesty', () => {
     // is how the duplicate detail sections came back before. They render from
     // the snapshot they are given and stay silent when it is unavailable.
     // Mirrors dashboard-data-contract.test.ts, which pins the same decision.
-    expect(page).toContain('DataRefreshAlert');
     expect(page).toContain(
       "title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}",
     );
     expect(collections).not.toContain('isError');
-    expect(needsAttention).not.toContain('isError');
+    // The daily queue lives in the bell now; it delegates to the shared hook
+    // instead of owning a second snapshot read or error boundary.
+    expect(bell).toContain('useDashboardPriorities');
+    expect(hook).not.toContain('تعذر تحميل');
     expect(page).not.toContain('<MaintenanceSection');
     expect(page).not.toContain('<UpcomingContractsSection');
     expect(page).not.toContain('<PropertyHealthSection');

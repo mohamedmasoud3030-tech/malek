@@ -36,7 +36,7 @@ describe('dashboard frontend/backend data contract', () => {
       read('dashboard-page.tsx'),
       read('components/office-pulse.tsx'),
       read('components/financial-performance-section.tsx'),
-      read('components/needs-attention-section.tsx'),
+      read('use-dashboard-priorities.ts'),
       read('components/occupancy-section.tsx'),
       read('components/collections-section.tsx'),
     ].join('\n');
@@ -57,23 +57,27 @@ describe('dashboard frontend/backend data contract', () => {
   });
 
   it('does not start supplemental reads before the authoritative snapshot exists', () => {
-    const pageSource = read('dashboard-page.tsx');
+    const hookSource = read('use-dashboard-priorities.ts');
     const utilityHookSource = read('../utilities/use-utilities.ts');
-    expect(pageSource).toContain('const supplementalEnabled = Boolean(snapshot);');
-    expect(pageSource).toContain('{ enabled: supplementalEnabled }');
-    expect(pageSource).toContain('useUtilityBills(undefined, { enabled: supplementalEnabled })');
-    expect(pageSource).toContain("useMaintenance('all', '', { enabled: supplementalEnabled })");
-    expect(pageSource).toContain('attentionSourcesLoading');
+    expect(hookSource).toContain('const supplementalEnabled = enabled && Boolean(snapshot);');
+    expect(hookSource).toContain('{ enabled: supplementalEnabled }');
+    expect(hookSource).toContain('useUtilityBills(undefined, { enabled: supplementalEnabled })');
+    expect(hookSource).toContain("useMaintenance('all', '', { enabled: supplementalEnabled })");
+    expect(hookSource).toContain('sourcesLoading');
     expect(utilityHookSource).toContain('enabled: options?.enabled ?? true');
   });
 
   it('keeps authoritative snapshot failure owned by the page boundary only', () => {
     const pageSource = read('dashboard-page.tsx');
     const collectionsSource = read('components/collections-section.tsx');
-    const attentionSource = read('components/needs-attention-section.tsx');
+    const bellSource = readFileSync(resolve(import.meta.dirname, '../../app/layout/notifications-menu.tsx'), 'utf8');
     expect(pageSource).toContain("title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}");
     expect(collectionsSource).not.toContain('isError');
-    expect(attentionSource).not.toContain('isError');
+    // The bell delegates the queue to the shared hook — it never re-reads the
+    // authoritative snapshot or owns a second snapshot error boundary.
+    expect(bellSource).toContain('useDashboardPriorities');
+    expect(bellSource).not.toContain('getDashboardSnapshot');
+    expect(bellSource).not.toContain('rpt_dashboard_snapshot');
   });
 
   it('keeps cashflow failure and retry owned by the performance panel instead of the global attention alert', () => {
