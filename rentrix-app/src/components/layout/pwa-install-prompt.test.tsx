@@ -156,27 +156,38 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
     expect(interactiveOutsideCard).toHaveLength(0);
   });
 
-  it('stacks above the floating dock instead of covering it on phones', () => {
-    // Live-QA regression: with the bare dock clearance the tall iOS card
-    // overlapped the dock pill by its full height (390x72px) on every page,
-    // sandwiching real row-action buttons between banner and dock.
+  it('reserves its own height in the dock-clearance token while visible', () => {
+    // Live-QA regression: a floating card covered real row-action buttons on
+    // every phone page even after the dock stacking fix. The bar's measured
+    // height must fold INTO --mobile-dock-clearance (via --pwa-banner-height)
+    // so pages reserve its space and it floats over gutter only.
     pwaInstallMock.getDeferredInstallPrompt.mockReturnValue({} as object);
 
-    const banner = render();
+    render();
 
-    expect(banner).not.toBeNull();
-    expect(banner?.getAttribute('class') ?? '').not.toContain('pb-[var(--mobile-dock-clearance');
-    expect(banner?.getAttribute('class') ?? '').not.toContain('pb-[calc(');
+    // happy-dom reports offsetHeight 0 → the designed fallback height.
+    expect(document.documentElement.style.getPropertyValue('--pwa-banner-height')).toBe('60px');
+
+    const laterButton = [...document.body.querySelectorAll('button')].find(
+      (button) => button.textContent === 'لاحقًا',
+    );
+    act(() => laterButton?.click());
+
+    expect(document.documentElement.style.getPropertyValue('--pwa-banner-height')).toBe('0px');
   });
 
-  it('keeps the dock-stacking offset as an inline style (JIT-purge-proof)', () => {
-    // happy-dom cannot parse calc() values, so the guarantee is pinned at the
-    // source level: the stacking offset must stay an inline style on the
-    // container — a Tailwind arbitrary class with calc(var(...)) was silently
-    // dropped from the generated CSS and the fix had no effect in production.
+  it('composes the clearance from the banner height in the canonical stylesheet (JIT-purge-proof)', () => {
+    // happy-dom cannot parse calc() values, and the Tailwind JIT silently
+    // dropped an arbitrary calc(var()) class from production CSS (v1 failed
+    // exactly that way), so both halves of the contract are pinned at source
+    // level: the stylesheet must compose the dock clearance from the measured
+    // banner height, and the component must publish that measurement.
+    const css = readFileSync(resolve(__dirname, '../../styles/ux-foundation.css'), 'utf8');
+    expect(css).toContain('var(--pwa-banner-height');
+
     const source = readFileSync(resolve(__dirname, './pwa-install-prompt.tsx'), 'utf8');
-    expect(source).toContain("paddingBottom: 'calc(var(--mobile-dock-clearance, 5.25rem) + 4.5rem)'");
-    expect(source).not.toContain('pb-[var(--mobile-dock-clearance,5.25rem)]');
+    expect(source).toContain("'--pwa-banner-height'");
+    expect(source).not.toContain('paddingBottom:');
   });
 
   it('stays hidden on auth surfaces — the banner must never block signing in', () => {

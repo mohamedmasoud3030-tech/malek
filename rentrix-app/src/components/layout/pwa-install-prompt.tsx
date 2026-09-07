@@ -1,6 +1,6 @@
-import { useSyncExternalStore, useState } from 'react';
+import { useLayoutEffect, useRef, useSyncExternalStore, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
-import { Share, SquarePlus, X } from 'lucide-react';
+import { Share, SquarePlus } from 'lucide-react';
 import { MalikMark } from '@/components/brand/malik-mark';
 import { Button } from '@/components/ui/button';
 import { APP_BRAND_NAME } from '@/lib/brand';
@@ -19,16 +19,26 @@ function installPromptSnapshot(): string {
   return `${Boolean(getDeferredInstallPrompt())}:${getAppInstalledEventFired()}`;
 }
 
+/** Fallback bar height when the runtime cannot measure (tests). */
+const FALLBACK_BAR_HEIGHT_PX = 60;
+
 /**
  * First-open "install the app" banner.
  *
  * Shown once when the app can be installed (Chrome/Edge native prompt) or can
  * be installed manually (iOS Safari instructions). Persists dismissal and
  * never nags inside an installed standalone window. Suppressed entirely in
- * the e2e fixture environment (VITE_E2E) and on auth surfaces: on iPhone the
- * tall iOS-guidance card sits exactly over the login form, so showing it
- * there blocks the very action a first-time visitor came for (live-QA
- * regression: the banner swallowed taps on the login submit button).
+ * the e2e fixture environment (VITE_E2E) and on auth surfaces (the banner
+ * must never block signing in).
+ *
+ * Layout contract (live-QA 2026-09): a floating card used to cover real row
+ * actions on every phone page. Now the banner is a one-row bar AND its height
+ * is folded into the canonical `--mobile-dock-clearance` token (JS measures
+ * the bar and sets `--pwa-banner-height`; ux-foundation.css composes the
+ * clearance from it). Page content and every dock-anchored overlay reserve
+ * the bar's space, so the bar floats only over reserved gutter — never over
+ * content, at any scroll position. The container keeps positioning only and
+ * is pointer-events-none; the bar is the single interactive hit target.
  */
 const AUTH_SURFACE_PATHS = ['/login', '/forgot-password', '/reset-password'];
 
@@ -47,11 +57,30 @@ export function PwaInstallPrompt() {
   const nativePromptAvailable = nativeFlag === 'true';
   const [dismissed, setDismissed] = useState(() => isInstallDismissed());
   const [installing, setInstalling] = useState(false);
-
-  if (isE2E || isAuthSurfacePath(pathname) || dismissed || appInstalled || isStandaloneDisplay()) return null;
+  const barRef = useRef<HTMLDivElement | null>(null);
 
   const iosManual = isIosManualInstall();
-  if (!nativePromptAvailable && !iosManual) return null;
+  const visible =
+    !isE2E &&
+    !isAuthSurfacePath(pathname) &&
+    !dismissed &&
+    !appInstalled &&
+    !isStandaloneDisplay() &&
+    (nativePromptAvailable || iosManual);
+
+  useLayoutEffect(() => {
+    const rootStyle = document.documentElement.style;
+    if (!visible) {
+      rootStyle.setProperty('--pwa-banner-height', '0px');
+      return;
+    }
+    // jsdom/happy-dom report offsetHeight 0 — fall back to the designed height.
+    const measured = barRef.current?.offsetHeight || FALLBACK_BAR_HEIGHT_PX;
+    rootStyle.setProperty('--pwa-banner-height', `${Math.round(measured)}px`);
+    return () => rootStyle.setProperty('--pwa-banner-height', '0px');
+  }, [visible]);
+
+  if (!visible) return null;
 
   const handleDismiss = () => {
     dismissInstallPrompt();
@@ -74,65 +103,42 @@ export function PwaInstallPrompt() {
       data-pwa-install-prompt
       role="region"
       aria-label={`تثبيت تطبيق ${APP_BRAND_NAME}`}
-      /* pointer-events-none on the full-width container + pointer-events-auto
-         on the card itself: the banner must never intercept touches aimed at
-         the page beneath it (a full-width fixed hit-area was observed blocking
-         the login submit button on iPhone/Safari). The container keeps
-         positioning only; the card is the single interactive hit target. */
-      /* Inline paddingBottom stacks the card ABOVE the floating dock (dock
-         height + clearance): at the bare clearance value the 3-row iOS card
-         overlapped the dock pill by its full height (live-QA: 390x72px on
-         every page, hiding real row-action buttons). Kept as an inline
-         style — the Tailwind JIT did not emit a rule for this arbitrary
-         calc(var(...)) value, so the class alone had no effect. */
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pt-2 lg:pb-6"
-      style={{ paddingBottom: 'calc(var(--mobile-dock-clearance, 5.25rem) + 4.5rem)' }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pt-2"
     >
-      <div className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-2xl border border-border bg-card p-3.5 text-card-foreground shadow-elevated">
-        <div aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted">
-          <MalikMark className="size-7" />
+      <div
+        ref={barRef}
+        className="pointer-events-auto flex w-full max-w-md items-center gap-2.5 rounded-2xl border border-border bg-card p-2 text-card-foreground shadow-elevated"
+      >
+        <div aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted">
+          <MalikMark className="size-5" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">{`ثبّت تطبيق ${APP_BRAND_NAME}`}</p>
-          {iosManual ? (
-            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-              من متصفح Safari: اضغط{' '}
-              <Share className="inline size-3.5 align-[-2px]" aria-hidden="true" />{' '}
-              زر المشاركة ثم اختر{' '}
-              <span className="font-bold text-foreground">
-                «إضافة إلى الشاشة الرئيسية»{' '}
-                <SquarePlus className="inline size-3.5 align-[-2px]" aria-hidden="true" />
-              </span>{' '}
-              لفتح التطبيق كأيقونة مستقلة.
-            </p>
-          ) : (
-            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-              وصول أسرع من الشاشة الرئيسية وعمل دون اتصال — دون متجر تطبيقات.
-            </p>
-          )}
-
-          <div className="mt-2.5 flex items-center gap-2">
-            {nativePromptAvailable ? (
-              <Button size="sm" className="min-h-11" onClick={() => void handleInstall()} disabled={installing}>
-                {installing ? 'جارٍ فتح نافذة التثبيت…' : 'تثبيت التطبيق'}
-              </Button>
-            ) : null}
-            <Button size="sm" variant="secondary" className="min-h-11" onClick={handleDismiss}>
-              {iosManual ? 'فهمت' : 'لاحقًا'}
-            </Button>
-          </div>
+          <p className="truncate text-[13px] font-bold">{`ثبّت تطبيق ${APP_BRAND_NAME}`}</p>
+          <p className="truncate text-[11px] leading-4 text-muted-foreground">
+            {iosManual ? (
+              <>
+                من Safari: اضغط{' '}
+                <Share className="inline size-3 align-[-1px]" aria-hidden="true" />{' '}
+                زر المشاركة ثم{' '}
+                <span className="font-bold text-foreground">
+                  «إضافة إلى الشاشة الرئيسية»{' '}
+                  <SquarePlus className="inline size-3 align-[-1px]" aria-hidden="true" />
+                </span>
+              </>
+            ) : (
+              'وصول أسرع من الشاشة الرئيسية وعمل دون اتصال.'
+            )}
+          </p>
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={handleDismiss}
-          aria-label="إغلاق رسالة تثبيت التطبيق"
-          className="shrink-0 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-        >
-          <X className="size-4" aria-hidden="true" />
+        {nativePromptAvailable ? (
+          <Button size="sm" className="min-h-11 shrink-0 px-3" onClick={() => void handleInstall()} disabled={installing}>
+            {installing ? 'جارٍ التثبيت…' : 'تثبيت التطبيق'}
+          </Button>
+        ) : null}
+        <Button type="button" size="sm" variant="secondary" className="min-h-11 shrink-0 px-3" onClick={handleDismiss}>
+          {iosManual ? 'فهمت' : 'لاحقًا'}
         </Button>
       </div>
     </div>

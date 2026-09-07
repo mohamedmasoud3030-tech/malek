@@ -23,8 +23,13 @@
   --mobile-floating-control-height: 3.75rem;
   /* Space an overlay needs to leave between itself and the phone dock.
      Dock height + the dock's own 0.75rem breathing gap. Redefined below in
-     the phone media block to add the safe-area inset. */
+     the phone media block to add the safe-area inset. On phones the PWA
+     install bar folds its measured height in through --pwa-banner-height
+     (set by pwa-install-prompt.tsx), so content and dock-anchored overlays
+     reserve the bar's space from this one token. */
   --mobile-dock-clearance: calc(var(--mobile-floating-control-height) + 0.75rem);
+  /* Measured height of the fixed PWA install bar (phones only consume it). */
+  --pwa-banner-height: 0px;
 }
 
 /* iPad / tablet portrait — more air without wasting the 768–1023 band as a phone. */
@@ -177,7 +182,18 @@
 @media (max-width: 767px) {
   :root {
     --mobile-dock-clearance: calc(
-      var(--mobile-floating-control-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
+      var(--mobile-floating-control-height) + 0.75rem + env(safe-area-inset-bottom, 0px) +
+        var(--pwa-banner-height, 0px)
+    );
+  }
+
+  /* The PWA install bar docks directly above the floating control dock: its
+     container pads by the dock zone (clearance minus the bar's own measured
+     height) so the bar never overlaps the dock pill, and the bar's height is
+     already folded into the clearance every page reserves. */
+  [data-pwa-install-prompt] {
+    padding-bottom: calc(
+      var(--mobile-dock-clearance, 5.25rem) - var(--pwa-banner-height, 0px) + 0.25rem
     );
   }
 
@@ -558,5 +574,15 @@
   [data-app-shell] [data-app-shell-header] > div {
     max-width: none;
     padding-inline: clamp(1.1rem, 1.8vw, 2rem);
+  }
+}
+
+/* ── PWA install banner (desktop) ─ */
+/* No floating dock on ≥768px, so the bar hugs the viewport bottom with a small
+   gap. Phone padding lives in the phone media block above, composed from the
+   dock clearance token. */
+@media (min-width: 768px) {
+  [data-pwa-install-prompt] {
+    padding-bottom: 0.75rem;
   }
 }
