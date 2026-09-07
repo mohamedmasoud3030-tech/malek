@@ -401,7 +401,11 @@ function OpenReportProduct({
             className="rounded-xl border border-border/70 bg-card/85 p-3 shadow-sm sm:p-4"
             data-report-product-header
           >
-          <div className="flex min-w-0 flex-wrap items-start justify-between gap-2.5">
+          {/* Phone: the title block takes the full row and the export actions
+              stack beneath it — sharing one flex row squeezed the Arabic title
+              to ~120px beside the back button + export actions and wrapped it
+              across 5-7 lines (live-QA 390px, all report products). */}
+          <div className="flex min-w-0 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
             <div className="flex min-w-0 flex-1 items-start gap-2.5">
               <Button
                 type="button"
