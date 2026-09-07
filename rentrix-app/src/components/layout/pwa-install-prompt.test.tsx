@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -163,9 +165,18 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
     const banner = render();
 
     expect(banner).not.toBeNull();
-    const cls = banner?.getAttribute('class') ?? '';
-    expect(cls).toContain('pb-[calc(var(--mobile-dock-clearance,5.25rem)+4.5rem)]');
-    expect(cls).not.toContain('pb-[var(--mobile-dock-clearance,5.25rem)]');
+    expect(banner?.getAttribute('class') ?? '').not.toContain('pb-[var(--mobile-dock-clearance');
+    expect(banner?.getAttribute('class') ?? '').not.toContain('pb-[calc(');
+  });
+
+  it('keeps the dock-stacking offset as an inline style (JIT-purge-proof)', () => {
+    // happy-dom cannot parse calc() values, so the guarantee is pinned at the
+    // source level: the stacking offset must stay an inline style on the
+    // container — a Tailwind arbitrary class with calc(var(...)) was silently
+    // dropped from the generated CSS and the fix had no effect in production.
+    const source = readFileSync(resolve(__dirname, './pwa-install-prompt.tsx'), 'utf8');
+    expect(source).toContain("paddingBottom: 'calc(var(--mobile-dock-clearance, 5.25rem) + 4.5rem)'");
+    expect(source).not.toContain('pb-[var(--mobile-dock-clearance,5.25rem)]');
   });
 
   it('stays hidden on auth surfaces — the banner must never block signing in', () => {
