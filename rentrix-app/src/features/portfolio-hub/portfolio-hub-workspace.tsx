@@ -2,7 +2,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { resolvePortfolioHubState } from './portfolio-hub-model';
@@ -33,15 +33,6 @@ const sectionComponents: Record<PortfolioHubSectionId, ComponentType> = {
   lands: LandsBody,
   owners: OwnersBody,
 };
-
-function SectionFallback() {
-  return (
-    <div className="col-span-full row-start-2 space-y-3" role="status" aria-label="جارٍ تحميل قسم المحفظة">
-      <Skeleton className="h-24" />
-      <Skeleton className="h-64" />
-    </div>
-  );
-}
 
 export type PortfolioHubWorkspaceProps = Readonly<{
   defaultSection?: PortfolioHubSectionId;
@@ -116,7 +107,7 @@ export function PortfolioHubWorkspace({
                 className={isActive ? 'contents' : undefined}
                 hidden={!isActive}
               >
-                <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
+                <Suspense fallback={<LoadingState variant="section" className="col-span-full row-start-2" label="جارٍ تحميل قسم المحفظة..." />}><SectionBody /></Suspense>
               </div>
             );
           })}
