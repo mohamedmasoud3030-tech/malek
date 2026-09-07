@@ -13,6 +13,7 @@ import { getAppLanguageState, translateSharedLabel, type SharedLabel } from '@/l
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view';
+import { NotificationsMenu } from './notifications-menu';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
@@ -441,6 +442,11 @@ export function AppShell() {
               >
                 <Search className="size-[22px]" aria-hidden="true" />
               </HeaderControl>
+              {/* Desktop + tablet: the priority action queue and event feed
+                  live in the bell. Phones use the floating dock instead. */}
+              <div className="hidden md:inline-flex">
+                <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} chrome="header" />
+              </div>
               <HeaderControl
                 label={sharedLabel('toggleTheme')}
                 title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}

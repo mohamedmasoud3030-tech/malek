@@ -37,9 +37,19 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, ...props }: { children: ReactNode; to: string } & Record<string, unknown>) => (
     <a href={to} {...props}>{children}</a>
   ),
+  useLocation: () => ({ pathname: '/dashboard', search: {}, hash: '', state: {}, href: '/dashboard' }),
 }));
 
 import { NotificationsMenu } from './notifications-menu';
+
+const prioritiesState = vi.hoisted(() => ({
+  signal: { items: [] as unknown[], totalCount: 0, isComplete: true },
+  isLoading: false,
+  isError: false,
+}));
+vi.mock('@/features/dashboard/use-dashboard-priorities', () => ({
+  useDashboardPriorities: () => prioritiesState,
+}));
 
 const authorization: AuthorizationContext = {
   userId: 'admin-1',
@@ -81,6 +91,9 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     requestsState.isLoading = false;
     requestsState.isError = false;
     requestsState.refetch.mockReset();
+    prioritiesState.signal = { items: [], totalCount: 0, isComplete: true };
+    prioritiesState.isLoading = false;
+    prioritiesState.isError = false;
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -184,4 +197,48 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     open(host);
     expect(host.querySelector<HTMLAnchorElement>('a[href="/arrears"]')?.className).toMatch(/min-h-(10|11)/);
   });
+
+  it('shows the daily priority queue inside the bell (moved off the dashboard top)', () => {
+    prioritiesState.signal = {
+      items: [
+        { key: 'bank', severity: 'danger', title: 'حركة بنكية غير مطابقة', meta: 'حركتان بانتظار المطابقة', to: '/financials', search: { section: 'exceptions' } },
+        { key: 'maintenance', severity: 'danger', title: 'طلب صيانة عاجل يحتاج تدخلاً', meta: 'طلب عاجل مفتوح', to: '/maintenance' },
+        { key: 'settlements', severity: 'warning', title: 'تسوية ملاك', meta: 'تسوية بانتظار الاعتماد', to: '/financials', search: { section: 'owner-funds' } },
+      ],
+      totalCount: 3,
+      isComplete: true,
+    };
+    act(() => {
+      root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);
+    });
+
+    open(host);
+
+    const priorityGroup = host.querySelector('[data-notification-priorities]');
+    expect(priorityGroup).not.toBeNull();
+    expect(priorityGroup?.textContent).toContain('حركة بنكية غير مطابقة');
+    expect(priorityGroup?.textContent).toContain('تسوية ملاك');
+    expect(host.querySelectorAll('[data-notification-priority-link]')).toHaveLength(3);
+    // The badge counts actionable priorities.
+    const trigger = host.querySelector<HTMLButtonElement>('button[aria-label^="التنبيهات"]');
+    expect(trigger?.getAttribute('aria-label')).toContain('3');
+  });
+
+  it('is honest when priority sources are only partially available', () => {
+    prioritiesState.signal = {
+      items: [
+        { key: 'maintenance', severity: 'danger', title: 'طلب صيانة عاجل يحتاج تدخلاً', meta: 'طلب عاجل مفتوح', to: '/maintenance' },
+      ],
+      totalCount: 1,
+      isComplete: false,
+    };
+    act(() => {
+      root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);
+    });
+
+    open(host);
+    expect(host.textContent).toContain('تعذر اكتمال قائمة الأولويات');
+    expect(host.textContent).toContain('بعض المصادر غير متاحة');
+  });
+
 });

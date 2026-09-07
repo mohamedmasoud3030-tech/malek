@@ -1,16 +1,14 @@
 import './dashboard-v2.css';
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { ErrorState } from '@/components/ui/error-state';
+import { ErrorState as ErrorStateView } from '@/components/ui/error-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useAuth } from '@/hooks/use-auth';
 import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
-import { useUtilityBills } from '@/features/utilities/use-utilities';
 import { useAllContracts } from '@/features/contracts/useContracts';
 import { useAllUnits } from '@/features/units/use-units';
 import { buildVacancyAnalytics } from '@/features/units/vacancy-analytics';
@@ -19,13 +17,8 @@ import { useFinancialCashflowReport } from '@/features/financials/reports/useFin
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { OfficePulse } from './components/office-pulse';
 import { FinancialPerformanceSection } from './components/financial-performance-section';
-import { NeedsAttentionSection } from './components/needs-attention-section';
 import { OccupancySection } from './components/occupancy-section';
 import { CollectionsSection } from './components/collections-section';
-import { buildNeedsAttentionSignal } from './needs-attention-signal';
-import { buildMaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
-import { useMaintenance } from '@/features/maintenance/use-maintenance';
-import { buildUtilityObligationsSignal } from './utility-obligations-signal';
 import { toDateInputValue } from './dashboard-utils';
 import { buildMonthlyCashflowChartRows, getFinancialPerformanceRange, type FinancialPerformanceWindow } from './financial-performance';
 
@@ -68,12 +61,13 @@ const DashboardGroup = memo(function DashboardGroup({
 });
 
 /**
- * MALEK Property Office Command Center.
+ * MALEK Property Office command center.
  *
- * This surface is deliberately decision-first and compact. Detailed maintenance,
- * contract-expiry, property-health, utility and owner-settlement registers live
- * in their canonical workspaces and are represented here only when they require
- * attention. The dashboard must not duplicate those full detail surfaces.
+ * Decision-first and compact. The daily action queue («يحتاج انتباهك») lives
+ * in the notifications bell now, so this surface shows the four office KPIs
+ * and the three owning detail sections. Detailed maintenance, contract-expiry,
+ * property-health, utility and owner-settlement registers remain in their
+ * canonical workspaces and are never duplicated here.
  */
 export function DashboardPage() {
   const { authorization } = useAuth();
@@ -137,12 +131,6 @@ export function DashboardPage() {
     cashflowQuery.refetch().catch(() => undefined);
   }, [cashflowQuery]);
 
-  const utilityBillsQuery = useUtilityBills(undefined, { enabled: supplementalEnabled });
-  const utilityObligations = useMemo(
-    () => buildUtilityObligationsSignal(utilityBillsQuery.data, today),
-    [utilityBillsQuery.data, today],
-  );
-
   const needsVacancyDetails = supplementalEnabled && (snapshot?.occupancy.vacantUnits ?? 0) > 0;
   const unitsQuery = useAllUnits({ enabled: needsVacancyDetails });
   const contractsQuery = useAllContracts('all', { enabled: needsVacancyDetails });
@@ -162,66 +150,23 @@ export function DashboardPage() {
   );
   const vacancyDetailsUnavailable = needsVacancyDetails
     && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError || Boolean(contractsQuery.data?.truncated));
-
-  const maintenanceQuery = useMaintenance('all', '', { enabled: supplementalEnabled });
-  const maintenanceFollowUp = useMemo(
-    () => buildMaintenanceFollowUpSignal(maintenanceQuery.data, today),
-    [maintenanceQuery.data, today],
-  );
-
-  const attentionSourcesLoading = supplementalEnabled && (
-    utilityBillsQuery.isLoading
-    || maintenanceQuery.isLoading
-    || (needsVacancyDetails && (unitsQuery.isLoading || contractsQuery.isLoading || propertyTitlesQuery.isLoading))
-  );
-  const attentionSourcesComplete = supplementalEnabled
-    && !attentionSourcesLoading
-    && !(isError || isRefetchError)
-    && !(needsVacancyDetails && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError))
-    && !maintenanceQuery.isError
-    && !utilityBillsQuery.isError;
-  const needsAttention = useMemo(
-    () => buildNeedsAttentionSignal({
-      snapshot,
-      vacancyAnalytics,
-      utilityObligations,
-      maintenanceFollowUp,
-      isComplete: attentionSourcesComplete,
-    }),
-    [snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp, attentionSourcesComplete],
-  );
+  const vacancyDetailsLoading = needsVacancyDetails
+    && (unitsQuery.isLoading || contractsQuery.isLoading || propertyTitlesQuery.isLoading);
 
   const hasDashboardError = isError || isRefetchError;
   const snapshotUnavailable = hasDashboardError && !snapshot;
-  const hasSupplementalError = utilityBillsQuery.isError
-    || (needsVacancyDetails && (unitsQuery.isError || contractsQuery.isError || propertyTitlesQuery.isError))
-    || maintenanceQuery.isError;
-  const supplementalIsFetching = utilityBillsQuery.isFetching
-    || (needsVacancyDetails && (unitsQuery.isFetching || contractsQuery.isFetching || propertyTitlesQuery.isFetching))
-    || maintenanceQuery.isFetching;
-  const retrySupplemental = () => {
-    void Promise.all([
-      utilityBillsQuery.refetch(),
-      maintenanceQuery.refetch(),
-      ...(needsVacancyDetails ? [
-        unitsQuery.refetch(),
-        contractsQuery.refetch(),
-        propertyTitlesQuery.refetch(),
-      ] : []),
-    ]);
-  };
 
   return (
     <PageLayout size="wide">
       <PageHeader
         title="اليوم"
-        description="قرارات اليوم وحالة المكتب بدون تعقيد."
+        description="قرارات اليوم وحالة المكتب بدون تعقيد. الأولويات تجدها في جرس الإشعارات."
         showTodayContext
       />
 
       <div data-dashboard-page className="space-y-3 lg:space-y-4">
         {hasDashboardError ? (
-          <ErrorState
+          <ErrorStateView
             title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
             description={
               snapshotUnavailable
@@ -230,15 +175,6 @@ export function DashboardPage() {
             }
             error={error}
             onRetry={retryDashboard}
-          />
-        ) : null}
-
-        {!snapshotUnavailable && hasSupplementalError ? (
-          <DataRefreshAlert
-            title="بعض مؤشرات لوحة التحكم غير متاحة"
-            description="المصادر التي نجحت ما زالت معروضة، لكن إجمالي الأولويات غير مكتمل حتى تنجح بقية القراءات."
-            onRetry={retrySupplemental}
-            isRefreshing={supplementalIsFetching}
           />
         ) : null}
 
@@ -252,17 +188,7 @@ export function DashboardPage() {
 
             <div className="grid min-w-0 grid-cols-1 gap-3 lg:gap-4 xl:grid-cols-12 xl:items-start">
               <div className="min-w-0 xl:col-span-12">
-                <DashboardGroup ariaLabel="الحالات التي تحتاج انتباهاً" sectionId="needs-attention" priority="attention" showHeader={false}>
-                  <NeedsAttentionSection
-                    signal={needsAttention}
-                    isLoading={isLoading || attentionSourcesLoading}
-                    isPartial={!needsAttention.isComplete}
-                  />
-                </DashboardGroup>
-              </div>
-
-              <div className="min-w-0 xl:col-span-12">
-                <DashboardGroup eyebrow="الآن" title="نبض المكتب" ariaLabel="نبض المكتب" sectionId="office-pulse" priority="primary">
+                <DashboardGroup ariaLabel="نبض المكتب" sectionId="office-pulse" priority="primary" showHeader={false}>
                   <OfficePulse
                     snapshot={snapshot}
                     isLoading={isLoading}
@@ -286,7 +212,7 @@ export function DashboardPage() {
                   <OccupancySection
                     snapshot={snapshot}
                     analytics={vacancyAnalytics}
-                    isLoading={isLoading || (needsVacancyDetails && (unitsQuery.isLoading || contractsQuery.isLoading || propertyTitlesQuery.isLoading))}
+                    isLoading={isLoading || vacancyDetailsLoading}
                     isError={needsVacancyDetails && unitsQuery.isError && !unitsQuery.data}
                     detailsUnavailable={vacancyDetailsUnavailable}
                     settings={settings}

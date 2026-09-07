@@ -15,10 +15,10 @@ import {
   vacancyAgingBucketLabels,
   vacancyAgingBucketOrder,
 } from '@/features/units/vacancy-analytics';
+import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
 import {
   DistributionStrip,
-  RadialMetric,
   TrendDelta,
 } from './dashboard-visuals';
 
@@ -106,63 +106,47 @@ export const OccupancySection = memo(function OccupancySection({
         />
       ) : (
         <div
-          className="grid min-w-0 gap-4 bg-muted/20 p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-4"
+          className="grid min-w-0 gap-4 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] sm:p-4"
           data-dashboard-occupancy-summary
         >
-          <div className="flex items-center gap-3">
-            <RadialMetric
-              percent={occupancyRate}
-              label={`نسبة الإشغال ${occupancyRate}%`}
-              size={92}
-              fillClass={
-                occupancyRate >= 90
-                  ? 'text-success'
-                  : occupancyRate >= 75
-                    ? 'text-warning'
-                    : 'text-danger'
-              }
-            />
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold text-muted-foreground">
-                مشغولة / شاغرة
-              </p>
-              <p
-                className="mt-0.5 text-xl font-black tabular-nums leading-7 text-foreground"
-                dir="ltr"
-              >
-                {isError ? '—' : number(occupiedUnits)} /{' '}
-                {isError ? '—' : number(vacantUnits)}
-              </p>
-              {canTrustHistory && analytics.totalUnits > 0 ? (
-                <TrendDelta
-                  className="mt-1"
-                  direction={
-                    changePoints > 0
-                      ? 'up'
-                      : changePoints < 0
-                        ? 'down'
-                        : 'neutral'
-                  }
-                  tone={
-                    changePoints > 0
-                      ? 'success'
-                      : changePoints < 0
-                        ? 'danger'
-                        : 'neutral'
-                  }
-                  text={`${Math.abs(changePoints)} نقطة عن نهاية الشهر السابق`}
-                />
-              ) : (
-                <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                  {snapshot
-                    ? `${number(snapshot.portfolio.units)} وحدة في المحفظة`
-                    : 'بيانات المحفظة غير متاحة'}
+          <div className="min-w-0 border-s-0 sm:border-e sm:border-border/70 sm:pe-4">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-muted-foreground">نسبة الإشغال</p>
+                <p
+                  className={cn(
+                    'mt-0.5 text-3xl font-black tabular-nums leading-8',
+                    occupancyRate >= 90 ? 'text-success' : occupancyRate >= 75 ? 'text-warning' : 'text-danger',
+                  )}
+                  dir="ltr"
+                >
+                  {occupancyRate}%
                 </p>
-              )}
+              </div>
+              <div className="min-w-0 text-end">
+                <p className="text-[11px] font-bold text-muted-foreground">مشغولة / شاغرة</p>
+                <p className="mt-0.5 text-base font-black tabular-nums leading-6 text-foreground" dir="ltr">
+                  {isError ? '—' : number(occupiedUnits)} / {isError ? '—' : number(vacantUnits)}
+                </p>
+              </div>
             </div>
+            {canTrustHistory && analytics.totalUnits > 0 ? (
+              <TrendDelta
+                className="mt-2.5"
+                direction={changePoints > 0 ? 'up' : changePoints < 0 ? 'down' : 'neutral'}
+                tone={changePoints > 0 ? 'success' : changePoints < 0 ? 'danger' : 'neutral'}
+                text={`${Math.abs(changePoints)} نقطة عن نهاية الشهر السابق`}
+              />
+            ) : (
+              <p className="mt-2.5 text-[11px] font-medium text-muted-foreground">
+                {snapshot
+                  ? `${number(snapshot.portfolio.units)} وحدة في المحفظة`
+                  : 'بيانات المحفظة غير متاحة'}
+              </p>
+            )}
           </div>
 
-          <div className="min-w-0 border-s-0 sm:border-s sm:border-border/70 sm:ps-4">
+          <div className="min-w-0">
             <div className="flex min-w-0 items-center justify-between gap-2">
               <p className="text-[11px] font-bold text-muted-foreground">
                 أعمار الشغور
@@ -188,19 +172,21 @@ export const OccupancySection = memo(function OccupancySection({
                 className="mt-2"
                 label="أعمار الوحدات الشاغرة"
                 total={vacantUnits}
-                segments={vacancyAgingBucketOrder.map((key) => ({
-                  key,
-                  label: vacancyAgingBucketLabels[key],
-                  count: agingBuckets[key],
-                  barClass:
-                    key === 'days_0_15'
-                      ? 'bg-info'
-                      : key === 'days_16_30'
-                        ? 'bg-warning/70'
-                        : key === 'days_31_60'
-                          ? 'bg-warning'
-                          : 'bg-danger',
-                }))}
+                segments={vacancyAgingBucketOrder
+                  .map((key) => ({
+                    key,
+                    label: vacancyAgingBucketLabels[key],
+                    count: agingBuckets[key],
+                    barClass:
+                      key === 'days_0_15'
+                        ? 'bg-info'
+                        : key === 'days_16_30'
+                          ? 'bg-warning/70'
+                          : key === 'days_31_60'
+                            ? 'bg-warning'
+                            : 'bg-danger',
+                  }))
+                  .filter((segment) => segment.count > 0)}
               />
             )}
           </div>

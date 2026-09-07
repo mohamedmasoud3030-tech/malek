@@ -7,7 +7,6 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
-import { MiniBarsCompare, RadialMetric } from './dashboard-visuals';
 
 interface OfficePulseProps {
   snapshot: DashboardSnapshot | undefined;
@@ -16,12 +15,15 @@ interface OfficePulseProps {
 }
 
 /**
- * Office Pulse — the four executive surfaces above the fold:
- * collections, occupancy, arrears and the office cash movement.
+ * Office Pulse — the four executive KPIs in one unified strip.
  *
+ * The strip stays deliberately stat-free: every visualisation (the occupancy
+ * ring, the collections-vs-expenses comparison) lives once, in the detail
+ * section that owns that question below. Here each tile is one headline
+ * number, one label, one concise context line — scannable in seconds.
  * All numbers are the server snapshot KPIs rendered as-is. Tenant/owner money
- * is never presented as office revenue: the cash-pulse surface stays
- * explicitly labelled «collections minus recorded expenses».
+ * is never presented as office revenue: the cash tile stays explicitly
+ * labelled «collections minus recorded expenses».
  */
 export const OfficePulse = memo(function OfficePulse({
   snapshot,
@@ -51,20 +53,15 @@ export const OfficePulse = memo(function OfficePulse({
   const over90Count = snapshot?.arrears.over90Count ?? 0;
   const averageDaysOverdue = snapshot?.arrears.averageDaysOverdue ?? 0;
 
-  const pulseCardClass = 'h-full border-border/55 bg-card/95 shadow-sm';
   const pulseLinkClass =
-    'group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
+    'group block min-w-0 rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary';
 
   return (
     <div
       data-dashboard-office-pulse
-      className="relative overflow-hidden rounded-2xl border border-border/65 bg-card p-1.5 sm:p-2"
+      className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card"
     >
-      <span
-        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent"
-        aria-hidden="true"
-      />
-      <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4}>
+      <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4} className="dashboard-pulse-grid">
         <Link
           to="/financials"
           data-dashboard-kpi-link
@@ -84,7 +81,7 @@ export const OfficePulse = memo(function OfficePulse({
                   : 'rose'
             }
             compact
-            className={pulseCardClass}
+            className="dashboard-pulse-card"
           />
         </Link>
 
@@ -108,21 +105,7 @@ export const OfficePulse = memo(function OfficePulse({
                   : 'rose'
             }
             compact
-            className={pulseCardClass}
-            visual={
-              <RadialMetric
-                percent={occupancyRate}
-                label={`نسبة الإشغال ${occupancyRate}%`}
-                size={64}
-                fillClass={
-                  occupancyRate >= 90
-                    ? 'text-success'
-                    : occupancyRate >= 75
-                      ? 'text-warning'
-                      : 'text-danger'
-                }
-              />
-            }
+            className="dashboard-pulse-card"
           />
         </Link>
 
@@ -150,7 +133,7 @@ export const OfficePulse = memo(function OfficePulse({
                   : 'amber'
             }
             compact
-            className={pulseCardClass}
+            className="dashboard-pulse-card"
           />
         </Link>
 
@@ -165,29 +148,11 @@ export const OfficePulse = memo(function OfficePulse({
           <KpiCard
             label="نبض سيولة المكتب"
             value={money(netCash)}
-            sub="التحصيل ناقص المصروفات المسجلة"
+            sub={`محصّل ${money(collected)} ناقص مصروفات ${money(expenses)}`}
             icon={TrendingUp}
             accent={netCash >= 0 ? 'emerald' : 'rose'}
             compact
-            className={pulseCardClass}
-            visual={
-              <MiniBarsCompare
-                items={[
-                  {
-                    label: 'المحصّل',
-                    value: collected,
-                    displayValue: money(collected),
-                    barClass: 'bg-success',
-                  },
-                  {
-                    label: 'المصروفات',
-                    value: expenses,
-                    displayValue: money(expenses),
-                    barClass: 'bg-danger/80',
-                  },
-                ]}
-              />
-            }
+            className="dashboard-pulse-card"
           />
         </Link>
       </ResponsiveCardGrid>

@@ -122,29 +122,29 @@ describe('Dashboard compact command center', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
   }
 
-  it('renders only the five canonical decision surfaces', async () => {
+  it('renders only the four canonical decision surfaces (queue moved to the bell)', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
     expect(Array.from(container.querySelectorAll('[data-dashboard-section]')).map((node) => node.getAttribute('data-dashboard-section'))).toEqual([
-      'needs-attention', 'office-pulse', 'collections', 'occupancy', 'financial-performance',
+      'office-pulse', 'collections', 'occupancy', 'financial-performance',
     ]);
   });
 
-  it('proves the removed duplicate dashboard surfaces stay absent', async () => {
+  it('proves the retired and moved dashboard surfaces stay absent', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
-    for (const id of ['maintenance', 'upcoming-contracts', 'property-health', 'owner-obligations', 'finance-exceptions']) {
+    for (const id of ['maintenance', 'upcoming-contracts', 'property-health', 'owner-obligations', 'finance-exceptions', 'needs-attention']) {
       expect(container.querySelector(`[data-dashboard-section="${id}"]`)).toBeNull();
     }
   });
 
-  it('keeps maintenance, settlement and bank exceptions in the unified attention queue', async () => {
+  it('keeps the action queue off the page — it now lives in the notifications bell', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
     await renderPage();
-    const section = container.querySelector('[data-dashboard-section="needs-attention"]');
-    expect(section?.textContent).toContain('حركة بنكية غير مطابقة');
-    expect(section?.textContent).toContain('تسوية ملاك');
-    expect(Array.from(section?.querySelectorAll('[data-needs-attention-link]') ?? []).some((link) => link.getAttribute('href') === '/maintenance')).toBe(true);
+    expect(container.textContent).not.toContain('حركة بنكية غير مطابقة');
+    expect(container.textContent).not.toContain('تسوية ملاك');
+    expect(container.querySelector('[data-needs-attention-link]')).toBeNull();
+    expect(container.querySelector('[data-notification-priorities]')).toBeNull();
   });
 
   it('keeps core operational and financial truth visible', async () => {

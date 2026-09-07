@@ -8,7 +8,7 @@ import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
-import { MetricStat, ProgressMeter } from './dashboard-visuals';
+import { ProgressMeter } from './dashboard-visuals';
 
 interface CollectionsSectionProps {
   snapshot: DashboardSnapshot | undefined;
@@ -76,10 +76,17 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
           barClass={collectionRate >= 80 ? 'bg-success' : collectionRate >= 50 ? 'bg-warning' : 'bg-danger'}
         />
 
-        <div className="grid min-w-0 grid-cols-1 gap-x-4 rounded-xl bg-muted/30 px-3 py-1 sm:grid-cols-3">
-          <MetricStat label="المستحق" value={money(invoiced)} />
-          <MetricStat label="المحصّل" value={money(collected)} />
-          <MetricStat label="المتبقي" value={money(outstanding)} />
+        <div className="grid min-w-0 grid-cols-3 divide-x divide-border/60 rounded-xl bg-muted/25 rtl:divide-x-reverse">
+          {[
+            { label: 'المستحق', value: money(invoiced) },
+            { label: 'المحصّل', value: money(collected) },
+            { label: 'المتبقي', value: money(outstanding) },
+          ].map((cell) => (
+            <div key={cell.label} className="min-w-0 px-1.5 py-2 text-center sm:px-2.5">
+              <p className="truncate text-[11px] font-bold text-muted-foreground">{cell.label}</p>
+              <p className="mt-0.5 text-[11px] font-black tabular-nums leading-4 text-foreground sm:text-sm sm:leading-6" dir="ltr">{cell.value}</p>
+            </div>
+          ))}
         </div>
 
         <div className="min-w-0">
@@ -96,25 +103,33 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
           </div>
 
           {hasOverdue ? (
-            <div className="mt-2 grid grid-cols-2 gap-2" data-dashboard-arrears-aging>
-              {AGING_BUCKETS.map((bucket) => {
-                const data = snapshot?.arrears.buckets[bucket.key];
-                const total = data?.total ?? 0;
-                const count = data?.count ?? 0;
-                return (
-                  <div key={bucket.key} className={cn('min-w-0 rounded-lg border border-border/60 px-2.5 py-2', count === 0 && 'opacity-70')}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-bold text-muted-foreground">{getAgingBucketLabel(bucket.key)}</p>
-                      <span className={cn('h-1.5 w-8 rounded-full', count > 0 ? bucket.barClass : 'bg-muted')} aria-hidden="true" />
-                    </div>
-                    <p className={cn('mt-1 truncate text-sm font-black tabular-nums', total > 0 ? bucket.textClass : 'text-muted-foreground')} dir="ltr">
-                      {money(total)}
-                    </p>
-                    <p className="text-[11px] font-medium text-muted-foreground">{count} فاتورة</p>
-                  </div>
-                );
-              })}
-            </div>
+            (() => {
+              const activeBuckets = AGING_BUCKETS
+                .map((bucket) => ({ bucket, data: snapshot?.arrears.buckets[bucket.key] }))
+                .filter(({ data }) => (data?.count ?? 0) > 0);
+              return activeBuckets.length > 0 ? (
+                <div className="mt-2 grid grid-cols-2 gap-2" data-dashboard-arrears-aging>
+                  {activeBuckets.map(({ bucket, data }) => {
+                    const total = data?.total ?? 0;
+                    const count = data?.count ?? 0;
+                    return (
+                      <div key={bucket.key} className="min-w-0 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] font-bold text-muted-foreground">{getAgingBucketLabel(bucket.key)}</p>
+                          <span className={cn('h-1.5 w-8 rounded-full', bucket.barClass)} aria-hidden="true" />
+                        </div>
+                        <p className={cn('mt-1 truncate text-sm font-black tabular-nums', bucket.textClass)} dir="ltr">
+                          {money(total)}
+                        </p>
+                        <p className="text-[11px] font-medium text-muted-foreground">{count} فاتورة</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs font-medium text-muted-foreground">لا توجد متأخرات مصنّفة — كل الفواتير ضمن الاستحقاق.</p>
+              );
+            })()
           ) : (
             <p className="mt-2 text-xs font-medium text-muted-foreground">لا توجد متأخرات — كل الفواتير ضمن الاستحقاق.</p>
           )}
