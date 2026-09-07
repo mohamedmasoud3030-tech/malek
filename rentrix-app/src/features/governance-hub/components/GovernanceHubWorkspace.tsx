@@ -26,8 +26,6 @@ const ChangePasswordWorkspace = lazy(() => import('@/features/auth/change-passwo
 const AutomationWorkspace = lazy(() => import('@/features/automation/components/automation-workspace').then((module) => ({ default: module.AutomationWorkspace })));
 const SystemWorkspace = lazy(() => import('@/features/system/system-page').then((module) => ({ default: module.SystemWorkspace })));
 
-const TabFallback = () => <LoadingState variant="section" label="جارٍ تحميل القسم..." />;
-
 function CostCentersWorkspace() {
   return <CostCentersSettingsSection />;
 }
@@ -110,7 +108,7 @@ export function GovernanceHubWorkspace() {
   }, [requestedSub, resolvedActiveTab]);
 
   return (
-    <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-2 md:space-y-4">
+    <PageLayout dir="rtl" lang="ar">
       <PageHeader title="الإعدادات" description={headerDescription} />
 
       {accessibleSections.length === 0 ? (
@@ -130,7 +128,7 @@ export function GovernanceHubWorkspace() {
           ) : null}
 
           <div className="min-w-0">
-            <Suspense fallback={<TabFallback />}>
+            <Suspense fallback={<LoadingState variant="section" label="جارٍ تحميل القسم..." />}>
               {shouldRenderTab('company') ? (
                 <SectionTabPanel id="company" activeId={resolvedActiveTab}>
                   <SettingsWorkspace

@@ -2,7 +2,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveOperationsHubState } from './operations-hub-model';
@@ -37,26 +37,13 @@ const sectionComponents: Record<OperationsHubSectionId, ComponentType> = {
   documents_vault: DocumentsVaultBody,
 };
 
-function SectionFallback() {
-  return (
-    <div className="col-span-full row-start-2 space-y-3" role="status" aria-label="جارٍ تحميل قسم الخدمات">
-      <Skeleton className="h-24" />
-      <Skeleton className="h-64" />
-    </div>
-  );
-}
-
 export type OperationsHubWorkspaceProps = Readonly<{
   defaultSection: OperationsHubSectionId;
-  title?: string;
-  description?: string;
   mode?: 'standalone' | 'embedded';
 }>;
 
 export function OperationsHubWorkspace({
   defaultSection,
-  title,
-  description,
   mode = 'standalone',
 }: OperationsHubWorkspaceProps) {
   const { authorization } = useAuth();
@@ -130,7 +117,7 @@ export function OperationsHubWorkspace({
                 className={isActive ? 'contents' : undefined}
                 hidden={!isActive}
               >
-                <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
+                <Suspense fallback={<LoadingState variant="section" className="col-span-full row-start-2" label="جارٍ تحميل قسم الخدمات..." />}><SectionBody /></Suspense>
               </div>
             );
           })}
@@ -141,8 +128,8 @@ export function OperationsHubWorkspace({
   return (
     <EmbeddableWorkspace
       embedded={mode === 'embedded'}
-      title={title ?? activeSectionDefinition.label}
-      description={description ?? activeSectionDefinition.description}
+      title={activeSectionDefinition.label}
+      description={activeSectionDefinition.description}
       size="wide"
     >
       {content}

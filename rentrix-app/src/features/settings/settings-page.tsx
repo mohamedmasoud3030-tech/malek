@@ -161,7 +161,7 @@ export function SettingsWorkspace({
 
   if (companySettingsQuery.isError && !draft) {
     return (
-      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
+      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-2.5 sm:space-y-3 md:space-y-3.5 lg:space-y-5">
         {variant === 'embedded' ? null : <SettingsHero companyName="—" hasUnsavedChanges={false} />}
         <Card role="alert">
           <CardHeader>
@@ -178,7 +178,7 @@ export function SettingsWorkspace({
 
   if (companySettingsQuery.isLoading || !draft) {
     return (
-      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-3">
+      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-2.5 sm:space-y-3 md:space-y-3.5 lg:space-y-5">
         {variant === 'embedded' ? null : <SettingsHero companyName="…" hasUnsavedChanges={false} />}
         <Card>
           <CardHeader><CardTitle>إعدادات الشركة</CardTitle><p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p></CardHeader>
@@ -230,7 +230,7 @@ export function SettingsWorkspace({
       variant={variant}
       dir={pageLanguage.direction}
       lang={pageLanguage.locale}
-      contentClassName={cn('min-w-0 space-y-2 pb-2 md:space-y-4', isDirty && 'pb-24 md:pb-8')}
+      contentClassName={cn('min-w-0 space-y-2.5 sm:space-y-3 md:space-y-3.5 lg:space-y-5 pb-2', isDirty && 'pb-24 md:pb-8')}
     >
       {showHero ? <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} /> : null}
       {companySettingsQuery.isError ? (
@@ -242,7 +242,7 @@ export function SettingsWorkspace({
         />
       ) : null}
       <div
-        className="space-y-2 md:space-y-4"
+        className="space-y-2.5 sm:space-y-3 md:space-y-3.5 lg:space-y-5"
         inert={companySettingsQuery.isError ? true : undefined}
         aria-disabled={companySettingsQuery.isError ? 'true' : undefined}
         data-stale-settings-content={companySettingsQuery.isError ? 'true' : undefined}

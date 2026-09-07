@@ -2,8 +2,8 @@ import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabs } from '@/components/ui/section-tabs';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { isLeasingHubSectionId, leasingHubSections, type LeasingHubSectionId } from './leasing-hub-sections';
 
@@ -37,15 +37,6 @@ const sectionComponents: Record<LeasingHubSectionId, ComponentType> = {
   leads: LeadsBody,
   communication: CommunicationBody,
 };
-
-function SectionFallback() {
-  return (
-    <div className="col-span-full row-start-2 space-y-2.5" role="status" aria-label="جارٍ تحميل قسم التأجير">
-      <Skeleton className="h-12 rounded-xl" />
-      <Skeleton className="h-40 rounded-xl" />
-    </div>
-  );
-}
 
 export function LeasingHubWorkspace() {
   const { canAccess } = useAuth();
@@ -126,7 +117,7 @@ export function LeasingHubWorkspace() {
                   className={isActive ? 'contents' : undefined}
                   hidden={!isActive}
                 >
-                  <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
+                  <Suspense fallback={<LoadingState variant="section" className="col-span-full row-start-2" label="جارٍ تحميل قسم التأجير..." />}><SectionBody /></Suspense>
                 </div>
               );
             })}
