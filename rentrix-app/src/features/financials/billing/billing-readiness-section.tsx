@@ -93,7 +93,11 @@ export function BillingReadinessSection() {
       render: (obligation) => (
         <div className="min-w-0 text-xs">
           <p dir="ltr" className="tabular-nums">{obligation.period_start} → {obligation.period_end}</p>
-          <p className="text-muted-foreground">إصدار {obligation.issue_date} · استحقاق {obligation.due_date}</p>
+          <p className="text-muted-foreground">
+            إصدار <span dir="ltr" className="whitespace-nowrap tabular-nums">{obligation.issue_date}</span>
+            {' · '}
+            استحقاق <span dir="ltr" className="whitespace-nowrap tabular-nums">{obligation.due_date}</span>
+          </p>
         </div>
       ),
     },
