@@ -157,6 +157,17 @@
   background: hsl(var(--background));
 }
 
+/* The register language flattens surface gutters, but it must not strip the
+   fixed phone dock's bottom clearance from the page shell itself — otherwise
+   content scrolls under the dock (and under the PWA install bar folded into
+   the same token) exactly like the reported stacked-layers screenshots.
+   Restored on the shell only ([data-page-layout]); nested surfaces keep
+   padding: 0. Higher specificity than the flattening rule above. */
+[data-operational-route='true'] [data-malek-surface][data-page-layout] {
+  padding-bottom: var(--mobile-dock-clearance);
+  padding-block-end: var(--mobile-dock-clearance);
+}
+
 [data-operational-route='true'] [data-malek-surface] [data-filter-bar] {
   position: relative;
   z-index: 2;
