@@ -14,10 +14,10 @@ function source(relativePath: string) {
 }
 
 describe('production product simplification contract', () => {
-  it('keeps support, diagnostics, security duplication, and duplicate cost-center entry out of routine Settings navigation', () => {
+  it('keeps diagnostics, security duplication, and duplicate cost-center entry out of routine Settings navigation while revealing support operations to permitted roles', () => {
     expect(
       workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey),
-    ).toEqual(['companySettings', 'usersPermissions']);
+    ).toEqual(['companySettings', 'usersPermissions', 'adminSupport']);
 
     const hiddenSections = governanceHubSections
       .filter((section) => !section.showInPrimaryNavigation)
@@ -64,7 +64,7 @@ describe('production product simplification contract', () => {
     ).toEqual(['lands']);
     expect(
       workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey),
-    ).toEqual(['units', 'owners']);
+    ).toEqual(['units', 'owners', 'lands']);
   });
 
   it('keeps Leasing routine navigation focused on contracts and tenants', () => {
@@ -80,13 +80,13 @@ describe('production product simplification contract', () => {
     ).toEqual(['people', 'leads', 'communication']);
     expect(
       workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey),
-    ).toEqual(['tenants']);
+    ).toEqual(['tenants', 'peopleDirectory', 'leads', 'communication']);
   });
 
   it('keeps Money task-first while specialist views stay available in the same workspace', () => {
     expect(
       workspaceChildNavItems['/financials'].map(([, labelKey]) => labelKey),
-    ).toEqual(['invoices', 'receipts', 'expenses']);
+    ).toEqual(['invoices', 'receipts', 'expenses', 'commissions']);
 
     expect(
       FINANCE_SECTIONS.filter((section) => section.showInPrimaryNavigation).map(
@@ -114,7 +114,7 @@ describe('production product simplification contract', () => {
     ).toEqual(['service_providers', 'documents_vault']);
     expect(
       workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey),
-    ).toEqual(['maintenance', 'utilities']);
+    ).toEqual(['maintenance', 'utilities', 'serviceProviders', 'documentsVault']);
   });
 
   it('keeps Reports task-first as five canonical products while specialist bodies remain reachable inside their product', () => {
@@ -167,20 +167,17 @@ describe('production product simplification contract', () => {
 
   it('keeps advanced routes available without advertising them as normal product destinations', () => {
     const nav = source('./navigation/app-nav-items.ts');
+    // Revealed registers (lands, people, leads, communication, commissions,
+    // service providers, documents vault, admin support) are sanctioned
+    // workspace children now. Still forbidden: specialist finance roles and
+    // duplicated settings entries that keep their guarded surfaces.
     for (const forbidden of [
-      "['/admin-support', 'supportOperations'",
       "['/settings', 'systemSettings'",
       "['/settings', 'costCenters'",
-      "['/properties', 'lands'",
-      "['/contracts', 'peopleDirectory'",
-      "['/contracts', 'leads'",
-      "['/contracts', 'communication'",
       "['/financials', 'deposits'",
       "['/financials', 'ownerSettlements'",
       "['/financials', 'bankReconciliation'",
-      "['/financials', 'commissions'",
-      "['/maintenance', 'serviceProviders'",
-      "['/maintenance', 'documentsVault'",
+      "['/admin-support', 'supportOperations'",
     ])
       expect(nav).not.toContain(forbidden);
   });

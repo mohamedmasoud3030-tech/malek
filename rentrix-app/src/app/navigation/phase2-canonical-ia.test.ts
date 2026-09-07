@@ -27,19 +27,20 @@ describe('Task-centric canonical IA', () => {
     for (const path of ['/people', '/lands', '/commissions', '/owners', '/tenants']) expect(hasRoute(path)).toBe(true);
   });
 
-  it('keeps Portfolio routine navigation focused while retaining specialist Lands capability', () => {
+  it('keeps Portfolio focused while revealing the specialist Lands register', () => {
     for (const path of ['/properties', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties']);
-    expect(workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey)).toEqual(['units', 'owners']);
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties', '/lands']);
+    expect(workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey)).toEqual(['units', 'owners', 'lands']);
     expect(portfolioHubSource).toContain('LandsWorkspace');
     expect(portfolioHubSource).toContain('OwnersWorkspace');
+    // Hub tabs stay routine-first; /lands remains the canonical register page.
     expect(portfolioSectionsSource).toMatch(/id: 'lands'[\s\S]*?showInPrimaryNavigation: false/);
   });
 
-  it('keeps Leasing focused on contracts and tenants while supporting relationship deep links', () => {
+  it('keeps Leasing focused while revealing people, leads and communication registers', () => {
     for (const path of ['/contracts', '/tenants', '/people', '/leads', '/communication']) expect(getNavRoot(path)).toBe('/contracts');
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts']);
-    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants']);
+    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts', '/people', '/leads', '/communication']);
+    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual(['tenants', 'peopleDirectory', 'leads', 'communication']);
     for (const workspace of ['ContractsWorkspace', 'TenantsWorkspace', 'PeopleListPage', 'LeadsWorkspace', 'CommunicationWorkspace']) {
       expect(leasingHubSource).toContain(workspace);
     }
@@ -50,9 +51,9 @@ describe('Task-centric canonical IA', () => {
 
   it('keeps Money task-first: invoices, receipt history and expenses are the routine shortcuts', () => {
     const children = workspaceChildNavItems['/financials'];
-    expect(children).toHaveLength(3);
-    expect(children.every(([to]) => to === '/financials')).toBe(true);
-    expect(children.map(([, , , , , search]) => search?.view)).toEqual(['invoices', 'receipts', 'expenses']);
+    expect(children).toHaveLength(4);
+    expect(children.slice(0, 3).every(([to]) => to === '/financials')).toBe(true);
+    expect(children.map(([, , , , , search]) => search?.view)).toEqual(['invoices', 'receipts', 'expenses', undefined]);
 
     for (const routineSection of ['collections', 'fees', 'expenses', 'funds', 'banking']) {
       expect(financeModelSource).toMatch(new RegExp(`id: '${routineSection}'[\\s\\S]*?showInPrimaryNavigation: true`));
@@ -70,9 +71,9 @@ describe('Task-centric canonical IA', () => {
 
   it('keeps Services routine navigation to maintenance and utilities only', () => {
     const children = workspaceChildNavItems['/maintenance'];
-    expect(children).toHaveLength(2);
-    expect(children.every(([to]) => to === '/maintenance')).toBe(true);
-    expect(children.map(([, , , , , search]) => search?.section)).toEqual(['maintenance', 'utilities']);
+    expect(children).toHaveLength(4);
+    expect(children.filter(([to]) => to === '/maintenance')).toHaveLength(3);
+    expect(children.map(([, , , , , search]) => search?.section)).toEqual(['maintenance', 'utilities', undefined, 'documents_vault']);
     expect(servicesSectionsSource).toMatch(/id: 'service_providers'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).toMatch(/id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/);
     expect(servicesSectionsSource).not.toContain("| 'automation'");
@@ -84,7 +85,7 @@ describe('Task-centric canonical IA', () => {
   });
 
   it('treats Automation as a guarded settings deep link, not routine navigation', () => {
-    expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual(['companySettings', 'usersPermissions']);
+    expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual(['companySettings', 'usersPermissions', 'adminSupport']);
     expect(governanceSectionsSource).toMatch(/id: 'automation'[\s\S]*?showInPrimaryNavigation: false/);
     // Automation has a single canonical destination: the guarded settings
     // section deep link. No legacy /automation route may be registered.

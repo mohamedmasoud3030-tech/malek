@@ -27,6 +27,7 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   settings: 'الإعدادات',
   companySettings: 'الشركة',
   usersPermissions: 'المستخدمون والصلاحيات',
+  adminSupport: 'عمليات الدعم والتحقيق',
   costCenters: 'مراكز التكلفة',
   systemSettings: 'إعدادات النظام',
   peopleDirectory: 'جهات التعامل',
