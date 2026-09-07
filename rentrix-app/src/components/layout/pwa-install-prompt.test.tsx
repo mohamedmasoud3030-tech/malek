@@ -17,6 +17,12 @@ const pwaInstallMock = vi.hoisted(() => ({
 
 vi.mock('@/lib/pwa-install', () => pwaInstallMock);
 
+// The banner reads the current path so it can stay off auth surfaces.
+let currentPathname = '/';
+vi.mock('@tanstack/react-router', () => ({
+  useLocation: () => ({ pathname: currentPathname }),
+}));
+
 import { PwaInstallPrompt } from './pwa-install-prompt';
 
 describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أول فتح', () => {
@@ -26,6 +32,7 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
   beforeEach(() => {
     // clearAllMocks keeps implementations, so re-baseline them explicitly.
     vi.clearAllMocks();
+    currentPathname = '/';
     pwaInstallMock.getDeferredInstallPrompt.mockReturnValue(null);
     pwaInstallMock.getAppInstalledEventFired.mockReturnValue(false);
     pwaInstallMock.isStandaloneDisplay.mockReturnValue(false);
@@ -145,5 +152,21 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
     const interactiveOutsideCard = [...(banner?.querySelectorAll('button, a') ?? [])]
       .filter((el) => !card?.contains(el));
     expect(interactiveOutsideCard).toHaveLength(0);
+  });
+
+  it('stays hidden on auth surfaces — the banner must never block signing in', () => {
+    // Live-QA regression (iPhone/Safari): the tall iOS-guidance card sat
+    // exactly over the login submit button. Install nudging is worthless
+    // where the user cannot get past the front door.
+    pwaInstallMock.getDeferredInstallPrompt.mockReturnValue({} as object);
+
+    for (const authPath of ['/login', '/login/e2e-fixture', '/forgot-password', '/reset-password']) {
+      currentPathname = authPath;
+      expect(render(), authPath).toBeNull();
+    }
+
+    // Non-auth public surfaces keep the banner.
+    currentPathname = '/support';
+    expect(render()).not.toBeNull();
   });
 });

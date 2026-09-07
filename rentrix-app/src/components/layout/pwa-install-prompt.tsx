@@ -1,4 +1,5 @@
 import { useSyncExternalStore, useState } from 'react';
+import { useLocation } from '@tanstack/react-router';
 import { Share, SquarePlus, X } from 'lucide-react';
 import { MalikMark } from '@/components/brand/malik-mark';
 import { Button } from '@/components/ui/button';
@@ -24,10 +25,22 @@ function installPromptSnapshot(): string {
  * Shown once when the app can be installed (Chrome/Edge native prompt) or can
  * be installed manually (iOS Safari instructions). Persists dismissal and
  * never nags inside an installed standalone window. Suppressed entirely in
- * the e2e fixture environment (VITE_E2E).
+ * the e2e fixture environment (VITE_E2E) and on auth surfaces: on iPhone the
+ * tall iOS-guidance card sits exactly over the login form, so showing it
+ * there blocks the very action a first-time visitor came for (live-QA
+ * regression: the banner swallowed taps on the login submit button).
  */
+const AUTH_SURFACE_PATHS = ['/login', '/forgot-password', '/reset-password'];
+
+function isAuthSurfacePath(pathname: string): boolean {
+  return (
+    AUTH_SURFACE_PATHS.includes(pathname) || pathname.startsWith('/login/')
+  );
+}
+
 export function PwaInstallPrompt() {
   const isE2E = Boolean(import.meta.env.VITE_E2E);
+  const { pathname } = useLocation();
   const snapshot = useSyncExternalStore(subscribeInstallPrompt, installPromptSnapshot);
   const [nativeFlag, appInstalledText] = snapshot.split(':');
   const appInstalled = appInstalledText === 'true';
@@ -35,7 +48,7 @@ export function PwaInstallPrompt() {
   const [dismissed, setDismissed] = useState(() => isInstallDismissed());
   const [installing, setInstalling] = useState(false);
 
-  if (isE2E || dismissed || appInstalled || isStandaloneDisplay()) return null;
+  if (isE2E || isAuthSurfacePath(pathname) || dismissed || appInstalled || isStandaloneDisplay()) return null;
 
   const iosManual = isIosManualInstall();
   if (!nativePromptAvailable && !iosManual) return null;
