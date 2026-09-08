@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
-import { escapeCsvValue } from '@/lib/csvExport';
+import { buildCsvMatrix } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
 import { EXPENSE_CHARGED_TO_LABELS, EXPENSE_CHARGED_TO_VALUES, buildExpenseCategoryOptions, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses, OPERATIONAL_EXPENSE_CATEGORIES, type ExpenseChargedTo, type OperationalExpenseCategory, type OperationalExpenseFilterValues } from '../expenses/operational-expenses';
@@ -59,10 +59,6 @@ export type ExpensesSectionHandle = Readonly<{
   exportVisibleExpenses: () => void;
 }>;
 
-function escapeCsvCell(value: string | number | null | undefined) {
-  return escapeCsvValue(value);
-}
-
 export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: readonly Property[]) {
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
   const rows = expenses.map((expense) => [
@@ -74,10 +70,11 @@ export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: rea
     expense.description ?? '',
   ]);
 
-  return [
-    'التاريخ,العقار,التصنيف,المبلغ,مركز التكلفة,الوصف',
-    ...rows.map((row) => row.map(escapeCsvCell).join(',')),
-  ].join('\n');
+  return buildCsvMatrix([
+    ['التاريخ', 'العقار', 'التصنيف', 'المبلغ', 'مركز التكلفة', 'الوصف'],
+    ...rows,
+  ]);
+
 }
 
 export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSectionProps>(function ExpensesSection({

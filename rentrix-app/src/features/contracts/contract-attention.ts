@@ -1,3 +1,4 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 /**
  * Contracts — operational attention.
  *
@@ -13,7 +14,7 @@
  * - invoice status comes from the canonical `normalizeInvoiceStatus` (live rows
  *   mix 'issued'/'partial' with 'UNPAID'/'PARTIALLY_PAID');
  * - lateness comes from the canonical `calculateDaysOverdue`;
- * - amounts come from the canonical `getInvoiceGrossAmount` /
+ * - amounts come from the canonical `getInvoiceRemainingAmount` /
  *   `getSafeRemainingAmount` helpers;
  * - expiry comes from the canonical `isExpiringSoon` window;
  * - the next step comes from the canonical lifecycle rules.
@@ -24,11 +25,10 @@
  * shown here is the receivable principal of the visible contracts, not a
  * ledger-accurate arrears figure.
  */
-import { getSafeRemainingAmount } from '@/features/financials/financialMath';
 import { normalizeInvoiceStatus } from '@/features/financials/components/invoice-status-labels';
 import { calculateDaysOverdue } from '@/features/financials/reports/arrears-reports-service';
 import type { DossierInvoiceRow } from '@/features/financials/invoices/invoiceService';
-import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoiceService';
+
 import { isContractStatus } from '@/lib/contractStatus';
 import { parseContractDisplayDate } from './contractDisplayFormatters';
 import { getDaysUntilEnd, isExpiringSoon } from './hooks/useContractFilters';
@@ -165,9 +165,6 @@ function isReceivableInvoice(status: string): boolean {
   return canonical === 'unpaid' || canonical === 'partial' || canonical === 'overdue';
 }
 
-function invoiceRemainingAmount(invoice: DossierInvoiceRow): number {
-  return getSafeRemainingAmount(getInvoiceGrossAmount(invoice), invoice.paid_amount);
-}
 
 function formatDayCount(days: number): string {
   return days === 1 ? 'يوم واحد' : `${days} يوم`;
@@ -207,7 +204,7 @@ export function deriveContractAttention(
   for (const invoice of invoices) {
     if (!isReceivableInvoice(invoice.status)) continue;
     receivableInvoiceCount += 1;
-    const remaining = invoiceRemainingAmount(invoice);
+    const remaining = getInvoiceRemainingAmount(invoice);
     outstandingAmount += remaining;
     // Canonical lateness: 0 while the due date is today or in the future, so a
     // status that has not been flipped to 'overdue' yet still counts correctly

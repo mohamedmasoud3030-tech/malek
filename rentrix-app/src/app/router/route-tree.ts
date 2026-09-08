@@ -22,15 +22,8 @@ const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'auth',
   beforeLoad: async () => {
-    const { supabase } = await import('@/lib/supabase');
-    let session: import('@supabase/supabase-js').Session | null = null;
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) return;
-      session = data.session;
-    } catch {
-      return;
-    }
+    const { getCurrentSession } = await import('@/services/auth-service');
+    const session = await getCurrentSession();
     if (session) throw redirect({ to: '/dashboard' });
   },
   component: lazyRouteComponent(
@@ -43,15 +36,8 @@ const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'protected',
   beforeLoad: async () => {
-    const { supabase } = await import('@/lib/supabase');
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw redirect({ to: '/login' });
-      if (!data.session) throw redirect({ to: '/login' });
-    } catch (err) {
-      if (isRedirect(err)) throw err;
-      throw redirect({ to: '/login' });
-    }
+    const { getCurrentSession } = await import('@/services/auth-service');
+    if (!await getCurrentSession()) throw redirect({ to: '/login' });
   },
   component: lazyRouteComponent(
     () => import('@/routes/_protected'),
@@ -60,11 +46,11 @@ const protectedRoute = createRoute({
 });
 
 const requirePermission = (permission: AppPermission) => async () => {
-  const { supabase } = await import('@/lib/supabase');
+  const { getCurrentSession } = await import('@/services/auth-service');
   try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw redirect({ to: '/login' });
-    await assertSessionPermission(data.session, permission);
+    const session = await getCurrentSession();
+    if (!session) throw redirect({ to: '/login' });
+    await assertSessionPermission(session, permission);
   } catch (err) {
     if (isRedirect(err)) throw err;
     throw redirect({ to: '/login' });

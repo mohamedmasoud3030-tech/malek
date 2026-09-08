@@ -242,7 +242,7 @@ describe('ReportsPage shaping helpers', () => {
   });
 
   it('neutralizes spreadsheet formulas in exported CSV string values', () => {
-    expect(escapeCsvValue('=HYPERLINK("https://example.test")')).toBe('"\'=HYPERLINK(\\"https://example.test\\")"');
+    expect(escapeCsvValue('=HYPERLINK("https://example.test")')).toBe('"\'=HYPERLINK(""https://example.test"")"');
     expect(escapeCsvValue(' +SUM(1,2)')).toBe('"\' +SUM(1,2)"');
     expect(escapeCsvValue('@tenant')).toBe('"\'@tenant"');
     expect(escapeCsvValue('safe tenant')).toBe('"safe tenant"');

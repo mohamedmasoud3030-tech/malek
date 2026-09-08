@@ -74,7 +74,7 @@ function ContractPaymentsTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
       aria-label="جدول دفعات العقد"
       rows={snapshot.payments}
       columns={columns}
-      keyOf={(p) => p.id}
+      keyOf={(p) => `${p.id}:${p.invoice_id}`}
       emptyTitle="لا توجد دفعات مسجلة"
       emptyDescription="سيظهر هنا سجل الدفعات والإيصالات المرجعية عند توفر دفعات منشورة على فواتير هذا العقد."
     />

@@ -1,7 +1,5 @@
 import { fetchAllRows, type RangeQueryable } from '@/lib/paginatedRead';
 
-const DEFAULT_REPORT_ID_BATCH_SIZE = 250;
-
 /**
  * Financial reports must never present partial totals as complete.
  *
@@ -18,22 +16,4 @@ export async function fetchCompleteReportRows<Row>(
     throw new Error(`تعذر تحميل كامل بيانات ${label}. قلّل الفترة أو استخدم تقريرًا خادميًا مجمّعًا.`);
   }
   return rows;
-}
-
-/**
- * Keep `.in(...)` hydration queries below practical URL and PostgREST limits.
- */
-export function chunkReportIds(
-  values: readonly string[],
-  batchSize = DEFAULT_REPORT_ID_BATCH_SIZE,
-): string[][] {
-  if (!Number.isInteger(batchSize) || batchSize <= 0) {
-    throw new Error('حجم دفعة معرّفات التقرير يجب أن يكون عددًا صحيحًا موجبًا');
-  }
-
-  const chunks: string[][] = [];
-  for (let index = 0; index < values.length; index += batchSize) {
-    chunks.push(values.slice(index, index + batchSize));
-  }
-  return chunks;
 }

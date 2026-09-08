@@ -1,15 +1,11 @@
+import { getInvoiceGrossAmount, getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { Download, Eye, FolderOpen, HandCoins, Printer } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DataTableColumnsMenu } from '@/components/ui/data-table';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { toDateOnlyISO } from '@/lib/formatters';
-import { getSafeRemainingAmount } from '../financialMath';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
-import {
-  getInvoiceGrossAmount,
-  type InvoiceListItem,
-  type InvoiceStatusFilter,
-} from '../invoices/invoiceService';
+import { type InvoiceListItem, type InvoiceStatusFilter } from '../invoices/invoiceService';
 import { calculateDaysOverdue } from '../reports/financialReportsService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
@@ -87,8 +83,7 @@ export function billingPeriodLabel(invoice: InvoiceListItem) {
 }
 
 function invoiceDueAttention(invoice: InvoiceListItem, today: string) {
-  const grossAmount = getInvoiceGrossAmount(invoice);
-  const remaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
+  const remaining = getInvoiceRemainingAmount(invoice);
   if (remaining <= 0 || !invoice.due_date) return null;
   if (invoice.due_date === today) return { label: 'مستحق اليوم', tone: 'warning' as const };
   if (invoice.due_date < today) {
@@ -229,8 +224,7 @@ export function InvoiceListSection({
       header: 'المتبقي',
       priority: 'primary',
       render: (invoice) => {
-        const grossAmount = getInvoiceGrossAmount(invoice);
-        const remaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
+        const remaining = getInvoiceRemainingAmount(invoice);
         return <AmountText className={remaining > 0 ? 'text-base font-black text-destructive' : 'text-base font-black text-success'}>{formatMoney(remaining)}</AmountText>;
       },
     },

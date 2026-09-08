@@ -1,6 +1,7 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import type { Invoice } from '@/types/domain';
-import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
-import { getInvoiceGrossAmount } from './invoiceService';
+import { toFinancialNumber } from '../financialMath';
+
 
 /**
  * Quick-collect (تحصيل سريع) helpers.
@@ -10,14 +11,14 @@ import { getInvoiceGrossAmount } from './invoiceService';
  * stays gross-based (net + VAT − paid) for consistency with the list, the
  * summary cards and the payment validation rules.
  */
-export type QuickCollectInvoiceInput = Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount'>>;
+export type QuickCollectInvoiceInput = Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
 
 export const QUICK_PAYMENT_FORM_ID = 'quick-payment-form';
 export const QUICK_PAYMENT_AMOUNT_INPUT_ID = 'quick-payment-amount';
 
 /** An invoice is collectible while it still has a positive gross remaining balance. */
 export function isInvoiceCollectible(invoice: QuickCollectInvoiceInput): boolean {
-  return getSafeRemainingAmount(getInvoiceGrossAmount(invoice), invoice.paid_amount) > 0;
+  return getInvoiceRemainingAmount(invoice) > 0;
 }
 
 /** Money values display 3-decimal precision across the app — keep the preset aligned. */
@@ -35,7 +36,7 @@ export function getQuickCollectPreset(
   invoice: QuickCollectInvoiceInput & { id: string },
 ): { invoiceId: string; amount: string } | null {
   if (!isInvoiceCollectible(invoice)) return null;
-  const remaining = getSafeRemainingAmount(getInvoiceGrossAmount(invoice), invoice.paid_amount);
+  const remaining = getInvoiceRemainingAmount(invoice);
   return { invoiceId: invoice.id, amount: toQuickCollectAmountString(remaining) };
 }
 

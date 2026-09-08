@@ -3,7 +3,8 @@
  *
  * The authoritative statement RPCs tag every movement with a fixed
  * `tx_type` (see `supabase/migrations/20260901000000_canonical_baseline.sql`):
- *  - `rpt_tenant_statement` lines: 'invoice' | 'receipt'
+ *  - `rpt_tenant_statement`: invoices, receipts, credit notes, deposit applications
+ *    and their explicit compensating reversals.
  *  - `rpt_owner_statement` transactions: 'payment' | 'expense' | 'settlement'
  *
  * The normalizers keep `type` as `string | null` because the RPC boundary is
@@ -14,12 +15,16 @@
  */
 import type { TenantStatementReport } from './statements-reports-service';
 
-export type TenantStatementLineType = 'invoice' | 'receipt';
+export type TenantStatementLineType = 'invoice' | 'receipt' | 'invoice_credit' | 'invoice_credit_reversal' | 'deposit_application' | 'deposit_application_reversal';
 export type OwnerStatementTransactionType = 'payment' | 'expense' | 'settlement';
 
 export const tenantStatementLineTypeLabels: Readonly<Record<TenantStatementLineType, string>> = {
   invoice: 'فاتورة / استحقاق',
   receipt: 'دفعة / إيصال',
+  invoice_credit: 'إشعار دائن',
+  invoice_credit_reversal: 'عكس إشعار دائن',
+  deposit_application: 'تسوية من التأمين',
+  deposit_application_reversal: 'عكس تسوية من التأمين',
 };
 
 /**

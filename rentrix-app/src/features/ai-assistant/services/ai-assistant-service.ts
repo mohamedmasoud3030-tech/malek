@@ -1,3 +1,4 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { getMaintenanceStatusVariants, normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
 import { deriveMaintenanceAttention } from '@/features/maintenance/maintenance-attention';
@@ -36,7 +37,7 @@ const topPropertyPerformancePayloadLimit = 3;
 const maxNameLength = 60;
 const renewalLookaheadDays = 90;
 
-type InvoiceContextRow = Pick<Invoice, 'id' | 'contract_id' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'>;
+type InvoiceContextRow = Pick<Invoice, 'id' | 'contract_id' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
 type ContractRenewalRow = Pick<Contract, 'id' | 'property_id' | 'tenant_id' | 'unit_id' | 'end_date' | 'rent_amount' | 'status' | 'deleted_at'>;
 type PropertySnapshotRow = Pick<Property, 'id' | 'status' | 'deleted_at'>;
 type UnitSnapshotRow = Pick<Unit, 'id' | 'status' | 'deleted_at'> & {
@@ -116,9 +117,6 @@ function sum(values: number[]): number {
   return Number(values.reduce((total, value) => total + (Number.isFinite(value) ? value : 0), 0).toFixed(3));
 }
 
-function remainingAmount(invoice: { amount: number | null; paid_amount: number | null }): number {
-  return Math.max(0, Number(invoice.amount ?? 0) - Number(invoice.paid_amount ?? 0));
-}
 
 function isOpenInvoiceStatus(status: string | null | undefined): boolean {
   const normalized = status?.toLowerCase() ?? '';
@@ -172,7 +170,7 @@ async function fetchOpenInvoiceContextRows(asOf: string) {
   try {
     ({ rows: data } = await fetchAllRows<InvoiceContextRow>(() => supabase
       .from('invoices')
-      .select('id, contract_id, due_date, amount, paid_amount, status, deleted_at')
+      .select('id, contract_id, due_date, amount, tax_amount, credited_amount, paid_amount, status, deleted_at')
       .is('deleted_at', null)
       .lte('due_date', asOf)
       .not('status', 'in', closedInvoiceStatusFilter)
@@ -356,9 +354,9 @@ async function loadEntityContext(
   if (!entityType || !entityId) return undefined;
 
   const outstandingFor = (contractIds: ReadonlySet<string>) => {
-    const scoped = openInvoices.filter((invoice) => contractIds.has(invoice.contract_id) && remainingAmount(invoice) > 0);
+    const scoped = openInvoices.filter((invoice) => contractIds.has(invoice.contract_id) && getInvoiceRemainingAmount(invoice) > 0);
     return {
-      outstandingAmount: sum(scoped.map(remainingAmount)),
+      outstandingAmount: sum(scoped.map(getInvoiceRemainingAmount)),
       oldestOverdueDate: scoped.length ? scoped.reduce((oldest, invoice) => (invoice.due_date < oldest ? invoice.due_date : oldest), scoped[0].due_date) : null,
     };
   };
@@ -461,16 +459,16 @@ async function loadEntityContext(
       let nextDueDate: string | null = null;
       const upcomingResult = await supabase
         .from('invoices')
-        .select('id, due_date, amount, paid_amount, status')
+        .select('id, due_date, amount, tax_amount, credited_amount, paid_amount, status')
         .eq('contract_id', entityId)
         .is('deleted_at', null)
         .gte('due_date', asOf)
         .not('status', 'in', closedInvoiceStatusFilter)
         .order('due_date', { ascending: true })
         .limit(5)
-        .returns<Array<{ id: string; due_date: string; amount: number | null; paid_amount: number | null; status: string | null }>>();
+        .returns<Array<{ id: string; due_date: string; amount: number | null; tax_amount?: number | null; credited_amount?: number | null; paid_amount: number | null; status: string | null }>>();
       const upcoming = !upcomingResult.error && Array.isArray(upcomingResult.data) ? upcomingResult.data : [];
-      nextDueDate = upcoming.find((invoice) => isOpenInvoiceStatus(invoice.status) && remainingAmount(invoice) > 0)?.due_date ?? null;
+      nextDueDate = upcoming.find((invoice) => isOpenInvoiceStatus(invoice.status) && getInvoiceRemainingAmount(invoice) > 0)?.due_date ?? null;
 
       return {
         type: 'contract',
@@ -591,7 +589,7 @@ export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContex
   ]);
 
   const overdueInvoices = openInvoices
-    .filter((invoice) => remainingAmount(invoice) > 0)
+    .filter((invoice) => getInvoiceRemainingAmount(invoice) > 0)
     .sort((left, right) => left.due_date.localeCompare(right.due_date));
   const dueTodayInvoices = overdueInvoices.filter((invoice) => invoice.due_date === asOf);
   const contractNames = await fetchContractNameMap(overdueInvoices.map((invoice) => invoice.contract_id));
@@ -614,7 +612,7 @@ export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContex
       outstandingAmount: 0,
       openInvoiceCount: 0,
     };
-    entry.outstandingAmount = Number((entry.outstandingAmount + remainingAmount(invoice)).toFixed(3));
+    entry.outstandingAmount = Number((entry.outstandingAmount + getInvoiceRemainingAmount(invoice)).toFixed(3));
     entry.openInvoiceCount += 1;
     outstandingByProperty.set(contract.property_id, entry);
   }
@@ -630,7 +628,7 @@ export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContex
     sampleLimit,
     overdueInvoices: {
       invoiceCount: overdueInvoices.length,
-      totalOutstanding: sum(overdueInvoices.map(remainingAmount)),
+      totalOutstanding: sum(overdueInvoices.map(getInvoiceRemainingAmount)),
       oldestDueDate: overdueInvoices[0]?.due_date ?? null,
       topInvoices: overdueInvoices.slice(0, topInvoicePayloadLimit).map((invoice) => {
         const contract = contractNames.get(invoice.contract_id);
@@ -638,7 +636,7 @@ export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContex
           invoiceId: invoice.id,
           contractId: invoice.contract_id,
           dueDate: invoice.due_date,
-          remainingAmount: remainingAmount(invoice),
+          remainingAmount: getInvoiceRemainingAmount(invoice),
           status: invoice.status,
           tenantName: contract ? joinedName(contract.people, 'full_name') : null,
           propertyName: contract ? joinedName(contract.properties, 'title', 'name') : null,
@@ -646,7 +644,7 @@ export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContex
         };
       }),
       dueTodayCount: dueTodayInvoices.length,
-      dueTodayAmount: sum(dueTodayInvoices.map(remainingAmount)),
+      dueTodayAmount: sum(dueTodayInvoices.map(getInvoiceRemainingAmount)),
     },
     contractRenewals: {
       lookaheadDays: renewalLookaheadDays,
@@ -668,7 +666,7 @@ export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContex
       occupiedUnitCount,
       vacantUnitCount: vacantUnits.length,
       occupancyRate: unitCount > 0 ? Number(((occupiedUnitCount / unitCount) * 100).toFixed(2)) : 0,
-      outstandingInvoiceAmount: sum(overdueInvoices.map(remainingAmount)),
+      outstandingInvoiceAmount: sum(overdueInvoices.map(getInvoiceRemainingAmount)),
       expensesLast90Days: sum(snapshot.expenses90.map((expense) => Number(expense.amount ?? 0))),
     },
     reportSummary: {

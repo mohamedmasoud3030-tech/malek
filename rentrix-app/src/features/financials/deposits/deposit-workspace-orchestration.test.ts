@@ -57,7 +57,7 @@ describe('deposits workspace orchestration boundaries (post-refactor)', () => {
     expect(allOrchestration).toContain('!createForm.contract_id');
     expect(allOrchestration).toContain('!createForm.received_date');
     expect(allOrchestration).toContain('createTenantDeposit');
-    expect(allOrchestration).toContain('request_id: crypto.randomUUID()');
+    expect(allOrchestration).toContain("commands.run('deposit-create'");
   });
 
   it('claim path requires evidence and enforces inspection for DAMAGE', () => {

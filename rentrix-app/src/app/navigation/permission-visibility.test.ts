@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getAllNavItems, navGroups, quickCreateItems, workspaceChildNavItems } from './app-nav-items';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
-const protectedLayoutSource = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
+import { workspacePermissionForPath } from './route-contract';
 
 function routeHasPermission(path: string, perm: string): boolean {
   const token = `path: '${path}'`;
@@ -25,13 +25,7 @@ function routeBlock(path: string): string {
 }
 
 function layoutGuardCoversPath(path: string, perm: string): boolean {
-  const token = `pathname === '${path}'`;
-  const idx = protectedLayoutSource.indexOf(token);
-  if (idx === -1) return false;
-  const end = protectedLayoutSource.indexOf('return', idx);
-  return protectedLayoutSource.slice(idx, end).includes(`'${perm}'`) || (
-    protectedLayoutSource.slice(end, protectedLayoutSource.indexOf(';', end)).includes(`'${perm}'`)
-  );
+  return workspacePermissionForPath(path) === perm;
 }
 
 describe('permission visibility — task-centric IA must not widen access', () => {

@@ -14,7 +14,8 @@ describe('browser Supabase client boundary', () => {
     expect(source).toContain('createClient<Database>(env.supabaseUrl, env.supabaseAnonKey');
     expect(source).not.toMatch(/SERVICE_ROLE|service_role|sb_secret_/);
     expect(source).toContain("schema: 'public'");
-    expect(source).toContain("storageKey: 'rentrix-auth-session'");
+    expect(source).toContain('storageKey: AUTH_STORAGE_KEY');
+    expect(read('features/auth/session-storage.ts')).toContain("AUTH_STORAGE_KEY = 'rentrix-auth-session'");
     expect(source).toContain('autoRefreshToken: true');
   });
 
@@ -23,7 +24,7 @@ describe('browser Supabase client boundary', () => {
     expect(source).toContain('VITE_SUPABASE_URL');
     expect(source).toContain('VITE_SUPABASE_ANON_KEY');
     expect(source).not.toMatch(/SERVICE_ROLE|sb_secret_|VITE_SUPABASE_SERVICE/);
-    expect(source).toContain('isConfigured');
+    expect(source).toContain('resolvePublicSupabaseConfig');
   });
 
   it('does not import a service-role key anywhere under the app source tree', () => {

@@ -66,21 +66,16 @@ describe('recordInvoicePaymentAtomic', () => {
   });
 });
 
-describe('payment request id helpers', () => {
-  it('preserves the same request_id across retries and creates a new one after reset', async () => {
-    const { getOrCreatePaymentRequestId, resetPaymentRequestId } = await import('./paymentService');
-    const state = { current: null };
-    const createId = vi.fn()
-      .mockReturnValueOnce('request-1')
-      .mockReturnValueOnce('request-2');
-
-    expect(getOrCreatePaymentRequestId(state, createId)).toBe('request-1');
-    expect(getOrCreatePaymentRequestId(state, createId)).toBe('request-1');
-    expect(createId).toHaveBeenCalledTimes(1);
-
-    resetPaymentRequestId(state);
-
-    expect(getOrCreatePaymentRequestId(state, createId)).toBe('request-2');
-    expect(createId).toHaveBeenCalledTimes(2);
+describe('payment acknowledgement identity and status', () => {
+  const payload = { invoice_id: 'invoice', amount: 50, method: 'cash' as const, date: '2026-09-09', reference: null, request_id: 'request' };
+  const ack = { status: 'recorded', request_id: 'request', invoice_id: 'invoice', payment_id: 'payment', receipt_id: 'receipt' };
+  it.each([
+    { success: false }, { status: 'failed' }, { status: undefined },
+    { payment_id: {} }, { receipt_id: 23 }, { payment_id: '   ' },
+    { invoice_id: 'different-invoice' }, { request_id: 'different-request' },
+  ])('rejects an unconfirmed or mismatched acknowledgement: %j', async (change) => {
+    supabaseMock.rpc.mockResolvedValue({ data: { ...ack, ...change }, error: null });
+    const { recordInvoicePaymentAtomic } = await import('./paymentService');
+    await expect(recordInvoicePaymentAtomic(payload)).rejects.toThrow();
   });
 });

@@ -1,16 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
-const AUTH_STORAGE_KEY = 'rentrix-auth-session';
-
-function clearStoredSession(): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
-  } catch {
-    // Storage may be unavailable (privacy mode, etc.) - safe to ignore.
-  }
-}
+import { clearStoredSession } from '@/features/auth/session-storage';
 
 export async function getCurrentSession(): Promise<Session | null> {
   try {
@@ -45,16 +36,27 @@ export async function signInWithEmail(email: string, password: string) {
  * token must never keep a previous operator signed in.
  */
 export async function signOut(): Promise<'remote' | 'local'> {
-  const { error } = await supabase.auth.signOut();
-  if (!error) {
-    clearStoredSession();
-    return 'remote';
+  let remoteError: unknown;
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      clearStoredSession();
+      return 'remote';
+    }
+    remoteError = error;
+  } catch (error) {
+    remoteError = error;
   }
 
-  const { error: localError } = await supabase.auth.signOut({ scope: 'local' });
-  clearStoredSession();
-  if (localError) throw localError;
+  // The SDK may reject rather than return an error (network/storage adapters).
+  // Always attempt SDK cleanup as well as removing the persisted session.
+  try {
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) throw error;
+  } finally {
+    clearStoredSession();
+  }
 
-  console.warn('Remote sign-out failed; cleared this browser session locally.', error.message);
+  console.warn('Remote sign-out failed; cleared this browser session locally.', remoteError);
   return 'local';
 }

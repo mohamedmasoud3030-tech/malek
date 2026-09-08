@@ -15,32 +15,25 @@ export type PaymentResult = {
   idempotent?: boolean;
 };
 
-export type PaymentRequestIdState = { current: string | null };
-
-export function getOrCreatePaymentRequestId(state: PaymentRequestIdState, createId: () => string = () => crypto.randomUUID()) {
-  state.current ??= createId();
-  return state.current;
-}
-
-export function resetPaymentRequestId(state: PaymentRequestIdState) {
-  state.current = null;
-}
-
-function parsePaymentResult(data: unknown): PaymentResult {
-  if (!data || typeof data !== 'object') {
+function parsePaymentResult(data: unknown, payload: PaymentPayload): PaymentResult {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('تعذر تأكيد نتيجة تسجيل الدفعة من الخادم. حدّث السجل قبل إعادة المحاولة.');
   }
 
   const result = data as Partial<PaymentResult>;
-  if (!result.receipt_id || !result.payment_id || !result.invoice_id || !result.request_id) {
+  if (![result.receipt_id, result.payment_id, result.invoice_id, result.request_id].every((id) => typeof id === 'string' && id.trim().length > 0)) {
     throw new Error('تم استلام استجابة غير مكتملة بعد تسجيل الدفعة. حدّث السجل قبل إعادة المحاولة.');
   }
 
-  return { ...result, status: result.status ?? 'recorded' } as PaymentResult;
+  if (result.status !== 'recorded' || (result.success !== undefined && result.success !== true)
+      || result.invoice_id !== payload.invoice_id || result.request_id !== payload.request_id) {
+    throw new Error('تعذر تأكيد ارتباط نتيجة الدفعة بالطلب الحالي. حدّث السجل قبل إعادة المحاولة.');
+  }
+  return result as PaymentResult;
 }
 
 export async function recordInvoicePaymentAtomic(payload: PaymentPayload): Promise<PaymentResult> {
   const { data, error } = await supabase.rpc('record_invoice_payment_atomic', { payload });
   if (error) handleSupabaseError(error, 'تعذر تسجيل الدفعة');
-  return parsePaymentResult(data);
+  return parsePaymentResult(data, payload);
 }

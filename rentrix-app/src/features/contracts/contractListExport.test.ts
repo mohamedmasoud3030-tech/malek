@@ -1,5 +1,6 @@
+import { escapeCsvValue } from '@/lib/csvExport';
 import { describe, expect, it } from 'vitest';
-import { buildContractsCsv, buildContractsCsvFilename, escapeContractCsvCell, getContractNumber } from './contractListExport';
+import { buildContractsCsv, buildContractsCsvFilename, getContractNumber } from './contractListExport';
 import type { ContractListItem } from './services/contractService';
 import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 
@@ -42,10 +43,10 @@ describe('contract list CSV export helpers', () => {
   });
 
   it('escapes CSV cells that include commas, quotes, or line breaks', () => {
-    expect(escapeContractCsvCell('مسقط، الخوير')).toBe('مسقط، الخوير');
-    expect(escapeContractCsvCell('A, B')).toBe('"A, B"');
-    expect(escapeContractCsvCell('A "quoted" value')).toBe('"A ""quoted"" value"');
-    expect(escapeContractCsvCell('Line\nbreak')).toBe('"Line\nbreak"');
+    expect(escapeCsvValue('مسقط، الخوير', { quoteText: false })).toBe('مسقط، الخوير');
+    expect(escapeCsvValue('A, B', { quoteText: false })).toBe('"A, B"');
+    expect(escapeCsvValue('A "quoted" value', { quoteText: false })).toBe('"A ""quoted"" value"');
+    expect(escapeCsvValue('Line\nbreak', { quoteText: false })).toBe('"Line\nbreak"');
   });
 
   it('renders legacy uppercase statuses with the same Arabic labels instead of blanks', () => {

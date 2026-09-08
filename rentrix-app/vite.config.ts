@@ -1,3 +1,4 @@
+import { resolvePublicSupabaseConfig } from './src/lib/supabase-config';
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -12,49 +13,6 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 }
 
 const basePath = process.env.BASE_PATH ?? "/";
-
-const PLACEHOLDER_URLS = new Set([
-  "https://example.supabase.co",
-  "https://invalid.supabase.local",
-]);
-const PLACEHOLDER_KEYS = new Set(["test-anon-key", "invalid-anon-key"]);
-
-function isPlaceholderEnv(
-  url: string | undefined,
-  key: string | undefined,
-): { isPlaceholder: boolean; reason?: string } {
-  if (!url || !key) {
-    return {
-      isPlaceholder: true,
-      reason: "VITE_SUPABASE_URL أو VITE_SUPABASE_ANON_KEY مفقود",
-    };
-  }
-
-  const normalizedUrl = url.trim();
-  const normalizedKey = key.trim();
-  if (PLACEHOLDER_URLS.has(normalizedUrl)) {
-    return {
-      isPlaceholder: true,
-      reason: `VITE_SUPABASE_URL يستخدم قيمة وهمية: ${url}`,
-    };
-  }
-  if (PLACEHOLDER_KEYS.has(normalizedKey)) {
-    return {
-      isPlaceholder: true,
-      reason: `VITE_SUPABASE_ANON_KEY يستخدم قيمة وهمية: ${key}`,
-    };
-  }
-  if (
-    normalizedUrl.includes("example.supabase.co") ||
-    normalizedUrl.includes("invalid.supabase.local")
-  ) {
-    return {
-      isPlaceholder: true,
-      reason: `VITE_SUPABASE_URL يحتوي على نطاق وهمي: ${url}`,
-    };
-  }
-  return { isPlaceholder: false };
-}
 
 function productionEnvGuardPlugin() {
   return {
@@ -73,12 +31,16 @@ function productionEnvGuardPlugin() {
 
       if (isTest) return;
 
-      if (isProdBuild) {
-        const url = process.env.VITE_SUPABASE_URL;
-        const key = process.env.VITE_SUPABASE_ANON_KEY;
-        const check = isPlaceholderEnv(url, key);
+      const url = config.env.VITE_SUPABASE_URL;
+      const key = config.env.VITE_SUPABASE_ANON_KEY;
+      const check = resolvePublicSupabaseConfig(url, key);
+      // Never embed recognizable non-public credentials, even in local builds.
+      // Placeholder-only local builds retain the existing explicit warning mode.
+      if (check.errorCode === 'unsafe-key') throw new Error(check.reason);
 
-        if (check.isPlaceholder) {
+      if (isProdBuild) {
+
+        if (!check.isConfigured) {
           if (isVercel || isEnforced) {
             throw new Error(
               `\n\n=== فشل بناء الإنتاج: متغيرات Supabase وهمية ===\n${check.reason}\n\n` +
@@ -89,7 +51,7 @@ function productionEnvGuardPlugin() {
                 `3. لا تستخدم https://example.supabase.co أو https://invalid.supabase.local في الإنتاج\n\n` +
                 `القيم الحالية:\n` +
                 `VITE_SUPABASE_URL=${url || "(مفقود)"}\n` +
-                `VITE_SUPABASE_ANON_KEY=${key ? `${key.slice(0, 10)}...` : "(مفقود)"}\n`,
+                `VITE_SUPABASE_ANON_KEY=${key ? "(موجود؛ غير صالح)" : "(مفقود)"}\n`,
             );
           }
 
@@ -251,7 +213,6 @@ export default defineConfig({
           if (id.includes("@supabase")) return "vendor-supabase";
           if (id.includes("recharts") || id.includes("d3-") || id.includes("victory")) return "vendor-charts";
           if (id.includes("jspdf") || id.includes("html2canvas")) return "vendor-pdf";
-          if (id.includes("framer-motion")) return "vendor-motion";
           if (id.includes("date-fns")) return "vendor-date";
           // React, TanStack, Zustand, Sonner, Zod and all other node_modules
           // stay in a single vendor chunk to avoid circular dependencies

@@ -73,7 +73,7 @@ const featureDependencyAllowList = new Map([
   // read (listDossierInvoicesForContracts) from financials/invoices — the
   // same query-only invoice-read seam already granted to owners, tenants and
   // reports. No writes, no second invoices authority.
-  ['people', new Set(['financials', 'tenants'])],
+  ['people', new Set(['contracts', 'financials', 'tenants'])],
   // portfolio-hub composes properties/owners/units/lands under /properties.
   ['portfolio-hub', new Set(['auth', 'lands', 'owners', 'properties', 'units'])],
   // properties reads the shared company-settings seam (useCompanySettingsContract)
@@ -91,9 +91,9 @@ const featureDependencyAllowList = new Map([
   ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units', 'utilities'])],
   // settings reads finance readiness/tax authority to surface authoritative tax config and fail-closed states
   // in the finance-readiness settings section — governed RPCs only, no raw writes, per FOM-005.
-  ['settings', new Set(['properties', 'financials'])],
-  ['system', new Set(['auth', 'settings'])],
-  ['tenants', new Set(['financials', 'people'])],
+  ['settings', new Set(['properties', 'financials', 'units'])],
+  ['system', new Set(['auth', 'settings', 'financials'])],
+  ['tenants', new Set(['contracts', 'financials', 'people'])],
   // units reads useUnitContractDrafts to show pending-draft indicators in the
   // unit list (units-list). Reviewed integration seam: query-only, no write
   // coupling to the contracts feature.

@@ -1,13 +1,12 @@
+import { collectionSummaryFromPeriod } from './financial-reporting/report-calculations';
+import { isValidDateInput } from '../financials-date-utils';
 import { useQuery } from '@tanstack/react-query';
 import {
-  getAgedReceivablesReport,
-  getArrearsSummaryReport,
-  getCollectionSummaryReport,
+  getArrearsReportSnapshot,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
   getFinancialCashflowReport,
   getFinancialPeriodSummaryReport,
-  getOverdueInvoicesReport,
   getOwnerStatementReport,
   getPropertyCollectionBreakdownReport,
   getTenantStatementReport,
@@ -19,10 +18,7 @@ import {
 
 export const financialReportKeys = {
   all: ['financialReports'] as const,
-  collectionSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'collectionSummary', filters] as const,
-  overdueInvoices: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'overdueInvoices', filters] as const,
-  agedReceivables: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'agedReceivables', filters] as const,
-  arrearsSummary: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'arrearsSummary', filters] as const,
+  arrearsSnapshot: (filters: ArrearsReportFilters) => [...financialReportKeys.all, 'arrearsSnapshot', filters] as const,
   dailyCollection: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'dailyCollection', filters] as const,
   propertyCollectionBreakdown: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'propertyCollectionBreakdown', filters] as const,
   financialPeriodSummary: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'financialPeriodSummary', filters] as const,
@@ -41,17 +37,18 @@ export const financialReportKeys = {
 export type ReportQueryOptions = Readonly<{ enabled?: boolean }>;
 
 function hasRequiredDateRange(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
-  return Boolean(filters.dateFrom && filters.dateTo);
+  return isValidDateInput(filters.dateFrom) && isValidDateInput(filters.dateTo) && filters.dateFrom <= filters.dateTo;
 }
 
 function hasRequiredAsOf(filters: Pick<ArrearsReportFilters, 'asOf'>) {
-  return Boolean(filters.asOf);
+  return isValidDateInput(filters.asOf);
 }
 
 export function useCollectionSummaryReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
-    queryKey: financialReportKeys.collectionSummary(filters),
-    queryFn: () => getCollectionSummaryReport(filters),
+    queryKey: financialReportKeys.financialPeriodSummary(filters),
+    queryFn: () => getFinancialPeriodSummaryReport(filters),
+    select: collectionSummaryFromPeriod,
     enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
@@ -106,24 +103,27 @@ export function useExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters
 
 export function useOverdueInvoicesReport(filters: ArrearsReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
-    queryKey: financialReportKeys.overdueInvoices(filters),
-    queryFn: () => getOverdueInvoicesReport(filters),
+    queryKey: financialReportKeys.arrearsSnapshot(filters),
+    queryFn: () => getArrearsReportSnapshot(filters),
+    select: (snapshot) => snapshot.overdueInvoices,
     enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }
 
 export function useAgedReceivablesReport(filters: ArrearsReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
-    queryKey: financialReportKeys.agedReceivables(filters),
-    queryFn: () => getAgedReceivablesReport(filters),
+    queryKey: financialReportKeys.arrearsSnapshot(filters),
+    queryFn: () => getArrearsReportSnapshot(filters),
+    select: (snapshot) => snapshot.agedReceivables,
     enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }
 
 export function useArrearsSummaryReport(filters: ArrearsReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
-    queryKey: financialReportKeys.arrearsSummary(filters),
-    queryFn: () => getArrearsSummaryReport(filters),
+    queryKey: financialReportKeys.arrearsSnapshot(filters),
+    queryFn: () => getArrearsReportSnapshot(filters),
+    select: (snapshot) => snapshot.arrearsSummary,
     enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }

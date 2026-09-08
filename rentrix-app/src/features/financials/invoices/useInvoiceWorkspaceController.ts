@@ -1,3 +1,4 @@
+import { getInvoiceRemainingAmount, summarizeInvoices } from '@/features/financials/invoices/invoice-amounts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
@@ -6,11 +7,11 @@ import { useAllContracts } from '@/features/contracts/useContracts';
 import type { Contract, Payment, Person, Property, Unit } from '@/types/domain';
 import { getTodayLocalDateString, isValidDateInput } from '../financials-date-utils';
 import { toFinancialNumber } from '../financialMath';
-import { getInvoiceRemainingAmount, getInvoicePaymentValidationMessage } from '../invoices/invoice-payment-validation';
-import { summarizeInvoices, type InvoiceStatusFilter } from '../invoices/invoiceService';
+import { getInvoicePaymentValidationMessage } from '../invoices/invoice-payment-validation';
+import { type InvoiceStatusFilter } from '../invoices/invoiceService';
 import { findNextCollectibleInvoiceId, getQuickCollectPreset, parseQuickCollectSearch } from '../invoices/quick-collect';
 import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoices/useInvoices';
-import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
+import { RetryableCommandStore } from '@/lib/retryable-command';
 import { usePostPayment } from '../payments/usePayments';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
 import { useReceipt } from '../receipts/useReceipts';
@@ -71,7 +72,7 @@ export function useInvoiceWorkspaceController() {
   const [paymentReference, setPaymentReference] = useState('');
   const [isGenerateDialogOpen, setGenerateDialogOpen] = useState(false);
   const quickPaySubmitRef = useRef(false);
-  const quickPayRequestIdRef = useRef<string | null>(null);
+  const [paymentCommands] = useState(() => new RetryableCommandStore());
 
   // Invoice identity and document generation both need the same canonical
   // contract/tenant/property/unit context. The all-pages read prevents the
@@ -207,33 +208,29 @@ export function useInvoiceWorkspaceController() {
     if (!amount.trim() || !Number.isFinite(currentRawAmount) || currentAmount <= 0 || currentAmount > currentRemaining || !isValidDateInput(paymentDate)) return;
 
     quickPaySubmitRef.current = true;
-    const requestId = getOrCreatePaymentRequestId(quickPayRequestIdRef);
-    postPayment.mutate(
-      {
-        invoice_id: invoiceDetail.id,
-        amount: currentAmount,
-        method: paymentMethod,
-        date: paymentDate,
-        reference: paymentReference.trim() ? paymentReference.trim() : null,
-        request_id: requestId,
-      },
-      {
-        onSuccess: (result) => {
-          setCollectionSuccess({
-            receiptId: result.receipt_id,
-            receiptNumber: result.receipt_no ?? null,
-            amount: currentAmount,
-            method: paymentMethod,
-          });
-          setAmount('');
-          setPaymentReference('');
-          resetPaymentRequestId(quickPayRequestIdRef);
-        },
-        onSettled: () => {
-          quickPaySubmitRef.current = false;
-        },
-      },
-    );
+    const payload = {
+      invoice_id: invoiceDetail.id,
+      amount: currentAmount,
+      method: paymentMethod,
+      date: paymentDate,
+      reference: paymentReference.trim() || null,
+    };
+    void paymentCommands.run('invoice-payment', payload, (request_id) =>
+      postPayment.mutateAsync({ ...payload, request_id }),
+    ).then((result) => {
+      setCollectionSuccess({
+        receiptId: result.receipt_id,
+        receiptNumber: result.receipt_no ?? null,
+        amount: payload.amount,
+        method: payload.method,
+      });
+      setAmount('');
+      setPaymentReference('');
+    }).catch(() => {
+      // The mutation exposes/toasts the error; preserve the uncertain intent.
+    }).finally(() => {
+      quickPaySubmitRef.current = false;
+    });
   };
 
   const onCollectInvoice = (invoiceId: string) => {

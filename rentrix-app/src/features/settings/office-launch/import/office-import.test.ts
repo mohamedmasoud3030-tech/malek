@@ -89,3 +89,20 @@ describe('XLSX reader', () => {
     ]);
   });
 });
+
+it('preserves source row numbers when blank rows precede validation errors', () => {
+  const preview = buildOfficeImportPreview('owners', [
+    ['اسم المالك', 'البريد الإلكتروني'], ['', ''], ['صالح', 'ok@example.com'], ['خاطئ', 'bad'],
+  ]);
+  expect(preview.validRows.map((row) => row.full_name)).toEqual(['صالح']);
+  expect(preview.issues).toContainEqual(expect.objectContaining({ row: 4, field: 'email' }));
+});
+
+it('rejects impossible calendar dates, not just malformed strings', () => {
+  const preview = buildOfficeImportPreview('contracts', [
+    ['العقار', 'رقم الوحدة', 'المستأجر', 'تاريخ البداية', 'تاريخ النهاية', 'الإيجار'],
+    ['عقار', '1', 'مستأجر', '2026-02-31', '2026-12-01', '100'],
+  ]);
+  expect(preview.canCommit).toBe(false);
+  expect(preview.issues).toContainEqual(expect.objectContaining({ field: 'start_date' }));
+});

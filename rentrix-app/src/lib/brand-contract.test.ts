@@ -109,16 +109,12 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
 
   [
-    'src/hooks/use-auth.tsx',
-    'Auth session storage key rentrix-auth-session — renaming would sign every user out.',
+    'src/features/auth/session-storage.ts',
+    'Sole owner of the persisted rentrix-auth-session key; renaming would invalidate existing sessions.',
   ],
   [
-    'src/services/auth-service.ts',
-    'Auth session storage key rentrix-auth-session — renaming would sign every user out.',
-  ],
-  [
-    'src/lib/supabase.ts',
-    'Supabase client storageKey rentrix-auth-session — renaming would sign every user out.',
+    'src/features/auth/session-storage.test.ts',
+    'Asserts the historical session storage key and cleanup compatibility, not display branding.',
   ],
   [
     'src/lib/supabase-client-boundary.test.ts',

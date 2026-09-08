@@ -13,7 +13,11 @@ describe('public landing performance contract', () => {
     expect(routeTreeSource).not.toMatch(
       /^import .*['"]@\/lib\/supabase['"];?$/m,
     );
-    expect(routeTreeSource).toContain("await import('@/lib/supabase')");
+    // Session restoration is now owned by the service, but must stay lazy.
+    expect(routeTreeSource).not.toMatch(
+      /^import .*['"]@\/services\/auth-service['"];?$/m,
+    );
+    expect(routeTreeSource).toContain("await import('@/services/auth-service')");
     expect(routeTreeSource).toMatch(
       /lazyRouteComponent\(\s*\(\) => import\('@\/routes\/_protected'\)/,
     );

@@ -1,3 +1,4 @@
+import { clearStoredSession } from '@/features/auth/session-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import type { Session, User } from '@supabase/supabase-js';
@@ -33,21 +34,11 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOGIN_PATH = '/login';
-const AUTH_STORAGE_KEY = 'rentrix-auth-session';
 let effectivePermissionsChannelSequence = 0;
 
 function nextEffectivePermissionsChannelTopic(userId: string): string {
   effectivePermissionsChannelSequence += 1;
   return `effective-permissions:${userId}:${effectivePermissionsChannelSequence}`;
-}
-
-function clearStaleSessionStorage(): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(AUTH_STORAGE_KEY);
-  } catch {
-    // Storage may be unavailable in privacy mode. Safe to ignore.
-  }
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -105,7 +96,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           setEffectivePermissionsResolved(false);
           hadSessionRef.current = false;
           if (wasUnexpected) {
-            clearStaleSessionStorage();
+            clearStoredSession();
             toast.error('انتهت جلستك، الرجاء تسجيل الدخول مجددًا للمتابعة.');
           }
           explicitLogoutRef.current = false;

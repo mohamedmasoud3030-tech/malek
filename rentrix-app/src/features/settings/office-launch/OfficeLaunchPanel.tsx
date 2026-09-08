@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -12,9 +12,9 @@ import {
   type OfficeImportPreview,
 } from './import/office-import';
 import {
-  buildCanonicalOfficeImportPreview,
-  buildCanonicalOfficeImportTemplate,
-} from './import/office-import-contract';
+  buildOfficeImportPreview,
+  buildOfficeImportTemplate,
+} from './import/office-import';
 
 const entityOptions: readonly Readonly<{ id: OfficeImportEntity; label: string }>[] = [
   { id: 'owners', label: 'الملاك' },
@@ -26,7 +26,7 @@ const entityOptions: readonly Readonly<{ id: OfficeImportEntity; label: string }
 
 function TemplateButton({ entity, format }: Readonly<{ entity: OfficeImportEntity; format: 'csv' | 'xlsx' }>) {
   const download = () => {
-    const template = buildCanonicalOfficeImportTemplate(entity, format);
+    const template = buildOfficeImportTemplate(entity, format);
     downloadBlob(template.blob, template.filename);
   };
   return (
@@ -72,8 +72,12 @@ export function OfficeLaunchPanel({ draft }: Readonly<{ draft: CompanySettingsDr
   const [fileName, setFileName] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
+  const parseVersion = useRef(0);
+  useEffect(() => () => { parseVersion.current += 1; }, []);
 
   const onEntityChange = (next: OfficeImportEntity) => {
+    parseVersion.current += 1;
+    setIsParsing(false);
     setEntity(next);
     setPreview(null);
     setFileName('');
@@ -84,17 +88,18 @@ export function OfficeLaunchPanel({ draft }: Readonly<{ draft: CompanySettingsDr
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    const version = ++parseVersion.current;
     setIsParsing(true);
     setParseError(null);
     setPreview(null);
     setFileName(file.name);
     try {
       const matrix = await parseOfficeImportFile(file);
-      setPreview(buildCanonicalOfficeImportPreview(entity, matrix));
+      if (version === parseVersion.current) setPreview(buildOfficeImportPreview(entity, matrix));
     } catch (error) {
-      setParseError(error instanceof Error ? error.message : 'تعذر قراءة الملف');
+      if (version === parseVersion.current) setParseError(error instanceof Error ? error.message : 'تعذر قراءة الملف');
     } finally {
-      setIsParsing(false);
+      if (version === parseVersion.current) setIsParsing(false);
     }
   };
 

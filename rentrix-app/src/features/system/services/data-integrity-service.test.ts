@@ -227,3 +227,8 @@ describe('fetchPaginatedRows', () => {
     expect(DATA_INTEGRITY_PAGE_SIZE).toBeGreaterThan(0);
   });
 });
+
+it('does not label correctly paid VAT as an overpayment', () => {
+  const result = buildDataIntegritySnapshot({ ...baseInput, invoices: [{ ...baseInput.invoices[0], tax_amount: 5, paid_amount: 105 }] });
+  expect(getCheck(result, 'overpaid-invoices').count).toBe(0);
+});

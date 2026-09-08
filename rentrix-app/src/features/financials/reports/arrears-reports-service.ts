@@ -1,22 +1,9 @@
+import { getInvoiceGrossAmount, getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { supabase } from '@/lib/supabase';
 import type { Invoice } from '@/types/domain';
 import { getInvoiceStatusVariants, normalizeInvoiceStatus } from '../components/invoice-status-labels';
 import { sumFinancialValues, toFinancialNumber } from '../financialMath';
-import {
-  type ContractContext,
-  type InvoiceReportRow,
-  type PersonContext,
-  type PropertyContext,
-  type UnitContext,
-  getInvoiceReportGrossAmount,
-  getInvoiceReportRemainingAmount,
-  loadPeopleById,
-  loadPropertiesById,
-  loadUnitsById,
-  mapFromSettledContext,
-  matchesInvoiceContext,
-  uniqueStrings,
-} from './financial-report-rows';
+import { type ContractContext, type InvoiceReportRow, type PersonContext, type PropertyContext, type UnitContext, loadPeopleById, loadPropertiesById, loadUnitsById, mapFromSettledContext, matchesInvoiceContext, uniqueStrings } from './financial-report-rows';
 import { fetchCompleteReportRows } from './report-paginated-read';
 import { agingBucketLabels, agingBucketOrder, getAgingBucketKeyFromDaysOverdue, type AgingBucketKey } from './aging-buckets';
 
@@ -95,7 +82,7 @@ export type ArrearsSummaryReport = {
   averageDaysOverdue: number;
 };
 
-export type DashboardArrearsReports = {
+export type ArrearsReportSnapshot = {
   overdueInvoices: OverdueInvoicesReport;
   arrearsSummary: ArrearsSummaryReport;
   agedReceivables: AgedReceivablesReport;
@@ -113,7 +100,7 @@ const receivableInvoiceStatuses: Invoice['status'][] = [
 ];
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
-const invoiceReportSelect = 'id, reference, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, reference, property_id, tenant_id, unit_id)';
+const invoiceReportSelect = 'id, reference, contract_id, issue_date, due_date, amount, tax_amount, credited_amount, paid_amount, status, deleted_at, contracts:contract_id(id, reference, property_id, tenant_id, unit_id)';
 
 function createEmptyAgingBuckets(): Record<AgingBucketKey, AgedReceivablesBucket> {
   return agingBucketOrder.reduce((buckets, key) => {
@@ -152,7 +139,7 @@ export function filterInvoicesForArrearsReport(invoices: InvoiceReportRow[], fil
   return invoices.filter((invoice) => {
     if (invoice.deleted_at) return false;
     if (!isReceivableInvoiceStatus(invoice.status)) return false;
-    if (getInvoiceReportRemainingAmount(invoice) <= 0) return false;
+    if (getInvoiceRemainingAmount(invoice) <= 0) return false;
     return matchesInvoiceContext(invoice, filters);
   });
 }
@@ -196,9 +183,9 @@ function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contex
     ...getArrearsEntityContextFields(invoice, contexts),
     dueDate: invoice.due_date,
     daysOverdue: calculateDaysOverdue(invoice.due_date, asOf),
-    amount: getInvoiceReportGrossAmount(invoice),
+    amount: getInvoiceGrossAmount(invoice),
     paidAmount: toFinancialNumber(invoice.paid_amount),
-    remainingAmount: getInvoiceReportRemainingAmount(invoice),
+    remainingAmount: getInvoiceRemainingAmount(invoice),
     status: invoice.status,
   };
 }
@@ -249,7 +236,7 @@ export function summarizeAgedReceivablesReport(
   const receivableInvoices = filterInvoicesForArrearsReport(invoices, filters);
 
   for (const invoice of receivableInvoices) {
-    const remainingAmount = getInvoiceReportRemainingAmount(invoice);
+    const remainingAmount = getInvoiceRemainingAmount(invoice);
     const bucketKey = getAgingBucketKey(invoice.due_date, filters.asOf);
     addToAgingBucket(buckets, bucketKey, remainingAmount);
 
@@ -283,9 +270,9 @@ export function summarizeArrearsSummaryReport(invoices: ArrearsInvoiceRow[], fil
 
   return {
     asOf: filters.asOf,
-    totalOverdue: sumFinancialValues(overdueInvoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
+    totalOverdue: sumFinancialValues(overdueInvoices.map((invoice) => getInvoiceRemainingAmount(invoice))),
     overdueInvoiceCount: overdueInvoices.length,
-    over90Amount: sumFinancialValues(over90Invoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
+    over90Amount: sumFinancialValues(over90Invoices.map((invoice) => getInvoiceRemainingAmount(invoice))),
     over90InvoiceCount: over90Invoices.length,
     averageDaysOverdue: daysOverdueValues.length > 0
       ? toFinancialNumber(sumFinancialValues(daysOverdueValues) / daysOverdueValues.length)
@@ -335,18 +322,7 @@ export async function getOverdueInvoicesReport(filters: ArrearsReportFilters): P
   return summarizeOverdueInvoicesReport(overdueInvoices, filters, contexts);
 }
 
-export async function getAgedReceivablesReport(filters: ArrearsReportFilters): Promise<AgedReceivablesReport> {
-  const invoices = await loadArrearsInvoices(filters);
-  const contexts = await loadArrearsContextMaps(invoices);
-  return summarizeAgedReceivablesReport(invoices, filters, contexts);
-}
-
-export async function getArrearsSummaryReport(filters: ArrearsReportFilters): Promise<ArrearsSummaryReport> {
-  const invoices = await loadArrearsInvoices(filters);
-  return summarizeArrearsSummaryReport(invoices, filters);
-}
-
-export async function getDashboardArrearsReports(filters: ArrearsReportFilters): Promise<DashboardArrearsReports> {
+export async function getArrearsReportSnapshot(filters: ArrearsReportFilters): Promise<ArrearsReportSnapshot> {
   const invoices = await loadArrearsInvoices(filters);
   const contexts = await loadArrearsContextMaps(invoices);
 

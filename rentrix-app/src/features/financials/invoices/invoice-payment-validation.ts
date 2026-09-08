@@ -1,22 +1,5 @@
 import { isValidDateInput } from '../financials-date-utils';
-import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
-import { getInvoiceGrossAmount } from './invoiceService';
-
-import type { Invoice } from '@/types/domain';
-
-type InvoiceRemainingInput = Pick<Invoice, 'amount' | 'paid_amount'> & {
-  tax_amount?: Invoice['tax_amount'] | null;
-};
-
-/**
- * Remaining collectible amount for an invoice — ALWAYS gross-based
- * (net amount + VAT − paid), matching the list view, the summary cards and
- * the status logic in summarizeInvoices. Using the net amount here previously
- * prevented collectors from ever paying the VAT portion of taxed invoices.
- */
-export function getInvoiceRemainingAmount(invoice: InvoiceRemainingInput): number {
-  return getSafeRemainingAmount(getInvoiceGrossAmount(invoice), toFinancialNumber(invoice.paid_amount));
-}
+import { getInvoiceRemainingAmount, type InvoiceRemainingInput } from './invoice-amounts';
 
 export function getInvoicePaymentValidationMessage({
   amount,

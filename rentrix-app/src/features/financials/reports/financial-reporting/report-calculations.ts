@@ -1,7 +1,8 @@
+import { summarizeInvoices, getInvoiceRemainingAmount, type InvoiceRemainingInput } from '@/features/financials/invoices/invoice-amounts';
 import type { Payment } from '@/types/domain';
 import { sumFinancialValues, toFinancialNumber } from '../../financialMath';
-import type { ExpenseReportRow, InvoiceReportRow, PaymentReportRow, PaymentWithInvoiceContext, PropertyContext } from '../financial-report-rows';
-import { getInvoiceReportGrossAmount, getInvoiceReportRemainingAmount } from '../financial-report-rows';
+import type { ExpenseReportRow, PaymentReportRow, PaymentWithInvoiceContext, PropertyContext } from '../financial-report-rows';
+
 import type {
   CollectionSummaryReport,
   DailyCollectionReport,
@@ -21,12 +22,13 @@ import type {
   PropertyCollectionBreakdownRow,
 } from './report-types';
 
-export function summarizeInvoiceTotals(invoices: Array<Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>>): InvoiceTotalsReport {
+export function summarizeInvoiceTotals(invoices: readonly InvoiceRemainingInput[]): InvoiceTotalsReport {
+  const summary = summarizeInvoices(invoices);
   return {
-    totalAmount: sumFinancialValues(invoices.map((invoice) => getInvoiceReportGrossAmount(invoice))),
-    totalPaid: sumFinancialValues(invoices.map((invoice) => invoice.paid_amount)),
-    totalOutstanding: sumFinancialValues(invoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
-    invoicesCount: invoices.length,
+    totalAmount: summary.totalAmount,
+    totalPaid: summary.totalPaid,
+    totalOutstanding: summary.totalRemaining,
+    invoicesCount: summary.count,
   };
 }
 
@@ -44,10 +46,10 @@ export function summarizeExpenseTotals(expenses: Pick<ExpenseReportRow, 'amount'
   };
 }
 
-export function summarizeOutstandingBalance(invoices: Array<Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>>): OutstandingBalanceReport {
-  const outstandingInvoices = invoices.filter((invoice) => getInvoiceReportRemainingAmount(invoice) > 0);
+export function summarizeOutstandingBalance(invoices: readonly InvoiceRemainingInput[]): OutstandingBalanceReport {
+  const outstandingInvoices = invoices.filter((invoice) => getInvoiceRemainingAmount(invoice) > 0);
   return {
-    totalOutstanding: sumFinancialValues(outstandingInvoices.map((invoice) => getInvoiceReportRemainingAmount(invoice))),
+    totalOutstanding: sumFinancialValues(outstandingInvoices.map((invoice) => getInvoiceRemainingAmount(invoice))),
     invoicesCount: outstandingInvoices.length,
   };
 }
@@ -234,5 +236,14 @@ export function summarizeExpenseBreakdownReport(
     expensesCount: expenses.length,
     byCategory,
     byProperty,
+  };
+}
+
+/** Presentation projection of the same period snapshot, not a second invoice/payment read. */
+export function collectionSummaryFromPeriod(period: FinancialPeriodSummaryReport): CollectionSummaryReport {
+  return {
+    invoiced: period.invoiced, paid: period.paid, outstanding: period.outstanding,
+    receiptsCount: period.paymentsCount, invoicesCount: period.invoicesCount,
+    expensesTotal: period.expenses,
   };
 }

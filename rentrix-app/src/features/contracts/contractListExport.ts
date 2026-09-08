@@ -1,3 +1,4 @@
+import { buildCsvMatrix, withUtf8Bom } from '@/lib/csvExport';
 import { DEFAULT_CURRENCY } from '@/lib/formatters';
 import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
@@ -26,10 +27,6 @@ export function getContractNumber(contract: Pick<ContractListItem, 'id' | 'refer
   return contract.reference ?? 'عقد بلا مرجع تجاري';
 }
 
-export function escapeContractCsvCell(value: string | number | null | undefined) {
-  const text = value === null || value === undefined ? '' : String(value);
-  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-}
 
 export function buildContractsCsv(contracts: ContractListItem[]) {
   const rows = contracts.map((contract) => [
@@ -47,11 +44,11 @@ export function buildContractsCsv(contracts: ContractListItem[]) {
     contractStatusLabels[normalizeContractStatus(contract.status)],
   ]);
 
-  return [EXPORT_HEADERS, ...rows].map((row) => row.map(escapeContractCsvCell).join(',')).join('\n');
+  return buildCsvMatrix([EXPORT_HEADERS, ...rows], { quoteText: false });
 }
 
 export function buildContractsCsvBlob(contracts: ContractListItem[]) {
-  return new Blob([`\uFEFF${buildContractsCsv(contracts)}`], { type: 'text/csv;charset=utf-8' });
+  return new Blob([withUtf8Bom(buildContractsCsv(contracts))], { type: 'text/csv;charset=utf-8' });
 }
 
 export function buildContractsCsvFilename(date: Date) {

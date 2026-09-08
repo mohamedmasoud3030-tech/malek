@@ -27,7 +27,7 @@ function tenantStatement(lines: TenantStatementReport['lines'], finalBalance = 0
 
 describe('statement ledger vocabulary (rpt_tenant_statement / rpt_owner_statement)', () => {
   it('labels every tx_type the tenant statement RPC emits without falling back', () => {
-    expect(Object.keys(tenantStatementLineTypeLabels).sort()).toEqual(['invoice', 'receipt']);
+    expect(Object.keys(tenantStatementLineTypeLabels).sort()).toEqual(['deposit_application', 'deposit_application_reversal', 'invoice', 'invoice_credit', 'invoice_credit_reversal', 'receipt']);
     expect(getTenantStatementLineTypeLabel('invoice')).toBe('فاتورة / استحقاق');
     expect(getTenantStatementLineTypeLabel('receipt')).toBe('دفعة / إيصال');
     for (const type of Object.keys(tenantStatementLineTypeLabels)) {

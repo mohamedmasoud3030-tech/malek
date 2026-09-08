@@ -84,4 +84,21 @@ describe('auth service session lifecycle', () => {
     await expect(signOut()).rejects.toThrow('local storage failed');
     expect(window.localStorage.getItem('rentrix-auth-session')).toBeNull();
   });
+  it('attempts local SDK logout when remote logout rejects', async () => {
+    auth.signOut.mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({ error: null });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await expect(signOut()).resolves.toBe('local');
+    expect(auth.signOut).toHaveBeenNthCalledWith(2, { scope: 'local' });
+    expect(window.localStorage.getItem('rentrix-auth-session')).toBeNull();
+    warn.mockRestore();
+  });
+
+  it('removes persisted credentials even when both SDK calls reject', async () => {
+    auth.signOut.mockRejectedValueOnce(new Error('offline'))
+      .mockRejectedValueOnce(new Error('local rejection'));
+    await expect(signOut()).rejects.toThrow('local rejection');
+    expect(window.localStorage.getItem('rentrix-auth-session')).toBeNull();
+  });
+
 });

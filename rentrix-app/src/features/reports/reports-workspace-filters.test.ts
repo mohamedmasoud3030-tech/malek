@@ -53,3 +53,9 @@ describe('reports contextual deep-link filters', () => {
     expect(filters.tenantId).toBe('tenant-7');
   });
 });
+
+it('ignores unknown URL statuses and impossible dates while preserving legacy status values', () => {
+  expect(getInitialReportsFilters({ status: 'not-an-invoice-status', asOf: '2026-02-31' }).status).toBe('all');
+  expect(getInitialReportsFilters({ asOf: '2026-02-31' }).asOf).not.toBe('2026-02-31');
+  expect(getInitialReportsFilters({ status: 'PARTIALLY_PAID' }).status).toBe('PARTIALLY_PAID');
+});

@@ -1,3 +1,5 @@
+import { loadReceiptAllocations, singleInvoiceIdsByReceipt } from '../../receipts/receipt-relationships';
+import { chunkForInFilter } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { getInvoiceStatusVariants } from '../../components/invoice-status-labels';
 import type {
@@ -8,12 +10,12 @@ import type {
   PaymentWithInvoiceContext,
 } from '../financial-report-rows';
 import { hasStatusFilter, uniqueStrings } from '../financial-report-rows';
-import { chunkReportIds, fetchCompleteReportRows } from '../report-paginated-read';
+import { fetchCompleteReportRows } from '../report-paginated-read';
 import type { ExpenseBreakdownReportFilters } from './report-types';
 import { filterExpensesForReport, filterInvoicesForReport, filterPaymentsForReport } from './report-filters';
 
-const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id, unit_id)';
-const paymentReportSelect = 'id, invoice_id, amount, payment_date, payment_method, status, deleted_at';
+const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, tax_amount, credited_amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id, unit_id)';
+const paymentReportSelect = 'id, invoice_id, contract_id, receipt_id, amount, payment_date, payment_method, status, deleted_at';
 const expenseReportSelect = 'id, property_id, category, amount, expense_date, cost_center_id, deleted_at';
 
 export async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceReportRow[]> {
@@ -45,7 +47,7 @@ type ContractContextRow = { id: string; property_id: string; tenant_id: string; 
 async function loadInvoiceContextsById(invoiceIds: string[]): Promise<InvoiceContextRow[]> {
   const rows: InvoiceContextRow[] = [];
 
-  for (const batch of chunkReportIds(invoiceIds)) {
+  for (const batch of chunkForInFilter(invoiceIds)) {
     const { data, error } = await supabase
       .from('invoices')
       .select('id, contract_id, deleted_at')
@@ -63,7 +65,7 @@ async function loadInvoiceContextsById(invoiceIds: string[]): Promise<InvoiceCon
 async function loadContractContextsById(contractIds: string[]): Promise<ContractContextRow[]> {
   const rows: ContractContextRow[] = [];
 
-  for (const batch of chunkReportIds(contractIds)) {
+  for (const batch of chunkForInFilter(contractIds)) {
     const { data, error } = await supabase
       .from('contracts')
       .select('id, property_id, tenant_id, unit_id')
@@ -83,20 +85,25 @@ async function loadPaymentContexts(payments: PaymentReportRow[]): Promise<Paymen
 
   // Hydrate in bounded batches so a large report cannot exceed URL limits or
   // lose context rows at PostgREST's response cap.
-  const invoiceIds = uniqueStrings(payments.map((payment) => payment.invoice_id));
+  const allocations = await loadReceiptAllocations('receipt_id', uniqueStrings(payments.filter(payment => !payment.invoice_id).map(payment => payment.receipt_id ?? payment.id)));
+  const invoiceByReceipt = singleInvoiceIdsByReceipt(allocations);
+  const invoiceIds = uniqueStrings([...payments.map(payment => payment.invoice_id), ...invoiceByReceipt.values()]);
   const invoiceRows = await loadInvoiceContextsById(invoiceIds);
-  const contractIds = uniqueStrings(invoiceRows.map((invoice) => invoice.contract_id));
+  const contractIds = uniqueStrings([...payments.map(payment => payment.contract_id), ...invoiceRows.map(invoice => invoice.contract_id)]);
   const contractRows = await loadContractContextsById(contractIds);
 
   const invoiceById = new Map(invoiceRows.map((invoice) => [invoice.id, invoice]));
   const contractById = new Map(contractRows.map((contract) => [contract.id, contract]));
 
   return payments.map((payment) => {
-    const invoice = payment.invoice_id ? (invoiceById.get(payment.invoice_id) ?? null) : null;
+    const invoiceId = payment.invoice_id ?? invoiceByReceipt.get(payment.receipt_id ?? payment.id);
+    const invoice = invoiceId ? invoiceById.get(invoiceId) ?? null : null;
+    const contractId = payment.contract_id ?? invoice?.contract_id;
     return {
       ...payment,
       invoice,
-      contract: invoice?.contract_id ? contractById.get(invoice.contract_id) ?? null : null,
+      // Keep one row per cash movement, including multi-invoice receipts.
+      contract: contractId ? contractById.get(contractId) ?? null : null,
     };
   });
 }

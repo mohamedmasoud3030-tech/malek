@@ -1,4 +1,5 @@
-import type { FinancialReportStatus } from '@/features/financials/reports/financial-report-rows';
+import { isValidDateInput } from '@/features/financials/financials-date-utils';
+import { readFinancialReportStatus, type FinancialReportStatus } from '@/features/financials/reports/financial-report-rows';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
 
 /** Global report filter fields that a workspace or premium product may expose. */
@@ -59,7 +60,7 @@ function readSearchString(search: Record<string, unknown> | undefined, key: stri
 
 function readSearchDate(search: Record<string, unknown> | undefined, key: string) {
   const value = readSearchString(search, key);
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+  return isValidDateInput(value) ? value : '';
 }
 
 /**
@@ -86,6 +87,6 @@ export function getInitialReportsFilters(search?: Record<string, unknown>): Repo
     costCenterId: readSearchString(search, 'costCenterId'),
     ownerId: readSearchString(search, 'ownerId'),
     contractId: readSearchString(search, 'contractId'),
-    status: (readSearchString(search, 'status') as FinancialReportStatus) || 'all',
+    status: readFinancialReportStatus(search?.status),
   };
 }

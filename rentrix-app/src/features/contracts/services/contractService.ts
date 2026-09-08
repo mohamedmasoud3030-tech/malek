@@ -361,3 +361,24 @@ export async function activateContract(contractId: string): Promise<Contract> {
   if (error) throw error;
   return toApprovalResult(data);
 }
+
+/** Shared party-scoped contract context for people and tenant dossiers/registers.
+ * The party filter is always applied; full reads preserve links beyond the API cap.
+ */
+export type PartyContractContext = Contract & {
+  properties: Pick<Property, 'id' | 'title'> | null;
+  units: Pick<Unit, 'id' | 'unit_number'> | null;
+};
+
+export async function listContractsForTenants(tenantIds: readonly string[]): Promise<PartyContractContext[]> {
+  const ids = [...new Set(tenantIds.filter(Boolean))];
+  const { rows } = await fetchAllRowsInBatches<PartyContractContext, string>(ids, (batch) => supabase
+    .from('contracts')
+    .select('*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)')
+    .in('tenant_id', [...batch])
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .returns<PartyContractContext[]>());
+  return rows;
+}

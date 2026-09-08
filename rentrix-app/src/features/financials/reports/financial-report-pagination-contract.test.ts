@@ -1,7 +1,8 @@
+import { chunkForInFilter } from '@/lib/paginatedRead';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { chunkReportIds, fetchCompleteReportRows } from './report-paginated-read';
+import { fetchCompleteReportRows } from './report-paginated-read';
 
 const reportsRoot = __dirname;
 const reportLoadersSource = readFileSync(
@@ -72,14 +73,14 @@ describe('financial report pagination contract', () => {
 
   it('batches large relationship hydration id lists without losing ids', () => {
     const ids = Array.from({ length: 603 }, (_, index) => `id-${index}`);
-    const chunks = chunkReportIds(ids, 250);
+    const chunks = chunkForInFilter(ids, 250);
 
     expect(chunks.map((chunk) => chunk.length)).toEqual([250, 250, 103]);
     expect(chunks.flat()).toEqual(ids);
   });
 
   it('rejects invalid hydration batch sizes', () => {
-    expect(() => chunkReportIds(['id-1'], 0)).toThrow(/عددًا صحيحًا موجبًا/);
-    expect(() => chunkReportIds(['id-1'], 1.5)).toThrow(/عددًا صحيحًا موجبًا/);
+    expect(() => chunkForInFilter(['id-1'], 0)).toThrow(/عددًا صحيحًا موجبًا/);
+    expect(() => chunkForInFilter(['id-1'], 1.5)).toThrow(/عددًا صحيحًا موجبًا/);
   });
 });

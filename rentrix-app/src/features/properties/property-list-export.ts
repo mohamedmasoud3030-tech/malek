@@ -1,3 +1,4 @@
+import { buildCsvMatrix, withUtf8Bom } from '@/lib/csvExport';
 import { DEFAULT_CURRENCY } from '@/lib/formatters';
 import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
@@ -17,10 +18,6 @@ const EXPORT_HEADERS = [
   'العملة',
 ] as const;
 
-function escapeCell(value: string | number | null | undefined) {
-  const text = value === null || value === undefined ? '' : String(value);
-  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-}
 
 export function buildPropertiesCsv(properties: Property[]) {
   const rows = properties.map((property) => [
@@ -34,11 +31,11 @@ export function buildPropertiesCsv(properties: Property[]) {
     DEFAULT_CURRENCY,
   ]);
 
-  return [EXPORT_HEADERS, ...rows].map((row) => row.map(escapeCell).join(',')).join('\n');
+  return buildCsvMatrix([EXPORT_HEADERS, ...rows], { quoteText: false });
 }
 
 export function buildPropertiesCsvBlob(properties: Property[]) {
-  return new Blob([`\uFEFF${buildPropertiesCsv(properties)}`], { type: 'text/csv;charset=utf-8' });
+  return new Blob([withUtf8Bom(buildPropertiesCsv(properties))], { type: 'text/csv;charset=utf-8' });
 }
 
 export function buildPropertiesCsvFilename(date: Date) {

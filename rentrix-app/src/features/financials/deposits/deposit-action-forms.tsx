@@ -1,3 +1,4 @@
+import { getInvoiceRemainingAmount, getInvoiceGrossAmount } from '../invoices/invoice-amounts';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -214,11 +215,11 @@ export function DepositClaimForm({ controller }: { controller: Controller }) {
               <Select required value={invoiceInput} onChange={(event) => setInvoiceInput(event.target.value)}>
                 <option value="">اختر الفاتورة</option>
                 {invoicesQuery.data
-                  ?.filter((invoice) => invoice.amount + (invoice.paid_amount ?? 0) > 0)
+                  ?.filter((invoice) => getInvoiceRemainingAmount(invoice) > 0)
                   .map((invoice) => (
                     <option key={invoice.id} value={invoice.id}>
-                      {invoice.no || 'فاتورة بدون رقم'} — {formatDepositMoney(invoice.amount)} (متبقي{' '}
-                      {formatDepositMoney(invoice.amount - (invoice.paid_amount ?? 0))})
+                      {invoice.no || 'فاتورة بدون رقم'} — {formatDepositMoney(getInvoiceGrossAmount(invoice))} (متبقي{' '}
+                      {formatDepositMoney(getInvoiceRemainingAmount(invoice))})
                     </option>
                   ))}
               </Select>

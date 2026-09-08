@@ -69,16 +69,15 @@ describe('useDossierInvoicesForContracts — bounded batched register read', () 
     expect(queryMock.listDossierInvoicesForContracts).toHaveBeenCalledWith(['c-1', 'c-2', 'c-3']);
   });
 
-  it('chunks an oversized contract set instead of one unbounded filter', async () => {
+  it('delegates oversized contract sets to the service-owned batching policy', async () => {
     queryMock.listDossierInvoicesForContracts.mockResolvedValue([]);
 
     const ids = Array.from({ length: 600 }, (_, index) => `c-${index}`);
     const options = await captureOptions(ids);
     const rows = await options.queryFn();
 
-    expect(queryMock.listDossierInvoicesForContracts).toHaveBeenCalledTimes(3);
-    expect((queryMock.listDossierInvoicesForContracts.mock.calls[0]![0] as string[]).length).toBe(250);
-    expect((queryMock.listDossierInvoicesForContracts.mock.calls[2]![0] as string[]).length).toBe(100);
+    expect(queryMock.listDossierInvoicesForContracts).toHaveBeenCalledTimes(1);
+    expect(queryMock.listDossierInvoicesForContracts).toHaveBeenCalledWith([...ids].sort());
     expect(rows).toEqual([]);
   });
 

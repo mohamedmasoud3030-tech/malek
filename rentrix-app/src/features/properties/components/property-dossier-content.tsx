@@ -1,3 +1,4 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { Link } from '@tanstack/react-router';
 import { Building2, DoorOpen, FileText, ReceiptText, UserRound, WalletCards } from 'lucide-react';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
@@ -18,10 +19,6 @@ import { getInvoiceStatusTone } from '@/features/financials/finance-status-mappi
 import { usePropertyContractsTab, usePropertyInvoicesTab } from '../use-property-workspace-tabs';
 import { contractStatusLabels, contractStatusTone, normalizeContractStatus } from '@/lib/contractStatus';
 import { PropertyIdentityCard, PropertyUnitsSummaryCard } from '../overview/property-overview-cards';
-
-function getInvoiceRemaining(invoice: { amount: number; paid_amount: number }): number {
-  return Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount));
-}
 
 function getOwnerName(link: { owner?: { display_name?: string | null; full_name?: string | null } | null }): string {
   return link.owner?.display_name?.trim() || link.owner?.full_name?.trim() || 'مالك غير محدد';
@@ -53,9 +50,9 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
 
   const activeContracts = contracts.filter((contract) => contract.status === 'active');
   const openInvoices = invoices
-    .filter((invoice) => getInvoiceRemaining(invoice) > 0)
+    .filter((invoice) => getInvoiceRemainingAmount(invoice) > 0)
     .sort((left, right) => (left.due_date ?? '').localeCompare(right.due_date ?? ''));
-  const outstandingBalance = openInvoices.reduce((sum, invoice) => sum + getInvoiceRemaining(invoice), 0);
+  const outstandingBalance = openInvoices.reduce((sum, invoice) => sum + getInvoiceRemainingAmount(invoice), 0);
   const occupiedUnits = units.filter((unit) => unit.status === 'occupied').length;
 
   return (
@@ -189,7 +186,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                 <span className="min-w-0 flex-1 truncate font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                 <span className="flex flex-wrap items-center gap-2">
                   <StatusBadge tone={getInvoiceStatusTone(invoice.status)}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
-                  <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, getInvoiceRemaining(invoice))}</span>
+                  <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, getInvoiceRemainingAmount(invoice))}</span>
                 </span>
               </li>
             ))}

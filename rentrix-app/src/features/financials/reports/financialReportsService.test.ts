@@ -10,7 +10,7 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
-type TableResponses = Partial<Record<'invoices' | 'payments' | 'contracts' | 'expenses' | 'properties' | 'people' | 'units', unknown[]>>;
+type TableResponses = Partial<Record<'invoices' | 'payments' | 'contracts' | 'expenses' | 'properties' | 'people' | 'units' | 'receipt_allocations', unknown[]>>;
 
 function createQueryBuilder(table: string, responses: TableResponses, log: QueryLogEntry[]) {
   const builder = {
@@ -42,6 +42,7 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
       log.push({ table, method: 'order', args });
       return builder;
     }),
+    range: vi.fn(async (from: number, to: number) => ({ data: (responses[table as keyof TableResponses] ?? []).slice(from, to + 1), error: null })),
     // Thenable AND chainable: awaited directly by single-shot loaders, and
     // still exposes .range() for loaders that page past the 1000-row cap.
     returns: vi.fn(() => {
@@ -962,7 +963,9 @@ describe('financialReportsService Supabase queries', () => {
       payments: [],
       expenses: [],
     });
-    const { getCollectionSummaryReport } = await import('./financialReportsService');
+    const { getFinancialPeriodSummaryReport } = await import('./financialReportsService');
+    const { collectionSummaryFromPeriod } = await import('./financial-reporting/report-calculations');
+    const getCollectionSummaryReport = async (filters: Parameters<typeof getFinancialPeriodSummaryReport>[0]) => collectionSummaryFromPeriod(await getFinancialPeriodSummaryReport(filters));
 
     await expect(getCollectionSummaryReport({
       dateFrom: '2026-05-01',
@@ -989,7 +992,9 @@ describe('financialReportsService Supabase queries', () => {
       contracts: [{ id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' }],
       expenses: [],
     });
-    const { getCollectionSummaryReport } = await import('./financialReportsService');
+    const { getFinancialPeriodSummaryReport } = await import('./financialReportsService');
+    const { collectionSummaryFromPeriod } = await import('./financial-reporting/report-calculations');
+    const getCollectionSummaryReport = async (filters: Parameters<typeof getFinancialPeriodSummaryReport>[0]) => collectionSummaryFromPeriod(await getFinancialPeriodSummaryReport(filters));
 
     await expect(getCollectionSummaryReport({
       dateFrom: '2026-05-01',
@@ -1008,4 +1013,22 @@ describe('financialReportsService Supabase queries', () => {
     expect(log.some((entry) => ['insert', 'update', 'delete', 'rpc'].includes(entry.method))).toBe(false);
   });
 
+});
+
+
+it('keeps a multi-invoice receipt as one cash movement under its contract filters', async () => {
+  mockSupabaseTables({
+    payments: [{ id: 'p', receipt_id: 'r', invoice_id: null, contract_id: 'c', amount: 100, payment_date: '2026-09-09', payment_method: 'cash', status: 'POSTED', deleted_at: null }],
+    receipt_allocations: [
+      { id: 'a1', receipt_id: 'r', invoice_id: 'i1', amount: 40 },
+      { id: 'a2', receipt_id: 'r', invoice_id: 'i2', amount: 60 },
+    ],
+    contracts: [{ id: 'c', property_id: 'property', tenant_id: 'tenant', unit_id: 'unit' }],
+  });
+  const { loadPayments } = await import('./financial-reporting/report-loaders');
+  const filters = { dateFrom: '2026-09-01', dateTo: '2026-09-30', contractId: 'c', propertyId: 'property', tenantId: 'tenant' };
+  const rows = await loadPayments(filters);
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({ id: 'p', amount: 100, invoice: null, contract: { id: 'c' } });
+  expect(await loadPayments({ ...filters, propertyId: 'other' })).toEqual([]);
 });

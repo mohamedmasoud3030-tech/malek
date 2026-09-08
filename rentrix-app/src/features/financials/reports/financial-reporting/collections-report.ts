@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase';
 import type { FinancialReportFilters, PropertyContext } from '../financial-report-rows';
 import { loadPropertiesById, uniqueStrings } from '../financial-report-rows';
 import type {
-  CollectionSummaryReport,
   DailyCollectionReport,
   ExpenseBreakdownReport,
   ExpenseBreakdownReportFilters,
@@ -11,7 +10,6 @@ import type {
   PropertyCollectionBreakdownReport,
 } from './report-types';
 import {
-  summarizeCollectionReport,
   summarizeDailyCollectionReport,
   summarizeExpenseBreakdownReport,
   summarizeExpenseTotals,
@@ -23,23 +21,6 @@ import {
   summarizePropertyCollectionBreakdownReport,
 } from './report-calculations';
 import { loadExpenses, loadInvoices, loadPayments } from './report-loaders';
-
-export async function getCollectionSummaryReport(filters: FinancialReportFilters): Promise<CollectionSummaryReport> {
-  const [invoices, payments, expenses] = await Promise.all([
-    loadInvoices(filters),
-    loadPayments(filters),
-    loadExpenses(filters),
-  ]);
-
-  return summarizeCollectionReport({
-    invoiceTotals: summarizeInvoiceTotals(invoices),
-    // Receipts are currently read-only projections of posted payments, so the
-    // collection summary uses payment totals as the canonical receipt total.
-    paymentTotals: summarizePaymentTotals(payments),
-    outstandingBalance: summarizeOutstandingBalance(invoices),
-    expenseTotals: summarizeExpenseTotals(expenses),
-  });
-}
 
 export async function getDailyCollectionReport(filters: FinancialReportFilters): Promise<DailyCollectionReport> {
   const payments = await loadPayments(filters);

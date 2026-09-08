@@ -1,3 +1,4 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import {
   Activity,
@@ -23,6 +24,7 @@ import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import {
+  isContractStatus,
   contractStatusLabels,
   contractStatusTone,
   normalizeContractStatus,
@@ -82,11 +84,11 @@ export function PersonDossierContent({
 
   const outstanding = dossier.invoices.reduce(
     (sum, invoice) =>
-      sum + Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)),
+      sum + getInvoiceRemainingAmount(invoice),
     0,
   );
   const activeContracts = dossier.contracts.filter(
-    (contract) => contract.status === 'active',
+    (contract) => isContractStatus(contract.status, 'active'),
   );
   const statementContract = activeContracts[0] ?? dossier.contracts[0];
 
@@ -256,10 +258,7 @@ export function PersonDossierContent({
                 <span>
                   الاستحقاق {invoice.due_date} · المتبقي{' '}
                   {companyFormatters.money(
-                    Math.max(
-                      0,
-                      Number(invoice.amount) - Number(invoice.paid_amount),
-                    ),
+                    getInvoiceRemainingAmount(invoice),
                   )}
                 </span>
                 <Button asChild variant="secondary" className="min-h-11">

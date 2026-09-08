@@ -42,7 +42,8 @@ describe('deposit contract options are human-readable', () => {
     expect(controller).toContain('amount: createForm.amount');
     expect(controller).toContain('received_date: createForm.received_date');
     expect(controller).toContain('notes: createForm.notes || null');
-    expect(controller).toContain('request_id: crypto.randomUUID()');
+    expect(controller).toContain("commands.run('deposit-create'");
+    expect(controller).toContain('request_id,');
   });
 
   it('the deposits list no longer titles rows with a truncated contract UUID or raw tenant_id', () => {

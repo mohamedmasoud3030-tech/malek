@@ -57,6 +57,9 @@ export async function fetchAllRows<Row>(
 ): Promise<PagedReadResult<Row>> {
   const pageSize = options.pageSize ?? PAGED_READ_PAGE_SIZE;
   const maxPages = options.maxPages ?? PAGED_READ_MAX_PAGES;
+  if (!Number.isSafeInteger(pageSize) || pageSize <= 0 || !Number.isSafeInteger(maxPages) || maxPages <= 0) {
+    throw new Error('حدود القراءة المرحّلة يجب أن تكون أعداداً صحيحة موجبة');
+  }
   const rows: Row[] = [];
 
   for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {

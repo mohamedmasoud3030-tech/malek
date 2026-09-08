@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { defineEntityKeys } from '@/lib/query-keys';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { generateInvoicesFromActiveContracts, getInvoiceDetail, listDossierInvoicesForContracts, listInvoices, listInvoicesPaginated, type DossierInvoiceRow, type InvoiceListParams, type InvoicePaginationParams, type InvoiceStatusFilter } from './invoiceService';
+import { generateInvoicesFromActiveContracts, getInvoiceDetail, listDossierInvoicesForContracts, listInvoices, listInvoicesPaginated, type InvoiceListParams, type InvoicePaginationParams, type InvoiceStatusFilter } from './invoiceService';
 
 const invoiceBase = defineEntityKeys('invoices');
 
@@ -25,23 +25,6 @@ export function normalizeContractInvoiceQueryIds(contractIds: readonly string[])
 }
 
 /**
- * Max contract ids per `.in()` filter. A register can hold thousands of rows
- * when client-side filters widen the read, and a single URL carrying that many
- * UUIDs would be rejected — so the batch is chunked into a bounded number of
- * parallel reads. This is still one logical batch, never one query per row.
- */
-const CONTRACT_INVOICE_BATCH_LIMIT = 250;
-
-async function listDossierInvoicesInBatches(contractIds: readonly string[]): Promise<DossierInvoiceRow[]> {
-  const batches: string[][] = [];
-  for (let index = 0; index < contractIds.length; index += CONTRACT_INVOICE_BATCH_LIMIT) {
-    batches.push(contractIds.slice(index, index + CONTRACT_INVOICE_BATCH_LIMIT));
-  }
-  const results = await Promise.all(batches.map((batch) => listDossierInvoicesForContracts(batch)));
-  return results.flat();
-}
-
-/**
  * Bounded, cached invoice context for a whole register page.
  *
  * Registers need payment attention per row but must not fan out into N+1
@@ -54,7 +37,7 @@ export function useDossierInvoicesForContracts(contractIds: readonly string[]) {
 
   return useQuery({
     queryKey: invoiceKeys.dossierForContracts(stableContractIds),
-    queryFn: () => listDossierInvoicesInBatches(stableContractIds),
+    queryFn: () => listDossierInvoicesForContracts(stableContractIds),
     // Nothing to read: never issue an empty `in()` query.
     enabled: stableContractIds.length > 0,
     staleTime: 30_000,

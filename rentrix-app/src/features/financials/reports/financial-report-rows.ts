@@ -1,12 +1,18 @@
+import { normalizeInvoiceStatus } from '../components/invoice-status-labels';
+import { chunkForInFilter } from '@/lib/paginatedRead';
 import type { Contract, Expense, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
-import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
-import { chunkReportIds } from './report-paginated-read';
+
 
 // Shared row/context shapes for the operational collection and arrears report
 // modules. These stay intentionally narrow (Pick/Partial) so loaders only
 // request the columns each report actually consumes.
 
 export type FinancialReportStatus = Invoice['status'] | 'all';
+
+export function readFinancialReportStatus(value: unknown): FinancialReportStatus {
+  const status = typeof value === 'string' ? value.trim() : '';
+  return status && normalizeInvoiceStatus(status) !== 'other' ? status : 'all';
+}
 
 export type FinancialReportFilters = {
   dateFrom: string;
@@ -24,12 +30,12 @@ export type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'>
   reference?: string | null;
 };
 
-export type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount'>> & {
+export type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>> & {
   reference?: string | null;
   contracts?: ContractContext | null;
 };
 
-export type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'status' | 'deleted_at'>;
+export type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'status' | 'deleted_at'> & Partial<Pick<Payment, 'contract_id' | 'receipt_id'>>;
 
 export type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'cost_center_id' | 'deleted_at'>;
 
@@ -65,7 +71,7 @@ export function matchesInvoiceContext(
 }
 
 export function matchesPaymentContext(payment: PaymentWithInvoiceContext, filters: FinancialReportFilters) {
-  if (filters.contractId && payment.invoice?.contract_id !== filters.contractId) return false;
+  if (filters.contractId && (payment.contract?.id ?? payment.contract_id ?? payment.invoice?.contract_id) !== filters.contractId) return false;
   if (filters.propertyId && payment.contract?.property_id !== filters.propertyId) return false;
   if (filters.unitId && payment.contract?.unit_id !== filters.unitId) return false;
   if (filters.tenantId && payment.contract?.tenant_id !== filters.tenantId) return false;
@@ -76,14 +82,6 @@ export function uniqueStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
 }
 
-export function getInvoiceReportGrossAmount(invoice: Pick<InvoiceReportRow, 'amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>): number {
-  return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
-}
-
-export function getInvoiceReportRemainingAmount(invoice: Pick<InvoiceReportRow, 'amount' | 'paid_amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>): number {
-  return getSafeRemainingAmount(getInvoiceReportGrossAmount(invoice), invoice.paid_amount);
-}
-
 type SupabaseClient = typeof import('@/lib/supabase').supabase;
 
 export async function loadPropertiesById(
@@ -92,7 +90,7 @@ export async function loadPropertiesById(
 ): Promise<Map<string, PropertyContext>> {
   const rows: PropertyContext[] = [];
 
-  for (const batch of chunkReportIds(propertyIds)) {
+  for (const batch of chunkForInFilter(propertyIds)) {
     const { data, error } = await supabase
       .from('properties')
       .select('id, title')
@@ -112,7 +110,7 @@ export async function loadPeopleById(
 ): Promise<Map<string, PersonContext>> {
   const rows: PersonContext[] = [];
 
-  for (const batch of chunkReportIds(tenantIds)) {
+  for (const batch of chunkForInFilter(tenantIds)) {
     const { data, error } = await supabase
       .from('people')
       .select('id, full_name, phone')
@@ -132,7 +130,7 @@ export async function loadUnitsById(
 ): Promise<Map<string, UnitContext>> {
   const rows: UnitContext[] = [];
 
-  for (const batch of chunkReportIds(unitIds)) {
+  for (const batch of chunkForInFilter(unitIds)) {
     const { data, error } = await supabase
       .from('units')
       .select('id, unit_number')

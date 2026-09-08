@@ -52,6 +52,8 @@ export function buildTenantStatementDocumentData(
     propertyTitle: tenantStatement.propertyName || 'عقار غير محدد',
     unitNumber: tenantStatement.unitName || '—',
     openingBalance: deriveTenantOpeningBalance(tenantStatement),
+    // These stable document fields represent debit/credit movements, not cash
+    // or revenue KPIs. Keep template compatibility; label them accordingly.
     totalInvoiced: tenantStatement.lines.reduce((total, line) => total + (line.debit || 0), 0),
     totalPaid: tenantStatement.lines.reduce((total, line) => total + (line.credit || 0), 0),
     closingBalance: tenantStatement.finalBalance || 0,

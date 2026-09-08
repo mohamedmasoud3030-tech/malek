@@ -1,7 +1,8 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
-import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
+import { sumFinancialValues } from '@/features/financials/financialMath';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import {
@@ -73,7 +74,7 @@ export type OwnerProperty = Property & {
 
 export type OwnerUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'floor' | 'status' | 'rent_amount' | 'created_at'>;
 export type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status' | 'reference'>;
-export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at' | 'reference' | 'due_date' | 'created_at'>;
+export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at' | 'reference' | 'due_date' | 'created_at'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
 
 export type OwnerFinancialSummary = Readonly<{
   outstandingBalance: number;
@@ -227,10 +228,10 @@ export function getOwnerActivePropertyCount(ownerId: string, properties: readonl
   return properties.filter((property) => property.property_owners.some((link) => link.owner_id === ownerId && (!link.ends_on || link.ends_on >= getTodayLocalDate()))).length;
 }
 
-export function summarizeOwnerFinancials(invoices: readonly Pick<OwnerInvoice, 'amount' | 'paid_amount' | 'deleted_at'>[]): OwnerFinancialSummary {
+export function summarizeOwnerFinancials(invoices: readonly (Pick<OwnerInvoice, 'amount' | 'paid_amount' | 'deleted_at'> & { tax_amount?: number | null; credited_amount?: number | null })[]): OwnerFinancialSummary {
   const outstandingAmounts = invoices
     .filter((invoice) => !invoice.deleted_at)
-    .map((invoice) => getSafeRemainingAmount(invoice.amount, invoice.paid_amount))
+    .map((invoice) => getInvoiceRemainingAmount(invoice))
     .filter((remainingAmount) => remainingAmount > 0);
 
   return {
@@ -477,7 +478,7 @@ export async function listInvoicesForContracts(contractIds: readonly string[]): 
 
   const { rows } = await fetchAllRowsInBatches<OwnerInvoice, string>(contractIds, (contractIdBatch) => supabase
     .from('invoices')
-    .select('id, contract_id, amount, paid_amount, status, deleted_at, reference, due_date, created_at')
+    .select('id, contract_id, amount, tax_amount, credited_amount, paid_amount, status, deleted_at, reference, due_date, created_at')
     .in('contract_id', [...contractIdBatch])
     .is('deleted_at', null)
     .order('contract_id', { ascending: true })

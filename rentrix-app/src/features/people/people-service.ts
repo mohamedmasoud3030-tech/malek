@@ -1,3 +1,4 @@
+import { listContractsForTenants } from '@/features/contracts/services/contractService';
 import { listDossierInvoicesForContracts } from '@/features/financials/invoices/invoiceService';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
@@ -120,6 +121,8 @@ export type PersonDossierInvoice = Readonly<{
   due_date: string;
   amount: number;
   paid_amount: number;
+  tax_amount?: number | null;
+  credited_amount?: number | null;
   status: string;
 }>;
 
@@ -144,14 +147,10 @@ export async function getPersonDossier(
   options: { includeFinancial: boolean; includeActivity: boolean },
 ): Promise<PersonDossier> {
   const person = await getPerson(personId);
-  const { data: contractsData, error: contractsError } = await (supabase as any)
-    .from('contracts')
-    .select('id,reference,status,start_date,end_date,property_id,unit_id,properties:properties!contracts_property_id_fkey(id,title),units:units!contracts_unit_id_fkey(id,unit_number)')
-    .eq('tenant_id', personId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
-  if (contractsError) handleSupabaseError(contractsError, 'تعذر تحميل عقود الشخص');
-  const contracts = (contractsData ?? []) as PersonDossierContract[];
+  const contracts = await listContractsForTenants([personId]).catch((error) => {
+    handleSupabaseError(error, 'تعذر تحميل عقود الشخص');
+    throw error;
+  });
   const contractIds = contracts.map((contract) => contract.id);
 
   const [invoiceResult, activityResult] = await Promise.all([

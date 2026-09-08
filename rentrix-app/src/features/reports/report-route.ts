@@ -1,3 +1,5 @@
+import { readFinancialReportStatus } from '@/features/financials/reports/financial-report-rows';
+import { isValidDateInput } from '@/features/financials/financials-date-utils';
 import {
   getReportProduct,
   getReportProductTarget,
@@ -60,7 +62,6 @@ const REPORT_DATE_KEYS: readonly ReportFilterSearchKey[] = [
   'to',
   'asOf',
 ];
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const FILTER_FIELD_SEARCH_KEYS = {
   period: ['from', 'to'],
@@ -182,11 +183,11 @@ export function diffReportFiltersFromSearch(
     const after = readRawSearchValue(next, key);
     if (before === after) continue;
     if (REPORT_DATE_KEYS.includes(key)) {
-      if (after && DATE_PATTERN.test(after)) patch[key] = after;
+      if (after && isValidDateInput(after)) patch[key] = after;
       continue;
     }
     if (key === 'status') {
-      patch.status = (after ?? 'all') as ReportsFilterState['status'];
+      patch.status = readFinancialReportStatus(after);
       continue;
     }
     patch[key] = after ?? '';

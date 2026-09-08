@@ -28,9 +28,7 @@ export {
   type AgingBucketKey,
 } from './aging-buckets';
 export {
-  getAgedReceivablesReport,
-  getArrearsSummaryReport,
-  getDashboardArrearsReports,
+  getArrearsReportSnapshot,
   getOverdueInvoicesReport,
   calculateDaysOverdue,
   filterInvoicesForArrearsReport,
@@ -43,7 +41,7 @@ export {
   type AgedReceivablesReport,
   type ArrearsReportFilters,
   type ArrearsSummaryReport,
-  type DashboardArrearsReports,
+  type ArrearsReportSnapshot,
   type OverdueInvoiceReportRow,
   type OverdueInvoicesReport,
 } from './arrears-reports-service';
@@ -51,7 +49,6 @@ export {
   filterExpensesForReport,
   filterInvoicesForReport,
   filterPaymentsForReport,
-  getCollectionSummaryReport,
   getDailyCollectionReport,
   getExpenseBreakdownReport,
   getFinancialCashflowReport,

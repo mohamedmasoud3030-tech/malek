@@ -280,3 +280,71 @@ the mapping so the label is not misread.
 - Intentional compatibility redirects that preserve one canonical IA.
 - Historical technical identifiers such as `rentrix-app` while user branding is MALEK.
 - Vercel Preview availability without journey acceptance.
+
+## Session/navigation extraction evidence — 2026-09-09
+
+Working-tree reconstruction against `fe2a5911076229206eb54cbcd7f3fc5303501360`:
+
+- **SEC-005:** `route-contract.ts` now declares the existing reactive workspace
+  gate scope. `_protected.tsx` consumes that metadata; it no longer owns a
+  duplicate pathname-to-permission map. Exact receipts matching, subtree
+  matching, action guards, settings section gates and backend enforcement are
+  retained. `workspace-permission.test.ts` characterizes the preserved behavior.
+- **SEC-010:** route session restoration delegates to `auth-service.ts`, matching
+  `AuthProvider`'s fail-closed restoration. `session-storage.ts` owns the existing
+  persisted key and best-effort cleanup. Logout attempts SDK-local cleanup on
+  returned **or thrown** remote errors, and clears persisted storage even if the
+  local SDK call rejects. It does not claim remote token revocation when offline.
+- Focused navigation/session/client-boundary verification: 14 test files / 99
+  tests passed. Effective route-guard checks also passed (2 tests).
+- This is a bounded extraction, not whole-product reconstruction completion.
+  No schema, accounting policy, permission catalog, stage credit or Work Package
+  exit status changes. GAP-003/GAP-021 hosted isolation/configuration evidence
+  and the full-product release gates remain open. Browser fixture results are
+  not hosted Auth/RLS evidence.
+
+Final local evidence for this extraction: full application suite **516 files /
+3,564 tests passed**, separate accessibility primitives **15 tests passed**, and
+Playwright login/RTL matrix **13 tests passed** with synthetic public config and
+mocked Auth HTTP responses. Build, typecheck, repository lint (TypeScript),
+architecture, business-rule, migration-hygiene, GL-write-boundary, enterprise-freeze,
+document-link and client privileged-key checks passed. The final changed-boundary
+batch passed **18 files / 147 tests**, including updated migration-backed permission
+parity and brand/lazy-import location contracts. These are local evidence only;
+no hosted/live or whole-product completion credit is granted.
+
+
+## Cross-application reconstruction continuation — 2026-09-09
+
+The session/navigation extraction above is retained and extended. See the
+[execution coverage](../execution/RECONSTRUCTION_COVERAGE.md) and
+[live inventory](../execution/RECONSTRUCTION_INVENTORY.md) for classification,
+authorities, removed duplication, preserved workflows and explicit limitations.
+
+Delivered boundaries now include the VAT/credit-aware invoice read model,
+complete/batched scoped financial and party-contract reads, shared arrears and
+period/collection report snapshots, RFC/formula-safe CSV exports, canonical office
+import specifications/templates/preview, unified public configuration validation,
+recognizable non-public-key build rejection, and verified dependency cleanup.
+No schema, historical posting, financial write authority, permission catalog or
+stage completion-credit change is included.
+
+Final current-code local evidence: **521 files / 3,617 tests passed**; application
+and full test-source typechecks passed; shared accessibility **15 passed**;
+hermetic browser matrix **43 passed / 1 project-specific skip**; production PWA
+worker/offline/cache-boundary smoke **1 passed**. Build, architecture, register
+inventory, business-rule, migration-hygiene, GL-write-boundary, enterprise-freeze,
+document-link and client-key guards passed. The repository's lint command is
+TypeScript checking. A synthetic non-public-key build was rejected as expected.
+
+These results do not close hosted Auth/RLS/deployment/pilot gates. Office import
+remains preview-only, larger-than-ceiling browser reads fail closed, and real-device
+PWA installation/update behavior is not certified. Existing product/stage gaps
+retain their prior governance credit.
+
+
+### Repository continuation evidence — 2026-09-09 (no stage-credit change)
+
+Affected rules: FIN-004, FIN-009, FIN-010, FIN-013, FIN-016, FIN-018, FIN-019; SEC-001, SEC-002, SEC-003, SEC-005, SEC-008, SEC-010.
+
+Forward migrations `20260909000000` through `20260909000003` repair reproduced role-NULL authorization, credited-debt deposit eligibility, deposit receipt context/idempotency, and tenant-statement settlement/permission defects. Historical migrations and financial rows remain untouched. Authenticated replay tests cover receipt/refund/application/reversal, cross-company denial, disabled identities, credited debt and statement/GL agreement. `financial-persisted-journey.spec.ts` exercises the UI against replayed financial SQL with explicitly mocked Auth. Payment/receipt read consolidation follows the persisted allocation relationship, retaining direct-link compatibility for historical rows. See the live reconstruction inventory for current checks and limits. This is repository evidence only: no hosted acceptance or governed stage status is advanced.

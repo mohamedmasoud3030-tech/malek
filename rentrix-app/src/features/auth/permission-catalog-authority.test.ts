@@ -26,7 +26,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getAllNavItems, navGroups, quickCreateItems, workspaceChildNavItems } from '@/app/navigation/app-nav-items';
-import { ROUTE_CONTRACT } from '@/app/navigation/route-contract';
+import { ROUTE_CONTRACT, workspacePermissionForPath } from '@/app/navigation/route-contract';
 import { appPermissions, canAccess, canAccessRoute, canShowNavigationItem, type AppPermission } from './permissions';
 
 const repoRoot = resolve(import.meta.dirname, '../../../..');
@@ -106,28 +106,17 @@ type LayoutWorkspaceRule = { exact: string[]; prefixes: string[]; permission: st
  * rules so a contract permission can be proven gated at either level.
  */
 function layoutWorkspaceRules(): LayoutWorkspaceRule[] {
-  const start = protectedLayoutSource.indexOf('function workspacePermissionForPath');
-  const end = protectedLayoutSource.indexOf('export function ProtectedRouteComponent');
-  expect(start, 'workspacePermissionForPath must exist').toBeGreaterThan(-1);
-  const block = protectedLayoutSource.slice(start, end);
-  const returns = [...block.matchAll(/return '([a-z0-9_.]+)';/g)];
-  return returns.map((match, index) => {
-    const from = index === 0 ? 0 : (returns[index - 1].index ?? 0) + returns[index - 1][0].length;
-    const condition = block.slice(from, match.index ?? 0);
-    return {
-      exact: [...condition.matchAll(/pathname === '([^']+)'/g)].map((entry) => entry[1]),
-      prefixes: [...condition.matchAll(/pathname\.startsWith\('([^']+)'\)/g)].map((entry) => entry[1]),
-      permission: match[1],
-    };
-  });
+  expect(protectedLayoutSource).toContain("import { workspacePermissionForPath } from '@/app/navigation/route-contract'");
+  expect(protectedLayoutSource).toContain('workspacePermissionForPath(pathname)');
+  return ROUTE_CONTRACT.filter((entry) => entry.workspaceGuard).map((entry) => ({
+    exact: [entry.canonical],
+    prefixes: entry.workspaceGuard === 'subtree' ? [`${entry.canonical}/`] : [],
+    permission: entry.permission!,
+  }));
 }
 
 function layoutGuardCoversPath(pathname: string, permission: string): boolean {
-  return layoutWorkspaceRules().some(
-    (rule) =>
-      rule.permission === permission
-      && (rule.exact.includes(pathname) || rule.prefixes.some((prefix) => pathname.startsWith(prefix))),
-  );
+  return workspacePermissionForPath(pathname) === permission;
 }
 
 function ownerEditorPermissions(): string[] {

@@ -1,8 +1,8 @@
-import { fetchAllRows } from '@/lib/paginatedRead';
+import { loadInvoicePayments } from '../receipts/receipt-relationships';
+import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { getInvoiceStatusVariants } from '../components/invoice-status-labels';
-import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
 
@@ -18,7 +18,6 @@ export type InvoiceContractContext = {
 export type InvoiceListItem = Invoice & { contracts: InvoiceContractContext | null };
 export type InvoiceDetail = InvoiceListItem & { payments: Payment[] };
 export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string };
-export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid: number; totalRemaining: number; count: number };
 
 const invoiceContractContextSelect =
   'id,property_id,tenant_id,properties:properties!contracts_property_id_fkey(id,title),units:units!contracts_unit_id_fkey(id,unit_number),people:people!contracts_tenant_id_fkey(id,full_name,phone)';
@@ -31,27 +30,6 @@ function applyStatusFilter<Q extends { in(column: 'status', values: string[]): Q
 ): Q {
   if (status === 'all') return query;
   return query.in('status', getInvoiceStatusVariants(status));
-}
-
-type InvoiceGrossInput = Pick<Invoice, 'amount'> & { tax_amount?: Invoice['tax_amount'] | null };
-
-export function getInvoiceGrossAmount(invoice: InvoiceGrossInput): number {
-  return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
-}
-
-export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid_amount'> & { tax_amount?: Invoice['tax_amount'] | null }>): InvoiceSummary {
-  return invoices.reduce(
-    (summary, invoice) => {
-      const grossAmount = getInvoiceGrossAmount(invoice);
-      summary.totalAmount += grossAmount;
-      summary.totalTax += toFinancialNumber(invoice.tax_amount);
-      summary.totalPaid += toFinancialNumber(invoice.paid_amount);
-      summary.totalRemaining += getSafeRemainingAmount(grossAmount, invoice.paid_amount);
-      summary.count += 1;
-      return summary;
-    },
-    { totalAmount: 0, totalTax: 0, totalPaid: 0, totalRemaining: 0, count: 0 },
-  );
 }
 
 function escapeOrSearch(value: string): string {
@@ -86,7 +64,7 @@ export async function listInvoices(params: InvoiceStatusFilter | InvoiceListPara
   const status = typeof params === 'string' ? params : params.status;
   const search = typeof params === 'string' ? '' : params.search?.trim() ?? '';
   const { rows } = await fetchAllRows<InvoiceListItem>(() => {
-    let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false });
+    let query = supabase.from('invoices').select(invoiceSelect).is('deleted_at', null).order('due_date', { ascending: false }).order('id', { ascending: false });
     query = applyStatusFilter(query, status);
     query = applyInvoiceSearch(query, search);
     return query as never;
@@ -115,6 +93,8 @@ export type DossierInvoiceRow = Readonly<{
   status: string;
   amount: number;
   paid_amount: number;
+  tax_amount?: number | null;
+  credited_amount?: number | null;
   due_date: string;
 }>;
 
@@ -127,15 +107,16 @@ export type DossierInvoiceRow = Readonly<{
  * dossiers need a bounded contract-scoped list without search/status filters.
  */
 export async function listDossierInvoicesForContracts(contractIds: readonly string[]): Promise<DossierInvoiceRow[]> {
-  if (contractIds.length === 0) return [];
-  const { data, error } = await supabase
+  const ids = [...new Set(contractIds.filter(Boolean))];
+  const { rows } = await fetchAllRowsInBatches<DossierInvoiceRow, string>(ids, (batch) => supabase
     .from('invoices')
-    .select('id,reference,contract_id,due_date,amount,paid_amount,status')
-    .in('contract_id', contractIds as string[])
+    .select('id,reference,contract_id,due_date,amount,tax_amount,credited_amount,paid_amount,status')
+    .in('contract_id', [...batch])
     .is('deleted_at', null)
-    .order('due_date', { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as DossierInvoiceRow[];
+    .order('due_date', { ascending: false })
+    .order('id', { ascending: false }));
+  return rows;
+
 }
 
 export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail> {
@@ -149,15 +130,8 @@ export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail
   if (invoiceError) throw invoiceError;
   const invoiceRow = (Array.isArray(invoice) ? invoice[0] ?? null : invoice) as InvoiceListItem | null;
   if (!invoiceRow) throw new Error('الفاتورة غير موجودة أو غير متاحة لصلاحياتك.');
-  const { data: payments, error: paymentsError } = await supabase
-    .from('payments')
-    .select('*')
-    .eq('invoice_id', invoiceId)
-    .is('deleted_at', null)
-    .order('payment_date', { ascending: false })
-    .returns<Payment[]>();
-  if (paymentsError) throw paymentsError;
-  return Object.assign(invoiceRow, { payments: payments ?? [] });
+  const payments = await loadInvoicePayments([invoiceId]);
+  return Object.assign(invoiceRow, { payments });
 }
 
 export async function generateInvoicesFromActiveContracts(): Promise<number> {

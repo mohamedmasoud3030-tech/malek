@@ -1,10 +1,12 @@
+import { listContractsForTenants, type PartyContractContext } from '@/features/contracts/services/contractService';
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { isContractStatus } from '@/lib/contractStatus';
 import { fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { normalizeInvoiceStatus } from '@/features/financials/components/invoice-status-labels';
 import { listDossierInvoicesForContracts } from '@/features/financials/invoices/invoiceService';
-import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
+import type { Invoice, Person } from '@/types/domain';
 
 export type TenantWorkspaceParams = {
   search: string;
@@ -27,12 +29,9 @@ export type TenantWorkspaceResult = {
   count: number;
 };
 
-type TenantContract = Contract & {
-  properties: Pick<Property, 'id' | 'title'> | null;
-  units: Pick<Unit, 'id' | 'unit_number'> | null;
-};
+type TenantContract = PartyContractContext;
 
-export type TenantInvoice = Pick<Invoice, 'contract_id' | 'status' | 'amount' | 'paid_amount' | 'due_date'>;
+export type TenantInvoice = Pick<Invoice, 'contract_id' | 'status' | 'amount' | 'paid_amount' | 'due_date'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
 
 type TenantPerson = TenantWorkspaceRow['person'];
 
@@ -41,8 +40,7 @@ type TenantInvoiceSummary = {
   hasArrears: boolean;
 };
 
-const tenantContractSelect = '*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)';
-const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
+const tenantInvoiceSelect = 'contract_id,status,amount,tax_amount,credited_amount,paid_amount,due_date';
 
 function escapeSearchTerm(value: string) {
   return value.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
@@ -73,7 +71,7 @@ function getPrimaryContract(contracts: TenantContract[]) {
 }
 
 export function isInvoiceInArrears(invoice: TenantInvoice, today: string) {
-  const remainingAmount = invoice.amount - invoice.paid_amount;
+  const remainingAmount = getInvoiceRemainingAmount(invoice);
   if (remainingAmount <= 0) return false;
 
   const status = normalizeInvoiceStatus(invoice.status);
@@ -100,23 +98,6 @@ function buildTenantRow(person: TenantPerson, contracts: TenantContract[], invoi
     primaryContractId: primaryContract?.id ?? null,
     ...invoiceSummary,
   };
-}
-
-async function listTenantContracts(tenantIds: string[]) {
-  if (tenantIds.length === 0) {
-    return [];
-  }
-
-  const { rows } = await fetchAllRowsInBatches<TenantContract, string>(tenantIds, (tenantIdBatch) => supabase
-    .from('contracts')
-    .select(tenantContractSelect)
-    .in('tenant_id', [...tenantIdBatch])
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false })
-    .returns<TenantContract[]>());
-
-  return rows;
 }
 
 async function listTenantInvoices(contractIds: string[]) {
@@ -160,14 +141,7 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
   const personRow = (Array.isArray(person) ? person[0] ?? null : person) as TenantPerson | null;
   if (!personRow) throw new Error('المستأجر غير موجود أو غير متاح لصلاحياتك.');
 
-  const { data: contractsData, error: contractsError } = await (supabase as any)
-    .from('contracts')
-    .select('*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)')
-    .eq('tenant_id', tenantId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
-  if (contractsError) throw contractsError;
-  const contracts = (contractsData ?? []) as TenantDossier['contracts'];
+  const contracts = await listContractsForTenants([tenantId]);
   const contractIds = contracts.map((contract) => contract.id);
 
   const [invoiceResult, receiptResult, activityResult] = await Promise.all([
@@ -219,7 +193,7 @@ export async function listTenantWorkspace(params: TenantWorkspaceParams): Promis
   }
 
   const tenantPeople = people ?? [];
-  const contracts = await listTenantContracts(tenantPeople.map((person) => person.id));
+  const contracts = await listContractsForTenants(tenantPeople.map((person) => person.id));
   const invoices = await listTenantInvoices(contracts.map((contract) => contract.id));
   const contractsByTenant = groupBy(contracts, (contract) => contract.tenant_id);
   const invoicesByContract = groupBy(invoices, (invoice) => invoice.contract_id);

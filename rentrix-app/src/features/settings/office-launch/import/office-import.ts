@@ -1,6 +1,8 @@
+import { unitStatusValues } from '@/features/units/unit-schema';
+import { isValidDateInput } from '@/features/financials/financials-date-utils';
 import { formatFileSize } from '@/lib/formatters';
 import { buildXlsxBlob } from '@/lib/xlsx-export';
-import { withUtf8Bom } from '@/lib/csvExport';
+import { buildCsvMatrix, withUtf8Bom } from '@/lib/csvExport';
 
 export type OfficeImportEntity = 'owners' | 'properties' | 'units' | 'tenants' | 'contracts';
 export type OfficeImportRow = Readonly<Record<string, string>>;
@@ -23,6 +25,8 @@ type FieldSpec = Readonly<{
   label: string;
   aliases: readonly string[];
   required?: boolean;
+  /** Known legacy column: diagnose it, but never emit it in a supported template. */
+  unsupported?: boolean;
   validate?: (value: string, row: OfficeImportRow) => string | null;
 }>;
 
@@ -34,7 +38,6 @@ type EntitySpec = Readonly<{
 }>;
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 export const OFFICE_IMPORT_MAX_FILE_BYTES = 5 * 1024 * 1024;
 export const OFFICE_IMPORT_MAX_ROWS = 5_000;
@@ -62,7 +65,7 @@ function positiveAmount(value: string) {
 }
 
 function optionalDate(value: string) {
-  return !value || isoDatePattern.test(value) ? null : 'استخدم التاريخ بصيغة YYYY-MM-DD';
+  return !value || isValidDateInput(value) ? null : 'استخدم التاريخ بصيغة YYYY-MM-DD';
 }
 
 function percentage(value: string) {
@@ -107,11 +110,11 @@ export const officeImportSpecs: Readonly<Record<OfficeImportEntity, EntitySpec>>
       { key: 'property_title', label: 'العقار', aliases: ['العقار', 'اسم العقار', 'property', 'property title', 'property_title'], required: true },
       { key: 'unit_number', label: 'رقم الوحدة', aliases: ['رقم الوحدة', 'الوحدة', 'unit', 'unit number', 'unit_number'], required: true },
       { key: 'floor', label: 'الطابق', aliases: ['الطابق', 'الدور', 'floor'] },
-      { key: 'type', label: 'نوع الوحدة', aliases: ['نوع الوحدة', 'type', 'unit type', 'unit_type'] },
+      { key: 'type', label: 'نوع الوحدة', aliases: ['نوع الوحدة', 'type', 'unit type', 'unit_type'], unsupported: true, validate: (value) => value ? 'نوع الوحدة ليس حقلاً في سجل الوحدة الحالي؛ احذف العمود قبل الاعتماد' : null },
       { key: 'rent_amount', label: 'الإيجار', aliases: ['الإيجار', 'قيمة الإيجار', 'rent', 'rent amount', 'rent_amount'], validate: positiveAmount },
-      { key: 'status', label: 'الحالة', aliases: ['الحالة', 'status'] },
+      { key: 'status', label: 'الحالة', aliases: ['الحالة', 'status'], required: true, validate: (value) => !value || (unitStatusValues as readonly string[]).includes(value.toLowerCase()) ? null : `حالة الوحدة يجب أن تكون ${unitStatusValues.join(' أو ')}` },
     ],
-    sample: { property_title: 'برج النخيل', unit_number: '101', floor: '1', type: 'apartment', rent_amount: '250.000', status: 'vacant' },
+    sample: { property_title: 'برج النخيل', unit_number: '101', floor: '1', rent_amount: '250.000', status: 'available' },
   },
   tenants: {
     label: 'المستأجرون',
@@ -381,6 +384,7 @@ export function buildOfficeImportPreview(entity: OfficeImportEntity, matrix: rea
   }
 
   const rows: OfficeImportRow[] = [];
+  const sourceRows: number[] = [];
   for (let index = 1; index < matrix.length; index += 1) {
     const sourceRow = matrix[index] ?? [];
     if (!sourceRow.some((value) => value.trim())) continue;
@@ -389,6 +393,7 @@ export function buildOfficeImportPreview(entity: OfficeImportEntity, matrix: rea
       if (key) record[key] = (sourceRow[column] ?? '').trim();
     });
     rows.push(record);
+    sourceRows.push(index + 1);
     for (const field of spec.fields) {
       const value = record[field.key] ?? '';
       if (field.required && !value) issues.push({ row: index + 1, field: field.key, message: `${field.label} مطلوب` });
@@ -405,13 +410,13 @@ export function buildOfficeImportPreview(entity: OfficeImportEntity, matrix: rea
     const key = spec.naturalKey.map((field) => (row[field] ?? '').trim().toLocaleLowerCase('ar')).join('|');
     if (!key.replaceAll('|', '')) return;
     const first = duplicateRows.get(key);
-    if (first !== undefined) issues.push({ row: rowIndex + 2, message: `سجل مكرر داخل الملف (يطابق الصف ${first + 2})` });
+    if (first !== undefined) issues.push({ row: sourceRows[rowIndex], message: `سجل مكرر داخل الملف (يطابق الصف ${sourceRows[first]})` });
     else duplicateRows.set(key, rowIndex);
   });
 
   if (rows.length === 0) issues.push({ row: 1, message: 'الملف لا يحتوي على سجلات بيانات' });
   const invalidRows = new Set(issues.filter((issue) => issue.row > 1).map((issue) => issue.row));
-  const validRows = rows.filter((_, index) => !invalidRows.has(index + 2));
+  const validRows = rows.filter((_, index) => !invalidRows.has(sourceRows[index]));
   return {
     entity,
     headers: spec.fields.map((field) => field.key),
@@ -422,18 +427,15 @@ export function buildOfficeImportPreview(entity: OfficeImportEntity, matrix: rea
   };
 }
 
-function csvEscape(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
-}
-
 export function buildOfficeImportTemplate(entity: OfficeImportEntity, format: 'csv' | 'xlsx') {
   const spec = officeImportSpecs[entity];
-  const headers = spec.fields.map((field) => field.label);
-  const row = spec.fields.map((field) => spec.sample[field.key] ?? '');
+  const fields = spec.fields.filter((field) => !field.unsupported);
+  const headers = fields.map((field) => field.label);
+  const row = fields.map((field) => spec.sample[field.key] ?? '');
   const baseName = `malek-${entity}-import-template`;
   if (format === 'xlsx') {
     return { filename: `${baseName}.xlsx`, blob: buildXlsxBlob({ name: spec.label, headers, rows: [row] }) };
   }
-  const csv = [headers.map(csvEscape).join(','), row.map(csvEscape).join(',')].join('\n');
+  const csv = buildCsvMatrix([headers, row], { spreadsheetSafe: false });
   return { filename: `${baseName}.csv`, blob: new Blob([withUtf8Bom(csv)], { type: 'text/csv;charset=utf-8' }) };
 }

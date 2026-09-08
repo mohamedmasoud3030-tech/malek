@@ -1,3 +1,5 @@
+import { RetryableCommandStore } from '@/lib/retryable-command';
+import { invalidateFinancialReadModels } from '@/lib/financial-cache';
 import { useMemo, useState } from 'react';
 import { formatMoney as formatCurrencyMoney, normalizeCurrency } from '@/lib/formatters';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
@@ -45,6 +47,7 @@ export type DepositActionType = 'claim' | 'refund' | 'rejectClaim' | 'reverseCla
 
 export function useDepositWorkspaceController() {
   const queryClient = useQueryClient();
+  const [commands] = useState(() => new RetryableCommandStore());
   const { user } = useAuth();
   const currentUserId = user?.id ?? '';
 
@@ -84,21 +87,17 @@ export function useDepositWorkspaceController() {
   const formatDepositMoney = (value: number) =>
     formatCurrencyMoney({ amount: value, currency: currencyCode, locale: 'ar' });
 
-  const invalidateFinancial = () => {
-    void queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
-    void queryClient.invalidateQueries({ queryKey: ['deposit-claims'] });
-    void queryClient.invalidateQueries({ queryKey: ['deposit-refund-events'] });
-  };
+  const invalidateFinancial = () => { void invalidateFinancialReadModels(queryClient); };
 
   const createMut = useMutation({
-    mutationFn: () =>
+    mutationFn: () => commands.run('deposit-create', createForm, (request_id) =>
       createTenantDeposit({
         contract_id: createForm.contract_id,
         amount: createForm.amount,
         received_date: createForm.received_date,
         notes: createForm.notes || null,
-        request_id: crypto.randomUUID(),
-      }),
+        request_id,
+      })),
     onSuccess: () => {
       toast.success('تم تسجيل وديعة التأمين بنجاح');
       setActionType(null);
@@ -111,7 +110,7 @@ export function useDepositWorkspaceController() {
   const claimMut = useMutation({
     mutationFn: () => {
       if (!selectedDeposit) throw new Error('لا توجد وديعة محددة');
-      return createDepositClaim({
+      const payload = {
         deposit_id: selectedDeposit.id,
         claim_kind: claimKindInput,
         invoice_id: claimKindInput === 'INVOICE_ARREARS' ? invoiceInput || null : null,
@@ -119,8 +118,8 @@ export function useDepositWorkspaceController() {
         evidence_uri: evidenceInput,
         inspection_id: claimKindInput === 'DAMAGE' ? inspectionInput || null : null,
         claim_note: claimNoteInput || null,
-        request_id: crypto.randomUUID(),
-      });
+      };
+      return commands.run('deposit-claim', payload, (request_id) => createDepositClaim({ ...payload, request_id }));
     },
     onSuccess: () => {
       toast.success('تم إنشاء طلب التخصيص — بانتظار اعتماد مستخدم مخوّل آخر');
@@ -146,7 +145,7 @@ export function useDepositWorkspaceController() {
   });
 
   const applyMut = useMutation({
-    mutationFn: (claim: DepositClaimRecord) => applyDepositClaim(claim.id),
+    mutationFn: (claim: DepositClaimRecord) => commands.run('deposit-apply', { claim_id: claim.id }, (requestId) => applyDepositClaim(claim.id, requestId)),
     onSuccess: () => {
       toast.success('تم تطبيق التخصيص على الحسابات والفواتير');
       invalidateFinancial();
@@ -172,7 +171,7 @@ export function useDepositWorkspaceController() {
   const reverseClaimMut = useMutation({
     mutationFn: () => {
       if (!selectedClaim) throw new Error('لا يوجد طلب محدد');
-      return reverseDepositClaim(selectedClaim.id, reasonInput);
+      return commands.run('deposit-reverse-claim', { claim_id: selectedClaim.id, reason: reasonInput }, (requestId) => reverseDepositClaim(selectedClaim.id, reasonInput, requestId));
     },
     onSuccess: () => {
       toast.success('تم إلغاء التخصيص وإعادة أثره المالي');
@@ -187,14 +186,14 @@ export function useDepositWorkspaceController() {
   const refundMut = useMutation({
     mutationFn: () => {
       if (!selectedDeposit) throw new Error('لا توجد وديعة محددة');
-      return refundDepositGoverned({
+      const payload = {
         deposit_id: selectedDeposit.id,
         refund_amount: amountInput,
         payment_method: paymentMethodInput,
         refund_date: getTodayLocalDateString(),
         notes: claimNoteInput || null,
-        request_id: crypto.randomUUID(),
-      });
+      };
+      return commands.run('deposit-refund', payload, (request_id) => refundDepositGoverned({ ...payload, request_id }));
     },
     onSuccess: () => {
       toast.success('تم رد مبلغ التأمين');
@@ -210,7 +209,7 @@ export function useDepositWorkspaceController() {
   const reverseRefundMut = useMutation({
     mutationFn: () => {
       if (!selectedRefundEvent) throw new Error('لا يوجد حدث استرداد محدد');
-      return reverseDepositRefund(selectedRefundEvent.id, reasonInput);
+      return commands.run('deposit-reverse-refund', { refund_event_id: selectedRefundEvent.id, reason: reasonInput }, (requestId) => reverseDepositRefund(selectedRefundEvent.id, reasonInput, requestId));
     },
     onSuccess: () => {
       toast.success('تم إلغاء الاسترداد وإعادة أثره المالي');

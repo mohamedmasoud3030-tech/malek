@@ -1,6 +1,9 @@
+import { fetchAllRows } from '@/lib/paginatedRead';
+import { getTodayLocalDateString } from '../financials-date-utils';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import { depositPayloadSchema } from './deposit-schema';
+import { depositPayloadSchema, depositClaimPayloadSchema, depositRefundPayloadSchema, type DepositCreatePayload, type DepositClaimCreatePayload, type DepositRefundPayload } from './deposit-schema';
+export type { DepositCreatePayload, DepositClaimCreatePayload, DepositRefundPayload } from './deposit-schema';
 
 /** Narrow a Json RPC response to a plain object (never `as any`). */
 function asJsonObject(value: unknown): Record<string, unknown> {
@@ -31,26 +34,6 @@ export type DepositRecord = {
   notes?: string | null;
   created_at: string;
   request_id?: string | null;
-};
-
-export type DepositCreatePayload = {
-  contract_id: string;
-  tenant_id?: string | null;
-  property_id?: string | null;
-  unit_id?: string | null;
-  amount: number;
-  received_date?: string | null;
-  notes?: string | null;
-  request_id?: string;
-};
-
-export type DepositRefundPayload = {
-  deposit_id: string;
-  refund_amount: number;
-  payment_method: 'cash' | 'bank_transfer' | 'check';
-  refund_date: string;
-  notes?: string | null;
-  request_id?: string;
 };
 
 /** GAP-009 governed deposit claim (evidence-backed, maker-checker approved). */
@@ -84,17 +67,6 @@ export type DepositClaimRecord = {
   reversal_reason?: string | null;
   reversed_at?: string | null;
   created_at: string;
-};
-
-export type DepositClaimCreatePayload = {
-  deposit_id: string;
-  claim_kind: DepositClaimKind;
-  invoice_id?: string | null;
-  allocation_amount: number;
-  evidence_uri: string;
-  claim_note?: string | null;
-  inspection_id?: string | null;
-  request_id?: string;
 };
 
 export type DepositRefundEventRecord = {
@@ -141,11 +113,12 @@ export const depositClaimKindLabels: Record<DepositClaimKind, string> = {
   DAMAGE: 'تعويض عن أضرار',
 };
 
-function getLocalDateString(date = new Date()): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+function requireAcknowledgedId(data: unknown, field: string): string {
+  const value = asJsonObject(data)[field];
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error('تعذر تأكيد نتيجة العملية. أعد المحاولة بنفس البيانات أو حدّث السجل للتحقق.');
+  }
+  return value;
 }
 
 type DepositRow = Record<string, unknown> & {
@@ -210,7 +183,7 @@ function mapClaimRow(row: Record<string, unknown>): DepositClaimRecord {
 }
 
 export async function listTenantDeposits(): Promise<DepositRecord[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<Record<string, unknown>>(() => supabase
     .from('tenant_deposits')
     .select(`
       *,
@@ -220,16 +193,16 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
     `)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
-    .limit(200)
-    .returns<Record<string, unknown>[]>();
-  if (error) handleSupabaseError(error, 'تعذر تحميل الودائع');
-  return (data ?? []).map((row) => mapRow(row as DepositRow));
+    .order('id', { ascending: false })
+    .returns<Record<string, unknown>[]>());
+  return rows.map((row) => mapRow(row as DepositRow));
 }
 
-export async function createTenantDeposit(payload: DepositCreatePayload): Promise<DepositRecord> {
+export async function createTenantDeposit(payload: DepositCreatePayload): Promise<{ deposit_id: string }> {
   // Re-parse at the service boundary. UI validation is not a trust boundary.
   const validated = depositPayloadSchema.parse(payload);
-  const requestId = validated.request_id || crypto.randomUUID();
+  const requestId = validated.request_id;
+  if (!requestId) throw new Error('معرف محاولة العملية مطلوب');
 
   const rpcPayload = {
     contract_id: validated.contract_id,
@@ -237,7 +210,7 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
     property_id: validated.property_id || null,
     unit_id: validated.unit_id || null,
     amount: validated.amount,
-    received_date: validated.received_date || getLocalDateString(),
+    received_date: validated.received_date || getTodayLocalDateString(),
     notes: validated.notes || null,
     request_id: requestId,
   };
@@ -245,45 +218,20 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
   const { data, error } = await supabase.rpc('create_deposit_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'تعذر إنشاء وديعة التأمين');
 
-  const depositId = asJsonObject(data).deposit_id as string | undefined;
-  if (!depositId) throw new Error('لم يتم إرجاع معرف الوديعة من الخادم');
-
-  const { data: row, error: fetchError } = await supabase
-    .from('tenant_deposits')
-    .select(`
-      *,
-      contracts:contract_id(people:tenant_id(id,full_name)),
-      properties:property_id(id,title),
-      units:unit_id(id,unit_number)
-    `)
-    .eq('id', depositId)
-    .single();
-
-  if (fetchError) handleSupabaseError(fetchError, 'تم إنشاء الوديعة لكن تعذر تحميلها');
-  return mapRow(row as DepositRow);
+  // The RPC commits the command. Refreshing the read model is a separate query,
+  // never a second prerequisite for acknowledging a committed financial event.
+  return { deposit_id: requireAcknowledgedId(data, 'deposit_id') };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GAP-009 governed deposit claim lifecycle (evidence-backed, maker-checker)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function createDepositClaim(payload: DepositClaimCreatePayload): Promise<DepositClaimRecord> {
-  if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
-  if (!Number.isFinite(payload.allocation_amount) || payload.allocation_amount <= 0) {
-    throw new Error('مبلغ التخصيص يجب أن يكون أكبر من صفر');
-  }
-  if (!payload.evidence_uri || payload.evidence_uri.trim().length < 3) {
-    throw new Error('دليل الإثبات مطلوب (رابط أو مرجع مستند)');
-  }
-  if (payload.claim_kind === 'INVOICE_ARREARS' && !payload.invoice_id) {
-    throw new Error('فاتورة المتأخرات مطلوبة');
-  }
-  if (payload.claim_kind === 'DAMAGE' && !payload.inspection_id) {
-    throw new Error('فحص إخلاء مراجع مطلوب لطلب خصم الأضرار');
-  }
+export async function createDepositClaim(payload: DepositClaimCreatePayload): Promise<{ claim_id: string }> {
+  payload = depositClaimPayloadSchema.parse(payload);
 
   const rpcPayload = {
-    request_id: payload.request_id || crypto.randomUUID(),
+    request_id: payload.request_id,
     deposit_id: payload.deposit_id,
     claim_kind: payload.claim_kind,
     invoice_id: payload.invoice_id || null,
@@ -295,27 +243,16 @@ export async function createDepositClaim(payload: DepositClaimCreatePayload): Pr
 
   const { data, error } = await supabase.rpc('create_deposit_application_claim_with_inspection_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'تعذر إنشاء طلب تخصيص الوديعة');
-  const claimId = asJsonObject(data).claim_id as string | undefined;
-  if (!claimId) throw new Error('لم يتم إرجاع معرف الطلب من الخادم');
-  return (await getDepositClaim(claimId))!;
-}
-
-export async function getDepositClaim(claimId: string): Promise<DepositClaimRecord | null> {
-  const { data, error } = await supabase
-    .from('deposit_application_claims')
-    .select('*')
-    .eq('id', claimId)
-    .maybeSingle();
-  if (error) handleSupabaseError(error, 'تعذر تحميل الطلب');
-  return data ? mapClaimRow(data as Record<string, unknown>) : null;
+  return { claim_id: requireAcknowledgedId(data, 'claim_id') };
 }
 
 export async function listDepositClaims(depositId?: string): Promise<DepositClaimRecord[]> {
-  let query = supabase.from('deposit_application_claims').select('*').order('created_at', { ascending: false }).limit(200);
-  if (depositId) query = query.eq('deposit_id', depositId);
-  const { data, error } = await query;
-  if (error) handleSupabaseError(error, 'تعذر تحميل طلبات التخصيص');
-  return (data ?? []).map(mapClaimRow);
+  const { rows } = await fetchAllRows<Record<string, unknown>>(() => {
+    let query = supabase.from('deposit_application_claims').select('*').order('created_at', { ascending: false }).order('id', { ascending: false });
+    if (depositId) query = query.eq('deposit_id', depositId);
+    return query;
+  });
+  return rows.map(mapClaimRow);
 }
 
 export async function approveDepositClaim(claimId: string): Promise<void> {
@@ -331,22 +268,22 @@ export async function rejectDepositClaim(claimId: string, reason: string): Promi
   if (error) handleSupabaseError(error, 'تعذر رفض الطلب');
 }
 
-export async function applyDepositClaim(claimId: string, effectiveDate?: string): Promise<{ batch_id: string }> {
+export async function applyDepositClaim(claimId: string, requestId: string, effectiveDate?: string): Promise<{ batch_id: string }> {
   const { data, error } = await supabase.rpc('apply_deposit_claim_atomic', {
     p_payload: {
       claim_id: claimId,
-      request_id: crypto.randomUUID(),
-      effective_date: effectiveDate || getLocalDateString(),
+      request_id: requestId,
+      effective_date: effectiveDate || getTodayLocalDateString(),
     },
   });
   if (error) handleSupabaseError(error, 'تعذر تطبيق التخصيص - تحقق من الرصيد وحالة الفاتورة');
-  return { batch_id: String(asJsonObject(data).batch_id ?? '') };
+  return { batch_id: requireAcknowledgedId(data, 'batch_id') };
 }
 
-export async function reverseDepositClaim(claimId: string, reason: string): Promise<void> {
+export async function reverseDepositClaim(claimId: string, reason: string, requestId: string): Promise<void> {
   if (!reason || reason.trim().length < 3) throw new Error('سبب الإلغاء مطلوب');
   const { error } = await supabase.rpc('reverse_deposit_claim_atomic', {
-    p_payload: { claim_id: claimId, request_id: crypto.randomUUID(), reason: reason.trim() },
+    p_payload: { claim_id: claimId, request_id: requestId, reason: reason.trim() },
   });
   if (error) handleSupabaseError(error, 'تعذر إلغاء التخصيص');
 }
@@ -355,10 +292,8 @@ export async function reverseDepositClaim(claimId: string, reason: string): Prom
 // GAP-009 governed deposit refunds (server-derived cash account, reversible)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function refundDepositGoverned(payload: DepositRefundPayload): Promise<{ refund_event_id: string; remaining: number; refunded: number }> {
-  if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
-  if (!Number.isFinite(payload.refund_amount) || payload.refund_amount <= 0) throw new Error('مبلغ الاسترداد يجب أن يكون أكبر من صفر');
-  if (!payload.refund_date) throw new Error('تاريخ الاسترداد مطلوب');
+export async function refundDepositGoverned(payload: DepositRefundPayload): Promise<{ refund_event_id: string; remaining?: number; refunded?: number }> {
+  payload = depositRefundPayloadSchema.parse(payload);
 
   const rpcPayload = {
     deposit_id: payload.deposit_id,
@@ -366,24 +301,25 @@ export async function refundDepositGoverned(payload: DepositRefundPayload): Prom
     refund_date: payload.refund_date,
     payment_method: payload.payment_method,
     notes: payload.notes || null,
-    request_id: payload.request_id || crypto.randomUUID(),
+    request_id: payload.request_id,
   };
 
   const { data, error } = await supabase.rpc('refund_deposit_governed_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'تعذر رد مبلغ التأمين - تحقق من الرصيد المتبقي');
   return {
-    refund_event_id: String(asJsonObject(data).refund_event_id ?? ''),
-    remaining: Number(asJsonObject(data).remaining ?? 0),
-    refunded: Number(asJsonObject(data).refunded ?? 0),
+    refund_event_id: requireAcknowledgedId(data, 'refund_event_id'),
+    ...(asJsonObject(data).remaining !== undefined ? { remaining: Number(asJsonObject(data).remaining) } : {}),
+    ...(asJsonObject(data).refunded !== undefined ? { refunded: Number(asJsonObject(data).refunded) } : {}),
   };
 }
 
 export async function listDepositRefundEvents(depositId?: string): Promise<DepositRefundEventRecord[]> {
-  let query = supabase.from('deposit_refund_events').select('*').order('effective_date', { ascending: false }).limit(200);
-  if (depositId) query = query.eq('deposit_id', depositId);
-  const { data, error } = await query;
-  if (error) handleSupabaseError(error, 'تعذر تحميل أحداث الاسترداد');
-  return (data ?? []).map((row) => ({
+  const { rows } = await fetchAllRows<Record<string, unknown>>(() => {
+    let query = supabase.from('deposit_refund_events').select('*').order('effective_date', { ascending: false }).order('id', { ascending: false });
+    if (depositId) query = query.eq('deposit_id', depositId);
+    return query;
+  });
+  return rows.map((row) => ({
     id: String(row.id),
     deposit_id: String(row.deposit_id),
     amount: Number(row.amount ?? 0),
@@ -400,10 +336,10 @@ export async function listDepositRefundEvents(depositId?: string): Promise<Depos
   }));
 }
 
-export async function reverseDepositRefund(refundEventId: string, reason: string): Promise<void> {
+export async function reverseDepositRefund(refundEventId: string, reason: string, requestId: string): Promise<void> {
   if (!reason || reason.trim().length < 3) throw new Error('سبب إلغاء الاسترداد مطلوب');
   const { error } = await supabase.rpc('reverse_deposit_refund_atomic', {
-    p_payload: { refund_event_id: refundEventId, request_id: crypto.randomUUID(), reason: reason.trim() },
+    p_payload: { refund_event_id: refundEventId, request_id: requestId, reason: reason.trim() },
   });
   if (error) handleSupabaseError(error, 'تعذر إلغاء الاسترداد');
 }

@@ -1,9 +1,10 @@
+import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoice-amounts';
 import { CircleCheck, Download, HandCoins, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PreviewFacts } from '@/components/ui/quick-preview';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import type { Payment } from '@/types/domain';
-import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
+import { type InvoiceDetail } from '../invoices/invoiceService';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
 import type { ReceiptRecord } from '../receipts/receiptService';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from './financials-formatters';

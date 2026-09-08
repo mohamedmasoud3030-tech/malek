@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  loadPeopleById,
-  loadPropertiesById,
-  loadUnitsById,
-} from './financial-report-rows';
+import { loadPeopleById, loadPropertiesById, loadUnitsById } from './financial-report-rows';
 
 type ContextTable = 'properties' | 'people' | 'units';
 type BatchLog = { table: ContextTable; ids: string[] };

@@ -1,12 +1,8 @@
+import { getInvoiceGrossAmount, getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { listContractsForProperties, type ContractListItem } from '@/features/contracts/services/contractService';
 import { formatPaymentMethodLabel } from '@/features/financials/components/receipt-formatters';
 import { loadInvoices, loadPayments } from '@/features/financials/reports/financial-reporting/report-loaders';
-import {
-  getInvoiceReportGrossAmount,
-  getInvoiceReportRemainingAmount,
-  type InvoiceReportRow,
-  type PaymentWithInvoiceContext,
-} from '@/features/financials/reports/financial-report-rows';
+import { type InvoiceReportRow, type PaymentWithInvoiceContext } from '@/features/financials/reports/financial-report-rows';
 import { isContractStatus } from '@/lib/contractStatus';
 import { listUnitsForProperties, type OwnerUnit } from '@/features/owners/services/owner-service';
 import { unitStatusLabelFor } from '@/features/units/unit-schema';
@@ -75,8 +71,8 @@ function buildUnitRows(params: {
       const contractIds = new Set(unitContracts.filter((contract) => contractOverlapsPeriod(contract, from, to)).map((contract) => contract.id));
       const unitInvoices = invoices.filter((invoice) => contractIds.has(invoice.contract_id));
       const unitPayments = payments.filter((payment) => payment.invoice?.contract_id && contractIds.has(payment.invoice.contract_id));
-      const due = unitInvoices.reduce((sum, invoice) => sum + getInvoiceReportGrossAmount(invoice), 0);
-      const outstanding = unitInvoices.reduce((sum, invoice) => sum + getInvoiceReportRemainingAmount(invoice), 0);
+      const due = unitInvoices.reduce((sum, invoice) => sum + getInvoiceGrossAmount(invoice), 0);
+      const outstanding = unitInvoices.reduce((sum, invoice) => sum + getInvoiceRemainingAmount(invoice), 0);
       const collected = unitPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
       const latestPayment = [...unitPayments]
         .filter((payment) => Boolean(payment.payment_date))

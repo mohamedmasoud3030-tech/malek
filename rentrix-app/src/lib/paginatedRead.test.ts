@@ -57,3 +57,11 @@ describe('fetchAllRows', () => {
     await expect(fetchAllRows(() => query, { pageSize: 2 })).rejects.toThrow('read failed');
   });
 });
+
+it.each([{ pageSize: 0 }, { maxPages: -1 }, { pageSize: 1.5 }, { maxPages: Infinity }])(
+  'rejects invalid pagination options before querying: %j', async (options) => {
+    const query = fakeQuery([]);
+    await expect(fetchAllRows(() => query, options)).rejects.toThrow();
+    expect(query.range).not.toHaveBeenCalled();
+  },
+);

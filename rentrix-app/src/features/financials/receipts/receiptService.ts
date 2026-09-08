@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { loadReceiptAllocations, loadReceiptReferences, singleInvoiceIdsByReceipt } from './receipt-relationships';
 import { chunkForInFilter } from '@/lib/paginatedRead';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { formatReceiptNumber } from '../components/receipt-formatters';
@@ -29,7 +30,6 @@ type ReceiptContractContext = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 
 type ReceiptUnitContext = Pick<Unit, 'id' | 'unit_number'>;
 type ReceiptPropertyContext = Pick<Property, 'id' | 'title'>;
 type ReceiptTenantContext = Pick<Person, 'id' | 'full_name'>;
-type ReceiptAllocationContext = { receipt_id: string; invoice_id: string | null };
 
 const DEFAULT_RECEIPT_LIMIT = 25;
 
@@ -82,41 +82,13 @@ async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]>
   if (payments.length === 0) return [];
 
   const receiptIds = uniqueStrings(payments.map((payment) => payment.receipt_id ?? payment.id));
-  const { data: allocationRows, error: allocationsError } = await supabase
-    .from('receipt_allocations')
-    .select('receipt_id, invoice_id')
-    .in('receipt_id', receiptIds)
-    .is('deleted_at', null)
-    .returns<ReceiptAllocationContext[]>();
-  if (allocationsError) throw allocationsError;
+  const allocationRows = await loadReceiptAllocations('receipt_id', receiptIds);
 
-  const allocationInvoiceIdsByReceipt = new Map<string, Set<string>>();
-  for (const allocation of allocationRows ?? []) {
-    if (!allocation.invoice_id) continue;
-    const ids = allocationInvoiceIdsByReceipt.get(allocation.receipt_id) ?? new Set<string>();
-    ids.add(allocation.invoice_id);
-    allocationInvoiceIdsByReceipt.set(allocation.receipt_id, ids);
-  }
-  const invoiceIdByReceiptId = new Map(
-    [...allocationInvoiceIdsByReceipt.entries()]
-      .filter(([, ids]) => ids.size === 1)
-      .map(([receiptId, ids]) => [receiptId, [...ids][0]]),
-  );
+  const invoiceIdByReceiptId = singleInvoiceIdsByReceipt(allocationRows);
 
   // Surface the server-generated company-scoped reference from the receipts
   // table so the UI shows a business identifier instead of a raw UUID slice.
-  const referenceByReceiptId = new Map<string, string>();
-  if (receiptIds.length > 0) {
-    const { data: receiptRows, error: receiptsError } = await supabase
-      .from('receipts')
-      .select('id, reference')
-      .in('id', receiptIds)
-      .returns<Array<{ id: string; reference: string | null }>>();
-    if (receiptsError) throw receiptsError;
-    for (const row of (receiptRows ?? []) as Array<{ id: string; reference: string | null }>) {
-      if (row.reference) referenceByReceiptId.set(row.id, row.reference);
-    }
-  }
+  const referenceByReceiptId = await loadReceiptReferences(receiptIds);
   const invoiceIds = uniqueStrings([
     ...payments.map((payment) => payment.invoice_id),
     ...invoiceIdByReceiptId.values(),

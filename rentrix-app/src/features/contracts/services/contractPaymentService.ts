@@ -1,10 +1,12 @@
+import { fetchAllRows } from '@/lib/paginatedRead';
+import { getInvoiceGrossAmount, getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { supabase } from '@/lib/supabase';
 import type { Invoice, Payment } from '@/types/domain';
 import {
-  getSafeRemainingAmount,
   toFinancialNumber,
 } from '@/features/financials/financialMath';
-import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoiceService';
+
+import { loadInvoicePayments, loadReceiptReferences } from '@/features/financials/receipts/receipt-relationships';
 import { formatReceiptNumber } from '@/features/financials/components/receipt-formatters';
 
 export type ContractInvoicePaymentRow = Readonly<{
@@ -57,7 +59,7 @@ type InvoiceRow = Pick<
   | 'paid_amount'
   | 'status'
   | 'notes'
-> & Partial<Pick<Invoice, 'tax_amount'>> & { reference: string | null };
+> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>> & { reference: string | null };
 type PaymentRow = Pick<
   Payment,
   | 'id'
@@ -67,6 +69,7 @@ type PaymentRow = Pick<
   | 'payment_date'
   | 'reference_number'
   | 'receipt_id'
+  | 'created_at'
 >;
 
 function toPaymentRow(
@@ -90,25 +93,13 @@ function toPaymentRow(
   };
 }
 
-async function loadReceiptReferences(payments: readonly PaymentRow[]): Promise<Map<string, string>> {
-  const receiptIds = Array.from(new Set(payments.map((payment) => payment.receipt_id ?? payment.id)));
-  if (receiptIds.length === 0) return new Map();
-  const { data, error } = await supabase
-    .from('receipts')
-    .select('id, reference')
-    .in('id', receiptIds)
-    .returns<Array<{ id: string; reference: string | null }>>();
-  if (error) throw error;
-  return new Map((data ?? []).flatMap((row) => (row.reference ? [[row.id, row.reference] as const] : [])));
-}
-
 function buildSummary(
   invoices: ContractInvoiceRow[],
   payments: ContractInvoicePaymentRow[],
 ): ContractPaymentsSummary {
   return {
     invoiceCount: invoices.length,
-    paymentCount: payments.length,
+    paymentCount: new Set(payments.map(payment => payment.id)).size,
     totalInvoiced: invoices.reduce(
       (total, invoice) => total + toFinancialNumber(invoice.amount),
       0,
@@ -127,48 +118,28 @@ function buildSummary(
 export async function getContractPaymentsSnapshot(
   contractId: string,
 ): Promise<ContractPaymentsSnapshot> {
-  const { data: invoices, error: invoicesError } = await supabase
+  const { rows: invoiceRows } = await fetchAllRows<InvoiceRow>(() => supabase
     .from('invoices')
-    .select('id, reference, issue_date, due_date, amount, tax_amount, paid_amount, status, notes')
+    .select('id, reference, issue_date, due_date, amount, tax_amount, credited_amount, paid_amount, status, notes')
     .eq('contract_id', contractId)
     .is('deleted_at', null)
     .order('due_date', { ascending: false })
-    .returns<InvoiceRow[]>();
-  if (invoicesError) throw invoicesError;
-
-  const invoiceRows = invoices ?? [];
+    .order('id', { ascending: false }));
   const invoiceIds = invoiceRows.map((invoice) => invoice.id);
-  const { data: paymentRows, error: paymentsError } =
-    invoiceIds.length > 0
-      ? await supabase
-          .from('payments')
-          .select(
-            'id, invoice_id, amount, payment_method, payment_date, reference_number, receipt_id',
-          )
-          .in('invoice_id', invoiceIds)
-          .is('deleted_at', null)
-          .order('payment_date', { ascending: false })
-          .order('created_at', { ascending: false })
-          .returns<PaymentRow[]>()
-      : { data: [], error: null };
-  if (paymentsError) throw paymentsError;
+  const paymentRows = await loadInvoicePayments(invoiceIds);
 
   const invoicesById = new Map(
     invoiceRows.map((invoice) => [invoice.id, invoice]),
   );
-  const receiptReferenceById = await loadReceiptReferences(paymentRows ?? []);
+  const receiptReferenceById = await loadReceiptReferences(paymentRows.map(row => row.receipt_id ?? row.id));
   const paymentsByInvoiceId = new Map<string, ContractInvoicePaymentRow[]>();
-  const payments = (paymentRows ?? []).flatMap((payment) => {
+  const payments = paymentRows.flatMap((payment) => {
     const invoice = payment.invoice_id ? invoicesById.get(payment.invoice_id) : undefined;
-    if (!invoice) {
-      return [];
-    }
-
+    if (!invoice) return [];
     const row = toPaymentRow(payment, invoice, receiptReferenceById);
-    paymentsByInvoiceId.set(payment.invoice_id ?? '', [
-      ...(paymentsByInvoiceId.get(payment.invoice_id ?? '') ?? []),
-      row,
-    ]);
+    const bucket = paymentsByInvoiceId.get(invoice.id) ?? [];
+    bucket.push(row);
+    paymentsByInvoiceId.set(invoice.id, bucket);
     return [row];
   });
 
@@ -176,14 +147,11 @@ export async function getContractPaymentsSnapshot(
     id: invoice.id,
     issue_date: invoice.issue_date,
     due_date: invoice.due_date,
-    amount: invoice.amount,
+    amount: getInvoiceGrossAmount(invoice),
     paid_amount: invoice.paid_amount,
     // Gross-based like every other surfaces: net + VAT − paid. Using the net
     // amount here under-reported taxed invoices in the contract payments tab.
-    remaining_amount: getSafeRemainingAmount(
-      getInvoiceGrossAmount(invoice),
-      invoice.paid_amount,
-    ),
+    remaining_amount: getInvoiceRemainingAmount(invoice),
     status: invoice.status,
     notes: invoice.notes,
     reference: invoice.reference,

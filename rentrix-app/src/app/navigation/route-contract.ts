@@ -39,6 +39,8 @@ export interface RouteContractEntry {
   inMobileNav: boolean;
   permission: AppPermission | null;
   targetIANote?: string;
+  /** Existing reactive shell gate, in addition to action-specific route guards. */
+  workspaceGuard?: 'exact' | 'subtree';
 }
 
 export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
@@ -53,7 +55,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/dashboard', titleAr: 'اليوم', sidebarRoot: '/dashboard', isPrimaryNav: true, inMobileNav: false, permission: null, targetIANote: 'Canonical label is اليوم; route stays /dashboard for compatibility.' },
 
   // Portfolio
-  { canonical: '/properties', titleAr: 'العقارات', sidebarRoot: '/properties', isPrimaryNav: true, inMobileNav: false, permission: 'properties.view' },
+  { canonical: '/properties', workspaceGuard: 'subtree', titleAr: 'العقارات', sidebarRoot: '/properties', isPrimaryNav: true, inMobileNav: false, permission: 'properties.view' },
   { canonical: '/properties/new', titleAr: 'إضافة عقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.create' },
   { canonical: '/properties/$propertyId', titleAr: 'تفاصيل العقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.view' },
   { canonical: '/properties/$propertyId/edit', titleAr: 'تعديل عقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.edit' },
@@ -64,13 +66,13 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/owners/$ownerId/edit', titleAr: 'تعديل مالك', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'owners.hub.view' },
 
   // Leasing
-  { canonical: '/contracts', titleAr: 'العقود', sidebarRoot: '/contracts', isPrimaryNav: true, inMobileNav: false, permission: 'contracts.view' },
+  { canonical: '/contracts', workspaceGuard: 'subtree', titleAr: 'العقود', sidebarRoot: '/contracts', isPrimaryNav: true, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/contracts/new', titleAr: 'إنشاء عقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.create' },
   { canonical: '/contracts/$contractId', titleAr: 'تفاصيل العقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/contracts/$contractId/edit', titleAr: 'تعديل عقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.edit' },
-  { canonical: '/tenants', titleAr: 'المستأجرون', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
+  { canonical: '/tenants', workspaceGuard: 'subtree', titleAr: 'المستأجرون', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/tenants/$tenantId', titleAr: 'ملف المستأجر', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
-  { canonical: '/people', titleAr: 'الأشخاص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
+  { canonical: '/people', workspaceGuard: 'subtree', titleAr: 'الأشخاص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/people/$personId', titleAr: 'ملف الشخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.view' },
   { canonical: '/people/new', titleAr: 'إضافة شخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.create' },
   { canonical: '/people/$personId/edit', titleAr: 'تعديل شخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.edit' },
@@ -78,19 +80,19 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/communication', titleAr: 'التواصل', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'communication.view' },
 
   // Services
-  { canonical: '/maintenance', titleAr: 'الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: true, inMobileNav: false, permission: 'maintenance.view' },
+  { canonical: '/maintenance', workspaceGuard: 'subtree', titleAr: 'الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: true, inMobileNav: false, permission: 'maintenance.view' },
   { canonical: '/service-providers', titleAr: 'مزودو الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.view' },
   { canonical: '/service-providers/new', titleAr: 'إضافة مزود خدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.write' },
   { canonical: '/service-providers/$providerId', titleAr: 'ملف مزود الخدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.view' },
   { canonical: '/service-providers/$providerId/edit', titleAr: 'تعديل مزود الخدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.write' },
 
   // Money
-  { canonical: '/financials', titleAr: 'المال', sidebarRoot: '/financials', isPrimaryNav: true, inMobileNav: false, permission: 'financial.workspace.view' },
+  { canonical: '/financials', workspaceGuard: 'subtree', titleAr: 'المال', sidebarRoot: '/financials', isPrimaryNav: true, inMobileNav: false, permission: 'financial.workspace.view' },
   { canonical: '/commissions', titleAr: 'العمولات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'commissions.view' },
-  { canonical: '/receipts', titleAr: 'الإيصالات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.workspace.view', targetIANote: 'Receipt document/print surface; requires ?receiptId=. The register canonical is /financials?section=collections&view=receipts.' },
+  { canonical: '/receipts', workspaceGuard: 'exact', titleAr: 'الإيصالات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.workspace.view', targetIANote: 'Receipt document/print surface; requires ?receiptId=. The register canonical is /financials?section=collections&view=receipts.' },
 
   // Reports
-  { canonical: '/reports', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: true, inMobileNav: false, permission: 'financial.reports.view' },
+  { canonical: '/reports', workspaceGuard: 'subtree', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: true, inMobileNav: false, permission: 'financial.reports.view' },
   { canonical: '/reports/$reportId', titleAr: 'تقرير MALEK', sidebarRoot: '/reports', isPrimaryNav: false, inMobileNav: false, permission: 'financial.reports.view', targetIANote: 'Premium report product route — opened from the /reports catalog; export permissions stay page-level.' },
 
   // Tools/settings
@@ -103,3 +105,13 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
 export const TARGET_IA_TOP_LEVEL = [
   '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
 ] as const;
+
+/** Resolve the shell's existing gates from route metadata, never a second permission map.
+ * Action guards and database authorization remain independently enforced.
+ */
+export function workspacePermissionForPath(pathname: string): AppPermission | null {
+  return ROUTE_CONTRACT.find((entry) => entry.workspaceGuard && (
+    pathname === entry.canonical ||
+    (entry.workspaceGuard === 'subtree' && pathname.startsWith(`${entry.canonical}/`))
+  ))?.permission ?? null;
+}

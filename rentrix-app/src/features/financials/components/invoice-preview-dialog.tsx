@@ -1,3 +1,4 @@
+import { getInvoiceGrossAmount, getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { FolderOpen, HandCoins } from 'lucide-react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { PreviewFacts } from '@/components/ui/quick-preview';
@@ -5,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { getInvoiceStatusTone } from '../finance-status-mapping';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
-import { getInvoiceGrossAmount, type InvoiceListItem } from '../invoices/invoiceService';
-import { getSafeRemainingAmount } from '../financialMath';
+import { type InvoiceListItem } from '../invoices/invoiceService';
 import { billingPeriodLabel } from './invoice-list-section';
 
 /**
@@ -30,7 +30,7 @@ export function InvoicePreviewDialog({
   onCollect?: (invoiceId: string) => void;
 }>) {
   const grossAmount = invoice ? getInvoiceGrossAmount(invoice) : 0;
-  const remaining = invoice ? getSafeRemainingAmount(grossAmount, invoice.paid_amount) : 0;
+  const remaining = invoice ? getInvoiceRemainingAmount(invoice) : 0;
 
   return (
     <EntityPreviewDialog

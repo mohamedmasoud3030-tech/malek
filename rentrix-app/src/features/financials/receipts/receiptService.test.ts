@@ -76,6 +76,11 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
       log.push({ table, method: 'maybeSingle', args: [] });
       return builder;
     }),
+    range: vi.fn(async (from: number, to: number) => {
+      log.push({ table, method: 'range', args: [from, to] });
+      const result = await builder.returns();
+      return { ...result, data: Array.isArray(result.data) ? result.data.slice(from, to + 1) : result.data };
+    }),
     returns: vi.fn(async () => {
       log.push({ table, method: 'returns', args: [] });
       const data = (responses[table as TableName] ?? []).filter((row) => (

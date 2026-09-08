@@ -1,3 +1,5 @@
+import { fetchAllRows, type RangeQueryable } from '@/lib/paginatedRead';
+import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoice-amounts';
 import { toDateOnlyISO } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
@@ -11,7 +13,7 @@ type PropertyRow = Pick<Database['public']['Tables']['properties']['Row'], 'id' 
 type UnitRow = Pick<Database['public']['Tables']['units']['Row'], 'id' | 'property_id' | 'deleted_at'>;
 type PersonRow = Pick<Database['public']['Tables']['people']['Row'], 'id' | 'type' | 'deleted_at'>;
 type ContractRow = Pick<Database['public']['Tables']['contracts']['Row'], 'id' | 'property_id' | 'unit_id' | 'tenant_id' | 'start_date' | 'end_date' | 'deleted_at'>;
-type InvoiceRow = Pick<Database['public']['Tables']['invoices']['Row'], 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'deleted_at'>;
+type InvoiceRow = Pick<Database['public']['Tables']['invoices']['Row'], 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'deleted_at'> & { tax_amount?: number | null };
 type OwnerRow = { id: string; name: string; full_name: string | null; deleted_at: string | null };
 type PropertyOwnerRow = Pick<Database['public']['Tables']['property_owners']['Row'], 'property_id' | 'owner_id' | 'is_primary' | 'starts_on' | 'ends_on'> & { id?: string };
 type OwnerAgreementRow = Pick<Database['public']['Tables']['owner_agreements']['Row'], 'property_id' | 'owner_id' | 'starts_on' | 'ends_on'> & { id?: string };
@@ -20,10 +22,6 @@ const INTEGRITY_UNAVAILABLE_REASON = 'تعذر تشغيل فحص سلامة ال
 const INTEGRITY_BROWSER_LIMIT_REASON = 'وصل فحص سلامة البيانات إلى حد القراءة الآمن في المتصفح قبل تأكيد اكتمال البيانات. هذا الفحص مناسب لبيانات العرض أو التدريج فقط، ويحتاج الإنتاج إلى مسار قراءة خادمي قابل للتوسع ومتحقق منه.';
 export const DATA_INTEGRITY_PAGE_SIZE = 500;
 export const DATA_INTEGRITY_MAX_PAGES = 10;
-
-type PaginatedReadQuery<Row> = Readonly<{
-  range: (from: number, to: number) => PromiseLike<{ data: readonly Row[] | null; error: unknown }>;
-}>;
 
 type PaginatedReadResult<Row> =
   | Readonly<{ status: 'available'; rows: readonly Row[] }>
@@ -45,25 +43,15 @@ function buildCheck(id: string, label: string, description: string, count: numbe
   return { id, label, description, count, severity: count > 0 ? 'warning' : 'ok' };
 }
 
-export async function fetchPaginatedRows<Row>(createQuery: () => PaginatedReadQuery<Row>): Promise<PaginatedReadResult<Row>> {
-  const rows: Row[] = [];
-
-  for (let pageIndex = 0; pageIndex < DATA_INTEGRITY_MAX_PAGES; pageIndex += 1) {
-    const from = pageIndex * DATA_INTEGRITY_PAGE_SIZE;
-    const to = from + DATA_INTEGRITY_PAGE_SIZE - 1;
-    const { data, error } = await createQuery().range(from, to);
-
-    if (error) return { status: 'unavailable', reason: INTEGRITY_UNAVAILABLE_REASON };
-
-    const page = data ?? [];
-    rows.push(...page);
-
-    if (page.length < DATA_INTEGRITY_PAGE_SIZE) {
-      return { status: 'available', rows };
-    }
+export async function fetchPaginatedRows<Row>(createQuery: () => RangeQueryable<Row>): Promise<PaginatedReadResult<Row>> {
+  try {
+    const { rows, truncated } = await fetchAllRows(createQuery, {
+      pageSize: DATA_INTEGRITY_PAGE_SIZE, maxPages: DATA_INTEGRITY_MAX_PAGES, allowTruncated: true,
+    });
+    return truncated ? { status: 'unavailable', reason: INTEGRITY_BROWSER_LIMIT_REASON } : { status: 'available', rows };
+  } catch {
+    return { status: 'unavailable', reason: INTEGRITY_UNAVAILABLE_REASON };
   }
-
-  return { status: 'unavailable', reason: INTEGRITY_BROWSER_LIMIT_REASON };
 }
 
 export function buildDataIntegritySnapshot(input: Readonly<{
@@ -90,7 +78,7 @@ export function buildDataIntegritySnapshot(input: Readonly<{
   }).length;
   const contractsWithInvalidDates = input.contracts.filter((contract) => !contract.deleted_at && new Date(contract.start_date).getTime() > new Date(contract.end_date).getTime()).length;
   const orphanInvoices = input.invoices.filter((invoice) => !invoice.deleted_at && !contractIds.has(invoice.contract_id)).length;
-  const overpaidInvoices = input.invoices.filter((invoice) => !invoice.deleted_at && Number(invoice.paid_amount) > Number(invoice.amount)).length;
+  const overpaidInvoices = input.invoices.filter((invoice) => !invoice.deleted_at && Number(invoice.paid_amount) > getInvoiceGrossAmount(invoice)).length;
   const owners = input.owners ?? [];
   const propertyOwners = input.propertyOwners ?? [];
   const ownerAgreements = input.ownerAgreements ?? [];
@@ -152,7 +140,7 @@ export async function runDataIntegrityAudit(): Promise<DataIntegrityResult> {
     fetchPaginatedRows<UnitRow>(() => supabase.from('units').select('id, property_id, deleted_at').order('id', { ascending: true })),
     fetchPaginatedRows<PersonRow>(() => supabase.from('people').select('id, type, deleted_at').order('id', { ascending: true })),
     fetchPaginatedRows<ContractRow>(() => supabase.from('contracts').select('id, property_id, unit_id, tenant_id, start_date, end_date, deleted_at').order('id', { ascending: true })),
-    fetchPaginatedRows<InvoiceRow>(() => supabase.from('invoices').select('id, contract_id, amount, paid_amount, deleted_at').order('id', { ascending: true })),
+    fetchPaginatedRows<InvoiceRow>(() => supabase.from('invoices').select('id, contract_id, amount, tax_amount, paid_amount, deleted_at').order('id', { ascending: true })),
     fetchPaginatedRows<OwnerRow>(() => supabase.from('owners').select('id, name, full_name, deleted_at' as never).order('id', { ascending: true }).returns<OwnerRow[]>()),
     // Offset pagination requires a globally unique final ordering key. Ordering
     // relationship tables by property_id alone can duplicate or skip rows when

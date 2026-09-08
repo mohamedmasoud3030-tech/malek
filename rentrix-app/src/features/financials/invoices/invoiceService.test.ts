@@ -107,7 +107,7 @@ describe('invoiceService financial reconciliation', () => {
   });
 
   it('summarizes invoice truth from canonical amount, paid, and clamped remaining values', async () => {
-    const { summarizeInvoices } = await import('./invoiceService');
+    const { summarizeInvoices } = await import('./invoice-amounts');
 
     expect(summarizeInvoices(invoiceRows)).toEqual({
       totalAmount: 3050.5,
@@ -142,7 +142,8 @@ describe('invoiceService financial reconciliation', () => {
         createPaymentFixture(),
       ],
     });
-    const { getInvoiceDetail, summarizeInvoices } = await import('./invoiceService');
+    const { getInvoiceDetail } = await import('./invoiceService');
+    const { summarizeInvoices } = await import('./invoice-amounts');
 
     const invoice = await getInvoiceDetail('invoice_1');
 
@@ -151,7 +152,9 @@ describe('invoiceService financial reconciliation', () => {
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'eq', args: ['id', 'invoice_1'] },
       { table: 'invoices', method: 'maybeSingle', args: [] },
-      { table: 'payments', method: 'eq', args: ['invoice_id', 'invoice_1'] },
+      { table: 'receipt_allocations', method: 'in', args: ['invoice_id', ['invoice_1']] },
+      { table: 'payments', method: 'in', args: ['invoice_id', ['invoice_1']] },
+      { table: 'payments', method: 'range', args: [0, 999] },
       { table: 'payments', method: 'is', args: ['deleted_at', null] },
     ]));
   });
@@ -186,8 +189,9 @@ describe('listDossierInvoicesForContracts — canonical dossier invoice read', (
       is: vi.fn((...args: unknown[]) => { calls.push({ method: 'is', args }); return chain; }),
       order: vi.fn((...args: unknown[]) => {
         calls.push({ method: 'order', args });
-        return Promise.resolve({ data: resultRows, error: null });
+        return chain;
       }),
+      range: vi.fn(() => Promise.resolve({ data: resultRows, error: null })),
     };
     supabaseMock.from.mockReturnValue(chain);
     const { listDossierInvoicesForContracts } = await import('./invoiceService');
@@ -197,10 +201,11 @@ describe('listDossierInvoicesForContracts — canonical dossier invoice read', (
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({ id: 'i1', contract_id: 'c1', due_date: '2026-05-01' });
     expect(calls).toEqual([
-      { method: 'select', args: ['id,reference,contract_id,due_date,amount,paid_amount,status'] },
+      { method: 'select', args: ['id,reference,contract_id,due_date,amount,tax_amount,credited_amount,paid_amount,status'] },
       { method: 'in', args: ['contract_id', ['c1', 'c2']] },
       { method: 'is', args: ['deleted_at', null] },
       { method: 'order', args: ['due_date', { ascending: false }] },
+      { method: 'order', args: ['id', { ascending: false }] },
     ]);
   });
 });

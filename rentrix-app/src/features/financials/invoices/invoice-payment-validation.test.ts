@@ -1,5 +1,6 @@
+import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { describe, expect, it } from 'vitest';
-import { getInvoiceRemainingAmount, getInvoicePaymentValidationMessage } from './invoice-payment-validation';
+import { getInvoicePaymentValidationMessage } from './invoice-payment-validation';
 
 const VALID_DATE = '2026-07-22';
 
