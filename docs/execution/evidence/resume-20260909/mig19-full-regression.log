@@ -1,0 +1,25 @@
+stderr | src/services/action-service.test.ts
+DOMException [NetworkError]: Failed to execute "fetch()" on "Window" with URL "http://localhost:3000/fonts/fonts.css": 
+    at Fetch.onError (file:///home/user/malek/node_modules/[4m.pnpm[24m/happy-dom@20.10.6/node_modules/[4mhappy-dom[24m/src/fetch/Fetch.ts:700:4)
+[90m    at ClientRequest.emit (node:events:524:28)[39m
+[90m    at emitErrorEvent (node:_http_client:101:11)[39m
+[90m    at Socket.socketErrorListener (node:_http_client:504:5)[39m
+[90m    at Socket.emit (node:events:524:28)[39m
+[90m    at emitErrorNT (node:internal/streams/destroy:169:8)[39m
+[90m    at emitErrorCloseNT (node:internal/streams/destroy:128:3)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:82:21)[39m
+
+
+
+================ SHARDED REGRESSION SUMMARY ================
+Test files executed : 508
+Tests executed      : 3601
+Shards with failures: 1
+Shards killed (INFRA): 1
+
+Details:
+  SHARD 2: INFRA — killed by SIGKILL (resource limit, not a test verdict)
+  SHARD 13: × uses the existing query policy over the real SDK (503) 5006ms
+  SHARD 13: FAIL  src/lib/paginatedRead.test.ts > uses the existing query policy over the real SDK (503)
+
+RESULT: NOT CLEAN — see details above
