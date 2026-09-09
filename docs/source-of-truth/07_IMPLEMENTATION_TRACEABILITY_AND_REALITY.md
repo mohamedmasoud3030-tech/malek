@@ -437,3 +437,16 @@ owns complete-read retries. Real SDK/query tests and desktop/mobile browser
 requests verify deterministic failure versus bounded transient retries. This
 scope does not cover every unpaged SDK call, change accounting/RLS, resolve the
 OWNER expense classification conflict, or confer hosted/governed acceptance.
+
+### Historical expense diagnostic lineage
+FIN-007/013/019, SEC-001/002, GAP-013: migration10 repairs the existing read-only
+S08 expense diagnostic, using charged responsibility, exact OMR source evidence,
+company/period scope and linked postings/compensations/reversals. It exposes
+unresolved ownership allocation and uncertified historical metadata rather than
+inventing rights or amounts. Existing report permissions guard the read. Local
+persisted and desktop/mobile tests retain the historical mismatch visibly;
+a separately reviewed disposable S09 compensation reconciles the first-day
+sample without rewriting its original batch, and reverses cleanly. This does
+not approve production correction or complete the OWNER expense write lifecycle.
+Correction dating, review snapshot integrity and coupled settlement/allocation
+remain explicit next work in the live inventory; governed stage credit unchanged.

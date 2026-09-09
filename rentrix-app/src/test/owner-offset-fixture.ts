@@ -7,7 +7,7 @@ const CHECKER = 'c2000000-0000-4000-8000-000000000099';
 export const OTHER_OFFSET_OWNER = 'c2000000-0000-4000-8000-000000000098';
 export const offsetDate = (day: number) => `${new Date().toISOString().slice(0,7)}-${String(day).padStart(2,'0')}`;
 export async function offsetFixtureCommand(db: PGlite, name: string, payload: Record<string, unknown>) {
-  if (!/^[a-z_]+$/.test(name)) throw new Error('Invalid test RPC');
+  if (!/^[a-z_][a-z0-9_]*$/.test(name)) throw new Error('Invalid test RPC');
   return (await db.query<{ data: Record<string, unknown> }>(`select public.${name}($1::jsonb) as data`,[JSON.stringify(payload)])).rows[0].data;
 }
 /** Governed collection -> maker/checker-approved settlement -> scoped receivable.
