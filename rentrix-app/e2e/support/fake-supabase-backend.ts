@@ -379,10 +379,17 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
     // The professional owner pack reads the canonical financial position next
     // to the statement; seed a truthful, internally consistent shape for the
     // demo owner so owner-report print/PDF runs hermetically.
+    // The canonical function returns owner identity and derivation authority
+    // under `meta`. Seeding a root-level `owner_id` here previously hid a real
+    // client defect, so this envelope mirrors the database exactly.
     rpt_owner_financial_position: () => ({
-      owner_id: IDS.owner,
-      basis: 'ACCRUAL_OMR_3DP',
-      operating_model: 'OWNER_AGENCY',
+      meta: {
+        owner_id: IDS.owner,
+        from: '2026-01-01',
+        to: '2026-12-31',
+        source: 'rpt_owner_financial_position',
+        derivation_authority: 'calculate_owner_net_payout (ADR 0001)',
+      },
       period: {
         tenant_collections: 8400,
         management_fees: { amount: 420, breakdown: { basis: 'RATE', percentage: 5 } },

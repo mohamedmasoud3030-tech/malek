@@ -10,11 +10,25 @@ import { getOwnerFinancialAuthority } from './owner-financial-service';
 
 const OWNER = 'owner-0001';
 
+/**
+ * Mirrors the REAL `rpt_owner_financial_position` envelope.
+ *
+ * The canonical function returns the owner identity and derivation authority
+ * under `meta` — never as root-level `owner_id`/`basis` keys. An earlier
+ * fixture asserted the root-level shape, which let a client parser that read
+ * `root.owner_id` pass unit tests while failing against every real response.
+ * The fixture now matches the server so the contract cannot drift silently
+ * again.
+ */
 function position(overrides: Record<string, unknown> = {}) {
   return {
-    owner_id: OWNER,
-    basis: 'OWNER_AGENCY',
-    operating_model: 'OWNER_AGENCY',
+    meta: {
+      owner_id: OWNER,
+      from: '2026-07-01',
+      to: '2026-07-31',
+      source: 'rpt_owner_financial_position',
+      derivation_authority: 'calculate_owner_net_payout (ADR 0001)',
+    },
     period: {
       tenant_collections: 1000,
       management_fees: { amount: 100, breakdown: { rate: 0.1 } },
@@ -75,12 +89,49 @@ describe('getOwnerFinancialAuthority', () => {
 
   it('rejects a position that belongs to a different owner (cross-owner guard)', async () => {
     rpcMock
-      .mockResolvedValueOnce({ data: position({ owner_id: 'other-owner' }), error: null })
+      .mockResolvedValueOnce({
+        data: position({ meta: { ...position().meta, owner_id: 'other-owner' } }),
+        error: null,
+      })
       .mockResolvedValueOnce({ data: statement(), error: null });
 
     await expect(getOwnerFinancialAuthority(OWNER, '2026-07-01', '2026-07-31')).rejects.toThrow(
       'لا يخص المالك المطلوب',
     );
+  });
+
+  it('reads the owner identity from the canonical meta envelope the server emits', async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: position(), error: null })
+      .mockResolvedValueOnce({ data: statement(), error: null });
+
+    const authority = await getOwnerFinancialAuthority(OWNER, '2026-07-01', '2026-07-31');
+    expect(authority.position.owner_id).toBe(OWNER);
+    // The server states its derivation authority under meta; surface it rather
+    // than inventing a basis label the server never sent.
+    expect(authority.position.basis).toBe('calculate_owner_net_payout (ADR 0001)');
+    expect(authority.position.operating_model).toBeNull();
+  });
+
+  it('fails closed when NO owner identity is provable anywhere in the response', async () => {
+    const { meta: _meta, ...withoutMeta } = position();
+    rpcMock
+      .mockResolvedValueOnce({ data: withoutMeta, error: null })
+      .mockResolvedValueOnce({ data: statement(), error: null });
+
+    await expect(getOwnerFinancialAuthority(OWNER, '2026-07-01', '2026-07-31')).rejects.toThrow(
+      'ناقصة المعرّف',
+    );
+  });
+
+  it('still accepts a root-level owner identity for forward compatibility', async () => {
+    const { meta: _meta, ...withoutMeta } = position();
+    rpcMock
+      .mockResolvedValueOnce({ data: { ...withoutMeta, owner_id: OWNER }, error: null })
+      .mockResolvedValueOnce({ data: statement(), error: null });
+
+    const authority = await getOwnerFinancialAuthority(OWNER, '2026-07-01', '2026-07-31');
+    expect(authority.position.owner_id).toBe(OWNER);
   });
 
   it('fails closed when a financial value is not a finite number', async () => {

@@ -74,6 +74,33 @@ function requiredString(value: unknown, label: string): string {
   return value;
 }
 
+/**
+ * Canonical owner identity of a position response.
+ *
+ * `rpt_owner_financial_position` returns the requested owner under
+ * `meta.owner_id` (see the canonical baseline definition and its COMMENT).
+ * An earlier client revision read a root-level `owner_id` that the database
+ * has never emitted, so every real response failed identity validation before
+ * any figure could render. The identity check itself is a genuine control —
+ * it stops one owner's money being shown under another owner — so it is kept
+ * and pointed at the field the server actually populates. A root-level
+ * variant is still accepted for forward compatibility, and a response with
+ * neither is rejected rather than rendered without a proven owner.
+ */
+function positionMeta(root: Record<string, unknown>): Record<string, unknown> {
+  return root.meta && typeof root.meta === 'object' && !Array.isArray(root.meta)
+    ? root.meta as Record<string, unknown>
+    : {};
+}
+
+function positionOwnerId(root: Record<string, unknown>): string {
+  const meta = positionMeta(root);
+  const candidate = typeof meta.owner_id === 'string' && meta.owner_id.trim() !== ''
+    ? meta.owner_id
+    : root.owner_id;
+  return requiredString(candidate, 'الموقف المالي للمالك');
+}
+
 function parsePosition(value: unknown): OwnerFinancialPosition {
   const root = asRecord(value, 'الموقف المالي للمالك');
   const period = asRecord(root.period, 'فترة الموقف المالي');
@@ -90,10 +117,19 @@ function parsePosition(value: unknown): OwnerFinancialPosition {
   }
 
 
+  const meta = positionMeta(root);
+
   return {
-    owner_id: requiredString(root.owner_id, 'الموقف المالي للمالك'),
-    basis: typeof root.basis === 'string' ? root.basis : null,
-    operating_model: typeof root.operating_model === 'string' ? root.operating_model : null,
+    owner_id: positionOwnerId(root),
+    // `basis`/`operating_model` are optional descriptive labels. The canonical
+    // function exposes its derivation authority under `meta`; it does not emit
+    // a `basis` field. Read both locations and keep null when the server said
+    // nothing, so the UI badge stays absent instead of asserting a basis the
+    // server never declared.
+    basis: typeof root.basis === 'string' ? root.basis
+      : typeof meta.derivation_authority === 'string' ? meta.derivation_authority : null,
+    operating_model: typeof root.operating_model === 'string' ? root.operating_model
+      : typeof meta.operating_model === 'string' ? meta.operating_model : null,
     period: {
       tenant_collections: requiredNumber(period.tenant_collections, 'تحصيلات الفترة'),
       management_fees: {

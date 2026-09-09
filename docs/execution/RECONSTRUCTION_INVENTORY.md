@@ -315,3 +315,32 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 
 ## User-requested stop — migration16 preserved, NOT completed
 The user explicitly stopped all development and requested only commit/push of local work plus a full handoff, without merge. The authoritative stop record is [HANDOFF_20260909_STOP.md](HANDOFF_20260909_STOP.md). Migration16 and its UI/service/document/tests are preserved as incomplete work: focused35/types/build PASS, first browser2 FAIL, corrected browser attempt interrupted with a desktop failure and no final group result. No final full-suite/gates/browser success is claimed for16. Last fully verified checkpoint is15 at9cbd15d730efa281edb0957e194fd27abd993ded. Do not resume autonomously without a new user instruction. Selected validation logs are preserved under `evidence/session-stop-20260909/`.
+
+## Authorized resume — migration16 completed and verified (2026-09-09)
+Resumed on user instruction from `81ee3671fd4edda6c719aab9b58211f7ea2584f2`, same branch, no reset/revert/stash. Branch, HEAD and remote SHA were verified identical before any edit; the tree was clean.
+
+### COMPLETED — migration16 browser failure diagnosed to a real product defect
+- The interrupted browser failure was NOT the `property_owners` fixture relation. That harness change (already committed in 81ee3671) is correct and works: with it the dossier renders and the financial tab opens.
+- Reproduced the real failure from actual evidence (`error-context.md` DOM snapshot, not inference): the financial tab rendered **«تعذر تحميل الموقف المالي للمالك — استجابة الموقف المالي للمالك ناقصة المعرّف»**.
+- Root cause is a genuine client/server **contract mismatch**, not a fixture artifact: `public.rpt_owner_financial_position` returns the owner identity under **`meta.owner_id`** (canonical baseline, confirmed by executing the real function), while `parsePosition` required a root-level `owner_id`. Every real response therefore failed the cross-owner identity guard before any figure could render. `basis`/`operating_model` are likewise absent at the root; the server states `meta.derivation_authority`.
+- Why it was invisible: the service unit test mocked a root-level envelope the database never emits, and the hermetic browser fixture seeded that same wrong shape. Both were green while the real screen was broken.
+- Repair is at the client boundary, which is the incorrect side. The identity guard is **preserved** (it prevents showing one owner's money under another) and now reads the field the server actually populates; a root-level variant is still accepted for forward compatibility; a response proving no owner is still rejected. No production `fallback`, no weakened assertion, no auth/Web-Locks change, no SQL rewrite.
+- Fixture correction: `e2e/support/fake-supabase-backend.ts` now mirrors the real `meta` envelope, so the hermetic backend can no longer hide this class of drift.
+- New regression `owner-position-response-contract.test.ts` feeds the **unmodified jsonb of the real function** into the real parser — the only layer that proves DB output and client parsing agree. It also pins the incomplete-evidence state (`paid_cash` null, proven subtotal 975, missing count 1, entitlement 1100) and that lifetime cash is not rescoped to the requested period.
+- Verified: focused **46 PASS** (was 35); full regression **544 files / 3820 tests PASS, 0 failures** (sharded, see note below); main+test types PASS; six repository gates PASS; frontend–database contract gate PASS; accessibility primitives 15 PASS; build/PWA PASS; browser **6 PASS** desktop+mobile (migration16 spec plus both migration15 specs, no regression), retries 0.
+- Resource note: a single-process full Vitest run is SIGKILLed by the 2 GB sandbox part-way through. That is an INFRA outcome and is never counted as a pass or a failure. `scripts/run-sharded-regression.mjs` runs the identical suite/config/exclusions in sequential fresh processes and reports signal-kills separately from test verdicts. Browser runs use the production build behind `scripts/e2e-static-preview.mjs`, matching the previously documented approach after the dev server exhausted memory.
+- Two repository gates (`check:migration-hygiene`, `check:gl-write-boundary`) and Guardian initially failed only because a single-branch clone has no `origin/main` base ref. Fetching `origin/main` (fe2a5911…) resolved them; no gate logic or threshold was modified.
+
+### IN PROGRESS — rpt_owner_statement settlement authority (evidenced, not yet repaired)
+`owner-statement-settlement-authority.test.ts` proves three defects against real SQL, before any repair:
+1. **Monetary** — settlement movements use legacy `s.amount` (frozen entitlement 1000), not the 975 cash proven by `app_private.owner_settlement_paid_cash`. The statement overstates the outflow by exactly the lawful offset.
+2. **Temporal** — movements use legacy `s.date`, written once at draft creation as `period_end`. A statement window containing the true `paid_at` date omits the settlement entirely.
+3. **Lifecycle** — a CANCELLED settlement retains its legacy `amount` and is still presented as a real −500 deduction.
+These assertions document CURRENT REALITY so the defect is evidenced rather than asserted, and are to be updated in the same commit as the repair.
+
+### NEXT
+Repair the statement settlement authority at the source (cash/paid_at/lifecycle), then `_owner_statement_expenses`, deductions, historical ownership allocation, fees/tax, opening/closing/running balances and historical cutoff, governed historical adoption, owner-funds compensating events, post-payment adjustment workflow and adjustment/recovery/offset UI, remaining S08/S09 and cache/rebuild/permission items, then the application-wide audit.
+
+### BLOCKED
+- **GitHub credentials are not available in this environment.** `git ls-remote` over HTTPS works read-only and confirmed the remote tip matches `81ee3671…`, but no token/helper is present, so **push and remote-SHA verification cannot be performed**. Work is committed locally on the same branch so nothing is lost; the user must restore access for the checkpoint to be pushed and literally verified.
+- Hosted JWT/GoTrue/PostgREST/RLS/Storage parity and multi-session concurrency remain unproven. Local SQL with mocked browser auth is not hosted proof. No stage credit and no application-completion claim.
