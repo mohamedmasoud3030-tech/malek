@@ -3,7 +3,7 @@ import { COMPANY, MAKER, OTHER, OWNER } from './office-creditor-fixture';
 
 /** Prerequisite property/tax configuration, followed by the governed agreement
  * creation RPC. No accrual, balance or journal rows are fabricated here. */
-export async function createFixedFeeAgreementFixture(db: PGlite, from: string, monthlyAmount: number, taxRate = 7) {
+export async function createFixedFeeAgreementFixture(db: PGlite, from: string, monthlyAmount: number, taxRate = 7, offsetAllowed = false) {
   const property = crypto.randomUUID();
   await db.exec('reset role');
   try {
@@ -15,7 +15,7 @@ export async function createFixedFeeAgreementFixture(db: PGlite, from: string, m
   const created = await db.query<{ data: { id: string } }>('select public.create_owner_agreement_with_version_atomic($1::jsonb) as data', [JSON.stringify({
     owner_id: OWNER, property_id: property, agreement_type: 'property_management', operating_model: 'OWNER_AGENCY',
     collection_role: 'OWNER_IS_CREDITOR', commission_type: 'FIXED_MONTHLY', commission_value: monthlyAmount,
-    starts_on: from, deposit_beneficiary: 'OWNER', deposit_custodian: 'OFFICE',
+    starts_on: from, offset_allowed: offsetAllowed, deposit_beneficiary: 'OWNER', deposit_custodian: 'OFFICE',
   })]);
   return created.rows[0].data.id;
 }

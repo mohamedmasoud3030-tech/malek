@@ -394,3 +394,13 @@ silently removed. Missing lineage/counter evidence fails closed; an independent
 GL discrepancy remains visible. This does not advance stage credit or establish
 hosted/owner-receivable UI acceptance, complete offset workflow coverage, or legacy
 expense classification correctness. Exact replay status remains in the inventory.
+
+### Lawful-offset scope and identity continuation
+FIN-007/008/013/016/019, SEC-001/002, GAP-008: migration 08 repairs reproduced
+per-receivable offset-event collisions and prevents borrowing offset authority
+from an agreement for another owner/property. Existing source snapshots, posted
+batch/event identity, legal-evidence rows and ACLs are preserved. Authenticated
+SQL lifecycle and pre-migration upgrade tests verify independent 1300/2000
+history, lawful-right/payable limits, reversal, retry and isolation. No hosted
+parity, legal enforceability certification, new UI acceptance or stage credit is
+implied. The live inventory records validation and continuous remote checkpoints.
