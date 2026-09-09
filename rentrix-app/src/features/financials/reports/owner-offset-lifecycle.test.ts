@@ -53,6 +53,7 @@ it('restores the receivable, payable, and settlement through an explicit idempot
     await command('reverse_owner_receivable_offset_atomic',payload);
     expect((await balances(10)).map(row=>[row.source,row.control])).toEqual([['200.000','200.000'],['1000.000','1000.000']]);
     expect((await db.query<{offset_applied:string}>('select offset_applied::text from public.owner_settlements where id=$1',[settlement])).rows[0].offset_applied).toBe('0.000');
+    expect((await command('cancel_owner_settlement_atomic',{settlement_id:settlement,request_id:crypto.randomUUID(),reason:'Cancel after offset reversal'})).status).toBe('CANCELLED');
   } finally { await db.exec('rollback'); }
 });
 it('rejects an over-offset and foreign-company command without changing sources',async()=>{
@@ -111,3 +112,94 @@ it('requires an approved unpaid settlement even when owner funds exist',async()=
     await expect(offset(5,'offset-cancelled-settlement')).rejects.toThrow(/SETTLEMENT_NOT_APPROVED/);
   } finally { await db.exec('rollback'); }
 });
+
+it('rejects even one baisa beyond payable before any posting',async()=>{
+  await db.exec('begin');
+  try {
+    const d=await command('create_owner_receivable_atomic',{owner_id:OWNER,owner_agreement_id:agreement,property_id:property,amount:1500,effective_date:at(1),request_id:'exact-payable-due'});
+    const before=(await db.query('select * from public.journal_batches order by id')).rows;
+    await db.exec('savepoint offset_attempt');
+    await expect(command('offset_owner_receivable_atomic',{due_from_owner_id:d.due_from_owner_id,owner_settlement_id:settlement,amount:1000.001,effective_date:at(10),lawful_offset_evidence:'Approved exact payable ceiling',request_id:'one-baisa-over'})).rejects.toThrow(/OFFSET_EXCEEDS_PAYABLE/);
+    await db.exec('rollback to offset_attempt');
+    expect((await db.query('select * from public.journal_batches order by id')).rows).toEqual(before);
+  } finally {await db.exec('rollback');}
+});
+it('requires active offsets to be reversed before releasing settlement reservations',async()=>{
+  await db.exec('begin');
+  try {
+    await offset(25,'cancel-active-offset');
+    await db.exec('savepoint cancel_attempt');
+    await expect(command('cancel_owner_settlement_atomic',{settlement_id:settlement,request_id:crypto.randomUUID(),reason:'Withdraw settlement order'})).rejects.toThrow(/ACTIVE_OFFSETS_REVERSE_FIRST/);
+    await db.exec('rollback to cancel_attempt');
+    expect((await db.query('select status,offset_applied::text from public.owner_settlements where id=$1',[settlement])).rows).toEqual([{status:'APPROVED',offset_applied:'25.000'}]);
+    expect((await db.query<{released_at:string|null}>('select released_at from public.owner_settlement_payment_links where settlement_id=$1',[settlement])).rows.every(r=>r.released_at===null)).toBe(true);
+  } finally {await db.exec('rollback');}
+});
+it('does not rewrite a paid settlement through an offset reversal',async()=>{
+  await db.exec('begin');
+  try {
+    await offset(25,'paid-offset-source');
+    const event=(await db.query<{id:string}>('select id from public.due_from_owner_offsets')).rows[0].id;
+    await assumeIdentity(db,'c2000000-0000-4000-8000-000000000099',COMPANY);
+    const pay={settlement_id:settlement,request_id:crypto.randomUUID(),method:'cash'};
+    await command('pay_owner_settlement_atomic',pay);
+    const before=(await db.query('select * from public.owner_settlements where id=$1',[settlement])).rows;
+    const journals=(await db.query('select * from public.journal_batches order by id')).rows;
+    await db.exec('savepoint reverse_attempt');
+    await expect(command('reverse_owner_receivable_offset_atomic',{offset_event_id:event,request_id:'after-payout-reverse',reason:'Offset adjustment after payout'})).rejects.toThrow(/PAID_SETTLEMENT_REQUIRES_GOVERNED_ADJUSTMENT/);
+    await db.exec('rollback to reverse_attempt');
+    expect((await db.query('select * from public.owner_settlements where id=$1',[settlement])).rows).toEqual(before);
+    expect((await db.query('select * from public.journal_batches order by id')).rows).toEqual(journals);
+    await command('pay_owner_settlement_atomic',pay);
+    expect((await balances(28)).map(r=>[r.source,r.control])).toEqual([['175.000','175.000'],['0.000','0.000']]);
+  } finally {await db.exec('rollback');await assumeIdentity(db,MAKER,COMPANY);}
+});
+
+it('preserves a historical one-baisa over-offset on upgrade without permitting another effect',async()=>{
+  const f=await createOwnerOffsetFixture('20260909000012');
+  const run=(name:string,p:Record<string,unknown>)=>offsetFixtureCommand(f.db,name,p);
+  try {
+    const d=await run('create_owner_receivable_atomic',{owner_id:OWNER,owner_agreement_id:f.agreement,property_id:f.property,amount:1500,effective_date:at(1),request_id:'historical-large-due'});
+    const p={due_from_owner_id:d.due_from_owner_id,owner_settlement_id:f.settlement,amount:1000.001,effective_date:at(10),lawful_offset_evidence:'Historical offset evidence',request_id:'historical-over-offset'};
+    const old=await run('offset_owner_receivable_atomic',p);
+    expect((await f.db.query("select subledger_balance::text as source,gl_balance::text as control from public.wp05_reconcile_all($1,$2::date) where account_no='2000'",[COMPANY,at(10)])).rows).toEqual([{source:'-0.001',control:'-0.001'}]);
+    const journal=(await f.db.query('select * from public.journal_batches order by id')).rows;
+    const header=(await f.db.query('select * from public.owner_settlements where id=$1',[f.settlement])).rows;
+    await f.db.exec('reset role');
+    await f.db.exec(readFileSync(`${repoRoot}/supabase/migrations/20260909000013_owner_offset_settlement_finality.sql`,'utf8'));
+    await f.db.exec('set role authenticated');
+    expect(await run('offset_owner_receivable_atomic',p)).toEqual(old);
+    expect((await f.db.query('select * from public.journal_batches order by id')).rows).toEqual(journal);
+    expect((await f.db.query('select * from public.owner_settlements where id=$1',[f.settlement])).rows).toEqual(header);
+    await expect(run('offset_owner_receivable_atomic',{...p,amount:0.001,request_id:'new-over-offset'})).rejects.toThrow(/OFFSET_EXCEEDS_PAYABLE/);
+    const event=(await f.db.query<{id:string}>('select id from public.due_from_owner_offsets')).rows[0].id;
+    await run('reverse_owner_receivable_offset_atomic',{offset_event_id:event,request_id:'correct-unpaid-offset',reason:'Reverse historical over-offset before payment'});
+    expect((await f.db.query("select subledger_balance::text as source,gl_balance::text as control from public.wp05_reconcile_all($1,$2::date) where account_no='2000'",[COMPANY,at(10)])).rows).toEqual([{source:'1000.000',control:'1000.000'}]);
+  } finally {await f.db.close();}
+},60_000);
+it('retains old reversal and payment retries after upgrade and freezes paid evidence',async()=>{
+  const f=await createOwnerOffsetFixture('20260909000012');
+  const run=(name:string,p:Record<string,unknown>)=>offsetFixtureCommand(f.db,name,p);
+  try {
+    await run('offset_owner_receivable_atomic',{due_from_owner_id:f.receivable,owner_settlement_id:f.settlement,amount:25,effective_date:at(10),lawful_offset_evidence:'Original order',request_id:'original-offset'});
+    const event=(await f.db.query<{id:string}>('select id from public.due_from_owner_offsets')).rows[0].id;
+    const reverse={offset_event_id:event,request_id:'original-reversal',reason:'Withdraw offset before payout'};
+    await run('reverse_owner_receivable_offset_atomic',reverse);
+    await assumeIdentity(f.db,'c2000000-0000-4000-8000-000000000099',COMPANY);
+    const pay={settlement_id:f.settlement,request_id:crypto.randomUUID(),method:'cash'};
+    await run('pay_owner_settlement_atomic',pay);
+    const headers=(await f.db.query('select * from public.owner_settlements')).rows;
+    const journals=(await f.db.query('select * from public.journal_batches order by id')).rows;
+    await f.db.exec('reset role');
+    await f.db.exec(readFileSync(`${repoRoot}/supabase/migrations/20260909000013_owner_offset_settlement_finality.sql`,'utf8'));
+    await f.db.exec('set role authenticated');
+    expect((await run('reverse_owner_receivable_offset_atomic',reverse)).idempotent).toBe(true);
+    expect((await run('pay_owner_settlement_atomic',pay)).idempotent).toBe(true);
+    expect((await f.db.query('select * from public.owner_settlements')).rows).toEqual(headers);
+    expect((await f.db.query('select * from public.journal_batches order by id')).rows).toEqual(journals);
+    await f.db.exec('reset role');
+    await expect(f.db.query('update public.owner_settlements set offset_applied=1 where id=$1',[f.settlement])).rejects.toThrow(/PAID_EVIDENCE_IMMUTABLE/);
+    await expect(f.db.query('delete from public.owner_settlements where id=$1',[f.settlement])).rejects.toThrow(/PAID_EVIDENCE_IMMUTABLE/);
+    await f.db.query("update public.owner_settlements set notes='Nonfinancial note' where id=$1",[f.settlement]);
+  } finally {await f.db.close();}
+},60_000);

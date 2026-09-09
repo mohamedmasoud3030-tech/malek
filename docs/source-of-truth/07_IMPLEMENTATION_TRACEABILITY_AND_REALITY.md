@@ -464,3 +464,31 @@ mid-period sample reconciles correctly before/after its economic date and is
 verified in desktop/mobile report UI. Generic OWNER expense creation, coupled
 allocation/settlement/offset flows, command UI and broader audit remain open.
 No production correction, legal certification or governed stage credit implied.
+
+### Owner offset settlement finality — repository verification 2026-09-09
+
+FIN-008/013/016/018/019, SEC-001/002, GAP-008: migration13 closes three
+persisted write defects (3 failing reproductions): an offset exceeding payable
+by one baisa, cancellation releasing reservations with an active offset, and
+an offset reversal rewriting an already-paid settlement. Exact rounded monetary
+ceilings and nonnegative2000/invoice-fund checks now apply prospectively. A paid
+settlement's evidence is independently immutable except nonfinancial notes.
+Unpaid offset reversal remains available; cancellation follows reversal. New
+post-payout correction requires a governed append-only adjustment, not this
+reversal command. That adjustment workflow remains open, not credited complete.
+
+Existing records are not rewritten: an actual pre13 negative0.001 owner-funds
+sample and all original batches/headers survive upgrade unchanged. Cached offset,
+reversal and payout responses survive; an authorized unpaid reversal can correct
+the old offset through compensating entries. Receipt/settlement lock ordering is
+not claimed multi-session verified; the offset reversal now locks receivable then
+settlement consistently with creation before any posting effect.
+
+SQL offset suite15 PASS; full541 files/3,845 tests PASS; test types, six repository
+gates and frontend/database contracts PASS. Built-app expense/maintenance/report
+browser desktop/mobile2 PASS39.7s, including failed post-payout reversal and
+unchanged paid evidence before report reconciliation. Auth and ancillary reads
+use the acceptance harness; command/report SQL is real disposable replay through13.
+The unchanged frontend bundle was reused; no new frontend behavior or hosted
+JWT/PostgREST/concurrency proof is claimed. Evidence: workspace
+`/home/user/validation/offset-safety/`. Governed stage credit is unchanged.

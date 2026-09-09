@@ -186,6 +186,10 @@ test("OWNER entry retains allocation on uncertain response and reconciles after 
       method: "cash",
       request_id: crypto.randomUUID(),
     });
+    const offsetEvent = (await db.query<{id:string}>('select id from public.due_from_owner_offsets where due_from_owner_id=$1',[dfo[0].id])).rows[0].id;
+    const paidEvidence = (await db.query('select * from public.owner_settlements where id=$1',[draft.settlement_id])).rows;
+    await expect(command(db,'reverse_owner_receivable_offset_atomic',{offset_event_id:offsetEvent,request_id:crypto.randomUUID(),reason:'Attempt after completed payout'})).rejects.toThrow(/PAID_SETTLEMENT_REQUIRES_GOVERNED_ADJUSTMENT/);
+    expect((await db.query('select * from public.owner_settlements where id=$1',[draft.settlement_id])).rows).toEqual(paidEvidence);
     await page.route("**/rest/v1/rpc/wp05_reconcile_all", async (route) => {
       const { p_as_of } = route.request().postDataJSON();
       const rows = (
