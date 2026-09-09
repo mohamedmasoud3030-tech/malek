@@ -12,6 +12,8 @@
  * visibly warns the user instead of presenting partial rows as complete.
  */
 export type RangeQueryable<Row> = Readonly<{
+  /** Native PostgREST builders support this; non-network adapters need not. */
+  retry?: (enabled: boolean) => RangeQueryable<Row>;
   range: (from: number, to: number) => PromiseLike<{ data: readonly Row[] | null; error: unknown }>;
 }>;
 
@@ -64,9 +66,15 @@ export async function fetchAllRows<Row>(
 
   for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
     const from = pageIndex * pageSize;
-    const { data, error } = await createQuery().range(from, from + pageSize - 1);
-    if (error) throw error instanceof Error ? error : new Error('تعذر إكمال قراءة الصفوف المرحّلة');
-    const page = data ?? [];
+    const initialQuery = createQuery();
+    // The caller (normally QueryClient) owns retries of the complete read.
+    // Do not multiply that policy by hidden SDK retries for each page.
+    const query = initialQuery.retry?.(false) ?? initialQuery;
+    const { data, error } = await query.range(from, from + pageSize - 1);
+    // Keep SQLSTATE/auth metadata for retry policy and actionable error copy.
+    if (error) throw error;
+    if (!Array.isArray(data)) throw new Error('تعذر إكمال القراءة: استجابة الصفوف غير مكتملة');
+    const page = data;
     rows.push(...page);
     if (page.length < pageSize) return { rows, truncated: false };
   }

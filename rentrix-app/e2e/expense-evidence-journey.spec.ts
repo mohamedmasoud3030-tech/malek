@@ -22,6 +22,7 @@ test('expense retry retains intent and failed reads cannot become zero summaries
     ).rows;
     let loseResponse = true;
     let readFailure = false;
+    let failedReadAttempts = 0;
     const requestIds: string[] = [];
     await page.route(
       /\/rest\/v1\/rpc\/create_expense_with_journal_atomic(?:\?|$)/,
@@ -54,6 +55,7 @@ test('expense retry retains intent and failed reads cannot become zero summaries
     );
     await page.route(/\/rest\/v1\/expenses(?:\?|$)/, async (route) => {
       if (readFailure) {
+        failedReadAttempts += 1;
         await route.fulfill({
           status: 503,
           contentType: 'application/json',
@@ -120,11 +122,11 @@ test('expense retry retains intent and failed reads cannot become zero summaries
     await expect(page.locator('[aria-label="ملخص المصروفات"]')).toBeVisible();
     readFailure = true;
     await page.reload();
-    // The SDK retries 503 reads (1/2/4s) inside the bounded query retry policy.
-    // Wait for those existing retries; do not replace them with a test-only policy.
+    // One initial read plus two application retries; no hidden SDK multiplier.
     await expect(
       page.getByRole('button', { name: 'إعادة المحاولة', exact: true }),
-    ).toBeVisible({ timeout: 40_000 });
+    ).toBeVisible({ timeout: 20_000 });
+    expect(failedReadAttempts).toBe(3);
     await expect(page.locator('[aria-label="ملخص المصروفات"]')).toHaveCount(0);
     await assertExport(true);
     readFailure = false;

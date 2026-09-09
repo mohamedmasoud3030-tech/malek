@@ -427,3 +427,13 @@ GL1300=0: settlement deductions, owner scope, lawful offset and historical
 adjustment semantics need a coherent repair, not an isolated account change.
 No hosted parity, owner-command UI coverage or governed stage credit is claimed.
 See the live inventory for full validation and remaining boundaries.
+
+### Shared paginated read evidence and retry ownership
+FIN-019, SEC-002, GAP-013: shared pagination preserves backend authorization and
+SQLSTATE evidence instead of replacing it with an unclassified error. Missing
+row payloads fail closed; genuine empty arrays and explicit truncation remain
+valid. Native per-page SDK retries are disabled so the existing caller policy
+owns complete-read retries. Real SDK/query tests and desktop/mobile browser
+requests verify deterministic failure versus bounded transient retries. This
+scope does not cover every unpaged SDK call, change accounting/RLS, resolve the
+OWNER expense classification conflict, or confer hosted/governed acceptance.
