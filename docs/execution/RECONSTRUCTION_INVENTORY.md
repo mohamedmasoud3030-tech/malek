@@ -14,6 +14,31 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 - Production PWA browser verification: worker activates, Arabic RTL offline fallback works, and observed caches contain no API/auth/storage responses.
 - Runtime import/dependency graph inspected before dependency removal; no unproven dead business files deleted.
 
+## LIVE LEDGER — final audit (updated 2026-09-10)
+
+**COMPLETED (with evidence in this file):**
+| Domain | Verdict | Evidence |
+|---|---|---|
+| Company/property/owner/tenant isolation | PASS | `db0:gate` 7/7; 107 tenant tables / 254 policies; 0 weak or tautological fences |
+| RLS | **2 DEFECTS FOUND AND FIXED** | SEC-003 `users`, SEC-004 `audit_log`; see section below |
+| Permissions / auth / maker-checker | PASS | 69/69 permission suites; 283/283 auth+governance+audit |
+| Data-access boundaries | PASS | `anon` holds **0** privileges; only 2 real tables writable by `authenticated`, both RESTRICTIVE-fenced; GL `journal_batches`/`journal_lines` deny-all to browser |
+| Reports | PASS | 219/219 report suites; period-scoping, historical cutoff and cash-vs-entitlement invariants each explicitly asserted |
+| Migrations | PASS | 97/97 replay from clean, 0 failures; new migration re-applies 3× cleanly |
+| Business logic / calculations / historical integrity | PASS | full sharded regression 3,943 tests, 0 assertion failures |
+| UI/UX + RTL + responsiveness | PASS | 26/26 + 31/32 + 56 passed across 5 viewports × light/dark, desktop+mobile |
+| Accessibility | PASS | axe 15/15 (suite is excluded from the sharded runner; run explicitly) |
+| PWA / offline / cache privacy | PASS | runtime-proven 2/2, zero private responses in any cache store |
+| Security / secrets | PASS | Guardian PASS incl. privileged-key scan |
+| Unused files & dependencies | PASS | 0 of 8 deps unused; 0 of 683 sources unreferenced |
+| Regression coverage | PASS | 552 files / 3,943 tests |
+
+**BLOCKED (unchanged, needs credentials/hosting — not repository work):**
+- Intermittent bootstrap stall root cause: requires authenticated e2e (`E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD` unavailable). Diagnosis narrowed to the two synchronous `onAuthStateChange` listeners + `withCompanyResolutionTimeout`; **not** guessed at or "fixed" blind.
+- Hosted JWT/PostgREST/concurrency proof for every migration in this session, including `20260910000000`. Local replay proves repository behaviour only.
+
+**NEXT:** governed adoption/allocation workflow UI (migration18 follow-on).
+
 ## IN PROGRESS
 - Continuing financial authority review: VAT/credit report lineage, lifecycle eligibility, historic snapshot semantics, and least-authority RPC/table grants.
 - Historical AR/deposit cutoff repair now passes repository SQL and desktop/mobile browser regressions. Continuing legacy-lineage compatibility and remaining report/tax authority review; hosted deployment is unverified.
