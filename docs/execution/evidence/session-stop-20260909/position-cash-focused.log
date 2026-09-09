@@ -1,0 +1,15 @@
+
+ RUN  v3.2.7 /home/user/malek/rentrix-app
+
+stderr | src/features/reports/documents/professional-owner-report.test.ts
+Supabase environment is incomplete. Runtime diagnostics will be shown in UI.
+
+ ✓ src/features/reports/documents/professional-owner-report.test.ts (17 tests) 14ms
+ ✓ src/features/financials/reports/owner-paid-cash-position.test.ts (3 tests) 4126ms
+ ✓ src/features/owners/services/owner-financial-service.test.ts (15 tests) 10ms
+
+ Test Files  3 passed (3)
+      Tests  35 passed (35)
+   Start at  13:21:49
+   Duration  5.35s (transform 336ms, setup 0ms, collect 589ms, tests 4.15s, environment 0ms, prepare 172ms)
+

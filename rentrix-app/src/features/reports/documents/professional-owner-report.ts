@@ -101,7 +101,8 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       { label: 'المصروفات المحملة على المالك', value: amount(position.period.owner_expenses) },
       { label: 'صافي المستحق للفترة', value: amount(position.period.net_payable) },
       { label: 'تسويات معتمدة/معلقة غير مدفوعة', value: amount(position.lifecycle_all_time.settled_pending_net) },
-      { label: 'إجمالي المسدد للمالك', value: amount(position.lifecycle_all_time.paid_net) },
+      { label: 'استحقاقات التسويات المسوّاة — كل الفترات', value: amount(position.lifecycle_all_time.paid_net) },
+      { label: 'النقد المصروف المثبت — كل الفترات', value: position.lifecycle_all_time.paid_cash === null ? text('غير مكتمل الإثبات') : amount(position.lifecycle_all_time.paid_cash) },
       { label: 'أموال مالك محتجزة لدى المكتب', value: amount(position.owner_funds.held) },
     );
     summaryAuthority = 'الملخص من الموقف المالي المعتمد للفترة (rpt_owner_financial_position) ودورة تسويات المالك.';
@@ -300,7 +301,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       kind: 'table',
       table: {
         title: 'تسويات مستحقات المالك',
-        columns: ['الفترة', 'العقار', 'حالة التسوية', 'صافي المبلغ', 'مرجع الدفع'],
+        columns: ['الفترة', 'العقار', 'حالة التسوية', 'الاستحقاق قبل المقاصة', 'مرجع الإغلاق/الصرف'],
         rows: activeSettlements.map((settlement) => [
           text(settlement.period_start && settlement.period_end ? `${dateLabel(settlement.period_start)} → ${dateLabel(settlement.period_end)}` : '—'),
           text(settlement.property_title),
@@ -314,7 +315,7 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
     feeBlocks.push({
       kind: 'note',
       note: {
-        text: 'التسوية المعتمدة ليست مبلغاً مدفوعاً فعلاً للمالك: تظهر حالة كل تسوية كما هي، ومرجع الدفع يُعرض فقط عند تسجيل صرف فعلي.',
+        text: 'المبلغ في سجل التسويات هو الاستحقاق قبل المقاصة وليس النقد المصروف. الاعتماد لا يعني الصرف، وقد تُغلق التسوية بالمقاصة دون دفع نقدي؛ مرجع الإغلاق ليس بديلاً عن إثبات القيد النقدي.',
         tone: 'risk',
       },
     });
@@ -322,6 +323,15 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
 
   if (feeBlocks.length > 0) {
     groups.push({ keepTogether: true, blocks: feeBlocks });
+  }
+
+  if (position) {
+    groups.push({ keepTogether: true, blocks: [{ kind: 'note', note: {
+      tone: position.lifecycle_all_time.paid_cash_evidence_missing_count > 0 ? 'risk' : 'neutral',
+      text: position.lifecycle_all_time.paid_cash_evidence_missing_count > 0
+        ? `إثبات الصرف النقدي غير مكتمل لـ ${position.lifecycle_all_time.paid_cash_evidence_missing_count} تسوية تاريخية. لا يعرض التقرير المبلغ الجزئي كإجمالي كامل. أرقام دورة التسويات تشمل كل الفترات ولا تُطرح من استحقاق فترة واحدة.`
+        : 'أرقام دورة التسويات تشمل كل الفترات؛ لا يُطرح الصرف النقدي التراكمي من استحقاق فترة واحدة. الاستحقاق المسوّى قد يتضمن مقاصة لا تمثل دفعاً نقدياً.',
+    } }] });
   }
 
   /* --- Group 5 (LAST) — final owner account reconciliation --- */
@@ -333,8 +343,9 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       [text('− ضريبة الأتعاب (VAT)'), amount(position.period.fee_vat)],
       [text('− المصروفات المحملة على المالك'), amount(position.period.owner_expenses)],
       [text('= المستحق قبل الصرف (من سلطة التسوية)'), amount(position.period.net_payable)],
-      [text('− إجمالي المسدد للمالك (دورة التسويات)'), amount(position.lifecycle_all_time.paid_net)],
-      [text('= صافي المتبقي غير المسدد'), amount(position.lifecycle_all_time.remaining_payable)],
+      [text('استحقاقات التسويات المسوّاة — كل الفترات'), amount(position.lifecycle_all_time.paid_net)],
+      [text('النقد المصروف المثبت — كل الفترات'), position.lifecycle_all_time.paid_cash === null ? text('غير مكتمل الإثبات') : amount(position.lifecycle_all_time.paid_cash)],
+      [text('المتبقي المستحق — كل الفترات'), amount(position.lifecycle_all_time.remaining_payable)],
     );
   } else if (statement) {
     finalRows.push(

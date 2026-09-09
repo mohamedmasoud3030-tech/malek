@@ -15,7 +15,11 @@ export type OwnerFinancialPeriod = Readonly<{
 
 export type OwnerFinancialLifecycle = Readonly<{
   settled_pending_net: number;
+  /** Settled entitlement, including amounts discharged by lawful offset. */
   paid_net: number;
+  paid_cash: number | null;
+  paid_cash_proven_total: number;
+  paid_cash_evidence_missing_count: number;
   remaining_payable: number;
   draft_count: number;
   approved_count: number;
@@ -51,6 +55,9 @@ function asRecord(value: unknown, label: string): Record<string, unknown> {
 }
 
 function requiredNumber(value: unknown, label: string): number {
+  if (typeof value !== 'number' && (typeof value !== 'string' || value.trim() === '')) {
+    throw new Error(`استجابة ${label} لا تحتوي قيمة مالية صالحة`);
+  }
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error(`استجابة ${label} لا تحتوي قيمة مالية صالحة`);
   return parsed;
@@ -73,6 +80,15 @@ function parsePosition(value: unknown): OwnerFinancialPosition {
   const managementFees = asRecord(period.management_fees, 'رسوم الإدارة');
   const lifecycle = asRecord(root.lifecycle_all_time, 'دورة تسويات المالك');
   const ownerFunds = asRecord(root.owner_funds, 'أموال المالك');
+  const missingCash = requiredNumber(lifecycle.paid_cash_evidence_missing_count, 'عدد التسويات غير المثبتة نقدياً');
+  const provenCash = requiredNumber(lifecycle.paid_cash_proven_total, 'الصرف النقدي المثبت');
+  const paidCash = lifecycle.paid_cash === null ? null : requiredNumber(lifecycle.paid_cash, 'إجمالي الصرف النقدي');
+  if (!Number.isInteger(missingCash) || missingCash < 0 || provenCash < 0
+    || missingCash > requiredNumber(lifecycle.paid_count, 'عدد التسويات المسواة')
+    || (missingCash === 0) !== (paidCash !== null) || (paidCash !== null && paidCash !== provenCash)) {
+    throw new Error('استجابة إثبات الصرف النقدي غير متسقة؛ لا يمكن عرض إجمالي غير مثبت.');
+  }
+
 
   return {
     owner_id: requiredString(root.owner_id, 'الموقف المالي للمالك'),
@@ -94,7 +110,10 @@ function parsePosition(value: unknown): OwnerFinancialPosition {
     },
     lifecycle_all_time: {
       settled_pending_net: requiredNumber(lifecycle.settled_pending_net, 'التسويات المعلقة'),
-      paid_net: requiredNumber(lifecycle.paid_net, 'التسويات المدفوعة'),
+      paid_net: requiredNumber(lifecycle.paid_net, 'استحقاقات التسويات المسواة'),
+      paid_cash: paidCash,
+      paid_cash_proven_total: provenCash,
+      paid_cash_evidence_missing_count: missingCash,
       remaining_payable: requiredNumber(lifecycle.remaining_payable, 'المتبقي المستحق'),
       draft_count: requiredNumber(lifecycle.draft_count, 'عدد المسودات'),
       approved_count: requiredNumber(lifecycle.approved_count, 'عدد التسويات المعتمدة'),

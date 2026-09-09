@@ -27,6 +27,9 @@ function position(overrides: Record<string, unknown> = {}) {
     lifecycle_all_time: {
       settled_pending_net: 0,
       paid_net: 2000,
+      paid_cash: 2000,
+      paid_cash_proven_total: 2000,
+      paid_cash_evidence_missing_count: 0,
       remaining_payable: 845,
       draft_count: 1,
       approved_count: 0,
@@ -108,5 +111,28 @@ describe('getOwnerFinancialAuthority', () => {
     await expect(getOwnerFinancialAuthority(OWNER, '2026-07-01', '2026-07-31')).rejects.toEqual({
       message: 'RLS denied',
     });
+  });
+});
+
+describe('owner cash evidence parsing',()=>{
+  beforeEach(()=>rpcMock.mockReset());
+  it('preserves an unknown total and its separately identified proven subtotal',async()=>{
+    const data=position();
+    rpcMock.mockResolvedValueOnce({data:{...data,lifecycle_all_time:{...data.lifecycle_all_time,paid_cash:null,paid_cash_proven_total:1975,paid_cash_evidence_missing_count:1}},error:null}).mockResolvedValueOnce({data:statement(),error:null});
+    expect((await getOwnerFinancialAuthority(OWNER,'2026-07-01','2026-07-31')).position.lifecycle_all_time).toMatchObject({paid_cash:null,paid_cash_proven_total:1975,paid_cash_evidence_missing_count:1});
+  });
+  it.each([null,'',false,[],{}])('does not coerce a missing/malformed required financial value (%j) to zero',async(value)=>{
+    rpcMock.mockResolvedValueOnce({data:position({period:{...position().period,net_payable:value}}),error:null}).mockResolvedValueOnce({data:statement(),error:null});
+    await expect(getOwnerFinancialAuthority(OWNER,'2026-07-01','2026-07-31')).rejects.toThrow('صافي مستحق الفترة');
+  });
+  it.each([
+    {paid_cash:null,paid_cash_evidence_missing_count:0},
+    {paid_cash:2000,paid_cash_evidence_missing_count:1},
+    {paid_cash:1975,paid_cash_evidence_missing_count:0},
+    {paid_cash:null,paid_cash_evidence_missing_count:4},
+  ])('rejects contradictory cash completeness %j',async(override)=>{
+    const data=position();
+    rpcMock.mockResolvedValueOnce({data:{...data,lifecycle_all_time:{...data.lifecycle_all_time,...override}},error:null}).mockResolvedValueOnce({data:statement(),error:null});
+    await expect(getOwnerFinancialAuthority(OWNER,'2026-07-01','2026-07-31')).rejects.toThrow('إثبات الصرف النقدي غير متسقة');
   });
 });

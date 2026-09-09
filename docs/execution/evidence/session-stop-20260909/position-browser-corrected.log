@@ -1,0 +1,4 @@
+
+Running 2 tests using 1 worker
+
+  ✘  1 [chromium-desktop] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence (2.0m)

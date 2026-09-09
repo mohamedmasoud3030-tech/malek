@@ -1,0 +1,165 @@
+
+> @workspace/rentrix@0.0.0 check:frontend-db-contract /home/user/malek/rentrix-app
+> node scripts/run-frontend-db-contract-tests.mjs
+
+
+=== Contract gate self-tests ===
+TAP version 13
+# Subtest: discovers literal tables, columns, mutations and RPC arguments
+ok 1 - discovers literal tables, columns, mutations and RPC arguments
+  ---
+  duration_ms: 5.645517
+  ...
+# Subtest: keeps consecutive Supabase query chains isolated
+ok 2 - keeps consecutive Supabase query chains isolated
+  ---
+  duration_ms: 0.973978
+  ...
+# Subtest: shadowed payload variable names fail safe instead of borrowing another scope
+ok 3 - shadowed payload variable names fail safe instead of borrowing another scope
+  ---
+  duration_ms: 0.668525
+  ...
+# Subtest: missing relation fails closed
+ok 4 - missing relation fails closed
+  ---
+  duration_ms: 0.486111
+  ...
+# Subtest: missing selected/filter column fails closed
+ok 5 - missing selected/filter column fails closed
+  ---
+  duration_ms: 0.56806
+  ...
+# Subtest: unknown mutation field fails closed
+ok 6 - unknown mutation field fails closed
+  ---
+  duration_ms: 0.45105
+  ...
+# Subtest: missing RPC and mismatched RPC args fail closed
+ok 7 - missing RPC and mismatched RPC args fail closed
+  ---
+  duration_ms: 0.667078
+  ...
+# Subtest: nested relation selects are not misclassified as root columns
+ok 8 - nested relation selects are not misclassified as root columns
+  ---
+  duration_ms: 0.215002
+  ...
+# Subtest: reviewed dynamic gate is fail-closed and inventory-counted
+ok 9 - reviewed dynamic gate is fail-closed and inventory-counted
+  ---
+  duration_ms: 1.097218
+  ...
+# Subtest: generic receipt helper is constrained to explicit relations and columns
+ok 10 - generic receipt helper is constrained to explicit relations and columns
+  ---
+  duration_ms: 0.257998
+  ...
+# Subtest: scanner noise and type-asserted literal targets are not silently accepted
+ok 11 - scanner noise and type-asserted literal targets are not silently accepted
+  ---
+  duration_ms: 0.129603
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 178.183608
+
+=== Repository frontend/database parity ===
+
+=== MALEK Frontend ↔ Database Contract Gate v2 ===
+Mode: DRY (generated types + source discovery)
+
+── 1. Generated contract + typed client ──
+  ✅ Plain TypeScript database contract
+  ✅ Generated database contract has substantial schema
+  ✅ Has Tables section
+  ✅ Has Views section
+  ✅ Has Functions section
+  ✅ Has Enums section
+  ✅ Supabase client is bound to Database generic
+
+── 2. Automatic frontend discovery ──
+  ✅ Discovered database relations from production source
+  ✅ Discovered RPCs from production source
+  ✅ Payment facade RPC is automatically discovered
+  ℹ️  36 tables/views, 79 RPCs discovered automatically
+
+── 3. Frontend ↔ generated database contract ──
+  ✅ No frontend/database mismatches
+  ⚠️  Dynamic update payload for 'properties' at features/properties/property-service.ts:302; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'units' at features/units/unit-service.ts:111; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'maintenance_records' at features/maintenance/maintenance-service.ts:109; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'people' at features/people/people-service.ts:181; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'owners' at features/owners/services/owner-service.ts:319; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'owners' at features/owners/services/owner-service.ts:339; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'property_owners' at features/owners/services/owner-service.ts:382; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'property_owners' at features/owners/services/owner-service.ts:394; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'lands' at features/lands/services/lands-service.ts:82; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'lands' at features/lands/services/lands-service.ts:90; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'communication_records' at features/communication/services/communication-service.ts:68; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'communication_records' at features/communication/services/communication-service.ts:77; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'leads' at features/leads/services/leads-service.ts:43; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'leads' at features/leads/services/leads-service.ts:69; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'company_settings' at features/settings/companySettingsService.ts:267; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'cost_centers' at features/settings/costCenterService.ts:57; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'cost_centers' at features/settings/costCenterService.ts:70; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'cost_centers' at features/settings/costCenterService.ts:83; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'payment_terms_templates' at features/settings/paymentTermsService.ts:54; key-level mutation verification skipped
+  ⚠️  Dynamic insert payload for 'payment_terms_templates' at features/settings/paymentTermsService.ts:67; key-level mutation verification skipped
+  ⚠️  Dynamic update payload for 'payment_terms_templates' at features/settings/paymentTermsService.ts:80; key-level mutation verification skipped
+  ⚠️  Dynamic RPC payload for 'rpt_dashboard_snapshot' at features/reports/reports-collection-efficiency.ts:29; argument-key verification skipped
+  ⚠️  Dynamic RPC payload for 'create_owner_settlement_draft_atomic' at features/owners/services/owner-settlements-service.ts:354; argument-key verification skipped
+  ⚠️  Dynamic Supabase from target at features/financials/receipts/receiptService.ts:101; name-level verification skipped
+  ⚠️  Dynamic Supabase from target at features/tenants/tenantWorkspaceService.ts:49; name-level verification skipped
+  ⚠️  Dynamic Supabase from target at features/utilities/utilities-service.ts:227; name-level verification skipped
+
+── 4. Critical relational + enum invariants ──
+  ✅ FK contracts_property_id_fkey
+  ✅ FK contracts_tenant_id_fkey
+  ✅ FK contracts_unit_id_fkey
+  ✅ FK invoices_contract_id_fkey
+  ✅ FK payments_receipt_id_fkey
+  ✅ FK receipts_payment_id_fkey
+  ✅ Enum user_role 'ADMIN'
+  ✅ Enum user_role 'MANAGER'
+  ✅ Enum user_role 'USER'
+  ✅ Enum user_role 'ACCOUNTANT'
+  ✅ Enum user_role 'OPERATIONS'
+  ✅ Enum user_role 'VIEWER'
+  ✅ Enum entity_status 'ACTIVE'
+  ✅ Enum entity_status 'INACTIVE'
+  ✅ Enum entity_status 'BLACKLISTED'
+  ✅ Enum charged_to_type 'OWNER'
+  ✅ Enum charged_to_type 'TENANT'
+  ✅ Enum charged_to_type 'COMPANY'
+  ✅ Enum utility_status 'UNPAID'
+  ✅ Enum utility_status 'PAID'
+  ✅ Enum utility_status 'OVERDUE'
+
+── 5. Database-only contracts ──
+  ⏭️  contracts.start_date SQL type: covered by migration replay; live check unavailable
+  ⏭️  contracts.end_date SQL type: covered by migration replay; live check unavailable
+  ⏭️  invoices.issue_date SQL type: covered by migration replay; live check unavailable
+  ⏭️  invoices.due_date SQL type: covered by migration replay; live check unavailable
+  ⏭️  Bucket attachments: covered by migration replay; live check unavailable
+
+=== 32/37 checks passed (0 failed, 5 skipped, 26 warnings) ===
+
+=== Reviewed dynamic contract closure ===
+
+=== MALEK Reviewed Dynamic Contract Gate ===
+  ℹ️  21 reviewed dynamic mutation/RPC signature groups
+  ℹ️  23 reviewed dynamic mutation/RPC occurrences
+  ℹ️  1 reviewed generic table helper
+  ℹ️  1 type-asserted literal target resolved automatically
+  ℹ️  1 comment-only scanner false positive(s) excluded
+  ✅ 0 unreviewed dynamic contracts
+  ✅ Reviewed receipt helper targets/columns still match database.ts
+
+=== PASS: dynamic contract inventory is closed and fail-closed ===

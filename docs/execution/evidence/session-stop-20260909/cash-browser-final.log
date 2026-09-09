@@ -1,0 +1,9 @@
+
+Running 4 tests using 1 worker
+
+  ✓  1 [chromium-desktop] › e2e/owner-expense-source.spec.ts:29:1 › OWNER entry retains allocation on uncertain response and reconciles after lawful recovery and settlement (18.2s)
+  ✓  2 [chromium-desktop] › e2e/owner-payout-bank-cash.spec.ts:8:1 › bank suggestions and confirmation use posted owner cash, and expose failed source reads (9.6s)
+  ✓  3 [chromium-mobile] › e2e/owner-expense-source.spec.ts:29:1 › OWNER entry retains allocation on uncertain response and reconciles after lawful recovery and settlement (16.5s)
+  ✓  4 [chromium-mobile] › e2e/owner-payout-bank-cash.spec.ts:8:1 › bank suggestions and confirmation use posted owner cash, and expose failed source reads (9.4s)
+
+  4 passed (57.0s)

@@ -1,0 +1,77 @@
+
+Running 2 tests using 1 worker
+
+  ✘  1 [chromium-desktop] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence (2.0m)
+  ✘  2 [chromium-mobile] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence (2.0m)
+
+
+  1) [chromium-desktop] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence 
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.click: Test timeout of 120000ms exceeded.
+    Call log:
+      - waiting for getByRole('tab', { name: 'الموقف المالي', exact: true })
+
+
+      26 |   }
+      27 |   await page.goto(`/owners/${OWNER}`);
+    > 28 |   await page.getByRole('tab',{name:'الموقف المالي',exact:true}).click();
+         |                                                                 ^
+      29 |   const section=page.locator('[data-owner-financial-authority]');
+      30 |   await section.getByText('دورة التسويات عبر كل الفترات',{exact:true}).click();
+      31 |   const cash=section.getByText('النقد المصروف المثبت — كل الفترات',{exact:true}).locator('..');
+        at /home/user/malek/rentrix-app/e2e/owner-position-cash.spec.ts:28:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium-mobile] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence 
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.click: Test timeout of 120000ms exceeded.
+    Call log:
+      - waiting for getByRole('tab', { name: 'الموقف المالي', exact: true })
+
+
+      26 |   }
+      27 |   await page.goto(`/owners/${OWNER}`);
+    > 28 |   await page.getByRole('tab',{name:'الموقف المالي',exact:true}).click();
+         |                                                                 ^
+      29 |   const section=page.locator('[data-owner-financial-authority]');
+      30 |   await section.getByText('دورة التسويات عبر كل الفترات',{exact:true}).click();
+      31 |   const cash=section.getByText('النقد المصروف المثبت — كل الفترات',{exact:true}).locator('..');
+        at /home/user/malek/rentrix-app/e2e/owner-position-cash.spec.ts:28:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-mobile/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/owner-position-cash-owner--e0bea-omplete-historical-evidence-chromium-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium-desktop] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence 
+    [chromium-mobile] › e2e/owner-position-cash.spec.ts:8:1 › owner position distinguishes settled entitlement, proven cash and incomplete historical evidence 
+undefined
+/home/user/malek/rentrix-app:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: playwright test e2e/owner-position-cash.spec.ts --project=chromium-desktop --project=chromium-mobile --workers=1 --retries=0

@@ -393,8 +393,11 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
         net_payable: 7539,
       },
       lifecycle_all_time: {
-        settled_pending_net: 7539,
+        settled_pending_net: 3339,
         paid_net: 4200,
+        paid_cash: 4200,
+        paid_cash_proven_total: 4200,
+        paid_cash_evidence_missing_count: 0,
         remaining_payable: 3339,
         draft_count: 0,
         approved_count: 1,

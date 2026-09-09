@@ -47,6 +47,9 @@ const position: OwnerFinancialPosition = {
   lifecycle_all_time: {
     settled_pending_net: 800,
     paid_net: 3000,
+    paid_cash: 2975,
+    paid_cash_proven_total: 2975,
+    paid_cash_evidence_missing_count: 0,
     remaining_payable: 1437.5,
     draft_count: 1,
     approved_count: 2,
@@ -198,7 +201,7 @@ describe('professional-owner-report adapter', () => {
     const firstGroup = payload.groups[0];
     expect(firstGroup.blocks[0]).toMatchObject({ kind: 'kpis' });
     const kpis = firstGroup.blocks[0] as { kind: 'kpis'; kpis: Array<{ label: string; value: { kind: string; value: number } }> };
-    expect(kpis.kpis).toHaveLength(8);
+    expect(kpis.kpis).toHaveLength(9);
     const netKpi = kpis.kpis.find((kpi) => kpi.label === 'صافي المستحق للفترة');
     expect(netKpi?.value).toEqual({ kind: 'amount', value: 4437.5 });
 
@@ -210,9 +213,9 @@ describe('professional-owner-report adapter', () => {
       table: { title: string; rows: unknown[][] };
     };
     expect(finalTable.table.title).toBe('الحساب الختامي — تسوية حساب المالك');
-    expect(finalTable.table.rows).toHaveLength(7);
+    expect(finalTable.table.rows).toHaveLength(8);
     expect(finalTable.table.rows[0][0]).toEqual({ kind: 'text', value: '+ التحصيلات العائدة للمالك' });
-    expect(finalTable.table.rows[6][1]).toEqual({ kind: 'amount', value: 1437.5 });
+    expect(finalTable.table.rows[7][1]).toEqual({ kind: 'amount', value: 1437.5 });
   });
 
   it('falls back to the canonical owner statement when no financial position exists', () => {
@@ -376,6 +379,9 @@ describe('Golden Owner fixture — full integration', () => {
     lifecycle_all_time: {
       settled_pending_net: 3042.75,
       paid_net: 6000,
+      paid_cash: 6000,
+      paid_cash_proven_total: 6000,
+      paid_cash_evidence_missing_count: 0,
       remaining_payable: 3042.75,
       draft_count: 0,
       approved_count: 1,
@@ -548,8 +554,8 @@ describe('Golden Owner fixture — full integration', () => {
     const lastGroup = payload.groups[payload.groups.length - 1];
     const finalTable = lastGroup.blocks.find((block) => (block as { table?: { title?: string } }).table?.title === 'الحساب الختامي — تسوية حساب المالك') as { table: { rows: unknown[][] } };
     expect(finalTable).toBeDefined();
-    expect(finalTable.table.rows).toHaveLength(7);
-    expect(finalTable.table.rows[6][1]).toEqual({ kind: 'amount', value: 3042.75 });
+    expect(finalTable.table.rows).toHaveLength(8);
+    expect(finalTable.table.rows[7][1]).toEqual({ kind: 'amount', value: 3042.75 });
   });
 });
 
@@ -629,5 +635,23 @@ describe('loadOwnerReportContext', () => {
     expect(context.scopeLabel).toBe('عقارات المالك المُدارة (2)');
     expect(context.maintenanceRows!.map((row) => row.id)).toEqual(['m-1', 'm-2']);
     expect(context.propertyTitles?.has('p-99')).toBe(false);
+  });
+});
+describe('owner report cash and temporal evidence',()=>{
+  it('separates cash from entitlement and does not subtract lifetime cash from period economics',()=>{
+    const payload=buildOwnerReportPayload({...baseContext,position});
+    const blocks=allBlocks(payload) as any[];
+    const cash=blocks.flatMap(b=>b.kpis??[]).find(k=>k.label==='النقد المصروف المثبت — كل الفترات');
+    expect(cash.value).toEqual({kind:'amount',value:2975});
+    const entitlement=blocks.flatMap(b=>b.kpis??[]).find(k=>k.label==='استحقاقات التسويات المسوّاة — كل الفترات');
+    expect(entitlement.value).toEqual({kind:'amount',value:3000});
+    expect(JSON.stringify(payload)).not.toContain('− إجمالي المسدد للمالك');
+    expect(JSON.stringify(payload)).toContain('لا يُطرح الصرف النقدي التراكمي من استحقاق فترة واحدة');
+  });
+  it('prints incomplete cash evidence instead of promoting a partial sum to a complete total',()=>{
+    const payload=buildOwnerReportPayload({...baseContext,position:{...position,lifecycle_all_time:{...position.lifecycle_all_time,paid_cash:null,paid_cash_evidence_missing_count:1}}});
+    const cash=(allBlocks(payload) as any[]).flatMap(b=>b.kpis??[]).find(k=>k.label==='النقد المصروف المثبت — كل الفترات');
+    expect(cash.value).toEqual({kind:'text',value:'غير مكتمل الإثبات'});
+    expect(JSON.stringify(payload)).toContain('لا يعرض التقرير المبلغ الجزئي كإجمالي كامل');
   });
 });

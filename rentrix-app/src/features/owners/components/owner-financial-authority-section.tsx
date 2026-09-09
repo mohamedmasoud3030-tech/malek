@@ -165,14 +165,21 @@ export function OwnerFinancialAuthoritySection({
           <DisclosureSection title="دورة التسويات عبر كل الفترات" icon={WalletCards}>
             <div className="grid grid-cols-2 gap-3">
               <FinancialValue label="متبقي مستحق للمالك" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.remaining_payable)} />
-              <FinancialValue label="صافي مدفوع سابقاً" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_net)} />
+              <FinancialValue label="استحقاقات التسويات المسوّاة" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_net)} />
+              <FinancialValue label="النقد المصروف المثبت — كل الفترات" value={position.lifecycle_all_time.paid_cash === null ? 'غير مكتمل الإثبات' : formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_cash)} />
               <FinancialValue label="صافي تسويات معلقة" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.settled_pending_net)} />
               <FinancialValue label="أموال المالك المحتجزة" value={formatCompanyMoney(companySettings, position.owner_funds.held)} />
             </div>
+            {position.lifecycle_all_time.paid_cash_evidence_missing_count > 0 ? (
+              <p role="alert" className="rounded-xl border border-border/70 bg-muted/30 p-3 text-sm text-foreground">
+                تعذر إثبات الصرف النقدي لـ {formatCompanyNumber(companySettings, position.lifecycle_all_time.paid_cash_evidence_missing_count)} تسوية تاريخية.
+                المبلغ المثبت من السجلات المتاحة فقط: {formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_cash_proven_total)}؛ ليس إجمالي الصرف الكامل.
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2 text-xs">
               <StatusBadge tone="neutral">{formatCompanyNumber(companySettings, position.lifecycle_all_time.draft_count)} مسودة</StatusBadge>
               <StatusBadge tone="info">{formatCompanyNumber(companySettings, position.lifecycle_all_time.approved_count)} معتمدة</StatusBadge>
-              <StatusBadge tone="success">{formatCompanyNumber(companySettings, position.lifecycle_all_time.paid_count)} مدفوعة</StatusBadge>
+              <StatusBadge tone="success">{formatCompanyNumber(companySettings, position.lifecycle_all_time.paid_count)} مسوّاة</StatusBadge>
               <StatusBadge tone="danger">{formatCompanyNumber(companySettings, position.lifecycle_all_time.cancelled_count)} ملغاة</StatusBadge>
             </div>
           </DisclosureSection>

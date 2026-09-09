@@ -560,3 +560,6 @@ Owner financial-position paid-cash presentation, statement/document authority,
 governed old-source remediation and remaining financial/app-wide audit are still
 open. Source discrepancies, historical postings and cached payouts are preserved.
 Governed stage credit is unchanged; no application completion claim.
+
+### 2026-09-09 — explicit user stop, migration16 incomplete checkpoint
+FIN-008/013/016/018/019 work on evidence-aware lifetime owner cash and document presentation is preserved, not credited complete. Focused35, main/test types and build passed; browser verification failed and the follow-up was interrupted by the user. Full/gates validation for16 is outstanding. No stage credit or deployment/completion claim. See `docs/execution/HANDOFF_20260909_STOP.md` for the complete session record, remaining work, limitations and explicit instruction not to resume without a new user request.

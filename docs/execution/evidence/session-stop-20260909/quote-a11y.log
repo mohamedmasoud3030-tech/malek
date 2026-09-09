@@ -1,0 +1,14 @@
+
+> @workspace/rentrix@0.0.0 test:a11y-primitives /home/user/malek/rentrix-app
+> vitest run --config vite.config.ts src/components/ui/primitives.axe.test.tsx
+
+
+ RUN  v3.2.7 /home/user/malek/rentrix-app
+
+ ✓ src/components/ui/primitives.axe.test.tsx (15 tests) 294ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  11:52:04
+   Duration  1.63s (transform 271ms, setup 0ms, collect 757ms, tests 294ms, environment 342ms, prepare 63ms)
+

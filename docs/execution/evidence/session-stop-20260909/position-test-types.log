@@ -1,0 +1,4 @@
+
+> @workspace/rentrix@0.0.0 typecheck:test /home/user/malek/rentrix-app
+> tsc -p tsconfig.test.json --noEmit
+
