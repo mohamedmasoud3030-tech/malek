@@ -260,3 +260,11 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 - Hosted JWT/PostgREST/concurrency and production evidence/remediation remain externally blocked; repository work is not blocked by missing hosted configuration.
 - Preserve original postings, historical costs and verified cached operations. A source review alone does not yet adopt legacy expenses or authorize their deduction.
 - Retired unsafe new raw maintenance expenses, alternate new private OWNER creation and unreviewed legacy automatic deductions. No history was rewritten or silently repaired in reports.
+
+## Agreement read boundary follow-up (FIN-007/016; SEC-002)
+### COMPLETED
+- After exact remote verification of9fbbc59638483913fd744d151e5e0873285a5b3d, reproduced silent truncation and later-page error loss:5 failing/1 passing agreement-read tests.
+- Property/owner agreement lists now use the existing fail-closed paged-read authority and deterministic date+ID ordering. Version reads deduplicate and batch IDs through the existing bounded-IN helper, page every batch, and preserve global version ordering. No new pagination abstraction, permission change, schema change or temporal-policy filter.
+- Focused agreement/helper regression49 PASS; real SQL source regression16 PASS; main/test types and frontend/database contracts PASS. Built-app expense/maintenance/report desktop/mobile2 PASS36.4s with retries0. Build/PWA PASS on unchanged rerun after a sandbox exit137. Logs: `/home/user/validation/owner-expense/agreement-*`. Last full-suite baseline remains540/3833 at9fbbc596; this follow-up adds6 focused tests, not a fabricated new full-suite total.
+### NEXT / PRESERVED
+- Agreement pagination item is resolved; remaining source remediation, approved S09 compatibility, adjustment/recovery/offset command UI and wider inventory remain open. Existing property/owner/RLS scope, all temporal statuses and error metadata are preserved. Multi-page service reproduction uses a capped adapter; the browser selects a real SQL-validated agreement, but is not hosted large-dataset verification.

@@ -1,5 +1,6 @@
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { supabase } from '@/lib/supabase';
+import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { Owner, PropertyOwnerWithOwner } from './services/owner-service';
 
@@ -198,9 +199,8 @@ export function groupAgreementsByTemporalStatus<T extends Pick<OwnerAgreement, '
 }
 
 export async function listOwnerAgreementsForProperty(propertyId: string): Promise<OwnerAgreement[]> {
-  const { data, error } = await supabase.from('owner_agreements').select('*').eq('property_id', propertyId).order('starts_on', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  const { rows } = await fetchAllRows<OwnerAgreement>(() => supabase.from('owner_agreements').select('*').eq('property_id', propertyId).order('starts_on', { ascending: false }).order('id', { ascending: true }));
+  return rows;
 }
 
 export type OwnerAgreementWithProperty = OwnerAgreement & Readonly<{
@@ -213,13 +213,13 @@ export type OwnerAgreementWithProperty = OwnerAgreement & Readonly<{
  * authority for agreements and versions.
  */
 export async function listOwnerAgreementsForOwner(ownerId: string): Promise<OwnerAgreementWithProperty[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<OwnerAgreementWithProperty>(() => supabase
     .from('owner_agreements')
     .select('*, property:properties(id, title)')
     .eq('owner_id', ownerId)
-    .order('starts_on', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+    .order('starts_on', { ascending: false })
+    .order('id', { ascending: true }));
+  return rows;
 }
 
 export async function getAgreementCoveringRange(propertyId: string, contractStart: string, contractEnd: string): Promise<OwnerAgreement | null> {
@@ -229,14 +229,14 @@ export async function getAgreementCoveringRange(propertyId: string, contractStar
 }
 
 export async function listOwnerAgreementVersions(agreementIds: readonly string[]): Promise<OwnerAgreementVersion[]> {
-  if (agreementIds.length === 0) return [];
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRowsInBatches<OwnerAgreementVersion, string>([...new Set(agreementIds)], ids => supabase
     .from('owner_agreement_versions')
     .select('*')
-    .in('owner_agreement_id', [...agreementIds])
-    .order('version_no', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+    .in('owner_agreement_id', [...ids])
+    .order('version_no', { ascending: false })
+    .order('id', { ascending: true }));
+  // Preserve the public global ordering after merging independently paged batches.
+  return rows.sort((a,b) => b.version_no-a.version_no || a.id.localeCompare(b.id));
 }
 
 export async function createOwnerAgreement(payload: OwnerAgreementFormPayload): Promise<OwnerAgreement> {
