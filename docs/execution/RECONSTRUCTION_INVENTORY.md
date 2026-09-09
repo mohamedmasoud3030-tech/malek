@@ -384,3 +384,23 @@ Literal remote SHA verified by an independent anonymous read of the remote, not 
 → `79fff701ab4e4be026abf2acc921ca3821a2dee6`, identical to local `HEAD`.
 
 `origin/main` (`fe2a5911…`) and `redesign/dashboard-calm-command-center` are untouched. No branch created, no PR, no merge, no force-push. The credential was used only for the in-process push: it is not in `.git/config`, the remote URL, `~/.git-credentials`, `~/.netrc`, `~/.gitconfig`, or any repository file (verified by scan after the push).
+
+## Co-owned property expense allocation — EVIDENCED, repair BLOCKED on an accounting decision
+`rentrix-app/src/features/financials/reports/owner-statement-coownership-allocation.test.ts` (5 PASS).
+
+### The defect (reporting only)
+`property_owners` is a real many-to-many carrying `ownership_percentage`, and co-ownership is a first-class governed feature: `20260901000069_atomic_property_ownership_payload.sql` accepts an explicit ownership payload, requires the shares to total EXACTLY 100, rejects duplicates and requires one primary. The property form exposes it.
+
+The legacy owner-expense selectors test ownership with a bare `EXISTS` against `property_owners` and never read the share. On a property owned 60/40, a single 100 OWNER expense is therefore charged in FULL to BOTH owners — **200 reported against 100 actually incurred**. Proven for `rpt_owner_statement` and for `calculate_owner_net_payout` (each co-owner shows `owner_expenses = 100`). A structural assertion pins that `ownership_percentage` is used by NO function to apportion an amount anywhere in the chain.
+
+### Severity is bounded — established by execution, not assumption
+- The MONEY path is already fail-closed: `create_owner_settlement_draft_atomic` refuses a co-owned legacy expense with `OWNER_SETTLEMENT_LEGACY_EXPENSE_REVIEW_REQUIRED` (migration12), and no `owner_settlement_expense_links` row is reserved. A double-counted deduction cannot reach a payout.
+- The governed adoption path is already correct: `owner_allocation_version=1` requires an explicit per-owner allocation whose total equals the expense exactly (deferred constraint `OWNER_EXPENSE_ALLOCATION_INCOMPLETE`), and adopted sources are excluded from these legacy selectors.
+- So this is a REPORTING overstatement on un-adopted legacy co-owned expenses, not a payment defect.
+
+### Why no repair is applied yet — deliberately NOT guessed
+Two lawful readings exist and they are NOT equivalent, so picking one in code would be inventing an accounting rule:
+1. apportion the legacy expense by `ownership_percentage` (60/40); or
+2. refuse to attribute an un-allocated co-owned expense to any single owner and surface it for governed adoption, consistent with the money path already refusing it.
+
+The canonical pack states share rules "must be explicit and company-consistent" but defines no apportionment basis for a legacy un-allocated expense, and `ownership_percentage` is a CURRENT attribute with `starts_on`/`ends_on` — using today's share to split a historical cost is exactly the kind of retroactive derivation the standing constraints forbid. Reading 2 is the safer default and matches the existing money-path stance; reading 1 changes reported owner economics. This needs the owner/accounting decision before implementation. The defect is evidenced and the guard is proven, so nothing is hidden in the meantime.
