@@ -373,3 +373,14 @@ Generated types were regenerated with `pnpm db0:gen-types`; the diff is exactly 
 - `app_private.guard_paid_owner_settlement` (migration13) correctly rejects any UPDATE to a PAID settlement. The test was rewritten to prove the point structurally instead of mutating paid evidence.
 - `owner_settlements_approval_state_check` correctly requires `approved_at`/`approved_by` for APPROVED and PAID rows.
 - RLS on `public.expenses` correctly hides the foreign row from `authenticated`; the probe reads it with the elevated role rather than weakening the policy.
+
+### Checkpoint pushed and verified (resume session)
+Remote credential access was restored in-process only. Both accumulated commits are now on the sole permitted branch `reconstruction/checkpoint-20260909`:
+- `8d1d5e75` — migration16: owner position identity read from the canonical `meta` envelope.
+- `79fff701` — migration17: owner statement settlement authority (proven cash, `paid_at`, PAID-only lifecycle) and the company-isolation repair of `_owner_statement_expenses`.
+
+Literal remote SHA verified by an independent anonymous read of the remote, not from push output:
+`git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git reconstruction/checkpoint-20260909`
+→ `79fff701ab4e4be026abf2acc921ca3821a2dee6`, identical to local `HEAD`.
+
+`origin/main` (`fe2a5911…`) and `redesign/dashboard-calm-command-center` are untouched. No branch created, no PR, no merge, no force-push. The credential was used only for the in-process push: it is not in `.git/config`, the remote URL, `~/.git-credentials`, `~/.netrc`, `~/.gitconfig`, or any repository file (verified by scan after the push).
