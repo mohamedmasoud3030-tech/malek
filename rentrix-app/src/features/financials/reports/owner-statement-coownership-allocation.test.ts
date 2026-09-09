@@ -1,43 +1,30 @@
 /**
- * Co-owned property expense allocation in owner reporting — source diagnosis.
+ * Co-owned property expense allocation in owner reporting.
  *
- * `property_owners` is a genuine many-to-many with an `ownership_percentage`
- * (DOM: "share/primary-owner rules must be explicit and company-consistent").
+ * `property_owners` is a genuine many-to-many with an `ownership_percentage`.
  * Co-ownership is a first-class, governed, UI-exposed feature:
  * `20260901000069_atomic_property_ownership_payload.sql` accepts an explicit
- * ownership payload, requires the shares to total EXACTLY 100, rejects
- * duplicate owners, and requires exactly one primary.
+ * ownership payload, requires shares totalling EXACTLY 100, rejects duplicate
+ * owners and requires exactly one primary.
  *
- * The legacy owner-expense selectors, however, test ownership with a bare
- * EXISTS against `property_owners` and never read `ownership_percentage`:
+ * BEFORE 20260909000018 the legacy owner-expense selectors tested ownership
+ * with a bare EXISTS against `property_owners` and never read the share, so on
+ * a 60/40 property a single 100 OWNER expense was charged in FULL to BOTH
+ * owners — 200 reported against 100 actually incurred.
  *
- *   AND EXISTS (SELECT 1 FROM public.property_owners po
- *               WHERE po.property_id = e.property_id AND po.owner_id = $1 ...)
+ * APPROVED RESOLUTION (Option 2): an unallocated historical co-owned expense
+ * stays UNALLOCATED. It is not apportioned by the current ownership share,
+ * because `ownership_percentage` is a present-tense attribute with validity
+ * dates and using it to split a historical cost would derive historical
+ * ownership from today's state. It attaches to nobody until the governed
+ * adoption workflow supplies the authoritative per-owner allocation.
  *
- * So for a property owned 60/40, a single 100 OWNER expense is charged in FULL
- * to BOTH owners — 200 of owner-charged expense reported against 100 of actual
- * cost. `ownership_percentage` is never used to apportion money anywhere in
- * the migration chain (verified by search).
+ * The suppressed cost is never silently dropped: it surfaces through
+ * `public.owner_unallocated_shared_expenses` as outstanding governed-adoption
+ * work.
  *
- * SCOPE AND SEVERITY, established by execution rather than assumed:
- *
- *  - The MONEY path is already fail-closed. `create_owner_settlement_draft_atomic`
- *    refuses a co-owned legacy expense with
- *    OWNER_SETTLEMENT_LEGACY_EXPENSE_REVIEW_REQUIRED (migration 12), so no
- *    settlement can silently pay a double-counted deduction. The governed
- *    adoption path (`owner_allocation_version = 1`) requires an explicit
- *    per-owner allocation totalling the expense exactly, and adopted sources
- *    are excluded from these legacy selectors.
- *  - The REPORTING path is NOT protected. `rpt_owner_statement` and
- *    `calculate_owner_net_payout` still present the full amount to each
- *    co-owner.
- *
- * This suite pins CURRENT REALITY so the defect is evidenced, and asserts the
- * money-path guard genuinely holds. The reporting repair requires an approved
- * apportionment rule: whether a legacy un-allocated expense on a co-owned
- * property should be split by `ownership_percentage`, or refused as
- * unallocated. That is an accounting decision, not a code guess, so it is NOT
- * silently invented here — see RECONSTRUCTION_INVENTORY.
+ * Ownership is evaluated AS OF THE EXPENSE DATE, so historical cutoffs hold in
+ * both directions — see the cutoff tests below.
  */
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { createOwnerOffsetFixture, offsetDate } from '@/test/owner-offset-fixture';
@@ -49,8 +36,16 @@ let property = '';
 
 const OWNER2 = 'c2000000-0000-4000-8000-0000000000e1';
 const SHARED_EXPENSE = 'c2000000-0000-4000-8000-0000000000e9';
+const SOLE_EXPENSE = 'c2000000-0000-4000-8000-0000000000ea';
 const SHARED_MARKER = 'SHARED EXPENSE';
+const SOLE_MARKER = 'SOLE ERA EXPENSE';
 const SHARED_AMOUNT = 100;
+const SOLE_AMOUNT = 70;
+
+/** Day 1..4 the property has ONE owner; co-ownership starts on day 5. */
+const COOWNERSHIP_STARTS = offsetDate(5);
+const SOLE_ERA_DATE = offsetDate(3);
+const SHARED_ERA_DATE = offsetDate(6);
 
 type StatementTx = { type: string; gross: number; details: string };
 type Statement = { transactions: StatementTx[]; total_gross: number };
@@ -62,6 +57,17 @@ async function statement(ownerId: string): Promise<Statement> {
   )).rows[0].d;
 }
 
+async function derivedExpenses(ownerId: string): Promise<number> {
+  return Number((await f.db.query<{ v: string }>(
+    'select (public.calculate_owner_net_payout($1::uuid,$2::date,$3::date,null)).owner_expenses::text as v',
+    [ownerId, offsetDate(1), offsetDate(28)],
+  )).rows[0].v);
+}
+
+function rows(s: Statement, marker: string) {
+  return s.transactions.filter((tx) => tx.details.includes(marker));
+}
+
 beforeAll(async () => {
   f = await createOwnerOffsetFixture();
   await f.db.exec('reset role');
@@ -70,102 +76,193 @@ beforeAll(async () => {
     [OWNER, COMPANY],
   )).rows[0].id;
 
-  // Split the property 60/40 between two owners in the same company.
+  // The property becomes co-owned 60/40 only from COOWNERSHIP_STARTS onwards.
   await f.db.query("insert into public.owners(id,full_name,name,company_id) values($1,'Co Owner','Co Owner',$2)", [OWNER2, COMPANY]);
   await f.db.query('update public.property_owners set ownership_percentage=60 where property_id=$1 and owner_id=$2', [property, OWNER]);
   await f.db.query(
     'insert into public.property_owners(property_id,owner_id,company_id,ownership_percentage,is_primary,starts_on)'
     + ' values($1,$2,$3,40,false,$4::date)',
-    [property, OWNER2, COMPANY, offsetDate(1)],
+    [property, OWNER2, COMPANY, COOWNERSHIP_STARTS],
   );
 
-  // One legacy (un-adopted) owner-charged expense of 100 on the shared property.
+  // One legacy expense in the CO-OWNED era, one in the SOLE-OWNER era.
   await f.db.query(
     'insert into public.expenses(id,company_id,property_id,category,description,amount,status,charged_to,date_time,expense_date)'
     + " values($1,$2,$3,'maintenance',$4,$5,'POSTED','OWNER',$6::text,$7::date)",
-    [SHARED_EXPENSE, COMPANY, property, SHARED_MARKER, SHARED_AMOUNT, offsetDate(6), offsetDate(6)],
+    [SHARED_EXPENSE, COMPANY, property, SHARED_MARKER, SHARED_AMOUNT, SHARED_ERA_DATE, SHARED_ERA_DATE],
+  );
+  await f.db.query(
+    'insert into public.expenses(id,company_id,property_id,category,description,amount,status,charged_to,date_time,expense_date)'
+    + " values($1,$2,$3,'maintenance',$4,$5,'POSTED','OWNER',$6::text,$7::date)",
+    [SOLE_EXPENSE, COMPANY, property, SOLE_MARKER, SOLE_AMOUNT, SOLE_ERA_DATE, SOLE_ERA_DATE],
   );
   await f.db.exec('set role authenticated');
 }, 60_000);
 
 afterAll(async () => { await f?.db.close(); });
 
-it('the fixture really is a 60/40 co-owned property with one un-adopted expense', async () => {
+it('the fixture is a 60/40 co-ownership starting mid-period, with two un-adopted expenses', async () => {
   await f.db.exec('reset role');
-  const shares = (await f.db.query<{ owner_id: string; pct: string }>(
-    'select owner_id::text, ownership_percentage::text as pct from public.property_owners where property_id=$1 order by ownership_percentage desc',
+  const shares = (await f.db.query<{ pct: string; starts_on: string | null }>(
+    'select ownership_percentage::text as pct, starts_on::text from public.property_owners where property_id=$1 order by ownership_percentage desc',
     [property],
   )).rows;
-  const expense = (await f.db.query<{ amount: string; version: number | null }>(
-    'select amount::text, owner_allocation_version as version from public.expenses where id=$1',
-    [SHARED_EXPENSE],
-  )).rows[0];
+  const expenses = (await f.db.query<{ id: string; version: number | null }>(
+    'select id::text, owner_allocation_version as version from public.expenses where id in ($1,$2) order by amount desc',
+    [SHARED_EXPENSE, SOLE_EXPENSE],
+  )).rows;
   await f.db.exec('set role authenticated');
 
   expect(shares.map((s) => Number(s.pct))).toEqual([60, 40]);
   expect(shares.reduce((t, s) => t + Number(s.pct), 0)).toBe(100);
-  expect(Number(expense.amount)).toBe(SHARED_AMOUNT);
-  // Legacy source: NOT adopted into the owner-receivable subledger.
-  expect(expense.version).toBeNull();
+  // Both are legacy sources, NOT adopted into the owner-receivable subledger.
+  expect(expenses.every((e) => e.version === null)).toBe(true);
 });
 
-it('DEFECT (reporting): the full expense is charged to BOTH co-owners, double counting it', async () => {
+it('60/40: the co-owned expense is charged to NEITHER owner and is not apportioned', async () => {
   const first = await statement(OWNER);
   const second = await statement(OWNER2);
 
-  const firstRows = first.transactions.filter((tx) => tx.details.includes(SHARED_MARKER));
-  const secondRows = second.transactions.filter((tx) => tx.details.includes(SHARED_MARKER));
+  // Not 100 to each (the old double count) and not 60/40 (an invented rule).
+  expect(rows(first, SHARED_MARKER)).toHaveLength(0);
+  expect(rows(second, SHARED_MARKER)).toHaveLength(0);
 
-  expect(firstRows).toHaveLength(1);
-  expect(secondRows).toHaveLength(1);
-
-  // Neither is apportioned by the 60/40 share: each carries the whole cost.
-  expect(firstRows[0].gross).toBe(-SHARED_AMOUNT);
-  expect(secondRows[0].gross).toBe(-SHARED_AMOUNT);
-
-  // 200 reported against 100 actually incurred.
-  const reported = Math.abs(firstRows[0].gross) + Math.abs(secondRows[0].gross);
-  expect(reported).toBe(2 * SHARED_AMOUNT);
+  // The derivation authority agrees: the 60% owner sees only the sole-era cost.
+  expect(await derivedExpenses(OWNER)).toBe(SOLE_AMOUNT);
+  expect(await derivedExpenses(OWNER2)).toBe(0);
 });
 
-it('DEFECT (derivation): calculate_owner_net_payout charges the full expense to each co-owner', async () => {
-  const read = async (ownerId: string) => (await f.db.query<{ v: string }>(
-    'select (public.calculate_owner_net_payout($1::uuid,$2::date,$3::date,null)).owner_expenses::text as v',
-    [ownerId, offsetDate(1), offsetDate(28)],
-  )).rows[0].v;
+it('HISTORICAL CUTOFF: an expense from the sole-owner era still belongs to that owner', async () => {
+  // The property is co-owned TODAY, but was solely owned when this cost was
+  // incurred. Ownership is evaluated at the expense date, so the cost is not
+  // retroactively orphaned by a later ownership change.
+  const first = await statement(OWNER);
+  const soleRows = rows(first, SOLE_MARKER);
+  expect(soleRows).toHaveLength(1);
+  expect(soleRows[0].gross).toBe(-SOLE_AMOUNT);
 
-  expect(Number(await read(OWNER))).toBe(SHARED_AMOUNT);
-  expect(Number(await read(OWNER2))).toBe(SHARED_AMOUNT);
+  // And it never leaks to the owner who only joined later.
+  expect(rows(await statement(OWNER2), SOLE_MARKER)).toHaveLength(0);
 });
 
-it('PRESERVED: the money path stays fail-closed for an un-allocated co-owned expense', async () => {
-  // The reporting defect must not be mistaken for a payable one. Migration 12
-  // refuses to build a settlement over un-reviewed legacy owner expenses, so
-  // no double-counted deduction can reach a payout.
+it('HISTORICAL CUTOFF: a co-owner who leaves does not absorb costs incurred after departure', async () => {
+  await f.db.exec('begin;reset role');
+  try {
+    // OWNER2 leaves the day before the shared expense, making OWNER the sole
+    // owner again on that date. The previously unallocated cost now resolves
+    // to the single historical owner — evaluated at the event date, not today.
+    await f.db.query(
+      'update public.property_owners set ends_on=$3::date where property_id=$1 and owner_id=$2',
+      [property, OWNER2, offsetDate(5)],
+    );
+    await f.db.exec('set local role authenticated');
+
+    const first = await statement(OWNER);
+    const second = await statement(OWNER2);
+    expect(rows(first, SHARED_MARKER)).toHaveLength(1);
+    expect(rows(first, SHARED_MARKER)[0].gross).toBe(-SHARED_AMOUNT);
+    expect(rows(second, SHARED_MARKER)).toHaveLength(0);
+  } finally {
+    await f.db.exec('rollback');
+  }
+});
+
+it('no double counting: the shared cost is reported once in total, or not at all', async () => {
+  const reported = [OWNER, OWNER2]
+    .map(async (o) => rows(await statement(o), SHARED_MARKER).reduce((t, r) => t + Math.abs(r.gross), 0));
+  const totals = await Promise.all(reported);
+  const sum = totals.reduce((t, v) => t + v, 0);
+  // Previously 200 against a 100 cost. Now 0 — pending governed adoption.
+  expect(sum).toBe(0);
+  expect(sum).toBeLessThanOrEqual(SHARED_AMOUNT);
+});
+
+it('VISIBILITY: the suppressed cost is surfaced as outstanding governed-adoption work', async () => {
+  const out = (await f.db.query<{ d: any }>(
+    'select public.owner_unallocated_shared_expenses($1::date,$2::date,null) as d',
+    [offsetDate(1), offsetDate(28)],
+  )).rows[0].d;
+
+  expect(Number(out.count)).toBe(1);
+  expect(Number(out.total_amount)).toBe(SHARED_AMOUNT);
+  const entry = out.expenses[0];
+  expect(entry.description).toContain(SHARED_MARKER);
+  expect(Number(entry.amount)).toBe(SHARED_AMOUNT);
+  expect(Number(entry.owners_at_expense_date)).toBe(2);
+  expect(entry.resolution).toBe('GOVERNED_ADOPTION_REQUIRED');
+  // The sole-era expense is attributable, so it is NOT outstanding work.
+  expect(JSON.stringify(out.expenses)).not.toContain(SOLE_MARKER);
+});
+
+it('VISIBILITY: the surface is permission-checked and company-scoped', async () => {
+  await f.db.exec('begin');
+  try {
+    await f.db.query("select set_config('request.jwt.claims','{}',true)");
+    await expect(
+      f.db.query('select public.owner_unallocated_shared_expenses(null,null,null)'),
+    ).rejects.toThrow();
+  } finally {
+    await f.db.exec('rollback');
+  }
+});
+
+it('PRESERVED: the money path stays fail-closed for a sole-owner legacy expense', async () => {
+  // The co-ownership change must not weaken the existing guard: a genuinely
+  // attributable, un-reviewed legacy expense still blocks a new settlement.
+  // The fixture already holds an active settlement over the main period, and
+  // that distinct rule would mask the guard, so assert on a clean later
+  // period carrying only a fresh sole-era expense.
+  await f.db.exec('reset role');
+  // Dates are computed in SQL: offsetDate only formats a day of the current
+  // month and cannot express a later period.
+  const later = (await f.db.query<{ d1: string; d2: string; d3: string; d4: string }>(
+    "select to_char($1::date + 40,'YYYY-MM-DD') as d1, to_char($1::date + 30,'YYYY-MM-DD') as d2,"
+    + " to_char($1::date + 35,'YYYY-MM-DD') as d3, to_char($1::date + 45,'YYYY-MM-DD') as d4",
+    [offsetDate(1)],
+  )).rows[0];
+
+  await f.db.query(
+    'insert into public.expenses(id,company_id,property_id,category,description,amount,status,charged_to,date_time,expense_date)'
+    + " values($1,$2,$3,'maintenance','LATER SOLE EXPENSE',15,'POSTED','OWNER',$4::text,$5::date)",
+    ['c2000000-0000-4000-8000-0000000000eb', COMPANY, property, later.d1, later.d1],
+  );
+  // Sole ownership again before that expense.
+  await f.db.query(
+    'update public.property_owners set ends_on=$3::date where property_id=$1 and owner_id=$2',
+    [property, OWNER2, later.d2],
+  );
+  await f.db.exec('set role authenticated');
+
   await assumeIdentity(f.db, MAKER, COMPANY);
   await expect(f.db.query(
     'select public.create_owner_settlement_draft_atomic($1::jsonb)',
     [JSON.stringify({
-      owner_id: OWNER2, property_id: property,
-      period_start: offsetDate(1), period_end: offsetDate(28),
-      request_id: 'c2000000-0000-4000-8000-0000000000b2',
+      owner_id: OWNER, property_id: property,
+      period_start: later.d3, period_end: later.d4,
+      request_id: 'c2000000-0000-4000-8000-0000000000b3',
     })],
   )).rejects.toThrow(/OWNER_SETTLEMENT_LEGACY_EXPENSE_REVIEW_REQUIRED/);
-
-  // And nothing reserved the shared expense.
-  await f.db.exec('reset role');
-  const links = (await f.db.query(
-    'select 1 from public.owner_settlement_expense_links where expense_id=$1 and released_at is null',
-    [SHARED_EXPENSE],
-  )).rows;
-  await f.db.exec('set role authenticated');
-  expect(links).toHaveLength(0);
 });
 
-it('PRESERVED: ownership_percentage is never used to apportion money in any authority', async () => {
-  // Documents the gap structurally: the ownership share exists and is
-  // validated to total 100, but no financial selector reads it. If a future
-  // apportionment rule is approved, this assertion is the one that must change.
+it('PRESERVED: no expense row was modified, and posted history is intact', async () => {
+  await f.db.exec('reset role');
+  const rowsOut = (await f.db.query<{ id: string; amount: string; version: number | null; deleted: string | null }>(
+    'select id::text, amount::text, owner_allocation_version as version, deleted_at::text as deleted'
+    + ' from public.expenses where id in ($1,$2)',
+    [SHARED_EXPENSE, SOLE_EXPENSE],
+  )).rows;
+  await f.db.exec('set role authenticated');
+
+  // The repair is a read-path change only: nothing was backfilled, allocated
+  // or soft-deleted to make the numbers work.
+  const byId = new Map(rowsOut.map((r) => [r.id, r]));
+  expect(Number(byId.get(SHARED_EXPENSE)?.amount)).toBe(SHARED_AMOUNT);
+  expect(Number(byId.get(SOLE_EXPENSE)?.amount)).toBe(SOLE_AMOUNT);
+  expect(rowsOut.every((r) => r.version === null)).toBe(true);
+  expect(rowsOut.every((r) => r.deleted === null)).toBe(true);
+});
+
+it('PRESERVED: ownership_percentage is still never used to apportion money', async () => {
   await f.db.exec('reset role');
   const users = (await f.db.query<{ n: string }>(
     `select count(*)::text as n from (

@@ -9316,6 +9316,15 @@ export type Database = {
         };
         Returns: Database['public']['Tables']['owner_agreement_versions']['Row'];
       };
+      owner_is_sole_property_owner_on: {
+        Args: {
+          p_company_id: string | null;
+          p_property_id: string | null;
+          p_owner_id: string | null;
+          p_on: string | null;
+        };
+        Returns: boolean;
+      };
       owner_settlement_reservable_expenses: {
         Args: {
           p_company_id: string | null;
@@ -9335,6 +9344,14 @@ export type Database = {
           p_property_id?: string | null;
         };
         Returns: string[];
+      };
+      owner_unallocated_shared_expenses: {
+        Args: {
+          p_from?: string | null;
+          p_to?: string | null;
+          p_property_id?: string | null;
+        };
+        Returns: Json;
       };
       pay_commission_atomic: {
         Args: {

@@ -385,7 +385,7 @@ Literal remote SHA verified by an independent anonymous read of the remote, not 
 
 `origin/main` (`fe2a5911…`) and `redesign/dashboard-calm-command-center` are untouched. No branch created, no PR, no merge, no force-push. The credential was used only for the in-process push: it is not in `.git/config`, the remote URL, `~/.git-credentials`, `~/.netrc`, `~/.gitconfig`, or any repository file (verified by scan after the push).
 
-## Co-owned property expense allocation — EVIDENCED, repair BLOCKED on an accounting decision
+## Co-owned property expense allocation — EVIDENCED, then RESOLVED (Option 2, migration18)
 `rentrix-app/src/features/financials/reports/owner-statement-coownership-allocation.test.ts` (5 PASS).
 
 ### The defect (reporting only)
@@ -398,9 +398,23 @@ The legacy owner-expense selectors test ownership with a bare `EXISTS` against `
 - The governed adoption path is already correct: `owner_allocation_version=1` requires an explicit per-owner allocation whose total equals the expense exactly (deferred constraint `OWNER_EXPENSE_ALLOCATION_INCOMPLETE`), and adopted sources are excluded from these legacy selectors.
 - So this is a REPORTING overstatement on un-adopted legacy co-owned expenses, not a payment defect.
 
-### Why no repair is applied yet — deliberately NOT guessed
-Two lawful readings exist and they are NOT equivalent, so picking one in code would be inventing an accounting rule:
-1. apportion the legacy expense by `ownership_percentage` (60/40); or
-2. refuse to attribute an un-allocated co-owned expense to any single owner and surface it for governed adoption, consistent with the money path already refusing it.
+### Resolution — APPROVED Option 2 (owner decision, 2026-09-09)
+`supabase/migrations/20260909000018_owner_expense_coownership_allocation_authority.sql`.
 
-The canonical pack states share rules "must be explicit and company-consistent" but defines no apportionment basis for a legacy un-allocated expense, and `ownership_percentage` is a CURRENT attribute with `starts_on`/`ends_on` — using today's share to split a historical cost is exactly the kind of retroactive derivation the standing constraints forbid. Reading 2 is the safer default and matches the existing money-path stance; reading 1 changes reported owner economics. This needs the owner/accounting decision before implementation. The defect is evidenced and the guard is proven, so nothing is hidden in the meantime.
+The owner directed: do NOT apportion historical co-owned expenses by the current `ownership_percentage`. An unallocated historical co-owned expense stays UNALLOCATED and enters the governed historical adoption/remediation workflow.
+
+Implemented exactly that:
+- New single-source predicate `public.owner_is_sole_property_owner_on(company, property, owner, on_date)` — true only when the owner is the ONLY owner of the property AS OF that date. It deliberately does NOT read `ownership_percentage`. Written once and reused by all three selectors so the read paths cannot drift apart again. Company-scoped explicitly because the callers are SECURITY DEFINER.
+- Applied to `public._owner_statement_expenses`, `public.calculate_owner_net_payout` and `public.owner_settlement_reservable_expenses`, each via `pg_get_functiondef` with a fail-closed precondition on the exact anchor text.
+- Ownership is evaluated AT THE EXPENSE DATE, never as of today, so historical cutoffs hold in BOTH directions: a cost incurred while the property had one owner still belongs to that owner even though the property is co-owned now; and a cost incurred after a co-owner departed resolves to the remaining sole owner.
+- Reporting no longer double counts: the shared 100 expense is reported 0 times in total instead of twice.
+- Nothing is hidden. New permission-checked, company-scoped read `public.owner_unallocated_shared_expenses(from,to,property)` lists every unallocated expense on a property that had more than one owner at the expense date, with `owners_at_expense_date` and `resolution='GOVERNED_ADOPTION_REQUIRED'`, plus a count and total. Suppressing a wrong number never silently drops the cost.
+- No apportionment or accounting rule was invented; no expense row was modified, allocated, backfilled or soft-deleted; the repair is read-path only. A test asserts the rows are byte-for-byte intact and that no function anywhere apportions an amount by `ownership_percentage`.
+- The fail-closed money path is preserved: `OWNER_SETTLEMENT_LEGACY_EXPENSE_REVIEW_REQUIRED` still fires for a genuinely attributable sole-owner legacy expense. A co-owned expense no longer belongs to any single owner, so it stops blocking an unrelated owner's settlement, and can only ever reach a settlement through governed adoption, which requires an explicit per-owner allocation totalling the expense exactly.
+
+Regression: `owner-statement-coownership-allocation.test.ts` 10 PASS — 60/40 non-attribution, non-apportionment, both historical-cutoff directions, no-double-count, visibility surface, permission check, money-path guard, row immutability, and the structural no-apportionment assertion.
+
+Verification: reports/owners/lifecycle 52 files / 392 PASS; full regression **547 files / 3902 tests, 0 test failures** (sharded run covered 508 files / 3589 tests with shard 2 SIGKILLed by the sandbox heap — an INFRA outcome, never counted as a pass or a failure; shard 2 was then re-run solo in two halves: 20 files / 130 PASS and 19 files / 183 PASS, closing the suite); db0 7/7; Guardian 12/12; `test:supabase` (rls-matrix 84, client-visibility 241, internal-gl-rpc 58); business rules, hygiene, GL boundary PASS; main+test types PASS; frontend-db contract PASS; build/PWA PASS; browser 6 PASS desktop+mobile (retries 0). Generated types regenerated (`db0:gen-types`), adding only the two new function signatures.
+
+### Still open (follow-on, not part of this milestone)
+The governed adoption workflow itself — turning a listed unallocated co-owned expense into an authoritative per-owner allocation — still needs its user-facing surface. Until then these expenses are correctly visible-but-unattributed rather than silently split.
