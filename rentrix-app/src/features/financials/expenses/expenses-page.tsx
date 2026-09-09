@@ -74,7 +74,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
   const onCreateExpense = (values: ExpenseFormValues) => {
     createExpense.mutate(
       {
-        requestId: crypto.randomUUID(),
         propertyId: values.property_id,
         category: values.category,
         amount: values.amount,
@@ -143,7 +142,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
             variant="secondary"
             className="min-h-11"
             onClick={() => expensesSectionRef.current?.exportVisibleExpenses()}
-            disabled={expenses.length === 0}
+            disabled={expenses.length === 0 || expensesQuery.isError || expensesQuery.isLoading || propertiesQuery.isError || propertiesQuery.isLoading}
           >
             <Download className="me-2 size-4" aria-hidden="true" />
             تصدير CSV
@@ -183,16 +182,6 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
               role="alert"
               ariaLive="assertive"
             />
-          ) : null}
-          {expensesQuery.isError ? (
-            <div className="space-y-3">
-              <EmptyState
-                title="تعذر تحميل المصروفات"
-                description="أعد المحاولة أو غيّر عوامل التصفية الحالية. الخطأ لا يظهر كحالة فارغة."
-                role="alert"
-                ariaLive="assertive"
-              />
-            </div>
           ) : null}
         </section>
 

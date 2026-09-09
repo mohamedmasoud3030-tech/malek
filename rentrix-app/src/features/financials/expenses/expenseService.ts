@@ -1,7 +1,16 @@
+import { z } from 'zod';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Expense } from '@/types/domain';
+
+const expenseAcknowledgement = z.object({
+  success: z.literal(true),
+  expense_id: z.string().min(1),
+  request_id: z.string().min(1),
+  idempotent: z.boolean(),
+});
+const createdExpenseAcknowledgement = expenseAcknowledgement.extend({ expense_no: z.string().min(1) });
 
 export type ExpenseFilters = { propertyId: string; category: string; costCenterId?: string; from: string; to: string };
 export type PagedExpenses = Readonly<{ rows: Expense[]; truncated: boolean }>;
@@ -30,7 +39,7 @@ export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpens
     );
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل المصروفات');
-    return { rows: [], truncated: false };
+    throw error;
   }
 }
 
@@ -43,7 +52,7 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
   try {
     const requestId = crypto.randomUUID();
 
-    const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)(
+    const { data, error } = await supabase.rpc(
       'update_expense_with_journal_atomic',
       {
         p_payload: {
@@ -63,8 +72,8 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
     );
     if (error) throw error;
 
-    const result = (data ?? {}) as { success?: boolean };
-    if (!result.success) throw new Error('Expense update failed');
+    const result = expenseAcknowledgement.parse(data);
+    if (result.expense_id !== id || result.request_id !== requestId) throw new Error('Expense acknowledgement scope mismatch');
 
     const { data: expense, error: fetchError } = await supabase
       .from('expenses')
@@ -108,7 +117,7 @@ export type ExpenseWithJournalResult = {
 };
 
 export async function createExpenseWithJournal(payload: ExpenseWithJournalPayload): Promise<ExpenseWithJournalResult> {
-  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)(
+  const { data, error } = await supabase.rpc(
     'create_expense_with_journal_atomic',
     {
       p_payload: {
@@ -127,11 +136,12 @@ export async function createExpenseWithJournal(payload: ExpenseWithJournalPayloa
   );
   if (error) throw error;
 
-  const result = (data ?? {}) as { expense_id?: string; expense_no?: string; request_id?: string; idempotent?: boolean };
+  const result = createdExpenseAcknowledgement.parse(data);
+  if (payload.requestId && result.request_id !== payload.requestId) throw new Error('Expense acknowledgement request mismatch');
   return {
-    expenseId: result.expense_id ?? '',
-    expenseNo: result.expense_no ?? '',
-    requestId: result.request_id ?? payload.requestId ?? '',
-    idempotent: Boolean(result.idempotent),
+    expenseId: result.expense_id,
+    expenseNo: result.expense_no,
+    requestId: result.request_id,
+    idempotent: result.idempotent,
   };
 }

@@ -104,7 +104,10 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.costCenterId || filters.from || filters.to);
   const documentSettings = useDocumentSettings();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
-  const exportVisibleExpenses = () => downloadExpenseCsv(`${APP_BRAND_FILE_SLUG}-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
+  const exportVisibleExpenses = () => {
+    if (error || isLoading) return;
+    downloadExpenseCsv(`${APP_BRAND_FILE_SLUG}-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
+  };
   // Guards run inside the async boundary so a reachable handler fails closed
   // with a visible Arabic reason rather than silently doing nothing.
   const exportExpenseVoucher = (expense: Expense) => {
@@ -219,7 +222,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
     <div className="min-w-0 space-y-2.5 sm:space-y-3">
         {isLoading ? (
           <LoadingState variant="section" label="جارٍ تحميل ملخص المصروفات" />
-        ) : (
+        ) : error ? null : (
          <RegisterMetricStrip
            aria-label="ملخص المصروفات"
            items={[

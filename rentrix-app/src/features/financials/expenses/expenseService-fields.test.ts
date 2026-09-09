@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { updateExpense } from './expenseService';
+import { createExpenseWithJournal, updateExpense } from './expenseService';
 
 const mocks = vi.hoisted(() => {
   const returns = vi.fn();
@@ -33,7 +33,18 @@ vi.mock('@/lib/supabase-error', () => ({
 describe('expense atomic update field contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.rpc.mockResolvedValue({ data: { success: true }, error: null });
+    mocks.rpc.mockImplementation(
+      (_fn: string, { p_payload }: { p_payload: { request_id: string } }) =>
+        Promise.resolve({
+          data: {
+            success: true,
+            expense_id: 'expense-1',
+            request_id: p_payload.request_id,
+            idempotent: false,
+          },
+          error: null,
+        }),
+    );
     mocks.returns.mockResolvedValue({
       data: {
         id: 'expense-1',
@@ -77,5 +88,61 @@ describe('expense atomic update field contract', () => {
         }),
       },
     );
+  });
+  it.each([null, {}, { success: false }, { success: true }])(
+    'rejects incomplete creation and update acknowledgements (%j)',
+    async (data) => {
+      mocks.rpc.mockResolvedValue({ data, error: null });
+      await expect(
+        createExpenseWithJournal({
+          propertyId: 'property-1',
+          category: 'صيانة',
+          amount: 20,
+          expenseDate: '2026-09-01',
+        }),
+      ).rejects.toThrow();
+      await expect(
+        updateExpense('expense-1', {
+          property_id: 'property-1',
+          category: 'صيانة',
+          amount: 20,
+          expense_date: '2026-09-01',
+          description: null,
+        }),
+      ).rejects.toThrow();
+      expect(mocks.returns).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects acknowledgements for a different command or expense', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: {
+        success: true,
+        expense_id: 'other-expense',
+        expense_no: 'EXP-1',
+        request_id: 'other-request',
+        idempotent: false,
+      },
+      error: null,
+    });
+    await expect(
+      createExpenseWithJournal({
+        propertyId: 'property-1',
+        category: 'صيانة',
+        amount: 20,
+        expenseDate: '2026-09-01',
+        requestId: 'expected-request',
+      }),
+    ).rejects.toThrow('request mismatch');
+    await expect(
+      updateExpense('expense-1', {
+        property_id: 'property-1',
+        category: 'صيانة',
+        amount: 20,
+        expense_date: '2026-09-01',
+        description: null,
+      }),
+    ).rejects.toThrow('scope mismatch');
+    expect(mocks.returns).not.toHaveBeenCalled();
   });
 });

@@ -47,12 +47,10 @@ describe('listExpenses paged reads', () => {
     expect(mocks.query.range).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the old error contract (toast + empty result) when a page fails', async () => {
+  it('propagates a page failure instead of manufacturing an empty register', async () => {
     mocks.query.range.mockResolvedValueOnce({ data: null, error: new Error('boom') });
 
-    const result = await listExpenses({ propertyId: '', category: '', from: '', to: '' });
-
-    expect(result).toEqual({ rows: [], truncated: false });
+    await expect(listExpenses({ propertyId: '', category: '', from: '', to: '' })).rejects.toThrow('boom');
     expect(mocks.handleSupabaseError).toHaveBeenCalledWith(expect.any(Error), 'تعذر تحميل المصروفات');
   });
 });

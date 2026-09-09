@@ -414,3 +414,16 @@ legacy shape retains its five-account contract and mismatch direction. Persisted
 tests cover historical/reversal parity and allowed/denied identities; full suite,
 types, gates, build and brokered desktop/mobile regressions pass. Hosted parity
 and governed stage credit remain separate; see the live reconstruction inventory.
+
+### Expense evidence and command boundaries
+FIN-007/013/016/019: the expense client now rejects incomplete/unrelated write
+acknowledgements, reuses the existing uncertain-command identity authority, and
+invalidates shared financial read models after uncertain as well as confirmed
+writes. Failed reads cannot masquerade as zero totals or usable exports; one
+register error/retry boundary serves desktop and mobile. Brokered browser tests
+persist a COMPANY expense through a lost acknowledgement and idempotent retry.
+The independent OWNER classification probe still produces source1300=30 and
+GL1300=0: settlement deductions, owner scope, lawful offset and historical
+adjustment semantics need a coherent repair, not an isolated account change.
+No hosted parity, owner-command UI coverage or governed stage credit is claimed.
+See the live inventory for full validation and remaining boundaries.
