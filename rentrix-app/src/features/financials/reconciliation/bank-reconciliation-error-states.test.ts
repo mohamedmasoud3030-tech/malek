@@ -23,6 +23,12 @@ describe('bank reconciliation error vs empty honesty', () => {
     expect(page).toContain('onRetry={() => { void ctrl.linesQuery.refetch(); }}');
   });
 
+  it('renders failed cash suggestions as an error rather than a successful empty list', () => {
+    expect(page).toContain('ctrl.selectedLine && ctrl.suggestionsQuery.isError ? (');
+    expect(page).toContain('تعذر تحميل اقتراحات المطابقة');
+    expect(page).toContain('onRetry={() => { void ctrl.suggestionsQuery.refetch(); }}');
+  });
+
   it('gates empty-state cards behind authoritative or cached payloads', () => {
     expect(page).toContain('!ctrl.accountsQuery.isLoading && !hasBlockingAccountsError && ctrl.accounts.length === 0');
     expect(page).toContain('!ctrl.linesQuery.isLoading && !hasBlockingLinesError && ctrl.lines.length === 0');

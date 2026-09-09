@@ -527,3 +527,36 @@ predating bootstrap issue is unresolved, not waived or falsely marked green.
 Auth/ancillary reads are mocked; hosted auth/concurrency remains unverified.
 See the live reconstruction inventory and workspace offset-safety logs. No governed
 stage credit changes and no financial/application completion declaration.
+
+### 2026-09-09 — historical original cash / bank match authority (migration15)
+
+FIN-008/013/016/018/019; SEC-001/002; GAP-008. Actual persisted reproduction
+showed the bank matcher accepting−1000 entitlement while rejecting−975 cash after
+a25 lawful offset. The existing matcher and candidate service now share the private
+`owner_settlement_paid_cash(uuid,text)` authority. It reads the original balanced
+2000/cash pay journal, not a current offset header; a retained zero-cash payment ACK
+proves a fully-offset closure. Missing or malformed evidence is NULL, never guessed
+zero. The bounded public cash reader checks effective bank-view permission and
+company context. No new ledger/balance table or historical mutation is introduced.
+
+Suggestions read complete batches within a coarse time envelope, retaining exact
+company-calendar inclusion. Bad/partial responses fail closed; a failed cash read
+is shown with retry instead of “no suggestions.” Server matching rejects unknown
+or zero cash for a nonzero bank line. Existing matches and retry/status semantics
+are preserved. Actual11→15 upgrade proves975 remains original cash after an old
+post-payment reversal changed offset_applied to0, while the old erroneous−1000
+owner-funds event and every original event remain unchanged. This is cash evidence,
+not a hidden subledger repair or financial adoption approval.
+
+SQL8/client10 PASS; reconciliation84 PASS; full544 files/3876 PASS539.96s;
+main/test types, generated types, six repository gates and frontend contracts PASS.
+Rebuilt PWA and four SQL-backed desktop/mobile browser scenarios PASS57.0s:
+expense/maintenance/payment/report and bank-cash/error-retry/confirmation. No new
+journal is created by matching−979.875. Auth/ancillary reads remain mocked. Previous
+intermittent bootstrap failures are still tracked; a green rerun is not a root-cause
+fix. Failure-only diagnostics were added without exposing session values.
+
+Owner financial-position paid-cash presentation, statement/document authority,
+governed old-source remediation and remaining financial/app-wide audit are still
+open. Source discrepancies, historical postings and cached payouts are preserved.
+Governed stage credit is unchanged; no application completion claim.

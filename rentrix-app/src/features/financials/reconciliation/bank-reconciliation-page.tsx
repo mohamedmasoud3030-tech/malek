@@ -331,7 +331,15 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
               </EntityForm.Field>
             </div>
 
-            {ctrl.selectedLine ? (
+            {ctrl.selectedLine && ctrl.suggestionsQuery.isError ? (
+              <ErrorState
+                title="تعذر تحميل اقتراحات المطابقة"
+                description="تعذر التحقق من المصدر النقدي. لا يعني فشل التحقق عدم وجود حركات؛ راجع المصدر أو أعد المحاولة."
+                error={ctrl.suggestionsQuery.error}
+                onRetry={() => { void ctrl.suggestionsQuery.refetch(); }}
+                compact
+              />
+            ) : ctrl.selectedLine ? (
               <SuggestedMatches
                 companySettings={companySettings}
                 candidates={ctrl.suggestionsQuery.data ?? []}

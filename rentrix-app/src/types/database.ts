@@ -8937,6 +8937,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_owner_settlement_cash_payments: {
+        Args: {
+          p_settlement_ids: (string)[] | null;
+        };
+        Returns: Json;
+      };
       get_tenant_portal_snapshot: {
         Args: {
           p_token: string | null;

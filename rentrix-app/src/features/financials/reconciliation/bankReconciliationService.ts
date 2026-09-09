@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import { fetchAllRows } from '@/lib/paginatedRead';
+import { chunkForInFilter, fetchAllRows } from '@/lib/paginatedRead';
 import type { SupportedTimezone } from '@/lib/companySettings';
 import type { Database } from '@/types/database';
 import { computeFileFingerprint } from '@/lib/bankCsvParser';
@@ -496,30 +496,48 @@ export async function listSuggestedBankMatches(
         );
       }
 
-      // paid_at is a timestamp. Filter stable status/amount at the database
+      // paid_at is a timestamp. Filter stable status at the database
       // boundary, paginate the complete result set, then apply the company's
       // calendar date. UTC or runner-local midnight must never decide a bank day.
-      const { rows: settlements } = await fetchAllRows<{ id: string; net_payable: number; paid_at: string | null }>(() =>
+      // Coarse UTC envelope only: every supported company's calendar day is
+      // inside it, including DST. Exact inclusion remains toCompanyDateKey.
+      // Do not read the company's entire paid history to match one bank day.
+      const bankDayUtc = Date.parse(`${line.transaction_date}T00:00:00Z`);
+      const earliestPaidAt = new Date(bankDayUtc - 86_400_000).toISOString();
+      const latestPaidAt = new Date(bankDayUtc + 172_800_000).toISOString();
+      const { rows: settlements } = await fetchAllRows<{ id: string; paid_at: string | null }>(() =>
         supabase
           .from('owner_settlements')
-          .select('id, net_payable, paid_at')
+          .select('id, paid_at')
           .eq('status', 'PAID')
-          .eq('net_payable', amount)
+          .gte('paid_at', earliestPaidAt)
+          .lte('paid_at', latestPaidAt)
           .order('id')
           .returns() as never,
       );
-      for (const settlement of settlements) {
-        if (!settlement.paid_at) continue;
-        const paidDate = toCompanyDateKey(settlement.paid_at, timeZone);
-        if (paidDate !== line.transaction_date) continue;
-        candidates.push(
-          toCandidate('owner_payout', {
-            id: settlement.id,
-            amount: -Math.abs(Number(settlement.net_payable)),
-            date: paidDate,
-            label: `صرف تسوية مالك ${settlement.id.slice(0, 8)}`,
-          }),
-        );
+      const datedSettlements = settlements.filter((settlement) => settlement.paid_at
+        && toCompanyDateKey(settlement.paid_at, timeZone) === line.transaction_date);
+      const cashSchema = z.array(z.object({
+        settlement_id: z.string().min(1), cash_paid: z.number().finite().nonnegative().nullable(),
+      }));
+      for (const ids of chunkForInFilter(datedSettlements.map((settlement) => settlement.id), 200)) {
+        const { data, error } = await supabase.rpc('get_owner_settlement_cash_payments', { p_settlement_ids: ids });
+        if (error) throw error;
+        const payments = cashSchema.parse(data);
+        const returnedIds = new Set(payments.map((payment) => payment.settlement_id));
+        if (payments.length !== ids.length || returnedIds.size !== ids.length || ids.some((id) => !returnedIds.has(id))) {
+          throw new Error('استجابة إثبات صرف المالك غير مكتملة أو لا تطابق التسويات المطلوبة.');
+        }
+        for (const payment of payments) {
+          if (payment.cash_paid === null) {
+            throw new Error('تعذر إثبات الصرف النقدي لإحدى التسويات التاريخية؛ راجع مصدر القيد قبل المطابقة.');
+          }
+          if (payment.cash_paid !== amount) continue;
+          candidates.push(toCandidate('owner_payout', {
+            id: payment.settlement_id, amount: -payment.cash_paid, date: line.transaction_date,
+            label: `صرف تسوية مالك ${payment.settlement_id.slice(0, 8)}`,
+          }));
+        }
       }
 
       // paid_at is stored as epoch milliseconds. As with owner payouts, the

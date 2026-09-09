@@ -9,6 +9,23 @@ import { assumeIdentity } from "../src/p1/replay-bootstrap";
 import { installAcceptanceBrowser } from "./support/document-acceptance-session";
 import { installFakeSupabaseBackend } from "./support/fake-supabase-backend";
 
+// Observe the pre-existing intermittent full-page bootstrap stall without
+// replacing auth, changing its lock implementation, or relaxing assertions.
+test.afterEach(async ({ page }, info) => {
+  if (info.status === info.expectedStatus || page.isClosed()) return;
+  const diagnostics = await page.evaluate(async () => ({
+    readyState: document.readyState,
+    mainLabel: document.querySelector('main')?.getAttribute('aria-label'),
+    locks: navigator.locks ? await navigator.locks.query() : null,
+    resources: performance.getEntriesByType('resource').map((entry) => ({
+      path: new URL(entry.name).pathname, duration: entry.duration,
+    })).filter((entry) => /auth|company_members/.test(entry.path)),
+  }));
+  await info.attach('bootstrap-diagnostics', {
+    body: JSON.stringify(diagnostics, null, 2), contentType: 'application/json',
+  });
+});
+
 test("OWNER entry retains allocation on uncertain response and reconciles after lawful recovery and settlement", async ({
   page,
 }) => {
