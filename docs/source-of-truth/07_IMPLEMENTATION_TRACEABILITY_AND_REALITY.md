@@ -404,3 +404,13 @@ SQL lifecycle and pre-migration upgrade tests verify independent 1300/2000
 history, lawful-right/payable limits, reversal, retry and isolation. No hosted
 parity, legal enforceability certification, new UI acceptance or stage credit is
 implied. The live inventory records validation and continuous remote checkpoints.
+
+### Reconciliation entry-point consolidation
+FIN-013/016/019, SEC-001/002/009, GAP-013: migration09 removes duplicate legacy
+reconciliation calculations without removing the public compatibility contract.
+Both public paths reach one private calculation through the existing effective
+financial-report permission authority and an explicit company boundary. The
+legacy shape retains its five-account contract and mismatch direction. Persisted
+tests cover historical/reversal parity and allowed/denied identities; full suite,
+types, gates, build and brokered desktop/mobile regressions pass. Hosted parity
+and governed stage credit remain separate; see the live reconstruction inventory.

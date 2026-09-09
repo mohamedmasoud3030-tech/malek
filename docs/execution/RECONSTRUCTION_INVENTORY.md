@@ -163,3 +163,15 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 ### NEXT / PRESERVED
 - Older reconciliation entry points and legacy expense classification remain active debt. Owner-receivable/offset command UI coverage is still not established; these checks are real SQL/API authority proof, not a browser command journey. Governed stage status unchanged.
 - Offset milestone validation: **4 files / 33 tests PASS** (offset10, owner-receivable8, existing collection/expense/settlement6, VAT9), test-source TypeScript PASS, migration hygiene and GL-write gates PASS. Evidence: `/home/user/validation/offset/{red,expanded,milestone,types,gates,hosted-preflight}.log`. Whole-app535/3751 and prior browser results predate migration08; they are not relabeled as a new offset UI proof.
+
+## Reconciliation entry-point consolidation (FIN-013/016/019; SEC-001/002/009; GAP-013)
+### CHECKPOINT / COMPLETED / REMOVED
+- Offset milestone remotely verified at **ab4200a95a81ea09df13e544945dcb24a9d97896** before this work began; no large uncommitted carryover.
+- Reproduced stale historical balances and reversed-GL omission in the older `gl_reconcile_subledgers` public contract. Also reproduced disabled/stale-membership reads and authorized accountant failure at underlying RLS boundaries. Initial tests: **8 FAIL / 1 PASS** (the comparison fixture was subsequently corrected to include the legacy account-name field as well as financial values).
+- Migration09 retains both public signatures but replaces the legacy calculation with a five-row compatibility shape adapter. WP05 calculation lives once in a private core, behind the same existing financial-report permission gate as the other financial reports. The public wrapper validates company context before privileged reads; no direct authenticated private-core execution is allowed.
+- Removed the older endpoint's independent table scans, current-counter cutoff logic, and POSTED-only GL calculation. Preserved its account names, five-account set, order, mismatch direction and details shape. No posted rows or source metadata changed.
+### VALIDATION
+- Expanded entry-boundary suite: **12 PASS**, including authorized ACCOUNTANT/VIEWER, denied OPERATIONS/disabled/stale membership, foreign-company denial, private-core ACLs, three cutoffs and compensating-reversal parity.
+- Whole application **537 files / 3,773 tests PASS** (535.13s); main/test TypeScript, build/PWA generation, all six repository gates and frontend DB-contract gate PASS. Persisted financial/fee browser regression **4 PASS** across desktop/mobile. Evidence: `/home/user/validation/report-entry/{red,expanded,full,types,test-types,build,gates,browser}.log`.
+### NEXT / BLOCKED
+- Continue legacy expense classification and remaining financial/source and architecture cleanup after remote checkpoint. Hosted auth/data parity still blocked by missing authorized QA runtime configuration. Repository/brokered browser evidence is not hosted JWT/PostgREST acceptance. No stage credit or mission completion claimed.
