@@ -1,0 +1,154 @@
+
+ RUN  v3.2.7 /home/user/malek/rentrix-app
+
+ ✓ src/features/contracts/r4-contract-billing-authority-execution.test.ts (7 tests) 4499ms
+ ✓ src/features/admin-support/admin-support-operations.test.ts (4 tests) 3099ms
+ ✓ src/features/contracts/contract-activation-authority.test.ts (7 tests) 3439ms
+stderr | src/features/reports/documents/professional-property-report.test.ts
+Supabase environment is incomplete. Runtime diagnostics will be shown in UI.
+
+ ✓ src/features/reports/documents/professional-property-report.test.ts (9 tests) 10ms
+ ✓ src/features/financials/phase3-credit-reversal.test.ts (9 tests) 3505ms
+ ✓ src/app/navigation/permission-visibility.test.ts (9 tests) 4ms
+ ✓ src/features/financials/invoices/invoice-read-model.test.ts (9 tests) 12ms
+ ✓ src/features/financials/expenses/operational-expenses.test.ts (8 tests) 2ms
+ ✓ src/features/financials/reconciliation/bank-reconciliation-economic-identity-pglite.test.ts (5 tests) 3190ms
+ ✓ src/features/finance/shell/finance-shell-model.test.ts (6 tests) 3ms
+ ✓ src/services/documents/currencyPrecision.test.ts (9 tests) 13ms
+ ✓ src/app/router/route-blank-state.test.ts (8 tests) 1ms
+ ✓ src/features/service-providers/service-provider-service.test.ts (5 tests) 24ms
+ ✓ src/features/ai-assistant/services/ai-assistant-operating-service.test.ts (5 tests) 12ms
+ ✓ src/features/financials/reports/financial-report-context-hydration.test.ts (3 tests) 5ms
+stderr | src/features/people/use-people.test.ts
+Supabase environment is incomplete. Runtime diagnostics will be shown in UI.
+
+ ✓ src/features/people/use-people.test.ts (3 tests) 6ms
+ ✓ src/features/units/vacancy-analytics.test.ts (4 tests) 19ms
+ ✓ src/features/financials/components/receipt-formatters.test.ts (10 tests) 2ms
+ ✓ src/components/ui/action-menu.placement.test.ts (6 tests) 1ms
+ ✓ src/features/p1-compact-responsive-registers.test.ts (2 tests) 21ms
+stderr | src/features/reports/report-route.test.ts
+Supabase environment is incomplete. Runtime diagnostics will be shown in UI.
+
+ ✓ src/features/reports/report-route.test.ts (6 tests) 3ms
+ ✓ src/features/commissions/p6g-commissions-workspace.test.ts (5 tests) 1ms
+ ✓ src/features/interface-entity-table-import.contract.test.ts (2 tests) 12ms
+ ✓ src/lib/supabase-client-boundary.test.ts (3 tests) 1ms
+ ✓ src/features/owners/owner-settlements-service-listAll.test.ts (2 tests) 4ms
+ ✓ src/lib/malek-brand-contract.test.ts (5 tests) 2ms
+ ✓ src/features/operations-hub/operations-hub.test.ts (8 tests) 2ms
+ ✓ src/lib/business-reference.test.ts (10 tests) 1ms
+ ✓ src/features/financials/reports/statement-ledger.test.ts (5 tests) 1ms
+ ✓ src/features/settings/settings-page.test.ts (3 tests) 1ms
+ ✓ src/features/maintenance/components/maintenance-list-display.contract.test.ts (5 tests) 1ms
+ ✓ src/features/auth/permission-request.test.ts (2 tests) 1ms
+ ✓ src/components/ui/entity-table.visual-wave-1.test.tsx (1 test) 24ms
+ ✓ src/features/auth/effective-permissions-admin.test.ts (1 test) 1ms
+ ✓ src/features/properties/property-unit-summary.test.ts (2 tests) 0ms
+ ✓ src/features/tenants/phase4-tenant-hub.test.tsx (2 tests) 0ms
+ ✓ src/app/layout/app-shell-header.test.tsx (11 tests) 188ms
+ ✓ src/services/documents/renderer/pdfArtifacts.test.ts (9 tests) 633ms
+   ✓ real PDF artifacts > fails closed with a clear Arabic error beyond the page cap, before rendering anything  434ms
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > fails closed when the authoritative snapshot fails
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/dashboard/dashboard-page.test.tsx (6 tests) 491ms
+
+ Test Files  39 passed (39)
+      Tests  216 passed (216)
+   Start at  14:25:52
+   Duration  22.98s (transform 1.26s, setup 0ms, collect 2.87s, tests 19.23s, environment 234ms, prepare 118ms)
+

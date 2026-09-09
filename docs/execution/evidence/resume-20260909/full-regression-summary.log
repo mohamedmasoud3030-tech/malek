@@ -1,0 +1,78 @@
+===== SHARD 1/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  255 passed (255)
+===== SHARD 2/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  278 passed (278)
+===== SHARD 3/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  227 passed (227)
+===== SHARD 4/14 — 39 files =====
+===== SHARD 5/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  255 passed (255)
+===== SHARD 6/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  214 passed (214)
+===== SHARD 7/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  271 passed (271)
+===== SHARD 8/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  396 passed (396)
+===== SHARD 9/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  279 passed (279)
+===== SHARD 10/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  254 passed (254)
+===== SHARD 11/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  266 passed (266)
+stderr | src/features/units/units-list-interaction.test.tsx > UnitsList Real Rendered User-Interaction Tests > proves clicking a compact responsive table row triggers correct unit detail navigation
+stderr | src/features/units/units-list-interaction.test.tsx > UnitsList Real Rendered User-Interaction Tests > proves clicking Edit secondary action does not trigger row click navigation but preserves behavior
+stderr | src/features/units/units-list-interaction.test.tsx > UnitsList Real Rendered User-Interaction Tests > proves clicking Edit secondary action does not trigger row click navigation but preserves behavior
+stderr | src/features/units/units-list-interaction.test.tsx > UnitsList Real Rendered User-Interaction Tests > proves clicking Archive secondary action does not trigger row click navigation but triggers confirmation flow
+===== SHARD 12/14 — 39 files =====
+ Test Files  39 passed (39)
+      Tests  334 passed (334)
+===== SHARD 13/14 — 38 files =====
+ Test Files  38 passed (38)
+      Tests  320 passed (320)
+===== SHARD 14/14 — 38 files =====
+ Test Files  38 passed (38)
+      Tests  255 passed (255)
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > exposes a mobile-safe create entry point and opens the unit form from the global units route
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > exposes a mobile-safe create entry point and opens the unit form from the global units route
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > exposes a mobile-safe create entry point and opens the unit form from the global units route
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > exposes a mobile-safe create entry point and opens the unit form from the global units route
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > exposes a mobile-safe create entry point and opens the unit form from the global units route
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > exposes a mobile-safe create entry point and opens the unit form from the global units route
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > opens the edit form from the mobile card without requiring property selection again
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves clicking a desktop row in UnitsWorkspace opens the shared unit preview
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves clicking a desktop row in UnitsWorkspace opens the shared unit preview
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves clicking a desktop row in UnitsWorkspace opens the shared unit preview
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves clicking a desktop row in UnitsWorkspace opens the shared unit preview
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves clicking a desktop row in UnitsWorkspace opens the shared unit preview
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves clicking a desktop row in UnitsWorkspace opens the shared unit preview
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves the explicit full-page action routes to the unit dossier
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves that clicking the embedded property link does not bubble and routes only to property detail
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves that clicking the embedded property link does not bubble and routes only to property detail
+stderr | src/features/units/units-page-interaction.test.tsx > Global UnitsWorkspace Real Rendered User-Interaction Tests > proves that clicking the embedded property link does not bubble and routes only to property detail
+================ SHARDED REGRESSION SUMMARY ================
+Tests executed      : 3604
+Shards killed (INFRA): 1
+  SHARD 4: INFRA — killed by SIGKILL (resource limit, not a test verdict)
+RESULT: NOT CLEAN — see details above

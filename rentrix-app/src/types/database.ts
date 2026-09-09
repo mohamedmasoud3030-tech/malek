@@ -8231,6 +8231,7 @@ export type Database = {
           p_owner_id: string | null;
           p_from: string | null;
           p_to: string | null;
+          p_company_id: string | null;
         };
         Returns: { tx_date: string | null; details: string | null; tx_type: string | null; property_name: string | null; gross: number | null; deduction: number | null; sort_no: string | null }[];
       };

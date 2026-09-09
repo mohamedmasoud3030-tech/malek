@@ -1,0 +1,1160 @@
+=== db0:gate ===
+
+> rentrix-production-workspace@1.0.0 db0:gate /home/user/malek
+> node scripts/db0/gate.mjs
+
+
+======================================================================
+[regressions] WP-DB0 parser, generator and isolation regression tests
+======================================================================
+TAP version 13
+# Subtest: PostgREST parser preserves constraint and join hints
+ok 1 - PostgREST parser preserves constraint and join hints
+  ---
+  duration_ms: 2.283769
+  ...
+# Subtest: composite foreign keys are valid PostgREST embed relationships
+ok 2 - composite foreign keys are valid PostgREST embed relationships
+  ---
+  duration_ms: 1.880936
+  ...
+# Subtest: a restrictive company fence safely constrains broad permissive policies
+ok 3 - a restrictive company fence safely constrains broad permissive policies
+  ---
+  duration_ms: 0.795559
+  ...
+# Subtest: a broad permissive policy fails without a restrictive company fence
+ok 4 - a broad permissive policy fails without a restrictive company fence
+  ---
+  duration_ms: 0.247721
+  ...
+# Subtest: SECURITY DEFINER functions executable by PUBLIC fail the isolation gate
+ok 5 - SECURITY DEFINER functions executable by PUBLIC fail the isolation gate
+  ---
+  duration_ms: 1.012541
+  ...
+# Subtest: generated types preserve overloads, defaults and one-to-one relationships
+ok 6 - generated types preserve overloads, defaults and one-to-one relationships
+  ---
+  duration_ms: 14.889453
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 96.821345
+
+======================================================================
+[migration-chain] Migration chain from a clean database
+======================================================================
+WP-DB0 replay: 91 migrations, clean database, PGlite (PostgreSQL 18).
+
+Applied 91/91 in 1.3s. Failures: 0.
+Platform-dependent migrations (managed extensions, exception-guarded): 2
+
+======================================================================
+[idempotency] Migration replay / idempotency
+======================================================================
+WP-DB0 idempotency gate: skipped for the single canonical dump bootstrap (not a forward incremental migration).
+
+======================================================================
+[schema-type-drift] Schema/type drift (generated types match the migrations)
+======================================================================
+database.ts matches the migration chain.
+
+======================================================================
+[contract] Frontend/service/RPC contract drift
+======================================================================
+WP-DB0 contract gate
+============================================================
+Findings: 28
+  DB0-07      28   (accepted 46)
+
+PASS — no new contract drift.
+
+======================================================================
+[isolation] RLS / company isolation and FK integrity
+======================================================================
+WP-DB0 isolation gate
+============================================================
+Tenant tables checked : 106
+Policies checked      : 252
+Functions checked     : 404
+Views checked         : 11
+
+PASS — no isolation violations.
+
+======================================================================
+[role-model] Six-role authorization is physically representable
+======================================================================
+WP-DB0 role-model probe: skipped for the single canonical dump bootstrap.
+
+======================================================================
+WP-DB0 DATABASE INTEGRITY GATES
+======================================================================
+  PASS  regressions          0.1s  WP-DB0 parser, generator and isolation regression tests
+  PASS  migration-chain      4.5s  Migration chain from a clean database
+  PASS  idempotency          0.1s  Migration replay / idempotency
+  PASS  schema-type-drift    4.8s  Schema/type drift (generated types match the migrations)
+  PASS  contract             5.0s  Frontend/service/RPC contract drift
+  PASS  isolation            4.5s  RLS / company isolation and FK integrity
+  PASS  role-model           0.1s  Six-role authorization is physically representable
+
+7/7 gates passed.
+EXIT_db0:gate=0
+=== db:guardian ===
+
+> rentrix-production-workspace@1.0.0 db:guardian /home/user/malek
+> node scripts/guardian/run.mjs
+
+MALEK Database Guardian
+========================================================================
+
+[db0-gate] Canonical schema replay / DB0 gate
+
+======================================================================
+[regressions] WP-DB0 parser, generator and isolation regression tests
+======================================================================
+TAP version 13
+# Subtest: PostgREST parser preserves constraint and join hints
+ok 1 - PostgREST parser preserves constraint and join hints
+  ---
+  duration_ms: 2.38183
+  ...
+# Subtest: composite foreign keys are valid PostgREST embed relationships
+ok 2 - composite foreign keys are valid PostgREST embed relationships
+  ---
+  duration_ms: 2.482348
+  ...
+# Subtest: a restrictive company fence safely constrains broad permissive policies
+ok 3 - a restrictive company fence safely constrains broad permissive policies
+  ---
+  duration_ms: 1.185939
+  ...
+# Subtest: a broad permissive policy fails without a restrictive company fence
+ok 4 - a broad permissive policy fails without a restrictive company fence
+  ---
+  duration_ms: 0.313084
+  ...
+# Subtest: SECURITY DEFINER functions executable by PUBLIC fail the isolation gate
+ok 5 - SECURITY DEFINER functions executable by PUBLIC fail the isolation gate
+  ---
+  duration_ms: 1.191353
+  ...
+# Subtest: generated types preserve overloads, defaults and one-to-one relationships
+ok 6 - generated types preserve overloads, defaults and one-to-one relationships
+  ---
+  duration_ms: 20.418624
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111.042581
+
+======================================================================
+[migration-chain] Migration chain from a clean database
+======================================================================
+WP-DB0 replay: 91 migrations, clean database, PGlite (PostgreSQL 18).
+
+Applied 91/91 in 1.4s. Failures: 0.
+Platform-dependent migrations (managed extensions, exception-guarded): 2
+
+======================================================================
+[idempotency] Migration replay / idempotency
+======================================================================
+WP-DB0 idempotency gate: skipped for the single canonical dump bootstrap (not a forward incremental migration).
+
+======================================================================
+[schema-type-drift] Schema/type drift (generated types match the migrations)
+======================================================================
+database.ts matches the migration chain.
+
+======================================================================
+[contract] Frontend/service/RPC contract drift
+======================================================================
+WP-DB0 contract gate
+============================================================
+Findings: 28
+  DB0-07      28   (accepted 46)
+
+PASS — no new contract drift.
+
+======================================================================
+[isolation] RLS / company isolation and FK integrity
+======================================================================
+WP-DB0 isolation gate
+============================================================
+Tenant tables checked : 106
+Policies checked      : 252
+Functions checked     : 404
+Views checked         : 11
+
+PASS — no isolation violations.
+
+======================================================================
+[role-model] Six-role authorization is physically representable
+======================================================================
+WP-DB0 role-model probe: skipped for the single canonical dump bootstrap.
+
+======================================================================
+WP-DB0 DATABASE INTEGRITY GATES
+======================================================================
+  PASS  regressions          0.2s  WP-DB0 parser, generator and isolation regression tests
+  PASS  migration-chain      4.4s  Migration chain from a clean database
+  PASS  idempotency          0.1s  Migration replay / idempotency
+  PASS  schema-type-drift    4.7s  Schema/type drift (generated types match the migrations)
+  PASS  contract             4.7s  Frontend/service/RPC contract drift
+  PASS  isolation            4.4s  RLS / company isolation and FK integrity
+  PASS  role-model           0.1s  Six-role authorization is physically representable
+
+7/7 gates passed.
+
+[canonical-authority] Canonical membership authority + Auth Hook matrix
+Canonical authority matrix: 91 migrations replayed cleanly.
+
+  PASS AUTH-01  users.role=ADMIN, membership.role=VIEWER -> resolver returns VIEWER
+  PASS AUTH-02  users.role=VIEWER, membership.role=ADMIN -> resolver returns ADMIN
+  PASS AUTH-03  is_admin() false when users.role=ADMIN but membership.role=VIEWER
+  PASS AUTH-04  is_active=false -> resolver returns NULL (denied) despite ADMIN membership
+  PASS AUTH-05  deleted_at set -> resolver returns NULL (denied) despite ADMIN membership
+  PASS AUTH-06  company_members.is_active=false -> resolver returns NULL
+  PASS AUTH-07  companies.is_active=false -> resolver returns NULL
+  PASS AUTH-08  no company_members row -> resolver returns NULL
+  PASS AUTH-09  Auth Hook: inactive user -> no user_role/company_id claim emitted
+  PASS AUTH-10  Auth Hook: deleted user -> no user_role/company_id claim emitted
+  PASS AUTH-11  Auth Hook: inactive membership -> no user_role/company_id claim emitted
+  PASS AUTH-12  Auth Hook: inactive company -> no user_role/company_id claim emitted
+  PASS AUTH-13  Auth Hook: users.role=ADMIN/membership=VIEWER -> claim.user_role=VIEWER
+  PASS AUTH-14  Auth Hook: users.role=VIEWER/membership=ADMIN -> claim.user_role=ADMIN
+  PASS AUTH-15  is_accountant() true for its matching active membership role
+  PASS AUTH-16  is_operations() true for its matching active membership role
+  PASS AUTH-17  is_admin_or_manager() true for its matching active membership role
+  PASS AUTH-18  is_app_user() true for its matching active membership role
+  PASS AUTH-19  is_viewer() false for a MANAGER membership
+  PASS AUTH-20  is_app_user() false with no active membership
+
+20/20 passed.
+
+[sensitive-rpc-auth] Sensitive RPC role/company authorization matrix
+Sensitive RPC authorization matrix: 91 migrations replayed cleanly.
+
+[deployed EXECUTE boundaries]
+  PASS GRANT-1  authenticated cannot execute post_receipt_atomic
+  PASS GRANT-2  authenticated cannot execute execute_receipt_void_internal
+  PASS GRANT-3  authenticated can execute import_bank_statement_batch_atomic
+
+[post_receipt_atomic inner auth]
+  PASS RPC-1  post_receipt_atomic: denied for users.role=ADMIN but membership.role=VIEWER
+  PASS RPC-2  post_receipt_atomic: denied for membership.role=ACCOUNTANT (not admin/manager)
+  PASS RPC-3  post_receipt_atomic: denied for is_active=false despite ADMIN membership
+  PASS RPC-4  post_receipt_atomic: denied for deleted_at set despite ADMIN membership
+  PASS RPC-5  post_receipt_atomic: denied for company inactive despite ADMIN membership
+  PASS RPC-6  post_receipt_atomic: denied for no company_members row
+  PASS RPC-7  post_receipt_atomic: denied for ADMIN membership exists only in company A, JWT selects active company B
+  PASS RPC-8  post_receipt_atomic: NOT auth-denied for active ADMIN membership (users.role=VIEWER, ignored)
+  PASS RPC-9  post_receipt_atomic: NOT auth-denied for active MANAGER membership (users.role=VIEWER, ignored)
+
+[execute_receipt_void_internal inner auth]
+  PASS RPC-10  execute_receipt_void_internal: denied for users.role=ADMIN but membership.role=VIEWER
+  PASS RPC-11  execute_receipt_void_internal: denied for membership.role=ACCOUNTANT (not admin/manager)
+  PASS RPC-12  execute_receipt_void_internal: denied for is_active=false despite ADMIN membership
+  PASS RPC-13  execute_receipt_void_internal: denied for deleted_at set despite ADMIN membership
+  PASS RPC-14  execute_receipt_void_internal: denied for company inactive despite ADMIN membership
+  PASS RPC-15  execute_receipt_void_internal: denied for no company_members row
+  PASS RPC-16  execute_receipt_void_internal: denied for ADMIN membership exists only in company A, JWT selects active company B
+  PASS RPC-17  execute_receipt_void_internal: NOT auth-denied for active ADMIN membership (users.role=VIEWER, ignored)
+  PASS RPC-18  execute_receipt_void_internal: NOT auth-denied for active MANAGER membership (users.role=VIEWER, ignored)
+
+[import_bank_statement_batch_atomic inner auth]
+  PASS RPC-19  import_bank_statement_batch_atomic: denied for users.role=ADMIN but membership.role=VIEWER
+  PASS RPC-20  import_bank_statement_batch_atomic: denied for membership.role=ACCOUNTANT (not admin/manager)
+  PASS RPC-21  import_bank_statement_batch_atomic: denied for is_active=false despite ADMIN membership
+  PASS RPC-22  import_bank_statement_batch_atomic: denied for deleted_at set despite ADMIN membership
+  PASS RPC-23  import_bank_statement_batch_atomic: denied for company inactive despite ADMIN membership
+  PASS RPC-24  import_bank_statement_batch_atomic: denied for no company_members row
+  PASS RPC-25  import_bank_statement_batch_atomic: denied for ADMIN membership exists only in company A, JWT selects active company B
+  PASS RPC-26  import_bank_statement_batch_atomic: NOT auth-denied for active ADMIN membership (users.role=VIEWER, ignored)
+  PASS RPC-27  import_bank_statement_batch_atomic: NOT auth-denied for active MANAGER membership (users.role=VIEWER, ignored)
+
+30/30 passed.
+
+[internal-gl-rpc-boundary] Internal GL posting/helper RPC browser EXECUTE boundary
+Internal GL RPC browser boundary matrix: 91 migrations replayed cleanly.
+
+[internal GL RPC browser EXECUTE boundary]
+  PASS GLB-01  anon cannot EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS GLB-02  authenticated cannot EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS GLB-03  service_role can EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS GLB-04  anon cannot EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS GLB-05  authenticated cannot EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS GLB-06  service_role can EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS GLB-07  anon cannot EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS GLB-08  authenticated cannot EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS GLB-09  service_role can EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS GLB-10  anon cannot EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS GLB-11  authenticated cannot EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS GLB-12  service_role can EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS GLB-13  anon cannot EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS GLB-14  authenticated cannot EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS GLB-15  service_role can EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS GLB-16  anon cannot EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS GLB-17  authenticated cannot EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS GLB-18  service_role can EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS GLB-19  anon cannot EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS GLB-20  authenticated cannot EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS GLB-21  service_role can EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS GLB-22  anon cannot EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS GLB-23  authenticated cannot EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS GLB-24  service_role can EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS GLB-25  anon cannot EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS GLB-26  authenticated cannot EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS GLB-27  service_role can EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS GLB-28  anon cannot EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS GLB-29  authenticated cannot EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS GLB-30  service_role can EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS GLB-31  anon cannot EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS GLB-32  authenticated cannot EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS GLB-33  service_role can EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS GLB-34  anon cannot EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS GLB-35  authenticated cannot EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS GLB-36  service_role can EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS GLB-37  anon cannot EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS GLB-38  authenticated cannot EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS GLB-39  service_role can EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS GLB-40  anon cannot EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS GLB-41  authenticated cannot EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS GLB-42  service_role can EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS GLB-43  anon cannot EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS GLB-44  authenticated cannot EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS GLB-45  service_role can EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS GLB-46  anon cannot EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS GLB-47  authenticated cannot EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS GLB-48  service_role can EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS GLB-49  anon cannot EXECUTE public.require_company_account_id(uuid,text)
+  PASS GLB-50  authenticated cannot EXECUTE public.require_company_account_id(uuid,text)
+  PASS GLB-51  service_role can EXECUTE public.require_company_account_id(uuid,text)
+  PASS GLB-52  anon cannot EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS GLB-53  authenticated cannot EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS GLB-54  service_role can EXECUTE public.check_unit_maintenance_block(uuid)
+
+[P0 reproduction: cross-company GL posting via gl_pm_post_owner_expense]
+  PASS GLB-EXP-01  VIEWER of company A cannot post a journal batch into company B through gl_pm_post_owner_expense
+  PASS GLB-EXP-02  VIEWER of company A cannot read company B financial projections through owner_settlement_reservable_payments
+
+[governed SECURITY DEFINER delegation is unaffected]
+  PASS GLB-WRAP-01  authenticated can still EXECUTE governed wrapper public.create_deposit_atomic(jsonb)
+  PASS GLB-WRAP-02  service_role can still run gl_pm_post_deposit_receipt internally
+
+Internal GL RPC browser boundary  58 passed  0 failed  0 skipped
+
+[tax-readiness-boundary] Tax authority readiness RPC browser EXECUTE boundary (P0-2)
+Tax readiness browser boundary: 91 migrations replayed cleanly (migration-only, no seed.sql).
+
+  PASS TAX-B-01  anon cannot EXECUTE public.resolve_active_tax_profile(uuid,date)
+  PASS TAX-B-02  authenticated cannot EXECUTE public.resolve_active_tax_profile(uuid,date)
+  PASS TAX-B-03  service_role can EXECUTE public.resolve_active_tax_profile(uuid,date)
+  PASS TAX-B-04  authenticated cannot EXECUTE public.resolve_active_fee_tax_treatment(uuid,text,date)
+  PASS TAX-B-05  anon cannot EXECUTE public.resolve_tax_authority_readiness(date[])
+  PASS TAX-B-06  authenticated can EXECUTE public.resolve_tax_authority_readiness(date[])
+  PASS TAX-B-07  service_role can EXECUTE public.resolve_tax_authority_readiness(date[])
+  PASS TAX-B-08  wrapper is SECURITY DEFINER with a pinned search_path
+  PASS TAX-B-09  wrapper argument list carries no company_id parameter
+  PASS TAX-B-10  wrapper result exposes no tax rate, tax code or profile id
+  PASS TAX-B-11  wrapper body enforces the caller identity, capability and company gates
+  PASS TAX-B-12  authenticated browser call to the internal resolver is denied with 42501 (the P0 defect)
+  PASS TAX-B-13  the governed wrapper answers the same browser session instead (fail-closed readiness)
+  PASS TAX-B-14  wrapper payload carries no tax rate, tax code or profile id
+  PASS TAX-B-15  the session company claim resolves through current_company_id()
+  PASS TAX-B-16  a member without a validated company claim fails closed
+  PASS TAX-B-17  a member whose role lacks financial.workspace.view is denied
+  PASS TAX-B-18  null input is rejected with TAX_READINESS_INPUT_REQUIRED
+  PASS TAX-B-19  an empty date list returns no rows instead of guessing
+  PASS TAX-B-20  an unbounded date set is rejected with TAX_READINESS_DATE_LIMIT_EXCEEDED
+  PASS TAX-B-21  RENT readiness becomes READY once an authoritative ACTIVE profile covers the date
+
+21/21 passed.
+
+[security-definer-governance] Effective SECURITY DEFINER governance audit
+SECURITY DEFINER governance audit: 91 migrations replayed cleanly.
+
+[canonical membership ADMIN/MANAGER gates]
+  PASS SD-01  public.preview_bank_statement_batch_atomic(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-02  public.import_bank_statement_batch_atomic(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-03  public.post_receipt_atomic(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-04  public.record_invoice_payment_atomic(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-05  public.record_invoice_payment_atomic_engine(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-06  public.execute_receipt_void_internal(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-07  public.approve_receipt_void_atomic(jsonb) uses canonical membership ADMIN/MANAGER gate and no users.role authority
+  PASS SD-08  public.recalculate_all_balances() uses canonical membership ADMIN/MANAGER gate and no users.role authority
+
+[canonical granular permission gates]
+  PASS SD-09  public.resolve_maintenance_with_expense(text,numeric,text) uses a canonical authority gate (ADMIN/MANAGER membership or maintenance.approve permission) and no users.role authority
+
+[disabled automation stub stays locked down]
+  PASS SD-10  run_scheduled_automation_rules() is the disabled stub with no authenticated EXECUTE grant (no ADMIN/MANAGER gate to enforce because the authenticated call path is closed at the grant level)
+
+[effective permission resolver]
+  PASS SD-11  effective permission resolver validates active app identity before role or explicit grants
+  PASS SD-12  effective permission resolver rejects unknown permission identifiers before ADMIN shortcut
+
+[request_permission boundary and routing]
+  PASS SD-13  request_permission requires an active app identity before SECURITY DEFINER writes
+  PASS SD-14  request_permission routes admin/manager notifications by company_members.role
+
+[support capability resolver]
+  PASS SD-15  support capability has no named role bypass and uses effective permission resolver
+
+[global effective SECURITY DEFINER scan]
+  PASS SD-16  no effective SECURITY DEFINER uses public.users.role as ADMIN/MANAGER authority
+
+[deployed EXECUTE boundaries]
+  PASS SD-17  authenticated EXECUTE public.post_receipt_atomic(jsonb) = false
+  PASS SD-18  authenticated EXECUTE public.record_invoice_payment_atomic_engine(jsonb) = false
+  PASS SD-19  authenticated EXECUTE public.execute_receipt_void_internal(jsonb) = false
+  PASS SD-20  authenticated EXECUTE public.preview_bank_statement_batch_atomic(jsonb) = true
+  PASS SD-21  authenticated EXECUTE public.import_bank_statement_batch_atomic(jsonb) = true
+  PASS SD-22  authenticated EXECUTE public.record_invoice_payment_atomic(jsonb) = true
+  PASS SD-23  authenticated EXECUTE public.approve_receipt_void_atomic(jsonb) = true
+  PASS SD-24  authenticated EXECUTE public.recalculate_all_balances() = true
+  PASS SD-25  authenticated EXECUTE public.resolve_maintenance_with_expense(text,numeric,text) = true
+  PASS SD-26  authenticated EXECUTE public.run_scheduled_automation_rules() = false
+  PASS SD-27  authenticated EXECUTE public.request_permission(text,text,text) = true
+  PASS SD-28  authenticated EXECUTE public.current_user_has_support_capability(text) = true
+  PASS SD-29  authenticated EXECUTE public.recalculate_unit_statuses() = false
+  PASS SD-30  anon EXECUTE public.recalculate_unit_statuses() = false
+  PASS SD-31  service_role EXECUTE public.recalculate_unit_statuses() = true
+  PASS SD-32  authenticated EXECUTE public.post_journal_event(jsonb) = false
+  PASS SD-33  authenticated EXECUTE public.gl_create_journal_batch(jsonb) = false
+  PASS SD-34  authenticated EXECUTE public.execute_automation_rule(text) = false
+  PASS SD-35  authenticated EXECUTE public.set_owner_agreements_updated_at() = false
+  PASS SD-36  service_role EXECUTE public.post_journal_event(jsonb) = true
+  PASS SD-37  authenticated EXECUTE public.approve_owner_settlement_atomic(jsonb) = true
+  PASS SD-38  authenticated EXECUTE public.resolve_active_tax_profile(uuid,date) = false
+  PASS SD-39  service_role EXECUTE public.resolve_active_tax_profile(uuid,date) = true
+  PASS SD-40  authenticated EXECUTE public.resolve_active_fee_tax_treatment(uuid,text,date) = false
+  PASS SD-41  service_role EXECUTE public.resolve_active_fee_tax_treatment(uuid,text,date) = true
+  PASS SD-42  authenticated EXECUTE public.resolve_tax_authority_readiness(date[]) = true
+  PASS SD-43  anon EXECUTE public.resolve_tax_authority_readiness(date[]) = false
+  PASS SD-44  service_role EXECUTE public.resolve_tax_authority_readiness(date[]) = true
+
+44/44 passed.
+
+[security-definer-boundary] Internal SECURITY DEFINER execute-boundary audit
+SECURITY DEFINER boundary audit: 91 migrations replayed cleanly.
+
+  PASS SD-01A  public.next_document_reference(uuid,text,text,integer) exists
+  PASS SD-01B  public.next_document_reference(uuid,text,text,integer) remains SECURITY DEFINER
+  PASS SD-01C  anon cannot EXECUTE public.next_document_reference(uuid,text,text,integer)
+  PASS SD-01D  authenticated cannot EXECUTE public.next_document_reference(uuid,text,text,integer)
+  PASS SD-01E  service_role can EXECUTE public.next_document_reference(uuid,text,text,integer)
+  PASS SD-02A  public.assign_document_reference() exists
+  PASS SD-02B  public.assign_document_reference() remains SECURITY DEFINER
+  PASS SD-02C  anon cannot EXECUTE public.assign_document_reference()
+  PASS SD-02D  authenticated cannot EXECUTE public.assign_document_reference()
+  PASS SD-02E  service_role can EXECUTE public.assign_document_reference()
+  PASS SD-02F  public.assign_document_reference() remains attached to at least 1 trigger(s)
+  PASS SD-03A  public.update_unit_status_from_activity() exists
+  PASS SD-03B  public.update_unit_status_from_activity() remains SECURITY DEFINER
+  PASS SD-03C  anon cannot EXECUTE public.update_unit_status_from_activity()
+  PASS SD-03D  authenticated cannot EXECUTE public.update_unit_status_from_activity()
+  PASS SD-03E  service_role can EXECUTE public.update_unit_status_from_activity()
+  PASS SD-03F  public.update_unit_status_from_activity() remains attached to at least 2 trigger(s)
+  PASS SD-06A  public.recalculate_unit_statuses() exists
+  PASS SD-06B  public.recalculate_unit_statuses() remains SECURITY DEFINER
+  PASS SD-06C  anon cannot EXECUTE public.recalculate_unit_statuses()
+  PASS SD-06D  authenticated cannot EXECUTE public.recalculate_unit_statuses()
+  PASS SD-06E  service_role can EXECUTE public.recalculate_unit_statuses()
+  PASS SD-04  assign_document_reference still delegates to next_document_reference
+  PASS SD-05A  governed bank preview RPC exists
+  PASS SD-05B  governed bank preview remains SECURITY DEFINER
+  PASS SD-05C  governed bank preview remains callable by authenticated
+  PASS SD-05D  governed bank preview still contains canonical ADMIN/MANAGER resolver path
+  PASS TH-1A  public.set_owner_agreements_updated_at() remains attached to a trigger
+  PASS TH-1B  authenticated cannot EXECUTE public.set_owner_agreements_updated_at()
+  PASS TH-1C  service_role can EXECUTE public.set_owner_agreements_updated_at()
+  PASS TH-2A  public.guard_invoice_credit_immutability() remains attached to a trigger
+  PASS TH-2B  authenticated cannot EXECUTE public.guard_invoice_credit_immutability()
+  PASS TH-2C  service_role can EXECUTE public.guard_invoice_credit_immutability()
+  PASS TH-3A  public.audit_service_provider_change() remains attached to a trigger
+  PASS TH-3B  authenticated cannot EXECUTE public.audit_service_provider_change()
+  PASS TH-3C  service_role can EXECUTE public.audit_service_provider_change()
+
+Phase 5 audit summary: 36 passed / 0 failed.
+
+[function-default-acl] Fail-closed default function EXECUTE audit
+Function default ACL audit: 91 migrations replayed cleanly.
+
+  PASS ACL-01  new public functions are NOT executable by anon by default
+  PASS ACL-02  new public functions are NOT executable by authenticated by default
+  PASS ACL-03  anon cannot EXECUTE public.post_journal_event(jsonb)
+  PASS ACL-04  authenticated cannot EXECUTE public.post_journal_event(jsonb)
+  PASS ACL-05  service_role can EXECUTE public.post_journal_event(jsonb)
+  PASS ACL-06  anon cannot EXECUTE public.gl_create_journal_batch(jsonb)
+  PASS ACL-07  authenticated cannot EXECUTE public.gl_create_journal_batch(jsonb)
+  PASS ACL-08  service_role can EXECUTE public.gl_create_journal_batch(jsonb)
+  PASS ACL-09  anon cannot EXECUTE public.gl_post_journal_batch(uuid)
+  PASS ACL-10  authenticated cannot EXECUTE public.gl_post_journal_batch(uuid)
+  PASS ACL-11  service_role can EXECUTE public.gl_post_journal_batch(uuid)
+  PASS ACL-12  anon cannot EXECUTE public.reverse_journal_batch(uuid)
+  PASS ACL-13  authenticated cannot EXECUTE public.reverse_journal_batch(uuid)
+  PASS ACL-14  service_role can EXECUTE public.reverse_journal_batch(uuid)
+  PASS ACL-15  anon cannot EXECUTE public.guard_bank_reconciliation_match_integrity()
+  PASS ACL-16  authenticated cannot EXECUTE public.guard_bank_reconciliation_match_integrity()
+  PASS ACL-17  service_role can EXECUTE public.guard_bank_reconciliation_match_integrity()
+  PASS ACL-18  anon cannot EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS ACL-19  authenticated cannot EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS ACL-20  service_role can EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS ACL-21  anon cannot EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS ACL-22  authenticated cannot EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS ACL-23  service_role can EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS ACL-24  anon cannot EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS ACL-25  authenticated cannot EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS ACL-26  service_role can EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS ACL-27  anon cannot EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS ACL-28  authenticated cannot EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS ACL-29  service_role can EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS ACL-30  anon cannot EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS ACL-31  authenticated cannot EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS ACL-32  service_role can EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS ACL-33  anon cannot EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS ACL-34  authenticated cannot EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS ACL-35  service_role can EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS ACL-36  anon cannot EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS ACL-37  authenticated cannot EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS ACL-38  service_role can EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS ACL-39  anon cannot EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS ACL-40  authenticated cannot EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS ACL-41  service_role can EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS ACL-42  anon cannot EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS ACL-43  authenticated cannot EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS ACL-44  service_role can EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS ACL-45  anon cannot EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS ACL-46  authenticated cannot EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS ACL-47  service_role can EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS ACL-48  anon cannot EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS ACL-49  authenticated cannot EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS ACL-50  service_role can EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS ACL-51  anon cannot EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS ACL-52  authenticated cannot EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS ACL-53  service_role can EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS ACL-54  anon cannot EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS ACL-55  authenticated cannot EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS ACL-56  service_role can EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS ACL-57  anon cannot EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS ACL-58  authenticated cannot EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS ACL-59  service_role can EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS ACL-60  anon cannot EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS ACL-61  authenticated cannot EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS ACL-62  service_role can EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS ACL-63  anon cannot EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS ACL-64  authenticated cannot EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS ACL-65  service_role can EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS ACL-66  anon cannot EXECUTE public.require_company_account_id(uuid,text)
+  PASS ACL-67  authenticated cannot EXECUTE public.require_company_account_id(uuid,text)
+  PASS ACL-68  service_role can EXECUTE public.require_company_account_id(uuid,text)
+  PASS ACL-69  anon cannot EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS ACL-70  authenticated cannot EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS ACL-71  service_role can EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS ACL-72  no browser-executable SECURITY DEFINER relies on current_user as caller identity
+
+  INFO: 8 SECURITY DEFINER function(s) still contain owner-identity current_user text; their browser EXECUTE boundary is independently closed.
+
+72/72 passed.
+
+[strict-governance] Guardian strict authority scan (DG-GOV-008)
+Database Guardian governance: migrations=91 security_definers=326
+GUARDIAN GOVERNANCE: PASS — no findings.
+
+[governance-migration-safety] Clean + incremental governance migration safety
+  PASS MIG-01  all Supabase migration versions are unique
+  PASS MIG-02  governance forward chain contains the expected 00012→00015 versions exactly once
+  PASS MIG-03  pre-governance baseline and forward migration sets are both non-empty
+
+[clean replay]
+  PASS MIG-04  clean replay applies the complete migration chain
+
+[incremental replay]
+  PASS MIG-05  pre-governance baseline replays cleanly
+  PASS MIG-06  governance forward migrations apply incrementally on the pre-existing baseline
+  PASS MIG-07  clean and incremental paths produce identical critical function definitions and ACLs
+  PASS MIG-08  incremental migration ledger records each governance version exactly once
+
+Phase 8 migration safety: 8/8 passed.
+
+[migration-hygiene] Migration / rollback hygiene
+file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:71
+  throw new Error('Unable to resolve a base ref (tried origin/main, main). Pass --base <ref> explicitly.');
+        ^
+
+Error: Unable to resolve a base ref (tried origin/main, main). Pass --base <ref> explicitly.
+    at resolveBaseRef (file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:71:9)
+    at main (file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:109:19)
+    at file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:223:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.20.2
+
+[privileged-key-scan] Privileged key exposure scan
+Privileged-key exposure scan
+============================================================
+Client files scanned : 698
+Forbidden markers    : 0
+Client contract      : PASS
+
+PASS — browser client uses only the public anon key.
+
+========================================================================
+PASS  db0-gate                       18.56s
+PASS  canonical-authority            13.94s
+PASS  sensitive-rpc-auth             14.55s
+PASS  internal-gl-rpc-boundary        4.48s
+PASS  tax-readiness-boundary          4.18s
+PASS  security-definer-governance    13.73s
+PASS  security-definer-boundary       4.49s
+PASS  function-default-acl            4.23s
+PASS  strict-governance               4.42s
+PASS  governance-migration-safety     7.96s
+FAIL  migration-hygiene               0.12s
+PASS  privileged-key-scan              0.1s
+Report: /home/user/malek/.guardian/report.json
+GUARDIAN: FAIL — 1 blocking layer(s).
+ ELIFECYCLE  Command failed with exit code 1.
+EXIT_db:guardian=1
+=== test:supabase ===
+
+> rentrix-production-workspace@1.0.0 test:supabase /home/user/malek
+> node scripts/supabase-tests/run.mjs
+
+
+======================================================================
+[privileged-keys] Privileged-key exposure protection
+======================================================================
+Privileged-key exposure scan
+============================================================
+Client files scanned : 698
+Forbidden markers    : 0
+Client contract      : PASS
+
+PASS — browser client uses only the public anon key.
+
+======================================================================
+[rls-matrix] Current-schema RLS / auth / integrity matrix
+======================================================================
+Supabase behavioral RLS / auth / integrity matrix
+======================================================================
+Replayed 91 migrations.
+Applied canonical reference seed.
+
+[structural] RLS, grants, storage, privileged objects
+  PASS struct.isolation  company-scoped tables keep RLS/policy/FK isolation (106 tables)
+  PASS struct.rls_all_tables  every public table has RLS enabled
+  PASS struct.storage_bucket  attachments bucket is private with the 5MB PDF/image contract
+  PASS struct.storage_write_admin  attachments mutation policies require ADMIN or MANAGER
+  PASS struct.no_anon_definer  only audited portal snapshot RPCs are anon-executable SECURITY DEFINER (get_owner_portal_snapshot, get_tenant_portal_snapshot)
+  PASS struct.hook_grants  auth hook is callable only by supabase_auth_admin
+  PASS struct.hook_definer_search_path  auth hook is SECURITY DEFINER with a pinned search_path
+  PASS struct.view_invoker  every public view uses security_invoker
+
+[auth] profile, membership, hook, inactive/deleted users
+  PASS auth.current_company_admin_a  ADMIN A JWT resolves Company A
+  PASS auth.current_company_admin_b  ADMIN B JWT resolves Company B
+  PASS auth.current_company_missing_claim  missing company claim fail-closes current_company_id()
+  PASS auth.is_app_user_admin  active ADMIN is an app user
+  PASS auth.inactive_user_denied  inactive user is not an app user
+  PASS auth.deleted_user_denied  soft-deleted user is not an app user
+  PASS auth.inactive_admin_not_manager  inactive ADMIN cannot keep manager authority
+  PASS auth.hook_selects_membership  access-token hook stamps Company A and ADMIN from live membership
+  PASS auth.hook_ignores_spoofed_claim  incoming Company B claim cannot override Admin A membership
+  PASS auth.hook_no_membership  user with no membership receives no company claim
+  PASS auth.hook_inactive_membership  inactive membership cannot issue a company claim
+
+[visibility] SELECT allow/deny across roles and tenants
+  PASS rls.anon.select.properties  anon cannot read properties
+  PASS rls.anon.select.owners  anon cannot read owners
+  PASS rls.anon.select.people  anon cannot read people
+  PASS rls.anon.select.units  anon cannot read units
+  PASS rls.anon.select.expenses  anon cannot read expenses
+  PASS rls.adminA.select.properties  ADMIN A sees only own-company properties
+  PASS rls.adminB.select.properties  ADMIN B sees only own-company properties
+  PASS rls.userA.select.properties  USER A can read own-company properties
+  PASS rls.viewerA.select.properties  VIEWER A can read own-company properties
+  PASS rls.hook_to_rls.select.properties  hook-issued Admin A token cannot read Company B properties
+  PASS rls.inactive.select.properties  inactive user cannot read properties
+  PASS rls.adminA.select.owners  ADMIN A sees only own-company owners
+  PASS rls.adminB.select.owners  ADMIN B sees only own-company owners
+  PASS rls.userA.select.owners  USER A can read own-company owners
+  PASS rls.viewerA.select.owners  VIEWER A can read own-company owners
+  PASS rls.hook_to_rls.select.owners  hook-issued Admin A token cannot read Company B owners
+  PASS rls.inactive.select.owners  inactive user cannot read owners
+  PASS rls.adminA.select.people  ADMIN A sees only own-company people
+  PASS rls.adminB.select.people  ADMIN B sees only own-company people
+  PASS rls.userA.select.people  USER A can read own-company people
+  PASS rls.viewerA.select.people  VIEWER A can read own-company people
+  PASS rls.hook_to_rls.select.people  hook-issued Admin A token cannot read Company B people
+  PASS rls.inactive.select.people  inactive user cannot read people
+  PASS rls.adminA.select.units  ADMIN A sees only own-company units
+  PASS rls.adminB.select.units  ADMIN B sees only own-company units
+  PASS rls.userA.select.units  USER A can read own-company units
+  PASS rls.viewerA.select.units  VIEWER A can read own-company units
+  PASS rls.hook_to_rls.select.units  hook-issued Admin A token cannot read Company B units
+  PASS rls.inactive.select.units  inactive user cannot read units
+  PASS rls.adminA.select.expenses  ADMIN A sees only own-company expenses
+  PASS rls.adminB.select.expenses  ADMIN B sees only own-company expenses
+  PASS rls.userA.select.expenses  USER A can read own-company expenses
+  PASS rls.viewerA.select.expenses  VIEWER A can read own-company expenses
+  PASS rls.hook_to_rls.select.expenses  hook-issued Admin A token cannot read Company B expenses
+  PASS rls.inactive.select.expenses  inactive user cannot read expenses
+  PASS rls.userA.select.idempotency  browser USER cannot read idempotency records
+  PASS rls.nomembership.select.properties  hook-issued token with no membership cannot read either company property
+
+[mutations] INSERT/UPDATE/DELETE allow/deny and spoofed company_id
+  PASS rls.adminA.insert.properties  ADMIN A can insert a Company A property
+  PASS rls.adminA.insert.spoof_company  ADMIN A cannot insert a Company B property
+  PASS rls.adminB.update.propertyA  ADMIN B cannot update Company A property
+  PASS rls.adminB.delete.propertyA  ADMIN B cannot delete Company A property
+  PASS rls.userA.insert.properties  USER cannot insert properties
+  PASS rls.viewerA.update.properties  VIEWER cannot update properties
+  PASS rls.accountantA.insert.properties  ACCOUNTANT cannot insert properties
+  PASS rls.anon.insert.properties  anon cannot insert properties
+  PASS rls.managerA.update.propertyA  MANAGER A can update own-company property
+  PASS rls.operationsA.insert.properties.compat  OPERATIONS keeps historical properties.write compatibility fallback
+  PASS auth.operationsA.contracts_create.compat  OPERATIONS keeps historical contracts.write compatibility fallback
+  PASS rls.operationsA.insert.properties.override  explicit properties.create=false overrides OPERATIONS compatibility fallback
+  PASS auth.operationsA.contracts_create.override  explicit contracts.create=false overrides OPERATIONS compatibility fallback
+  PASS rls.adminA.update.expenseB  ADMIN A cannot update Company B expense
+  PASS rls.userA.insert.idempotency  browser USER cannot write idempotency records
+  PASS rls.adminA.insert.journal_lines  browser ADMIN cannot insert journal lines directly
+
+[rpc] SECURITY DEFINER company isolation and role gates
+  PASS rpc.adminA.update_commission_b  ADMIN A cannot update Company B commission via RPC
+  PASS rpc.adminA.create_commission  ADMIN A can create a commission in Company A
+  PASS rpc.adminA.create_commission.stamped  commission RPC stamps Company A server-side
+  PASS rpc.adminA.pay_foreign_invoice  ADMIN A cannot pay a foreign/missing invoice
+  PASS rpc.anon.pay_invoice  anon cannot execute payment RPC
+  PASS rpc.dashboard.company_isolation  dashboard snapshot is callable and company-scoped for A and B
+  PASS rpc.anon.dashboard  anon cannot execute dashboard snapshot
+  PASS auth.six_role_matrix  six-role permission helper allow/deny matches the locked matrix
+
+[integrity] constraints, generated values, service-role bypass
+  PASS integrity.unit_overlap_exclusion  active contracts cannot overlap on the same unit
+  PASS integrity.users_role_check  users.role is constrained to the six canonical roles
+  PASS integrity.service_role_bypass  service_role can read both companies (server-only privilege)
+  PASS integrity.owner_name_generated  owner compatibility name is populated from full_name
+
+======================================================================
+Supabase RLS matrix  84 passed  0 failed  0 skipped  (5.1s)
+======================================================================
+
+======================================================================
+[internal-gl-rpc-boundary] Internal GL posting/helper RPC browser EXECUTE boundary
+======================================================================
+Internal GL RPC browser boundary matrix: 91 migrations replayed cleanly.
+
+[internal GL RPC browser EXECUTE boundary]
+  PASS GLB-01  anon cannot EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS GLB-02  authenticated cannot EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS GLB-03  service_role can EXECUTE public.gl_ml_post_sublease_receipt(jsonb)
+  PASS GLB-04  anon cannot EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS GLB-05  authenticated cannot EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS GLB-06  service_role can EXECUTE public.gl_pm_accrue_fixed_monthly_fee(jsonb)
+  PASS GLB-07  anon cannot EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS GLB-08  authenticated cannot EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS GLB-09  service_role can EXECUTE public.gl_pm_post_broker_commission_approval(jsonb)
+  PASS GLB-10  anon cannot EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS GLB-11  authenticated cannot EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS GLB-12  service_role can EXECUTE public.gl_pm_post_broker_commission_payment(jsonb)
+  PASS GLB-13  anon cannot EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS GLB-14  authenticated cannot EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS GLB-15  service_role can EXECUTE public.gl_pm_post_collection_office_is_creditor(jsonb)
+  PASS GLB-16  anon cannot EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS GLB-17  authenticated cannot EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS GLB-18  service_role can EXECUTE public.gl_pm_post_collection_owner_is_creditor(jsonb)
+  PASS GLB-19  anon cannot EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS GLB-20  authenticated cannot EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS GLB-21  service_role can EXECUTE public.gl_pm_post_deposit_receipt(jsonb)
+  PASS GLB-22  anon cannot EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS GLB-23  authenticated cannot EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS GLB-24  service_role can EXECUTE public.gl_pm_post_invoice_office_is_creditor(jsonb)
+  PASS GLB-25  anon cannot EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS GLB-26  authenticated cannot EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS GLB-27  service_role can EXECUTE public.gl_pm_post_owner_expense(jsonb)
+  PASS GLB-28  anon cannot EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS GLB-29  authenticated cannot EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS GLB-30  service_role can EXECUTE public.gl_pm_post_owner_payment(jsonb)
+  PASS GLB-31  anon cannot EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS GLB-32  authenticated cannot EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS GLB-33  service_role can EXECUTE public.gl_validate_and_normalize_lines(uuid,jsonb)
+  PASS GLB-34  anon cannot EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS GLB-35  authenticated cannot EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS GLB-36  service_role can EXECUTE public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)
+  PASS GLB-37  anon cannot EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS GLB-38  authenticated cannot EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS GLB-39  service_role can EXECUTE public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)
+  PASS GLB-40  anon cannot EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS GLB-41  authenticated cannot EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS GLB-42  service_role can EXECUTE public.assert_owner_funds_event_cutover(uuid,date,uuid)
+  PASS GLB-43  anon cannot EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS GLB-44  authenticated cannot EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS GLB-45  service_role can EXECUTE public.assert_owner_settlement_links_backfillable()
+  PASS GLB-46  anon cannot EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS GLB-47  authenticated cannot EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS GLB-48  service_role can EXECUTE public.contract_evidence_assert_documents(uuid,uuid,uuid[])
+  PASS GLB-49  anon cannot EXECUTE public.require_company_account_id(uuid,text)
+  PASS GLB-50  authenticated cannot EXECUTE public.require_company_account_id(uuid,text)
+  PASS GLB-51  service_role can EXECUTE public.require_company_account_id(uuid,text)
+  PASS GLB-52  anon cannot EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS GLB-53  authenticated cannot EXECUTE public.check_unit_maintenance_block(uuid)
+  PASS GLB-54  service_role can EXECUTE public.check_unit_maintenance_block(uuid)
+
+[P0 reproduction: cross-company GL posting via gl_pm_post_owner_expense]
+  PASS GLB-EXP-01  VIEWER of company A cannot post a journal batch into company B through gl_pm_post_owner_expense
+  PASS GLB-EXP-02  VIEWER of company A cannot read company B financial projections through owner_settlement_reservable_payments
+
+[governed SECURITY DEFINER delegation is unaffected]
+  PASS GLB-WRAP-01  authenticated can still EXECUTE governed wrapper public.create_deposit_atomic(jsonb)
+  PASS GLB-WRAP-02  service_role can still run gl_pm_post_deposit_receipt internally
+
+Internal GL RPC browser boundary  58 passed  0 failed  0 skipped
+
+======================================================================
+[tax-readiness-boundary] Tax authority readiness RPC browser EXECUTE boundary (P0-2)
+======================================================================
+Tax readiness browser boundary: 91 migrations replayed cleanly (migration-only, no seed.sql).
+
+  PASS TAX-B-01  anon cannot EXECUTE public.resolve_active_tax_profile(uuid,date)
+  PASS TAX-B-02  authenticated cannot EXECUTE public.resolve_active_tax_profile(uuid,date)
+  PASS TAX-B-03  service_role can EXECUTE public.resolve_active_tax_profile(uuid,date)
+  PASS TAX-B-04  authenticated cannot EXECUTE public.resolve_active_fee_tax_treatment(uuid,text,date)
+  PASS TAX-B-05  anon cannot EXECUTE public.resolve_tax_authority_readiness(date[])
+  PASS TAX-B-06  authenticated can EXECUTE public.resolve_tax_authority_readiness(date[])
+  PASS TAX-B-07  service_role can EXECUTE public.resolve_tax_authority_readiness(date[])
+  PASS TAX-B-08  wrapper is SECURITY DEFINER with a pinned search_path
+  PASS TAX-B-09  wrapper argument list carries no company_id parameter
+  PASS TAX-B-10  wrapper result exposes no tax rate, tax code or profile id
+  PASS TAX-B-11  wrapper body enforces the caller identity, capability and company gates
+  PASS TAX-B-12  authenticated browser call to the internal resolver is denied with 42501 (the P0 defect)
+  PASS TAX-B-13  the governed wrapper answers the same browser session instead (fail-closed readiness)
+  PASS TAX-B-14  wrapper payload carries no tax rate, tax code or profile id
+  PASS TAX-B-15  the session company claim resolves through current_company_id()
+  PASS TAX-B-16  a member without a validated company claim fails closed
+  PASS TAX-B-17  a member whose role lacks financial.workspace.view is denied
+  PASS TAX-B-18  null input is rejected with TAX_READINESS_INPUT_REQUIRED
+  PASS TAX-B-19  an empty date list returns no rows instead of guessing
+  PASS TAX-B-20  an unbounded date set is rejected with TAX_READINESS_DATE_LIMIT_EXCEEDED
+  PASS TAX-B-21  RENT readiness becomes READY once an authoritative ACTIVE profile covers the date
+
+21/21 passed.
+
+======================================================================
+[client-visibility] Client session, data-visibility, and function contracts
+======================================================================
+
+ RUN  v3.2.7 /home/user/malek/rentrix-app
+
+ ✓ src/features/auth/permission-catalog-authority.pglite.test.ts (11 tests) 11262ms
+   ✓ P0-1 database replay reproduces the authoritative catalog from migrations alone > produces the same catalog whether or not the reference seed is applied  3358ms
+   ✓ P0-1 database replay reproduces the authoritative catalog from migrations alone > upgrades a previously seeded settings.manage database without translating legacy authority  3278ms
+ ✓ src/features/financials/tax-authority/tax-readiness-boundary.pglite.test.ts (13 tests) 4270ms
+ ✓ src/features/ai-assistant/services/ai-assistant-edge-function.test.ts (15 tests) 21ms
+ ✓ src/features/auth/r5-authorization-matrix.test.ts (120 tests) 37ms
+ ✓ src/hooks/use-company-regression.test.ts (10 tests) 7ms
+ ✓ src/features/supabase-data-visibility/critical-page-states.test.ts (7 tests) 22ms
+ ✓ src/lib/supabase-client-boundary.test.ts (3 tests) 10ms
+ ✓ src/lib/env-validation.test.ts (4 tests) 3ms
+ ✓ src/features/contracts/ContractsListPage.test.tsx (15 tests) 209ms
+ ✓ src/hooks/use-company.test.tsx (10 tests) 97ms
+ ✓ src/features/auth/login-page.test.tsx (12 tests) 288ms
+ ✓ src/features/dashboard/dashboard-page.test.tsx (6 tests) 538ms
+ ✓ src/services/auth-service.test.ts (9 tests) 11ms
+ ✓ src/features/auth/password-recovery-page.test.tsx (4 tests) 111ms
+ ✓ src/features/properties/properties-list-page-states.test.tsx (2 tests) 107ms
+
+ Test Files  15 passed (15)
+      Tests  241 passed (241)
+   Start at  14:12:10
+   Duration  27.76s (transform 1.32s, setup 0ms, collect 5.02s, tests 16.99s, environment 2.34s, prepare 951ms)
+
+stderr | src/features/contracts/ContractsListPage.test.tsx
+Supabase environment is incomplete. Runtime diagnostics will be shown in UI.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The current testing environment is not configured to support act(...)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > renders only the four canonical decision surfaces (queue moved to the bell)
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The current testing environment is not configured to support act(...)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > proves the retired and moved dashboard surfaces stay absent
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The current testing environment is not configured to support act(...)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps the action queue off the page — it now lives in the notifications bell
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The current testing environment is not configured to support act(...)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps core operational and financial truth visible
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The current testing environment is not configured to support act(...)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > keeps setup shortcuts permission-gated
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > fails closed when the authoritative snapshot fails
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > fails closed when the authoritative snapshot fails
+The current testing environment is not configured to support act(...)
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > fails closed when the authoritative snapshot fails
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/dashboard/dashboard-page.test.tsx > Dashboard compact command center > fails closed when the authoritative snapshot fails
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/properties/properties-list-page-states.test.tsx > PropertiesListPage data visibility states > shows a retryable error instead of the empty-success register
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/properties/properties-list-page-states.test.tsx > PropertiesListPage data visibility states > shows a retryable error instead of the empty-success register
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/properties/properties-list-page-states.test.tsx > PropertiesListPage data visibility states > shows a retryable error instead of the empty-success register
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/properties/properties-list-page-states.test.tsx > PropertiesListPage data visibility states > keeps the honest empty office state when the query succeeds with zero rows
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/properties/properties-list-page-states.test.tsx > PropertiesListPage data visibility states > keeps the honest empty office state when the query succeeds with zero rows
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | src/features/properties/properties-list-page-states.test.tsx > PropertiesListPage data visibility states > keeps the honest empty office state when the query succeeds with zero rows
+The current testing environment is not configured to support act(...)
+
+
+======================================================================
+SUPABASE TEST SUITE
+======================================================================
+  PASS  privileged-keys        0.1s  1 passed / 0 failed / 0 skipped
+  PASS  rls-matrix             5.2s  84 passed / 0 failed / 0 skipped
+  PASS  internal-gl-rpc-boundary 5.1s  58 passed / 0 failed / 0 skipped
+  PASS  tax-readiness-boundary 4.6s  1 passed / 0 failed / 0 skipped
+  PASS  client-visibility      28.9s  241 passed / 0 failed / 0 skipped
+EXIT_test:supabase=0
+=== check:migration-hygiene ===
+
+> rentrix-production-workspace@1.0.0 check:migration-hygiene /home/user/malek
+> node scripts/check-migration-rollback-hygiene.mjs
+
+file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:71
+  throw new Error('Unable to resolve a base ref (tried origin/main, main). Pass --base <ref> explicitly.');
+        ^
+
+Error: Unable to resolve a base ref (tried origin/main, main). Pass --base <ref> explicitly.
+    at resolveBaseRef (file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:71:9)
+    at main (file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:109:19)
+    at file:///home/user/malek/scripts/check-migration-rollback-hygiene.mjs:223:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.20.2
+ ELIFECYCLE  Command failed with exit code 1.
+EXIT_check:migration-hygiene=1
+=== check:gl-write-boundary ===
+
+> rentrix-production-workspace@1.0.0 check:gl-write-boundary /home/user/malek
+> node scripts/check-no-new-legacy-journal-writes.mjs
+
+file:///home/user/malek/scripts/check-no-new-legacy-journal-writes.mjs:86
+  throw new Error('Unable to resolve base ref. Pass --base <ref>.');
+        ^
+
+Error: Unable to resolve base ref. Pass --base <ref>.
+    at resolveBaseRef (file:///home/user/malek/scripts/check-no-new-legacy-journal-writes.mjs:86:9)
+    at main (file:///home/user/malek/scripts/check-no-new-legacy-journal-writes.mjs:139:19)
+    at file:///home/user/malek/scripts/check-no-new-legacy-journal-writes.mjs:183:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.20.2
+ ELIFECYCLE  Command failed with exit code 1.
+EXIT_check:gl-write-boundary=1
+=== check:business-rules ===
+
+> rentrix-production-workspace@1.0.0 check:business-rules /home/user/malek
+> node scripts/check-canonical-business-rules.mjs
+
+Canonical business rules verified: v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79
+EXIT_check:business-rules=0

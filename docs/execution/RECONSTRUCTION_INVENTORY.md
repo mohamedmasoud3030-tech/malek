@@ -344,3 +344,32 @@ Repair the statement settlement authority at the source (cash/paid_at/lifecycle)
 ### BLOCKED
 - **GitHub credentials are not available in this environment.** `git ls-remote` over HTTPS works read-only and confirmed the remote tip matches `81ee3671…`, but no token/helper is present, so **push and remote-SHA verification cannot be performed**. Work is committed locally on the same branch so nothing is lost; the user must restore access for the checkpoint to be pushed and literally verified.
 - Hosted JWT/GoTrue/PostgREST/RLS/Storage parity and multi-session concurrency remain unproven. Local SQL with mocked browser auth is not hosted proof. No stage credit and no application-completion claim.
+
+## Owner statement authority — settlement cash, payment date, lifecycle and company isolation (migration17)
+`supabase/migrations/20260909000017_owner_statement_settlement_authority.sql`. Four defects were proven against real SQL BEFORE the repair, then re-asserted as the fixed behaviour in the same commit.
+
+### COMPLETED — company isolation of the statement expense source (security)
+- `public._owner_statement_expenses` carried NO company predicate, while every other CTE in `rpt_owner_statement` filtered on `v_company_id`. Because the caller is SECURITY DEFINER, the invoker's RLS on `public.expenses` (`expenses_select_app_users`) does not apply inside the call, so the helper's only scoping was owner id plus a `property_owners` link — and both tables hold per-company rows for the same owner id.
+- Reproduced, not inferred: a POSTED, OWNER-charged expense of 777 belonging to `OTHER_COMPANY`, on a foreign property linked to the same owner id, was rendered inside this company's statement as a real deduction and summed into its totals.
+- Repair: the helper takes an explicit `p_company_id` and filters BOTH the expense and the `property_owners` link on it. The unsafe three-argument overload is DROPPED so no caller can reach a version that cannot scope. The body is derived with `pg_get_functiondef` and asserts the governed `owner_allocation_version is null` source filter from migration12 is present, so that adoption rule is preserved exactly as deployed rather than re-typed and silently reverted.
+- `owner-statement-company-isolation.test.ts` (4 PASS) proves the foreign row genuinely matches every non-company condition (so the negative assertions are not vacuous), that it no longer appears, that the unscoped overload is gone, and that this company's own owner-charged expense still appears.
+
+### COMPLETED — settlement movements now read proven cash, real date and real lifecycle
+- Legacy `owner_settlements.date`/`amount` are written once at DRAFT creation (`date := period_end::text`, `amount := net_payable`, baseline 5273) and are never revised by the APPROVED, PAID, CANCELLED or offset paths. Verified by reading all four update sites.
+- MONETARY: the statement showed the 1000 entitlement where only 975 cash left the bank. It now reports the cash proven by `app_private.owner_settlement_paid_cash` — the same original-journal evidence the bank reconciliation and owner position already use — and labels the difference «بعد مقاصة مستحقات على المالك» instead of silently showing a smaller number.
+- TEMPORAL: movements were dated to `period_end`, so a window containing the true payment date returned nothing and a merely-closed period showed an outflow that had not happened. Movements are now dated `paid_at::date`.
+- LIFECYCLE: `settlement_rows` had no status filter, so a CANCELLED settlement still appeared as a −500 deduction. Only `PAID` settlements with a non-null `paid_at` are movements now; DRAFT/APPROVED remain visible in the owner position as `remaining_payable`, not as disbursements.
+- Cash is NEVER derived from `net_payable − offset_applied`. A test pins this structurally: today the naive derivation happens to equal 975, but the header is mutable and a lawful post-payment reversal can drive it to 0 while the original outflow is unchanged, so the authority remains the posted journal.
+- Missing evidence is surfaced, not invented: a PAID settlement whose original cash cannot be proven is shown at its entitlement and labelled «صرف غير مثبت بالمستندات» rather than dropped or zeroed.
+- Posted history is untouched: no backfill, no rewrite of `date`/`amount`. A test asserts the legacy pair is still intact after the repair.
+- `owner-statement-settlement-authority.test.ts` rewritten from diagnostic to authority: 8 PASS.
+
+### Verification (migration17)
+Focused 12 PASS (isolation + authority); dependent contracts 40 PASS (`r2-owner-financial-position-execution` statement parity, `r12-final-acceptance`, `owner-paid-cash-position`, `owner-position-response-contract`, `owner-offset-lifecycle` incl. paid-evidence freeze); all reports 62 files / 493 PASS; `db0:gate` 7/7 PASS; Guardian 12/12 PASS; `test:supabase` PASS (rls-matrix 84, client-visibility 241, internal-gl-rpc-boundary 58); migration hygiene, GL write boundary, business rules PASS; main+test types PASS; frontend–database contract PASS.
+
+Generated types were regenerated with `pnpm db0:gen-types`; the diff is exactly one added `p_company_id` parameter. The `db0` contract and schema-drift gates correctly FAILED before regeneration — recorded here because that failure is evidence the gates detect this class of change rather than a step that was skipped.
+
+### Harness bugs found in my own tests (NOT product defects — controls left intact)
+- `app_private.guard_paid_owner_settlement` (migration13) correctly rejects any UPDATE to a PAID settlement. The test was rewritten to prove the point structurally instead of mutating paid evidence.
+- `owner_settlements_approval_state_check` correctly requires `approved_at`/`approved_by` for APPROVED and PAID rows.
+- RLS on `public.expenses` correctly hides the foreign row from `authenticated`; the probe reads it with the elevated role rather than weakening the policy.
