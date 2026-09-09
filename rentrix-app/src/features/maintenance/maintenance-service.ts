@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import type { OwnerExpenseAllocation } from '@/features/financials/expenses/expenseService';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
@@ -138,6 +140,8 @@ export async function updateMaintenanceStatus(
 }
 
 export type CloseMaintenanceInput = {
+  ownerAllocations?: OwnerExpenseAllocation[];
+  allocationEvidence?: string;
   requestId: string;
   cost: number;
   chargedTo: 'OWNER' | 'TENANT' | 'COMPANY';
@@ -147,13 +151,23 @@ export type CloseMaintenanceInput = {
 };
 export type CloseMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };
 
+const closureAcknowledgement = z.object({
+  maintenance: z.object({id:z.string(),status:z.literal('closed'),cost:z.number(),charged_to:z.string(),expense_id:z.string().nullable()}).passthrough(),
+  expense_id:z.string().nullable(),
+});
 export async function closeMaintenanceWithExpense(input: CloseMaintenanceInput): Promise<CloseMaintenanceResult> {
   const { data, error } = await supabase
     .rpc('close_maintenance_with_expense', {
+      p_owner_allocations: input.chargedTo === 'OWNER' ? input.ownerAllocations ?? [] : null,
+      p_allocation_evidence: input.chargedTo === 'OWNER' ? input.allocationEvidence ?? '' : null,
       p_request_id: input.requestId, p_cost: input.cost, p_charged_to: input.chargedTo,
       p_notes: input.notes, p_evidence_url: input.evidenceUrl, p_confirmed: input.confirmed,
     })
     .single();
   if (error) handleSupabaseError(error, 'تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
-  return data as unknown as CloseMaintenanceResult;
+  const result=closureAcknowledgement.parse(data);
+  if(result.maintenance.id!==input.requestId || result.maintenance.cost!==input.cost || result.maintenance.charged_to!==input.chargedTo || result.expense_id!==result.maintenance.expense_id || (input.cost>0&&!result.expense_id)) {
+    throw new Error('استجابة الإغلاق لا تطابق الطلب أو التكلفة؛ راجع السجل قبل إعادة المحاولة.');
+  }
+  return result as unknown as CloseMaintenanceResult;
 }

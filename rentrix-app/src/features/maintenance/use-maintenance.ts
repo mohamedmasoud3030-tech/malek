@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { expenseKeys } from '../financials/expenses/useExpenses';
-import { financialReportKeys } from '../financials/reports/useFinancialReports';
+import { invalidateFinancialReadModels } from '@/lib/financial-cache';
 import {
   createMaintenance,
   listMaintenance,
@@ -35,14 +35,8 @@ export function useCloseMaintenanceWithExpense() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CloseMaintenanceInput) => closeMaintenanceWithExpense(input),
-    onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: maintenanceKeys.all }),
-        qc.invalidateQueries({ queryKey: expenseKeys.all }),
-        qc.invalidateQueries({ queryKey: financialReportKeys.all }),
-      ]);
-      toast.success('تم إغلاق طلب الصيانة بعد التحقق وتسجيل التكلفة');
-    },
+    onSuccess: () => toast.success('تم إغلاق طلب الصيانة بعد التحقق وتسجيل التكلفة'),
+    onSettled: () => Promise.all([qc.invalidateQueries({queryKey:maintenanceKeys.all}),qc.invalidateQueries({queryKey:expenseKeys.all}),invalidateFinancialReadModels(qc)]),
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إغلاق طلب الصيانة'),
   });
 }

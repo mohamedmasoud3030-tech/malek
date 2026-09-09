@@ -1,3 +1,5 @@
+// Create authentic legacy sources before adoption, then exercise the current
+// migration12 authorities; these scenarios must not run only against old code.
 import { readFileSync } from 'node:fs';
 import { repoRoot } from '@/p1/replay-bootstrap';
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it } from 'vitest';
@@ -22,7 +24,7 @@ let expense: string;
 let period: string;
 const checker = 'c2000000-0000-4000-8000-000000000097';
 beforeAll(async () => {
-  ({ db } = await createOfficeCreditorFixture());
+  ({ db } = await createOfficeCreditorFixture({throughMigration:'20260909000011'}));
   await db.query('insert into auth.users(id,email) values($1::uuid,$2)', [
     checker,
     'source-checker@test.local',
@@ -54,6 +56,9 @@ beforeAll(async () => {
       [COMPANY, at(9)],
     )
   ).rows[0].id;
+  await db.exec('reset role');
+  await db.exec(readFileSync(`${repoRoot}/supabase/migrations/20260909000012_owner_expense_allocation_source.sql`,'utf8'));
+  await db.exec('set role authenticated');
 }, 60_000);
 afterAll(async () => {
   await db?.close();

@@ -116,10 +116,6 @@ beforeAll(async () => {
     update public.receipts set payment_id = id
      where id in ('e2000000-0000-4000-8000-000000000201','e2000000-0000-4000-8000-000000000202','e2000000-0000-4000-8000-000000000203');
 
-    -- Owner expense in period: 120 POSTED/OWNER.
-    insert into public.expenses (id, property_id, category, amount, expense_date, date_time, status, charged_to, description, company_id) values
-      ('e2000000-0000-4000-8000-000000000301', '${PROPERTY}', 'maintenance', 120, date '2026-07-10', '2026-07-10', 'POSTED', 'OWNER', 'R2 expense', '${COMPANY}');
-
     -- Payout accounts for the pay path (fixture provisioning, P1 pattern).
     select public.provision_company_chart_of_accounts('${COMPANY}'::uuid);
 
@@ -154,6 +150,14 @@ beforeAll(async () => {
   `);
 
   await assumeIdentity(db, ADMIN, COMPANY);
+  const current=new Date();const from=current.toISOString().slice(0,7)+'-01';
+  const end=new Date(Date.UTC(current.getUTCFullYear(),current.getUTCMonth()+1,0)).toISOString().slice(0,10);
+  for(const period of [JULY,...(from===JULY.from?[]:[{from,to:end}])]) {
+    await db.query('select public.create_accounting_period($1::jsonb)',[JSON.stringify({start_date:period.from,end_date:period.to})]);
+  }
+  // The expense is now an actual, allocated source. It is not an implicit
+  // recovery from owner funds, even in this read-model fixture.
+  await db.query('select public.create_expense_with_journal_atomic($1::jsonb)',[JSON.stringify({property_id:PROPERTY,category:'maintenance',charged_to:'OWNER',amount:120,expense_date:'2026-07-10',owner_allocations:[{owner_id:OWNER,amount:120}],allocation_evidence:'R2 approved repair invoice',request_id:'r2-owner-expense'})]);
 }, 420_000);
 
 afterAll(async () => {
@@ -162,8 +166,8 @@ afterAll(async () => {
 
 // Expected July derivation for this fixture:
 //   collections 1500 (VOID excluded), fee 10% = 150, VAT 5% on fee = 7.5,
-//   expenses 120, net = 1500 - 150 - 120 - 7.5 = 1222.5.
-const EXPECTED = { gross: 1500, fee: 150, vat: 7.5, expenses: 120, net: 1222.5 };
+//   separate owner receivable120, no offset; net = 1500 - 150 - 7.5 = 1342.5.
+const EXPECTED = { gross: 1500, fee: 150, vat: 7.5, expenses: 0, net: 1342.5 };
 
 describe('R2 — rpt_owner_financial_position authoritative read model', () => {
   it('fails closed without auth, and rejects a cross-company owner', async () => {
@@ -311,8 +315,8 @@ describe('R2 — rpt_owner_financial_position authoritative read model', () => {
 
     // period.* remains July-scoped: no June collection, fee, expense or net.
     expect(num(p.period.tenant_collections)).toBe(EXPECTED.gross); // 1500
-    expect(num(p.period.net_payable)).toBe(EXPECTED.net);          // 1222.5
-    expect(num(p.period.owner_expenses)).toBe(EXPECTED.expenses);  // 120
+    expect(num(p.period.net_payable)).toBe(EXPECTED.net);          // 1342.5
+    expect(num(p.period.owner_expenses)).toBe(EXPECTED.expenses);  // no implicit expense offset
 
     // lifecycle_all_time.* is all-time: the June DRAFT is present, and the
     // July settlement paid earlier is lifetime paid history.

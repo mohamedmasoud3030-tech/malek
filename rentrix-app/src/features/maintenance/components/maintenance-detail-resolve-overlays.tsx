@@ -1,3 +1,5 @@
+import { OwnerExpenseAllocationFields } from '@/features/financials/expenses/owner-expense-allocation-fields';
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { PlayCircle } from 'lucide-react';
 import { MONEY_STEP } from '@/lib/money';
 import type { UseFormReturn } from 'react-hook-form';
@@ -25,7 +27,7 @@ import {
 export type ChargeTarget = 'landlord' | 'tenant' | 'office';
 
 export const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc: string }> = {
-  landlord: { title: 'المالك (استقطاع)', desc: 'تحميل المالك تكلفة الصيانة من حسابه' },
+  landlord: { title: 'المالك (ذمة مدينة)', desc: 'يسجل على المالك؛ لا يخصم من مستحقاته دون مقاصة معتمدة' },
   tenant: { title: 'المستأجر (مطالبة)', desc: 'إصدار فاتورة مطالبة بسبب سوء الاستخدام' },
   office: { title: 'شركة الإدارة (تشغيلي)', desc: 'مصروف تشغيلي عام على المكتب' },
 };
@@ -222,6 +224,7 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
     >
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>
         <EntityForm.ErrorSummary message={firstError} />
+        {target && chargedTo==='OWNER' && Number(form.watch('cost'))>0 ? <OwnerExpenseAllocationFields propertyId={target.property_id??''} date={getTodayLocalDateString()} allocations={form.watch('ownerAllocations')??[]} evidence={form.watch('allocationEvidence')??''} onChange={rows=>form.setValue('ownerAllocations',rows,{shouldDirty:true})} onEvidenceChange={value=>form.setValue('allocationEvidence',value,{shouldDirty:true})}/> : null}
         <EntityForm.Section title="التكلفة وتوزيع المسؤولية" description={target ? target.title : undefined}>
           <EntityForm.Field label="التكلفة الفعلية للأعمال" error={form.formState.errors.cost?.message}>
             <Input dir="ltr" type="number" min="0" step={MONEY_STEP} inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />

@@ -246,3 +246,17 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 - The controlled historical **sample** now reconciles through reviewed append-only source correction with correct cutoffs. No production dataset was available or corrected. Legal obligation/allocation evidence and authorized source-scoped production review remain external prerequisites, not authority inferred from tests.
 - S08 aggregate fingerprint behavior for other source types, other S09 correction dating/validation, unpaged data access, owner-receivable/offset command UI, legacy compatibility event grouping, and wider reconstruction/final-audit inventory remain open. No mission/stage completion claimed.
 - Hosted QA still lacks required configuration. Prior sporadic browser initialization stalls remain a tracked risk; one reappeared in the final ten-scenario run; the unchanged affected rerun passed. Assertions/timeouts were not weakened and retries were not enabled.
+
+## Owner expense allocation / lawful settlement source (migration12)
+### COMPLETED — repository implementation
+- Explicit immutable owner allocation/evidence and exact agreement version; canonical1300 source postings; deferred completeness; duplicate source protection; no inferred offset rights or automatic adopted-expense deduction.
+- Shared expense/maintenance entry, three-decimal maintenance persistence, strict closure acknowledgement and retry/cache behavior, all financial read-model invalidations. Retired obsolete positive-cost maintenance insertion.
+- Residual payout source/control agreement and fully-offset no-cash path. Unreviewed legacy automatic deductions now block new settlement effects while history/cached responses are preserved.
+- SQL16 PASS; current-authority historical/source suites44 PASS; final full540 files/3,833 PASS after the additional historical assertions; refreshed built-app expense/maintenance/report desktop/mobile2 PASS after an unchanged rerun of the tracked initialization stall. Main/test types and build/PWA PASS. Detailed scope, chronology and limitations: `OWNER_EXPENSE_SOURCE_ALLOCATION_20260909.md`.
+### IN PROGRESS / NEXT
+- Governed historical adoption and unblocking of reviewed legacy-netted settlements; old erroneous payout-source events; pre12-approved S09 apply compatibility; owner adjustment/recovery/offset command UI and parent source presentation.
+- Agreement-selector pagination, statements/cache/rebuild/classification/data-access audit; all remaining financial inventory, then the application-wide final audit. This is not financial or application completion.
+### BLOCKED externally / PRESERVED / RETIRED
+- Hosted JWT/PostgREST/concurrency and production evidence/remediation remain externally blocked; repository work is not blocked by missing hosted configuration.
+- Preserve original postings, historical costs and verified cached operations. A source review alone does not yet adopt legacy expenses or authorize their deduction.
+- Retired unsafe new raw maintenance expenses, alternate new private OWNER creation and unreviewed legacy automatic deductions. No history was rewritten or silently repaired in reports.

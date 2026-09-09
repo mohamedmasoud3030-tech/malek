@@ -17,6 +17,7 @@ function makeExpense(overrides: Partial<Expense> = {}): Expense {
     no: null,
     company_id: 'company-1',
     reference: null,
+    owner_allocation_version: null,
     description: null,
     attachment_url: null,
     created_at: '2026-05-18T00:00:00.000Z',

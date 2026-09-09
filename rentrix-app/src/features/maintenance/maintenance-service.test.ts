@@ -135,13 +135,13 @@ describe('maintenance service failure and mutation boundaries', () => {
   });
 
   it('closes a completed request only through the verified closure RPC', async () => {
-    const result = { maintenance: { id: 'maintenance-1', status: 'closed', cost: 250 }, expense_id: null };
+    const result = { maintenance: { id: 'maintenance-1', status: 'closed', cost: 250, charged_to:'OWNER', expense_id:'expense-1' }, expense_id: 'expense-1' };
     supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: result, error: null })) });
     const { closeMaintenanceWithExpense } = await import('./maintenance-service');
 
-    const outcome = await closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 250, chargedTo: 'OWNER', notes: 'تم استبدال المضخة', evidenceUrl: 'https://example.test/invoice', confirmed: true });
+    const outcome = await closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 250, chargedTo: 'OWNER', ownerAllocations:[{owner_id:'owner-1',amount:250}], allocationEvidence:'Approved repair invoice', notes: 'تم استبدال المضخة', evidenceUrl: 'https://example.test/invoice', confirmed: true });
     expect(supabaseMock.rpc).toHaveBeenCalledWith('close_maintenance_with_expense', {
-      p_request_id: 'maintenance-1', p_cost: 250, p_charged_to: 'OWNER', p_notes: 'تم استبدال المضخة',
+      p_request_id: 'maintenance-1', p_cost: 250, p_charged_to: 'OWNER', p_owner_allocations:[{owner_id:'owner-1',amount:250}], p_allocation_evidence:'Approved repair invoice', p_notes: 'تم استبدال المضخة',
       p_evidence_url: 'https://example.test/invoice', p_confirmed: true,
     });
     expect(outcome).toEqual(result);
@@ -153,4 +153,10 @@ describe('maintenance service failure and mutation boundaries', () => {
 
     await expect(closeMaintenanceWithExpense({ requestId: 'maintenance-1', cost: 100, chargedTo: 'COMPANY', notes: null, evidenceUrl: null, confirmed: true })).rejects.toThrow('تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
   });
+  it('rejects a mismatched closure acknowledgement instead of closing the workflow',async()=>{
+    supabaseMock.rpc.mockReturnValue({single:vi.fn(()=>Promise.resolve({data:{maintenance:{id:'other',status:'closed',cost:250,charged_to:'OWNER',expense_id:'expense-1'},expense_id:'expense-1'},error:null}))});
+    const {closeMaintenanceWithExpense}=await import('./maintenance-service');
+    await expect(closeMaintenanceWithExpense({requestId:'maintenance-1',cost:250,chargedTo:'OWNER',notes:null,evidenceUrl:null,confirmed:true})).rejects.toThrow('لا تطابق');
+  });
+
 });

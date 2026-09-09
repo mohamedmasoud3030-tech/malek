@@ -29,11 +29,11 @@ const TENANT = 'e2000000-0000-4000-8000-000000000071';
 
 const RENT = 450;
 const FEE_RATE = 10; // percentage on collections (owner agreement RATE)
-const OWNER_EXPENSE = 30; // owner-responsibility expense deducted in settlement
+const OWNER_EXPENSE = 30; // separate receivable; no automatic offset right
 const COMPANY_EXPENSE = 20; // office-responsibility expense, never touches the owner
 
 const FEE = (RENT * FEE_RATE) / 100; // 45
-const SETTLEMENT_NET = RENT - FEE - OWNER_EXPENSE; // 375
+const SETTLEMENT_NET = RENT - FEE; // 405; a receivable is not an authorized offset
 
 let db: PGlite;
 let contractId = '';
@@ -221,10 +221,12 @@ describe('P2 gate — unit to settlement reconciles with the financial engine', 
         amount: OWNER_EXPENSE,
         expense_date: asOf,
         charged_to: 'OWNER',
+        owner_allocations: [{owner_id:OWNER,amount:OWNER_EXPENSE}],
+        allocation_evidence:'Approved owner repair invoice',
         description: 'إصلاح مكيف على حساب المالك',
       })],
     )).rows[0]?.out;
-    expect(Boolean(ownerExpense?.success ?? true)).toBe(true);
+    expect(ownerExpense?.success).toBe(true);
 
     const companyExpense = (await db.query<{ out: Record<string, unknown> }>(
       `select public.create_expense_with_journal_atomic($1::jsonb) as out`,
@@ -238,7 +240,7 @@ describe('P2 gate — unit to settlement reconciles with the financial engine', 
         description: 'رسوم تجديد على حساب المكتب',
       })],
     )).rows[0]?.out;
-    expect(Boolean(companyExpense?.success ?? true)).toBe(true);
+    expect(companyExpense?.success).toBe(true);
 
     const { rows } = await db.query<{ charged_to: string; status: string; n: string }>(
       `select charged_to, status, count(*)::text as n
@@ -254,21 +256,18 @@ describe('P2 gate — unit to settlement reconciles with the financial engine', 
     expect(companyRow?.status).toBe('POSTED');
     expect(Number(companyRow?.n)).toBe(1);
 
-    // Every expense posts an exact DEBIT/CREDIT pair (classic ledger): the sum
-    // of signed journal_entries for the expense entity is exactly zero.
-    const { rows: pairs } = await db.query<{ entity_id: string; net: string }>(
-      `select entity_id::text as entity_id,
-              coalesce(sum(case when type = 'DEBIT' then amount else -amount end), 0)::text as net
-         from public.journal_entries
-        where company_id = $1::uuid and entity_type = 'expense'
-        group by entity_id`,
-      [COMPANY],
-    );
+    // Both sources have balanced canonical batches. The owner allocation is
+    // linked through its immutable receivable, not a legacy journal facade.
+    const {rows:pairs}=await db.query<{net:string}>(
+      `select b.id, sum(l.debit-l.credit)::text as net from public.journal_batches b
+       join public.journal_lines l on l.batch_id=b.id and l.company_id=b.company_id
+       where b.company_id=$1 and (b.source_id=$2 or exists(select 1 from public.due_from_owners d where d.journal_batch_id=b.id and d.source_id=$3 and d.company_id=b.company_id))
+       group by b.id`,[COMPANY,companyExpense?.expense_id,ownerExpense?.expense_id]);
     expect(pairs).toHaveLength(2);
     for (const pair of pairs) expect(Number(pair.net)).toBe(0);
   });
 
-  it('settlement: server-derived amounts reserve exactly the collected payment and the OWNER expense', async () => {
+  it('settlement: reserves collection but never implicitly reserves or deducts an owner receivable', async () => {
     await assumeIdentity(db, MAKER, COMPANY);
     const { from, to } = monthRange();
     const draft = (await db.query<{ out: Record<string, unknown> }>(
@@ -287,7 +286,7 @@ describe('P2 gate — unit to settlement reconciles with the financial engine', 
     expect(String(draft?.amounts_source)).toBe('server_derived');
     expect(Number(draft?.net_payable)).toBe(SETTLEMENT_NET);
     expect(Number(draft?.reserved_payments)).toBe(1);
-    expect(Number(draft?.reserved_expenses)).toBe(1);
+    expect(Number(draft?.reserved_expenses)).toBe(0);
 
     const { rows } = await db.query<{
       gross_collected: string; office_fee: string; owner_expenses: string; tax_amount: string; net_payable: string; status: string;
@@ -301,9 +300,8 @@ describe('P2 gate — unit to settlement reconciles with the financial engine', 
     expect(rows).toHaveLength(1);
     expect(Number(rows[0].gross_collected)).toBe(RENT);
     expect(Number(rows[0].office_fee)).toBe(FEE);
-    // Only the OWNER-responsibility expense is deducted; the office one never
-    // reaches the owner's settlement.
-    expect(Number(rows[0].owner_expenses)).toBe(OWNER_EXPENSE);
+    // Neither party's expense is an implicit lawful offset from owner funds.
+    expect(Number(rows[0].owner_expenses)).toBe(0);
     expect(Number(rows[0].tax_amount)).toBe(0);
     expect(Number(rows[0].net_payable)).toBe(SETTLEMENT_NET);
     expect(rows[0].status).toBe('DRAFT');
@@ -378,22 +376,24 @@ describe('P2 gate — unit to settlement reconciles with the financial engine', 
     // Fee revenue recognized on collection (RATE 10%): Dr 2000 / Cr 4100.
     expect(await glBatchNet('4100')).toBe(-FEE);
 
-    // Expense account carries both responsibilities' costs.
-    expect(await glBatchNet('6100')).toBe(OWNER_EXPENSE + COMPANY_EXPENSE);
+    // Company costs remain on6100; the approved owner obligation is on1300.
+    expect(await glBatchNet('6100')).toBe(COMPANY_EXPENSE);
+    expect(await glBatchNet('1300')).toBe(OWNER_EXPENSE);
 
     // Owner payable per GL = gross − recognized fee (invoice Cr 2000, fee Dr 2000).
     const glOwnerPayable = -(await glBatchNet('2000'));
     expect(glOwnerPayable).toBe(RENT - FEE);
 
-    // Reconciliation identity: GL owner payable minus the settlement net
-    // payable equals exactly the owner-responsibility expenses deducted in the
-    // settlement (they were paid in office cash and recovered from the owner).
+    // Without a lawful offset, settlement and GL payable agree exactly.
+    // The separate owner debt remains outstanding, never silently recovered.
     const { rows } = await db.query<{ net_payable: string; owner_expenses: string }>(
       `select net_payable::text, owner_expenses::text from public.owner_settlements
         where company_id = $1::uuid and owner_id::text = $2 and status = 'APPROVED'`,
       [COMPANY, OWNER],
     );
     expect(glOwnerPayable - Number(rows[0].net_payable)).toBe(Number(rows[0].owner_expenses));
-    expect(glOwnerPayable - Number(rows[0].net_payable)).toBe(OWNER_EXPENSE);
+    expect(glOwnerPayable - Number(rows[0].net_payable)).toBe(0);
+    expect((await db.query('select amount::text,outstanding::text,lawful_offset_right from public.due_from_owners where company_id=$1',[COMPANY])).rows).toEqual([{amount:'30.000',outstanding:'30.000',lawful_offset_right:false}]);
+    expect((await db.query("select reconciliation_status from public.wp05_reconcile_all($1,$2::date) where account_no in ('1300','2000')",[COMPANY,monthRange().asOf])).rows).toEqual([{reconciliation_status:'PASS'},{reconciliation_status:'PASS'}]);
   });
 });

@@ -3340,6 +3340,7 @@ export type Database = {
           company_id: string;
           owner_id: string;
           owner_agreement_id: string | null;
+          owner_agreement_version_id: string | null;
           property_id: string | null;
           source_type: 'OWNER_EXPENSE' | 'RECOVERY' | 'OFFSET' | 'ADJUSTMENT';
           source_id: string | null;
@@ -3364,6 +3365,7 @@ export type Database = {
           company_id: string;
           owner_id: string;
           owner_agreement_id?: string | null;
+          owner_agreement_version_id?: string | null;
           property_id?: string | null;
           source_type: 'OWNER_EXPENSE' | 'RECOVERY' | 'OFFSET' | 'ADJUSTMENT';
           source_id?: string | null;
@@ -3388,6 +3390,7 @@ export type Database = {
           company_id?: string;
           owner_id?: string;
           owner_agreement_id?: string | null;
+          owner_agreement_version_id?: string | null;
           property_id?: string | null;
           source_type?: 'OWNER_EXPENSE' | 'RECOVERY' | 'OFFSET' | 'ADJUSTMENT';
           source_id?: string | null;
@@ -3408,6 +3411,7 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          { foreignKeyName: 'due_from_owners_owner_agreement_version_id_fkey'; columns: ['owner_agreement_version_id']; isOneToOne: false; referencedRelation: 'owner_agreement_versions'; referencedColumns: ['id'] },
           {
             foreignKeyName: 'due_from_owners_company_id_fkey';
             columns: ['company_id'];
@@ -3445,6 +3449,16 @@ export type Database = {
           },
         ];
       };
+      expense_owner_allocations: {
+        Row: { expense_id: string; due_from_owner_id: string; company_id: string; allocation_evidence: string; created_at: string };
+        Insert: { expense_id: string; due_from_owner_id: string; company_id: string; allocation_evidence: string; created_at?: string };
+        Update: { expense_id?: string; due_from_owner_id?: string; company_id?: string; allocation_evidence?: string; created_at?: string };
+        Relationships: [
+          { foreignKeyName: 'expense_owner_allocations_expense_id_fkey'; columns: ['expense_id']; isOneToOne: false; referencedRelation: 'expenses'; referencedColumns: ['id'] },
+          { foreignKeyName: 'expense_owner_allocations_due_from_owner_id_fkey'; columns: ['due_from_owner_id']; isOneToOne: true; referencedRelation: 'due_from_owners'; referencedColumns: ['id'] },
+          { foreignKeyName: 'expense_owner_allocations_company_id_fkey'; columns: ['company_id']; isOneToOne: false; referencedRelation: 'companies'; referencedColumns: ['id'] }
+        ];
+      };
       expenses: {
         Row: {
           id: string;
@@ -3465,6 +3479,7 @@ export type Database = {
           no: string | null;
           company_id: string;
           reference: string | null;
+          owner_allocation_version: number | null;
         };
         Insert: {
           id?: string;
@@ -3485,6 +3500,7 @@ export type Database = {
           no?: string | null;
           company_id?: string;
           reference?: string | null;
+          owner_allocation_version?: number | null;
         };
         Update: {
           id?: string;
@@ -3505,6 +3521,7 @@ export type Database = {
           no?: string | null;
           company_id?: string;
           reference?: string | null;
+          owner_allocation_version?: number | null;
         };
         Relationships: [
           {
@@ -8354,6 +8371,8 @@ export type Database = {
           p_notes?: string | null;
           p_evidence_url?: string | null;
           p_confirmed?: boolean | null;
+          p_owner_allocations?: Json | null;
+          p_allocation_evidence?: string | null;
         };
         Returns: Json;
       };

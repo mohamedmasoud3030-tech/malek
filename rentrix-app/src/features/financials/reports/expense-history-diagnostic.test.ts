@@ -1,4 +1,7 @@
-import { assumeIdentity } from '@/p1/replay-bootstrap';
+// Create authentic legacy sources before adoption, then exercise the current
+// migration12 authorities; these scenarios must not run only against old code.
+import { readFileSync } from 'node:fs';
+import { assumeIdentity, repoRoot } from '@/p1/replay-bootstrap';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import {
@@ -32,7 +35,7 @@ async function read(company = COMPANY, scope = period) {
   ).rows;
 }
 beforeAll(async () => {
-  ({ db } = await createOfficeCreditorFixture());
+  ({ db } = await createOfficeCreditorFixture({throughMigration:'20260909000011'}));
   previousPeriod = (
     await db.query<{ id: string }>(
       `insert into public.accounting_periods(company_id,name,start_date,end_date,status) values($1::uuid,'Prior diagnostic period',date_trunc('month',$2::date)-interval '1 month',date_trunc('month',$2::date)-interval '1 day','OPEN') returning id`,
@@ -58,6 +61,9 @@ beforeAll(async () => {
       [COMPANY, at(1)],
     )
   ).rows[0].id;
+  await db.exec('reset role');
+  await db.exec(readFileSync(`${repoRoot}/supabase/migrations/20260909000012_owner_expense_allocation_source.sql`,'utf8'));
+  await db.exec('set role authenticated');
 }, 60_000);
 afterAll(async () => {
   await db?.close();
@@ -76,20 +82,8 @@ it('finds the real owner expense using charged responsibility and exact OMR evid
   );
 });
 it('uses the requested company period, not a company-wide scan labeled with that period', async () => {
-  await db.exec('begin');
-  try {
-    await offsetFixtureCommand(db, 'create_expense_with_journal_atomic', {
-      property_id: PROPERTY,
-      category: 'OWNER',
-      charged_to: 'OWNER',
-      amount: 1,
-      expense_date: at(1),
-      request_id: 'period-diagnostic',
-    });
-    expect(await read(COMPANY, previousPeriod)).toEqual([]);
-  } finally {
-    await db.exec('rollback');
-  }
+  expect((await read()).some(row=>row.expense_id===expense)).toBe(true);
+  expect(await read(COMPANY,previousPeriod)).toEqual([]);
 });
 it('does not turn a valid company expense category into an owner allocation', async () => {
   await db.exec('begin');

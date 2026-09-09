@@ -80,6 +80,7 @@ beforeAll(async () => {
 
   await assumeIdentity(db, ADMIN, COMPANY);
   await db.query('select public.provision_company_chart_of_accounts($1::uuid)', [COMPANY]);
+  await db.query('select public.gl_ensure_initial_open_period($1::uuid,current_date)',[COMPANY]);
 }, 420_000);
 
 afterAll(async () => {
@@ -202,8 +203,9 @@ describe('R8 — maintenance lifecycle authority', () => {
       `select public.close_maintenance_with_expense($1::text, 42.5, 'OWNER', 'استبدال محبس رئيسي', null, false)`, [id],
     )).rejects.toThrow(/MAINTENANCE_CONFIRMATION_REQUIRED/);
 
+    await db.query('insert into public.property_owners(property_id,owner_id,company_id,ownership_percentage,is_primary,starts_on) values($1,$2,$3,100,true,$4::date)',[PROPERTY,OWNER,COMPANY,'2020-01-01']);
     const { rows } = await db.query<{ out: any }>(
-      `select public.close_maintenance_with_expense($1::text, 42.5, 'OWNER', 'استبدال محبس رئيسي', 'https://example.test/invoice', true) as out`, [id],
+      `select public.close_maintenance_with_expense($1::text, 42.5, 'OWNER', 'استبدال محبس رئيسي', 'https://example.test/invoice', true,$2::jsonb,'اعتماد فاتورة الإصلاح') as out`, [id,JSON.stringify([{owner_id:OWNER,amount:42.5}])],
     );
     const closed = rows[0]?.out as any;
     expect(closed.maintenance.status).toBe('closed');

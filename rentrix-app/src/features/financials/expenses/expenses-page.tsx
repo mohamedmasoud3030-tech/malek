@@ -22,6 +22,8 @@ import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpe
 import { Alert } from '@/components/ui/alert';
 
 const expenseSchema = z.object({
+  owner_allocations: z.array(z.object({owner_id:z.string(),amount:z.coerce.number(),owner_agreement_id:z.string().optional()})).optional(),
+  allocation_evidence:z.string().optional(),
   property_id: z.string().trim().min(1, 'اختر العقار'),
   category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
   cost_center_id: z.string().optional(),
@@ -80,6 +82,8 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
         expenseDate: values.expense_date,
         costCenterId: values.cost_center_id?.trim() || null,
         chargedTo: values.charged_to,
+        ownerAllocations: values.owner_allocations,
+        allocationEvidence: values.allocation_evidence,
         description: values.description?.trim() ? values.description.trim() : null,
         attachmentUrl: values.attachment_url ?? null,
       },

@@ -1,3 +1,5 @@
+import { OwnerExpenseAllocationFields } from '../expenses/owner-expense-allocation-fields';
+import type { OwnerExpenseAllocation } from '../expenses/expenseService';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
@@ -26,6 +28,8 @@ import { getTodayLocalDateString } from '../financials-date-utils';
 import { MONEY_MIN_POSITIVE, MONEY_STEP } from '@/lib/money';
 
 export type ExpenseFormValues = {
+  owner_allocations?: OwnerExpenseAllocation[];
+  allocation_evidence?: string;
   property_id: string;
   category: OperationalExpenseCategory;
   cost_center_id?: string;
@@ -317,6 +321,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
           onSubmit={expenseForm.handleSubmit(submitExpenseForm)}
         >
           <EntityForm.ErrorSummary message={firstFormError} />
+          {editingExpense?.owner_allocation_version===1 ? <p role="status">التوزيع المالي معتمد وغير قابل للتحرير. يمكن توضيح الوصف والمرفق؛ تغيير الالتزام يتطلب إجراء تعديل أو عكس موثق للذمة.</p> : null}
 
           <EntityForm.Section title="بيانات المصروف" description="اختر العقار والتصنيف ثم أدخل المبلغ والتاريخ.">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -328,7 +333,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
               </EntityForm.Field>
 
               <EntityForm.Field label="التصنيف" error={expenseForm.formState.errors.category?.message}>
-                <Select {...expenseForm.register('category')}>
+                <Select {...expenseForm.register('category')} disabled={editingExpense?.owner_allocation_version===1}>
                   {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </Select>
               </EntityForm.Field>
@@ -336,10 +341,10 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
               <EntityForm.Field
                 label="يتحمّل المصروف"
                 className="sm:col-span-2"
-                hint="اختيار «المالك» يُظهر المصروف في كشف حساب المالك."
+                hint="مصروف المالك يحتاج توزيعاً معتمداً، ولا يعني تفويضاً بالخصم من أمواله."
                 error={expenseForm.formState.errors.charged_to?.message}
               >
-                <Select {...expenseForm.register('charged_to')}>
+                <Select {...expenseForm.register('charged_to')} disabled={editingExpense?.owner_allocation_version===1}>
                   {EXPENSE_CHARGED_TO_VALUES.map((value) => <option key={value} value={value}>{EXPENSE_CHARGED_TO_LABELS[value]}</option>)}
                 </Select>
               </EntityForm.Field>
@@ -352,7 +357,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
               </EntityForm.Field>
 
               <EntityForm.Field label="المبلغ" error={expenseForm.formState.errors.amount?.message}>
-                <Input type="number" min={MONEY_MIN_POSITIVE} inputMode="decimal" step={MONEY_STEP} placeholder="0.000" {...expenseForm.register('amount')} />
+                <Input disabled={editingExpense?.owner_allocation_version===1} type="number" min={MONEY_MIN_POSITIVE} inputMode="decimal" step={MONEY_STEP} placeholder="0.000" {...expenseForm.register('amount')} />
               </EntityForm.Field>
 
               <EntityForm.Field label="التاريخ" className="sm:col-span-2" error={expenseForm.formState.errors.expense_date?.message}>
@@ -361,6 +366,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
             </div>
           </EntityForm.Section>
 
+          {!editingExpense && expenseForm.watch('charged_to')==='OWNER' ? <OwnerExpenseAllocationFields propertyId={expenseForm.watch('property_id')} date={expenseForm.watch('expense_date')} allocations={expenseForm.watch('owner_allocations')??[]} evidence={expenseForm.watch('allocation_evidence')??''} onChange={rows=>expenseForm.setValue('owner_allocations',rows,{shouldDirty:true})} onEvidenceChange={value=>expenseForm.setValue('allocation_evidence',value,{shouldDirty:true})}/> : null}
           <EntityForm.Section title="تفاصيل إضافية" description="أضف وصفاً أو إيصالاً عند الحاجة.">
             <Textarea placeholder="الوصف (اختياري)" className="min-h-24" {...expenseForm.register('description')} />
             <Controller

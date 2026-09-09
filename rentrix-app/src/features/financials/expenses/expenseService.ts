@@ -96,7 +96,11 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
  * Atomic expense creation that records the expense together with its journal
  * entry and audit-log row in a single RPC. `requestId` enables idempotent retries.
  */
+export type OwnerExpenseAllocation = { owner_id: string; amount: number; owner_agreement_id?: string };
+
 export type ExpenseWithJournalPayload = {
+  ownerAllocations?: OwnerExpenseAllocation[];
+  allocationEvidence?: string;
   requestId?: string;
   propertyId: string;
   category: string;
@@ -121,6 +125,7 @@ export async function createExpenseWithJournal(payload: ExpenseWithJournalPayloa
     'create_expense_with_journal_atomic',
     {
       p_payload: {
+        ...(payload.chargedTo === 'OWNER' ? {owner_allocations: payload.ownerAllocations ?? [], allocation_evidence: payload.allocationEvidence ?? ''} : {}),
         request_id: payload.requestId ?? null,
         property_id: payload.propertyId,
         category: payload.category,

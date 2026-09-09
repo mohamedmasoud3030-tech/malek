@@ -49,6 +49,8 @@ export const maintenanceRequestSchema = z.object({
 export type MaintenanceFormValues = z.infer<typeof maintenanceRequestSchema>;
 
 export const maintenanceResolveSchema = z.object({
+  ownerAllocations: z.array(z.object({owner_id:z.string(),amount:z.coerce.number(),owner_agreement_id:z.string().optional()})).optional(),
+  allocationEvidence:z.string().optional(),
   cost: z.coerce.number({ invalid_type_error: 'أدخل تكلفة صحيحة' }).min(0, 'التكلفة لا يمكن أن تكون سالبة'),
   chargedTo: z.enum(['OWNER', 'TENANT', 'COMPANY']),
   evidenceUrl: z.string().url('رابط الإثبات غير صحيح').nullable().optional().or(z.literal('')),
@@ -348,6 +350,8 @@ export function useMaintenancePageController() {
         requestId: resolveTarget.id,
         cost: values.cost,
         chargedTo: values.chargedTo,
+        ownerAllocations: values.ownerAllocations,
+        allocationEvidence: values.allocationEvidence,
         notes: values.notes?.trim() ? values.notes.trim() : null,
         evidenceUrl: values.evidenceUrl?.trim() || null,
         confirmed: values.confirmed,

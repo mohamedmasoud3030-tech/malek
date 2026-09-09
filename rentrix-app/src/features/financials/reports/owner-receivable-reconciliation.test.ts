@@ -75,13 +75,11 @@ it('keeps an independent GL-only discrepancy visible', async () => {
     expect(report.rows[0].reconciliation_status).toBe('FAIL');
   } finally { await db.exec('rollback'); }
 });
-it('does not invent dates for a missing original posting link', async () => {
+it('rejects removal of an immutable original posting link at the source', async () => {
   await db.exec('begin');
   try {
     await db.exec('reset role');
-    await db.query('update public.due_from_owners set journal_batch_id=null where id=$1::uuid',[id]);
-    await db.exec('set role authenticated');
-    await expect(balances(28)).rejects.toThrow(/OWNER_RECEIVABLE_HISTORY_EVENT_GAP/);
+    await expect(db.query('update public.due_from_owners set journal_batch_id=null where id=$1::uuid',[id])).rejects.toThrow(/OWNER_RECEIVABLE_SOURCE_IMMUTABLE/);
   } finally { await db.exec('rollback'); }
 });
 
