@@ -446,6 +446,61 @@ Rather than continue site-by-site, every LIVE function in `public`/`app_private`
 
 No unrepaired instance of the defect remains live.
 
+## OMR 3-decimal integrity — `owner_balances` was silently truncating baisa (2026-09-09)
+Found by the final audit, not by a failing test: `pnpm db0:audit` reported 28 MAJOR `DB0-07` financial-precision findings, four of them on `public.owner_balances` (`total_income`, `total_expenses`, `commission`, `net_balance` all `numeric(14,2)`).
+
+**Proved against real SQL before repairing.** OMR carries 3 decimals (1000 baisa). `recalculate_owner_balance` already applies `public._r3(...)` to every figure it writes, so the correct 3-decimal value was computed and then destroyed by the column type:
+
+| surface | value |
+|---|---|
+| expense posted | `12.345` |
+| `owner_balances.total_expenses` (stored) | **`12.35`** |
+| `rpt_owner_statement` (authoritative) | `12.345` |
+
+A 0.005 — 5 baisa — disagreement between the persisted balance and the statement it reconciles to. This is the same drift shape migration19 removed, arriving through the schema instead of the query. A 0.007 line item is worse: it rounds to 0.01, a 43% error on that line.
+
+`20260909000020_owner_balances_omr_precision.sql` widens the four columns to `numeric(18,3)`, matching `owner_funds_events`, `due_from_owners` and the settlement tables. Widening is lossless, so **no stored value changes and no history is rewritten**; existing rows keep their current (possibly already-truncated) figures until their owner's next lawful recalculation, exactly as migration19 did. Correcting a stored figure is a governed accounting action, not a side effect of a type change. Precedent: migration12 widened `maintenance_records.cost` the same way.
+
+**A dependent-view hazard was caught by the migration's own precondition rather than by a broken deployment.** The first draft asserted no view depended on these columns; replay failed closed with `OWNER_BALANCE_PRECISION_PRECONDITION`, revealing that `public.s08_liability_balances_by_period` and `public.s08_subledger_gl_reconciliation` (layered on it) both read `net_balance`. The migration now captures each view verbatim — definition, `security_invoker`, owner, every ACL entry — drops them in dependency order, widens, and recreates them from the captured text, with a postcondition that both exist afterwards and a guard that aborts if any view other than those two appears. Verified after replay: both `security_invoker=true`, owner `postgres`, ACLs identical (`postgres`/`authenticated`/`service_role`), and both queryable (6 and 5 rows). Nothing about the views was retyped or redesigned.
+
+Regression: `owner-balance-omr-precision.test.ts` 7 PASS — all four columns are `numeric(18,3)`; the third decimal survives the round trip (20.243, not 20.24); a 0.007-only amount is not rounded away; the stored balance equals the statement AND `calculate_owner_net_payout` to the baisa; `net_balance` stays consistent with `income − expenses − commission`; and no balance row was invented by the widen.
+
+Audit effect: `db0:audit` financial-precision findings **28 → 24**, `owner_balances` findings **4 → 0**, BLOCKERS 0. The remaining 24 are on other tables and are recorded as open audit findings below, not silently accepted.
+
+Verification: focused 7/7; full regression **550 files / 3927 tests, 0 failures** (sharded run 516 files / 3724 with shard 7 SIGKILLed — INFRA, never counted — re-run solo in 5 chunks, 34 files / 203 PASS, closing the suite); db0 7/7 with **95/95** migrations replayed from clean and idempotency PASS; Guardian PASS all layers; `test:supabase` 84 + 58 + 1 + 1 + 241; business-rules hash unchanged; hygiene PASS; typecheck PASS; no generated-type drift; build/PWA 28 precache entries; browser 6/6 desktop+mobile, retries 0.
+
+### OPEN AUDIT FINDING — 24 remaining OMR precision drifts (recorded, not accepted)
+`pnpm db0:audit` still reports 24 MAJOR `DB0-07` findings after the `owner_balances` repair. They are listed here rather than left implicit. Each needs the same treatment applied above — prove the drift is reachable with a real 3-decimal amount, check dependent views, widen losslessly, do not backfill — and each must be judged individually, because some are not owner-money at all (`lands.purchase_price`, `properties.current_value`) and some are deliberately higher precision (`numeric(18,6)` fee snapshots, `numeric(14,4)` commission rates, which are RATES not amounts and must not be narrowed to 3).
+
+| column | current type |
+|---|---|
+| `bank_accounts.opening_balance` | `numeric(14,2)` |
+| `commissions.amount` | `numeric` |
+| `commissions.deal_value` | `numeric` |
+| `contract_balances.total_invoiced` | `numeric(14,2)` |
+| `contract_balances.total_paid` | `numeric(14,2)` |
+| `contract_balances.balance_due` | `numeric(14,2)` |
+| `contract_registration_records.fee_value_snapshot` | `numeric(18,6)` |
+| `contract_registration_requirement_profiles.fee_value` | `numeric(18,6)` |
+| `fixed_monthly_daily_accruals.monthly_contract_amount` | `numeric(14,4)` |
+| `lands.purchase_price` | `numeric` |
+| `lands.owner_price` | `numeric` |
+| `lands.commission` | `numeric` |
+| `owner_agreement_versions.commission_value` | `numeric(14,4)` |
+| `owner_agreements.commission_value` | `numeric(14,4)` |
+| `owner_settlements.amount` | `numeric` |
+| `owner_settlements.gross_collected` | `numeric` |
+| `owner_settlements.office_fee` | `numeric` |
+| `owner_settlements.tax_amount` | `numeric` |
+| `owner_settlements.net_payable` | `numeric` |
+| `properties.purchase_value` | `numeric(14,2)` |
+| `properties.current_value` | `numeric(14,2)` |
+| `tenant_balances.balance_due` | `numeric` |
+| `units.rent_amount` | `numeric(14,2)` |
+| `utility_bills.paid_amount` | `numeric(14,2)` |
+
+Priority order for the next session, worst first: `owner_settlements.*` (bare `numeric`, the settlement money path), `tenant_balances.balance_due` and `contract_balances.*` (persisted balances with the same stored-vs-derived drift shape just fixed on `owner_balances`), then `commissions.*`, then the asset-valuation columns which are the least likely to carry baisa.
+
 ## Intermittent bootstrap stall — diagnosis advanced, root cause NOT yet provable locally (2026-09-09)
 The standing hypothesis was an async auth-callback deadlock: a Supabase `onAuthStateChange` handler that `await`s a PostgREST call re-enters the GoTrue Web Lock and stalls the last `company_members` request on full-page navigation. **That hypothesis is now structurally excluded, by inspection rather than by guessing.** Both registered listeners — `src/hooks/use-auth.tsx:88` and `src/features/onboarding/useOnboarding.ts:66` — contain ZERO `await`/`async` tokens in their callback bodies (`grep -c` = 0 for each). They only call `setState`. A callback that never awaits cannot hold the auth lock across an I/O round trip, so the deadlock class cannot occur on these paths. No auth or Web Locks code was changed to reach this conclusion.
 
