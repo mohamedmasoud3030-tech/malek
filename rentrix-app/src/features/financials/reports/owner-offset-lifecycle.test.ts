@@ -203,3 +203,49 @@ it('retains old reversal and payment retries after upgrade and freezes paid evid
     await f.db.query("update public.owner_settlements set notes='Nonfinancial note' where id=$1",[f.settlement]);
   } finally {await f.db.close();}
 },60_000);
+
+it('quotes residual cash, rejects a stale amount confirmation, and replays the same paid intent',async()=>{
+  await db.exec('begin');
+  try {
+    await assumeIdentity(db,'c2000000-0000-4000-8000-000000000099',COMPANY);
+    const quote=async()=> (await db.query<{q:{settlement_id:string;net_payable:number;offset_applied:number;effective_payable:number;quote:string}}>('select public.preview_owner_settlement_payment($1) as q',[settlement])).rows[0].q;
+    const first=await quote();expect(first.effective_payable).toBe(1000);
+    await offset(25,'quote-offset');
+    const fresh=await quote();expect(fresh).toMatchObject({net_payable:1000,offset_applied:25,effective_payable:975});expect(fresh.quote).not.toBe(first.quote);
+    expect((await db.query<{data:{lifecycle_all_time:{remaining_payable:number}}}>('select public.rpt_owner_financial_position($1,$2::date,$3::date) as data',[OWNER,at(1),at(28)])).rows[0].data.lifecycle_all_time.remaining_payable).toBe(975);
+    const before=(await db.query('select * from public.journal_batches order by id')).rows;
+    const pay={settlement_id:settlement,request_id:crypto.randomUUID(),method:'cash',expected_quote:first.quote};
+    await db.exec('savepoint stale_quote');
+    await expect(command('pay_owner_settlement_atomic',pay)).rejects.toThrow(/PAYMENT_QUOTE_CHANGED/);
+    await db.exec('rollback to stale_quote');
+    expect((await db.query('select * from public.journal_batches order by id')).rows).toEqual(before);
+    const intent={...pay,expected_quote:fresh.quote};
+    expect((await command('pay_owner_settlement_atomic',intent)).effective_payable).toBe(975);
+    expect((await command('pay_owner_settlement_atomic',intent)).idempotent).toBe(true);
+    await db.exec('savepoint changed_intent');
+    await expect(command('pay_owner_settlement_atomic',pay)).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED/);
+    await db.exec('rollback to changed_intent');
+    expect((await balances(28)).map(r=>[r.source,r.control])).toEqual([['175.000','175.000'],['0.000','0.000']]);
+  } finally {await db.exec('rollback');await assumeIdentity(db,MAKER,COMPANY);}
+});
+it('does not disclose payment quotes to another company',async()=>{
+  await assumeIdentity(db,OTHER,OTHER_COMPANY);
+  try {await expect(db.query('select public.preview_owner_settlement_payment($1)',[settlement])).rejects.toThrow(/NOT_FOUND_OR_FORBIDDEN/);}
+  finally {await assumeIdentity(db,MAKER,COMPANY);}
+});
+
+it('forbids direct authenticated mutation of settlement money and reservation evidence', async () => {
+  await db.exec('begin');
+  try {
+    await assumeIdentity(db, MAKER, COMPANY);
+    await db.exec('set local role authenticated');
+    await expect(db.query('update public.owner_settlements set offset_applied=0.001 where id=$1', [settlement])).rejects.toThrow(/permission denied for table owner_settlements/);
+  } finally { await db.exec('rollback'); }
+  for (const table of ['owner_settlements', 'owner_settlement_expense_links', 'owner_settlement_payment_links']) {
+    for (const role of ['anon', 'authenticated']) {
+      const result = await db.query<{ allowed: boolean }>('select has_table_privilege($1,$2,$3) as allowed', [role, `public.${table}`, 'INSERT,UPDATE,DELETE,TRUNCATE']);
+      expect(result.rows[0].allowed, `${role} cannot write ${table}`).toBe(false);
+    }
+    expect((await db.query<{ allowed: boolean }>("select has_table_privilege('authenticated',$1,'SELECT') as allowed", [`public.${table}`])).rows[0].allowed).toBe(true);
+  }
+});

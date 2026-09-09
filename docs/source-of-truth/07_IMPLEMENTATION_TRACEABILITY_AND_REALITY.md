@@ -492,3 +492,38 @@ use the acceptance harness; command/report SQL is real disposable replay through
 The unchanged frontend bundle was reused; no new frontend behavior or hosted
 JWT/PostgREST/concurrency proof is claimed. Evidence: workspace
 `/home/user/validation/offset-safety/`. Governed stage credit is unchanged.
+
+### 2026-09-09 — quoted residual owner payout (migration14)
+
+FIN-008/013/016/018/019; SEC-001/002; GAP-008. The new
+`preview_owner_settlement_payment(text)` uses existing settlement/offset authority,
+company isolation, effective payout permission and source freshness. A supplied
+quote is checked under the payout lock after cache replay; old unquoted request
+fingerprints remain valid. Neither preview nor confirmation accepts a cash amount
+override. Pending financial-position cash now subtracts applied offset. Historical
+paid cash is intentionally not reconstructed as net minus a possibly altered old
+offset header; that authority/remediation track is still open.
+
+The workspace shows entitlement/offset/residual and verifies the payout ACK against
+its caller-stable attempt. A lost committed response retries the same request and
+hash. Positive cash requires a journal; a complete offset closes without a cash
+journal. Financial read models refresh on uncertain errors too. Mobile actions are
+no longer nested, and role-dependent actions no longer capture initial permissions.
+Existing ACL-lock restrictions, not baseline grants in isolation, remain the direct
+financial write boundary; actual authenticated UPDATE denial is regression-tested.
+
+Persisted SQL18 and client/workspace/report36 PASS. Standard full suite541 files /
+3842 tests PASS573.15s, with the separately excluded primitive accessibility file /
+15 tests PASS. Main/test types and repository gates/contracts PASS. Types regenerated
+from the migration chain, including normalization of prior hand-edited fields.
+Guardian's maintenance contract now names the preserved eight-argument authority
+and additionally verifies quote permission. Build/PWA PASS.
+
+Browser evidence is intentionally mixed: real SQL-backed payout UI and same-key
+retry passed both viewports; latest mobile completed the whole expense, maintenance
+and six-check report flow17.6s, while desktop stalled on final report initialization.
+Overall latest browser run1 PASS/1 FAIL; earlier desktop passed end to end. This
+predating bootstrap issue is unresolved, not waived or falsely marked green.
+Auth/ancillary reads are mocked; hosted auth/concurrency remains unverified.
+See the live reconstruction inventory and workspace offset-safety logs. No governed
+stage credit changes and no financial/application completion declaration.

@@ -15,6 +15,7 @@ function makeSettlement(overrides: Partial<OwnerSettlementRecord> = {}): OwnerSe
     owner_expenses: 20,
     fee_vat_amount: 5,
     net_payable_amount: 875,
+    offset_applied_amount: 0,
     status: 'pending',
     created_at: '2026-07-01T00:00:00Z',
     ...overrides,
@@ -91,4 +92,9 @@ describe('summarizeLiveOwnerSettlements', () => {
     ]);
     expect(totals.outstandingNet).toBeCloseTo(100.006, 3);
   });
+});
+
+it('keeps pre-offset entitlement separate from remaining cash',()=>{
+ const totals=summarizeLiveOwnerSettlements([makeSettlement({status:'approved',net_payable_amount:1000,offset_applied_amount:20.125})]);
+ expect(totals.net).toBe(1000);expect(totals.outstandingNet).toBe(979.875);
 });

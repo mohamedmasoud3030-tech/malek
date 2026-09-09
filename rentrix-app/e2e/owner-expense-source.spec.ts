@@ -181,11 +181,42 @@ test("OWNER entry retains allocation on uncertain response and reconciles after 
       lawful_offset_evidence: "Approved order and agreement",
       request_id: crypto.randomUUID(),
     });
-    await command(db, "pay_owner_settlement_atomic", {
-      settlement_id: draft.settlement_id,
-      method: "cash",
-      request_id: crypto.randomUUID(),
+    // Payout itself now goes through the real command UI and a server quote.
+    seed.tables.owners=(await db.query<Record<string,unknown>>('select * from public.owners where company_id=$1',[COMPANY])).rows;
+    await page.route(/\/rest\/v1\/owner_settlements(?:\?|$)/,async route=>{
+      const rows=(await db.query('select * from public.owner_settlements where company_id=$1 order by created_at desc,id desc',[COMPANY])).rows;
+      await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(rows)});
     });
+    await page.route('**/rest/v1/rpc/preview_owner_settlement_payment',async route=>{
+      const {p_settlement_id}=route.request().postDataJSON();
+      const row=(await db.query<{q:unknown}>('select public.preview_owner_settlement_payment($1) as q',[p_settlement_id])).rows[0].q;
+      await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(row)});
+    });
+    const paymentRequests:Record<string,unknown>[]=[];
+    await page.route('**/rest/v1/rpc/pay_owner_settlement_atomic',async route=>{
+      const {p_payload}=route.request().postDataJSON();paymentRequests.push(p_payload);
+      try {
+        const result=await command(db,'pay_owner_settlement_atomic',p_payload);
+        if(paymentRequests.length===1){await route.abort('failed');return;}
+        await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(result)});
+      }catch(error){await route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({message:String(error)})});}
+    });
+    await page.goto('/financials?section=funds&view=owner_settlements');
+    const settlementRegister=page.getByRole('region',{name:'سجل تسويات الملاك'});
+    await settlementRegister.getByRole('button',{name:(page.viewportSize()?.width??1280)<640 ? /^المزيد حول/ : /^إجراءات /}).first().click();
+    await page.getByRole('menuitem',{name:'تسجيل صرف المستحق',exact:true}).click();
+    const payout=page.getByRole('dialog',{name:'تسجيل صرف مستحق المالك'});
+    await expect(payout.getByText('النقد المتبقي للصرف',{exact:true})).toBeVisible();
+    await expect(payout.getByText(/سيُصرف مبلغ/)).toContainText(/979[.,]875|٩٧٩٫٨٧٥/);
+    await payout.getByRole('textbox').fill('Verified payout after lawful offset');
+    await payout.getByRole('button',{name:'تأكيد الصرف',exact:true}).click();
+    await expect.poll(()=>paymentRequests.length).toBe(1);
+    await expect(payout.getByRole('button',{name:'تأكيد الصرف',exact:true})).toBeEnabled();
+    await payout.getByRole('button',{name:'تأكيد الصرف',exact:true}).click();
+    await expect(payout).toBeHidden();
+    expect(paymentRequests).toHaveLength(2);expect(paymentRequests[0]).toEqual(paymentRequests[1]);
+    expect(paymentRequests[0].expected_quote).toMatch(/^[a-f0-9]{64}$/);
+
     const offsetEvent = (await db.query<{id:string}>('select id from public.due_from_owner_offsets where due_from_owner_id=$1',[dfo[0].id])).rows[0].id;
     const paidEvidence = (await db.query('select * from public.owner_settlements where id=$1',[draft.settlement_id])).rows;
     await expect(command(db,'reverse_owner_receivable_offset_atomic',{offset_event_id:offsetEvent,request_id:crypto.randomUUID(),reason:'Attempt after completed payout'})).rejects.toThrow(/PAID_SETTLEMENT_REQUIRES_GOVERNED_ADJUSTMENT/);

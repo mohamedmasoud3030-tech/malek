@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { roundMoney } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { fetchAllRows } from '@/lib/paginatedRead';
 
@@ -25,7 +27,9 @@ export type OwnerSettlementRecord = {
   owner_expenses: number;
   /** VAT charged on the office management fee (server column tax_amount). */
   fee_vat_amount: number;
+  /** Entitlement before the separately recorded lawful offset. */
   net_payable_amount: number;
+  offset_applied_amount: number;
   status: SettlementStatus;
   approved_by?: string | null;
   approved_at?: string | null;
@@ -87,7 +91,7 @@ export function summarizeLiveOwnerSettlements(settlements: readonly OwnerSettlem
   // payment: DRAFT + APPROVED only (PAID and CANCELLED do not inflate it).
   const outstandingNet = live
     .filter((settlement) => settlement.status === 'pending' || settlement.status === 'approved')
-    .reduce((sum, settlement) => sum + settlement.net_payable_amount, 0);
+    .reduce((sum, settlement) => roundMoney(sum + settlement.net_payable_amount - settlement.offset_applied_amount), 0);
 
   return { ...totals, outstandingNet };
 }
@@ -145,6 +149,8 @@ export type ProcessPayoutPayload = {
   settlement_id: string;
   payout_method: 'bank_transfer' | 'check' | 'cash';
   payout_reference: string;
+  request_id: string;
+  payment_quote: OwnerSettlementPaymentQuote;
 };
 
 export const settlementStatusLabels: Record<SettlementStatus, string> = {
@@ -254,7 +260,7 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
     owner_id: String(row.owner_id ?? ''),
     owner_name: ownerMap.get(String(row.owner_id ?? '')) ?? 'مالك غير معروف',
     property_id: String(row.property_id ?? ''),
-    property_title: propertyMap.get(String(row.property_id ?? '')) ?? 'عقار غير معروف',
+    property_title: row.property_id ? propertyMap.get(String(row.property_id)) ?? 'عقار غير معروف' : 'جميع عقارات المالك',
     period_start: String(row.period_start ?? ''),
     period_end: String(row.period_end ?? ''),
     gross_rent_collected: Number(row.gross_collected ?? 0),
@@ -262,6 +268,7 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
     owner_expenses: Number(row.owner_expenses ?? 0),
     fee_vat_amount: Number(row.tax_amount ?? 0),
     net_payable_amount: Number(row.net_payable ?? 0),
+    offset_applied_amount: Number(row.offset_applied ?? 0),
     status: normalizeStatus(row.status),
     approved_by: row.approved_by ? String(row.approved_by) : null,
     approved_at: row.approved_at ? String(row.approved_at) : null,
@@ -370,17 +377,36 @@ export async function approveOwnerSettlement(payload: ApproveSettlementPayload):
   }
 }
 
+const paymentQuoteSchema = z.object({
+  settlement_id:z.string().min(1),status:z.literal('APPROVED'),
+  net_payable:z.number().finite().nonnegative(),offset_applied:z.number().finite().nonnegative(),
+  effective_payable:z.number().finite().nonnegative(),quote:z.string().regex(/^[a-f0-9]{64}$/),
+}).refine(q=>roundMoney(q.net_payable-q.offset_applied)===q.effective_payable);
+export type OwnerSettlementPaymentQuote=z.infer<typeof paymentQuoteSchema>;
+export async function previewOwnerSettlementPayment(settlementId:string):Promise<OwnerSettlementPaymentQuote>{
+  const {data,error}=await supabase.rpc('preview_owner_settlement_payment',{p_settlement_id:settlementId});
+  if(error)throw new Error(messageFromError(error,'تعذر تحميل معاينة الصرف.'));
+  const quote=paymentQuoteSchema.parse(data);
+  if(quote.settlement_id!==settlementId)throw new Error('معاينة الصرف لا تطابق التسوية المطلوبة.');
+  return quote;
+}
+const payoutAcknowledgement=z.object({
+  success:z.literal(true),status:z.literal('PAID'),settlement_id:z.string(),request_id:z.string(),
+  net_payable:z.number(),offset_applied:z.number(),effective_payable:z.number(),journal_batch_id:z.string().nullable(),
+});
 export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise<void> {
-  const { error } = await supabase.rpc('pay_owner_settlement_atomic', {
-    p_payload: {
-      settlement_id: payload.settlement_id,
-      request_id: crypto.randomUUID(),
-      method: payload.payout_method,
-      payment_reference: payload.payout_reference,
-    },
+  const quote=paymentQuoteSchema.parse(payload.payment_quote);
+  if(!payload.request_id || quote.settlement_id!==payload.settlement_id)throw new Error('هوية محاولة الصرف أو معاينتها غير صالحة.');
+  const {data,error}=await supabase.rpc('pay_owner_settlement_atomic',{
+    p_payload:{settlement_id:payload.settlement_id,request_id:payload.request_id,method:payload.payout_method,
+      payment_reference:payload.payout_reference,expected_quote:quote.quote},
   });
-
-  if (error) {
-    throw new Error(messageFromError(error, 'تعذر تسجيل صرف تسوية المالك.'));
+  if(error)throw new Error(messageFromError(error,'تعذر تسجيل صرف تسوية المالك.'));
+  const parsed=payoutAcknowledgement.safeParse(data);
+  if(!parsed.success || parsed.data.settlement_id!==payload.settlement_id || parsed.data.request_id!==payload.request_id
+    || parsed.data.net_payable!==quote.net_payable || parsed.data.offset_applied!==quote.offset_applied
+    || parsed.data.effective_payable!==quote.effective_payable || (quote.effective_payable>0&&!parsed.data.journal_batch_id)
+    || (quote.effective_payable===0&&parsed.data.journal_batch_id!==null)) {
+    throw new Error('تعذر تأكيد الصرف: الاستجابة لا تطابق التسوية والمبلغ المعتمد. راجع السجل ثم أعد المحاولة نفسها.');
   }
 }

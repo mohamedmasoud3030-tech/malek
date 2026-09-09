@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "authorityModel": {
     "identity": "public.users must be ACTIVE, is_active=true, deleted_at IS NULL",
     "membershipSource": "public.company_members.role",
@@ -30,7 +30,8 @@
   ],
   "permissionGovernedSensitiveRpcs": {
     "resolve_maintenance_with_expense(text,numeric,text)": "maintenance.approve",
-    "close_maintenance_with_expense(text,numeric,text,text,text,boolean)": "maintenance.approve"
+    "close_maintenance_with_expense(text,numeric,text,text,text,boolean,jsonb,text)": "maintenance.approve",
+    "preview_owner_settlement_payment(text)": "financial.owner_settlements.pay"
   },
   "serviceOrInternalOnlyFunctions": [
     "post_receipt_atomic(jsonb)",

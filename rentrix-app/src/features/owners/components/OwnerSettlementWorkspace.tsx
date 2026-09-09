@@ -23,6 +23,7 @@ import {
 import { AsyncContentState } from '@/components/async-content-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
+import { invalidateFinancialReadModels } from '@/lib/financial-cache';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ import {
   listOwnerSettlementTargets,
   previewOwnerSettlement,
   processOwnerPayout,
+  previewOwnerSettlementPayment,
   settlementStatusLabels,
   summarizeLiveOwnerSettlements,
   type CreateSettlementDraftPayload,
@@ -104,6 +106,11 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
   const [draftRequestId, setDraftRequestId] = useState<string | null>(null);
   const [selectedSettlement, setSelectedSettlement] = useState<OwnerSettlementRecord | null>(null);
   const [payoutRef, setPayoutRef] = useState('');
+  const [payoutRequestId,setPayoutRequestId]=useState<string|null>(null);
+  const paymentQuoteQuery=useQuery({queryKey:['owner-settlement-payment-quote',selectedSettlement?.id,payoutRequestId],
+    queryFn:()=>previewOwnerSettlementPayment(selectedSettlement!.id),enabled:Boolean(selectedSettlement&&payoutRequestId&&canPaySettlement),
+    staleTime:Infinity,refetchOnWindowFocus:false});
+  const paymentQuote=paymentQuoteQuery.data;
   const [payoutMethod, setPayoutMethod] = useState<ProcessPayoutPayload['payout_method']>('bank_transfer');
 
   const settlementsQuery = useQuery({ queryKey: settlementsQueryKey, queryFn: listOwnerSettlements });
@@ -125,8 +132,8 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
   const approveMutation = useMutation({ mutationFn: approveOwnerSettlement, onSuccess: refreshSettlements });
   const payoutMutation = useMutation({
     mutationFn: processOwnerPayout,
+    onSettled:()=>Promise.all([refreshSettlements(),invalidateFinancialReadModels(queryClient)]),
     onSuccess: async () => {
-      await refreshSettlements();
       setSelectedSettlement(null);
       setPayoutRef('');
     },
@@ -175,7 +182,9 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
 
   const handlePayoutOpenChange = (open: boolean) => {
     if (open) return;
+    if(payoutMutation.isPending)return;
     setSelectedSettlement(null);
+    setPayoutRequestId(null);
     setPayoutRef('');
     payoutMutation.reset();
   };
@@ -279,11 +288,13 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
 
   const handlePayout = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedSettlement || !payoutRef.trim()) return;
+    if (!selectedSettlement || !payoutRef.trim() || !payoutRequestId || !paymentQuote || paymentQuoteQuery.isError || paymentQuoteQuery.isFetching) return;
     payoutMutation.mutate({
       settlement_id: selectedSettlement.id,
       payout_method: payoutMethod,
       payout_reference: payoutRef.trim(),
+      request_id:payoutRequestId,
+      payment_quote:paymentQuote,
     });
   };
 
@@ -304,12 +315,12 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
         ? [{ id: 'approve', label: isApproving ? 'جارٍ الاعتماد…' : 'اعتماد التسوية', icon: CheckCircle2, onClick: () => approveMutation.mutate({ settlement_id: settlement.id }), disabled: approveMutation.isPending }]
         : []),
       ...(settlement.status === 'approved' && canPaySettlement
-        ? [{ id: 'payout', label: 'تسجيل صرف المستحق', icon: Send, onClick: () => setSelectedSettlement(settlement), disabled: payoutMutation.isPending }]
+        ? [{ id: 'payout', label: 'تسجيل صرف المستحق', icon: Send, onClick: () => {payoutMutation.reset();setPayoutRequestId(crypto.randomUUID());setSelectedSettlement(settlement);}, disabled: payoutMutation.isPending }]
         : []),
     ];
   };
 
-  const columns = useMemo((): ColumnDef<OwnerSettlementRecord>[] => [
+  const columns: ColumnDef<OwnerSettlementRecord>[] = [
     {
       key: 'owner', priority: 'identity' as const,
       header: 'المالك والعقار',
@@ -337,10 +348,10 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
       header: 'ضريبة الأتعاب',
       render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.fee_vat_amount)}</strong>,
     },
-    { key: 'net', priority: 'primary' as const, header: 'الصافي', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
+    { key: 'net', priority: 'primary' as const, header: 'الاستحقاق قبل المقاصة', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
     { key: 'status', priority: 'secondary' as const, header: 'الحالة', render: (settlement) => <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge> },
     { key: 'actions', priority: 'actions' as const, header: 'إجراءات', render: (settlement) => <ActionMenu label={`إجراءات تسوية ${settlement.owner_name}`} items={settlementActions(settlement)} /> },
-  ], []);
+  ];
 
   return (
     <div className="space-y-4">
@@ -403,6 +414,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
             rows={settlements}
             columns={columns}
             keyOf={(settlement) => settlement.id}
+            mobileCardActions={(settlement)=>settlementActions(settlement)}
           />
         </AsyncContentState>
       </section>
@@ -428,30 +440,35 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
         open={Boolean(selectedSettlement)}
         onOpenChange={handlePayoutOpenChange}
         title="تسجيل صرف مستحق المالك"
-        description={selectedSettlement ? `${selectedSettlement.owner_name} · ${formatMoney(selectedSettlement.net_payable_amount)}` : undefined}
+        description={selectedSettlement?.owner_name}
         visualVariant="operational"
       >
         <EntityForm.Root onSubmit={handlePayout} aria-busy={payoutMutation.isPending}>
           <EntityForm.ErrorSummary message={payoutMutation.error ? errorMessage(payoutMutation.error) : undefined} />
-          {selectedSettlement ? (
+          {paymentQuoteQuery.isPending && selectedSettlement ? <p role="status">جارٍ التحقق من مبلغ الصرف بعد المقاصة…</p> : null}
+          {paymentQuoteQuery.isError ? <p role="alert">{errorMessage(paymentQuoteQuery.error)}</p> : null}
+          {selectedSettlement ? <Button type="button" variant="outline" onClick={()=>paymentQuoteQuery.refetch()} disabled={paymentQuoteQuery.isFetching||payoutMutation.isPending}>تحديث معاينة الصرف</Button> : null}
+          {selectedSettlement && paymentQuote ? (
             <EntityForm.Section
               title="معاينة الصرف"
               description="المبلغ مستمد من الخادم ويعاد اشتقاقه عند الاعتماد والدفع — لا يمكن تعديله من هنا."
             >
               <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
-                <Metric label="صافي المستحق" value={selectedSettlement.net_payable_amount} tone="success" />
+                <Metric label="النقد المتبقي للصرف" value={paymentQuote.effective_payable} tone="success" />
+                <Metric label="الاستحقاق قبل المقاصة" value={paymentQuote.net_payable} />
+                <Metric label="المقاصة المطبقة" value={paymentQuote.offset_applied} />
                 <Metric label="المحصل" value={selectedSettlement.gross_rent_collected} />
                 <Metric label="أتعاب المكتب" value={selectedSettlement.management_fee_amount} tone="primary" />
                 <Metric label="المصروفات والضريبة" value={selectedSettlement.owner_expenses + selectedSettlement.fee_vat_amount} tone="danger" />
               </div>
               <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
-                سيُصرف مبلغ <strong className="tabular-nums" dir="ltr">{formatMoney(selectedSettlement.net_payable_amount)}</strong> إلى {selectedSettlement.owner_name} عن {selectedSettlement.property_title}
+                {paymentQuote.effective_payable===0 ? <>ستغلق التسوية بالمقاصة دون صرف نقدي إضافي.</> : <>سيُصرف مبلغ <strong className="tabular-nums" dir="ltr">{formatMoney(paymentQuote.effective_payable)}</strong> إلى {selectedSettlement.owner_name} عن {selectedSettlement.property_title}</>}
                 {' '}({selectedSettlement.period_start} إلى {selectedSettlement.period_end})
                 {' '}عبر {formatPaymentMethodLabel(payoutMethod)}.
               </p>
             </EntityForm.Section>
           ) : null}
-          <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
+          <EntityForm.Section title="بيانات الصرف" description="يعاد التحقق من المعاينة عند التأكيد؛ لا ينشأ قيد نقدي إذا أكملت المقاصة كامل الاستحقاق.">
             <EntityForm.Field label="وسيلة الصرف *">
               <Select required value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
                 {(['bank_transfer', 'check', 'cash'] as const).map((method) => (
@@ -467,7 +484,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
             submitLabel={payoutMutation.isPending ? 'جارٍ تسجيل الصرف…' : 'تأكيد الصرف'}
             onCancel={() => handlePayoutOpenChange(false)}
             isSubmitting={payoutMutation.isPending}
-            submitDisabled={!payoutRef.trim()}
+            submitDisabled={!payoutRef.trim()||!paymentQuote||paymentQuoteQuery.isError||paymentQuoteQuery.isFetching||!payoutRequestId}
           />
         </EntityForm.Root>
       </EntityForm.Overlay>

@@ -22,6 +22,7 @@ vi.mock('@tanstack/react-query', () => ({
             owner_expenses: 50,
             fee_vat_amount: 0,
             net_payable_amount: 1300,
+            offset_applied_amount: 0,
             status: 'pending',
             created_at: '2026-07-20T00:00:00.000Z',
           },
@@ -118,6 +119,7 @@ describe('OwnerSettlementWorkspace full coverage tests', () => {
         owner_expenses: 100,
         fee_vat_amount: 0,
         net_payable_amount: 1700,
+        offset_applied_amount: 0,
         status: 'pending',
         created_at: '2026-07-01T00:00:00Z',
       },
@@ -145,6 +147,7 @@ describe('SettlementSupervisionBanner — first-run ADMIN supervision UX (Wave D
     owner_expenses: 100,
     fee_vat_amount: 0,
     net_payable_amount: 1700,
+    offset_applied_amount: 0,
     status: 'pending' as const,
     created_at: '2026-07-01T00:00:00Z',
   };
