@@ -348,3 +348,49 @@ retain their prior governance credit.
 Affected rules: FIN-004, FIN-009, FIN-010, FIN-013, FIN-016, FIN-018, FIN-019; SEC-001, SEC-002, SEC-003, SEC-005, SEC-008, SEC-010.
 
 Forward migrations `20260909000000` through `20260909000003` repair reproduced role-NULL authorization, credited-debt deposit eligibility, deposit receipt context/idempotency, and tenant-statement settlement/permission defects. Historical migrations and financial rows remain untouched. Authenticated replay tests cover receipt/refund/application/reversal, cross-company denial, disabled identities, credited debt and statement/GL agreement. `financial-persisted-journey.spec.ts` exercises the UI against replayed financial SQL with explicitly mocked Auth. Payment/receipt read consolidation follows the persisted allocation relationship, retaining direct-link compatibility for historical rows. See the live reconstruction inventory for current checks and limits. This is repository evidence only: no hosted acceptance or governed stage status is advanced.
+
+
+### Post-checkpoint historical read correction — 2026-09-09
+
+Rules FIN-009, FIN-010, FIN-013, FIN-016, FIN-017, FIN-018, FIN-019 and SEC-001/002:
+`20260909000004_historical_reconciliation_lineage.sql` corrects reproduced AR/deposit
+cutoff drift using source amounts and linked booked dates, not GL-derived fake
+subledgers. The SQL report/facade regression includes settlements, full refunds,
+credits/applications/reversals, retained receipt allocations, company isolation,
+incomplete-history rejection and a real independent variance. Closed-period and
+desktop/mobile SQL-backed report checks pass. Reconciliation has one client
+implementation, validated evidence and the actual report-cache invalidation root.
+The authorized checkpoint was pushed and verified before this continuation; no PR,
+production mutation, historical backfill, hosted acceptance or stage-credit change
+is implied. Deployment legacy-lineage review remains required. See the live
+reconstruction inventory for exact checks, checkpoint SHA and remaining work.
+
+### Post-checkpoint VAT and fixed-fee evidence continuation
+FIN-012/013/016/019 and SEC-001/002: forward migrations 05/06 retain existing public
+RPCs and posting kernels while unifying VAT immutable-source reads and repairing
+false fixed-fee historical tax metadata. Independent 2100 checks fail closed for
+unclassified GL, while source snapshots retain original tax treatment and booked
+credit/VOID/reversal dates. Empty/failed VAT evidence is not rendered as zero.
+Fee execution/reversal now invalidate shared reads on uncertain acknowledgements;
+strict response parsing rejects fabricated zero/success results but accepts real
+zero-amount source/reversal history. SQL-backed desktop/mobile journeys reproduce
+and verify retry, reload, source retention and compensating accounting; the shared
+mobile action-containment repair makes the actual reversal controls reachable.
+Candidate guards now inspect uncommitted as well as committed work. The obsolete
+fixture-only cash-flow path was removed without replacing canonical GL cash flow.
+See the live reconstruction inventory for red/green evidence, final-replay status,
+preserved checkpoint and remaining audit tracks. These are repository verification
+updates, not hosted parity, new stage credit, statutory tax guidance or deployment
+authorization. All existing VERIFIED_IMPLEMENTED governance rows retain their status.
+
+### Owner-receivable history and recovery continuation
+Migration 07 and `owner-receivable-reconciliation.test.ts` address reproduced
+1300 source omission, repeated-recovery event collision and blocked compensating
+source reversal. FIN-009/013/016/019 source amounts, booked dates, request identity,
+original financial rows and ACL boundaries are preserved. An upgrade replay over
+pre-existing recoveries verifies old batch/event identity and retry responses;
+separate recovery requests then post separately. Legacy expense evidence is not
+silently removed. Missing lineage/counter evidence fails closed; an independent
+GL discrepancy remains visible. This does not advance stage credit or establish
+hosted/owner-receivable UI acceptance, complete offset workflow coverage, or legacy
+expense classification correctness. Exact replay status remains in the inventory.

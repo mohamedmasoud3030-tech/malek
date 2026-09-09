@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { reportCountSchema, reportMoneySchema, reportNumberSchema } from '@/lib/report-value-schemas';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 
@@ -64,53 +66,71 @@ export type FixedMonthlyReverseResult = Readonly<{
   idempotent: boolean;
 }>;
 
-type JsonRecord = Record<string, unknown>;
+// Validate the server evidence before presenting success or monetary totals.
+// Nullable posting metadata is legitimate for a zero-amount accrual; absent
+// financial evidence is not. Contract precision is distinct from posted OMR.
+const identifier = z.string().min(1);
+const nullableText = z.string().nullable();
+const dates = { date_from: z.string().date(), date_to: z.string().date() };
+const amounts = { net_amount: reportMoneySchema, tax_amount: reportMoneySchema, gross_amount: reportMoneySchema };
+const rowSchema = z.object({
+  id: identifier, owner_agreement_id: identifier, agreement_version_id: identifier,
+  version_no: reportCountSchema, owner_name: z.string(), property_name: z.string(),
+  accrual_date: z.string().date(), monthly_contract_amount: reportNumberSchema,
+  monthly_amount_omr: reportMoneySchema, ...amounts,
+  tax_authority_status: identifier,
+  status: z.enum(['POSTED', 'REVERSED', 'ZERO_AMOUNT', 'SOURCE_ERROR']),
+  journal_batch_id: nullableText, accounting_period_id: nullableText,
+  posting_date: z.string().date().nullable(), period_resolution_reason: nullableText,
+  late_posting: z.boolean().nullable(), reversal_id: nullableText,
+  reversal_journal_batch_id: nullableText, reversal_reason: nullableText,
+  reversed_at: nullableText,
+});
+const listSchema = z.object({
+  success: z.literal(true), ...dates, ...amounts,
+  total_count: reportCountSchema, returned_count: reportCountSchema,
+  reversed_count: reportCountSchema, truncated: z.boolean(),
+  tax_authority_status: identifier, accruals: z.array(rowSchema),
+}).refine(root => root.returned_count === root.accruals.length
+  && root.total_count >= root.returned_count && root.reversed_count <= root.total_count,
+  'Inconsistent fixed-fee register counts');
+const runSchema = z.object({
+  success: z.literal(true), ...dates, ...amounts,
+  attempted_days: reportCountSchema, created_days: reportCountSchema,
+  idempotent_days: reportCountSchema, already_reversed_days: reportCountSchema,
+  zero_amount_days: reportCountSchema,
+});
+const reverseSchema = z.object({
+  success: z.literal(true), accrual_id: identifier, reversal_id: identifier,
+  original_batch_id: nullableText, reversal_batch_id: nullableText,
+  idempotent: z.boolean(),
+});
 
-function asRecord(value: unknown): JsonRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? value as JsonRecord
-    : {};
-}
-
-function asString(value: unknown): string {
-  return typeof value === 'string' ? value : '';
-}
-
-function asNullableString(value: unknown): string | null {
-  return value == null ? null : asString(value) || null;
-}
-
-function asNumber(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function parseRow(value: unknown): FixedMonthlyAccrualRow {
-  const row = asRecord(value);
+function parseRow(row: z.infer<typeof rowSchema>): FixedMonthlyAccrualRow {
   return {
-    id: asString(row.id),
-    ownerAgreementId: asString(row.owner_agreement_id),
-    agreementVersionId: asString(row.agreement_version_id),
-    versionNo: asNumber(row.version_no),
-    ownerName: asString(row.owner_name),
-    propertyName: asString(row.property_name),
-    accrualDate: asString(row.accrual_date),
-    monthlyContractAmount: asNumber(row.monthly_contract_amount),
-    monthlyAmountOmr: asNumber(row.monthly_amount_omr),
-    netAmount: asNumber(row.net_amount),
-    taxAmount: asNumber(row.tax_amount),
-    grossAmount: asNumber(row.gross_amount),
-    taxAuthorityStatus: asString(row.tax_authority_status),
-    status: (asString(row.status) || 'SOURCE_ERROR') as FixedMonthlyAccrualStatus,
-    journalBatchId: asNullableString(row.journal_batch_id),
-    accountingPeriodId: asNullableString(row.accounting_period_id),
-    postingDate: asNullableString(row.posting_date),
-    periodResolutionReason: asNullableString(row.period_resolution_reason),
-    latePosting: row.late_posting === true,
-    reversalId: asNullableString(row.reversal_id),
-    reversalBatchId: asNullableString(row.reversal_journal_batch_id),
-    reversalReason: asNullableString(row.reversal_reason),
-    reversedAt: asNullableString(row.reversed_at),
+    id: row.id,
+    ownerAgreementId: row.owner_agreement_id,
+    agreementVersionId: row.agreement_version_id,
+    versionNo: row.version_no,
+    ownerName: row.owner_name,
+    propertyName: row.property_name,
+    accrualDate: row.accrual_date,
+    monthlyContractAmount: row.monthly_contract_amount,
+    monthlyAmountOmr: row.monthly_amount_omr,
+    netAmount: row.net_amount,
+    taxAmount: row.tax_amount,
+    grossAmount: row.gross_amount,
+    taxAuthorityStatus: row.tax_authority_status,
+    status: row.status,
+    journalBatchId: row.journal_batch_id,
+    accountingPeriodId: row.accounting_period_id,
+    postingDate: row.posting_date,
+    periodResolutionReason: row.period_resolution_reason,
+    latePosting: row.late_posting ?? false,
+    reversalId: row.reversal_id,
+    reversalBatchId: row.reversal_journal_batch_id,
+    reversalReason: row.reversal_reason,
+    reversedAt: row.reversed_at,
   };
 }
 
@@ -120,20 +140,19 @@ export async function listFixedMonthlyAccruals(dateFrom: string, dateTo: string)
       p_payload: { date_from: dateFrom, date_to: dateTo },
     });
     if (error) throw error;
-    const root = asRecord(data);
-    const rows = Array.isArray(root.accruals) ? root.accruals : [];
+    const root = listSchema.parse(data);
     return {
-      dateFrom: asString(root.date_from) || dateFrom,
-      dateTo: asString(root.date_to) || dateTo,
-      totalCount: asNumber(root.total_count),
-      returnedCount: asNumber(root.returned_count),
-      truncated: root.truncated === true,
-      netAmount: asNumber(root.net_amount),
-      taxAmount: asNumber(root.tax_amount),
-      grossAmount: asNumber(root.gross_amount),
-      reversedCount: asNumber(root.reversed_count),
-      taxAuthorityStatus: asString(root.tax_authority_status),
-      accruals: rows.map(parseRow),
+      dateFrom: root.date_from,
+      dateTo: root.date_to,
+      totalCount: root.total_count,
+      returnedCount: root.returned_count,
+      truncated: root.truncated,
+      netAmount: root.net_amount,
+      taxAmount: root.tax_amount,
+      grossAmount: root.gross_amount,
+      reversedCount: root.reversed_count,
+      taxAuthorityStatus: root.tax_authority_status,
+      accruals: root.accruals.map(parseRow),
     };
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل سجل استحقاقات العمولة الشهرية');
@@ -155,18 +174,18 @@ export async function executeFixedMonthlyAccruals(
       },
     });
     if (error) throw error;
-    const root = asRecord(data);
+    const root = runSchema.parse(data);
     return {
-      dateFrom: asString(root.date_from) || dateFrom,
-      dateTo: asString(root.date_to) || dateTo,
-      attemptedDays: asNumber(root.attempted_days),
-      createdDays: asNumber(root.created_days),
-      idempotentDays: asNumber(root.idempotent_days),
-      alreadyReversedDays: asNumber(root.already_reversed_days),
-      zeroAmountDays: asNumber(root.zero_amount_days),
-      netAmount: asNumber(root.net_amount),
-      taxAmount: asNumber(root.tax_amount),
-      grossAmount: asNumber(root.gross_amount),
+      dateFrom: root.date_from,
+      dateTo: root.date_to,
+      attemptedDays: root.attempted_days,
+      createdDays: root.created_days,
+      idempotentDays: root.idempotent_days,
+      alreadyReversedDays: root.already_reversed_days,
+      zeroAmountDays: root.zero_amount_days,
+      netAmount: root.net_amount,
+      taxAmount: root.tax_amount,
+      grossAmount: root.gross_amount,
     };
   } catch (error) {
     handleSupabaseError(error, 'تعذر تنفيذ استحقاقات العمولة الشهرية');
@@ -188,13 +207,13 @@ export async function reverseFixedMonthlyAccrual(
       },
     });
     if (error) throw error;
-    const root = asRecord(data);
+    const root = reverseSchema.parse(data);
     return {
-      accrualId: asString(root.accrual_id),
-      reversalId: asString(root.reversal_id),
-      originalBatchId: asNullableString(root.original_batch_id),
-      reversalBatchId: asNullableString(root.reversal_batch_id),
-      idempotent: root.idempotent === true,
+      accrualId: root.accrual_id,
+      reversalId: root.reversal_id,
+      originalBatchId: root.original_batch_id,
+      reversalBatchId: root.reversal_batch_id,
+      idempotent: root.idempotent,
     };
   } catch (error) {
     handleSupabaseError(error, 'تعذر عكس استحقاق العمولة الشهرية');

@@ -869,6 +869,7 @@ export function useReportsWorkspace(
       statements: {
         financialSummary: financialSummaryQuery.data,
         vatReturn: vatReturnQuery.data,
+        vatReturnError: vatReturnQuery.error,
         tenantStatement: tenantStatementQuery.data,
         ownerStatement: ownerStatementQuery.data,
         ownerReportPayload: ownerReportPayloadQuery.data,

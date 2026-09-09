@@ -94,6 +94,7 @@ describe('R6 — Reports fetches only the open canonical body', () => {
     expect(workspaceSource).not.toContain('useCashFlowStatementReport(');
     expect(hooksSource).not.toContain('useCashFlowStatementReport(');
     expect(statementServiceSource).not.toContain('getCashFlowStatementReport');
+    expect(statementServiceSource).not.toContain('normalizeCashFlowStatementReport');
     expect(statementServiceSource).not.toContain(
       "supabase.rpc('rpt_cash_flow'",
     );

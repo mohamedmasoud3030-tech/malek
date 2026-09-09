@@ -144,17 +144,3 @@ export type CashFlowRpcResponse = {
   is_balanced?: boolean | null;
   currency?: string | null;
 };
-
-export type ReconciliationRpcRow = {
-  reconciliation_class: string | null;
-  account_no: string | null;
-  account_name: string | null;
-  subledger_balance: number | string | null;
-  gl_balance: number | string | null;
-  variance: number | string | null;
-  abs_variance: number | string | null;
-  currency: string | null;
-  reconciliation_status: string | null;
-  subledger_count: number | string | null;
-  gl_count: number | string | null;
-};

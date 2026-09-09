@@ -1,23 +1,8 @@
+import { z } from 'zod';
+import { reportMoneySchema, reportCountSchema } from '@/lib/report-value-schemas';
 import { supabase } from '@/lib/supabase';
-import { toFinancialNumber } from '../financialMath';
 
 export type ReportPeriod = { from: string | null; to: string | null };
-
-/**
- * Compatibility shape for historical `rpt_cash_flow` payload fixtures.
- * Product reports use the authoritative WP05 GL cash-flow contract instead.
- */
-export type CashFlowStatementReport = {
-  period: ReportPeriod;
-  operating: {
-    receipts: number;
-    expenses: number;
-    netOperating: number;
-  };
-  investing: { amount: number; note: string | null };
-  financing: { amount: number; note: string | null };
-  netChange: number;
-};
 
 export type VatReturnReport = {
   period: ReportPeriod;
@@ -28,47 +13,20 @@ export type VatReturnReport = {
 
 export type StatementReportFilters = { dateFrom: string; dateTo: string };
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-}
-
-function asNumber(value: unknown): number {
-  return toFinancialNumber(typeof value === 'string' || typeof value === 'number' ? value : 0);
-}
-
-function asString(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
-}
-
-/** Normalize historical `rpt_cash_flow` fixture payloads only. */
-export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {
-  const root = asRecord(payload);
-  const period = asRecord(root.period);
-  const operating = asRecord(root.operating);
-  const investing = asRecord(root.investing);
-  const financing = asRecord(root.financing);
-
-  return {
-    period: { from: asString(period.from), to: asString(period.to) },
-    operating: {
-      receipts: asNumber(operating.receipts),
-      expenses: asNumber(operating.expenses),
-      netOperating: asNumber(operating.net_operating),
-    },
-    investing: { amount: asNumber(investing.amount), note: asString(investing.note) },
-    financing: { amount: asNumber(financing.amount), note: asString(financing.note) },
-    netChange: asNumber(root.net_change),
-  };
-}
+const vatReportSchema = z.object({
+  period: z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+  total_sales_amount: reportMoneySchema,
+  total_tax_amount: reportMoneySchema,
+  invoice_count: reportCountSchema,
+});
 
 export function normalizeVatReturnReport(payload: unknown): VatReturnReport {
-  const root = asRecord(payload);
-  const period = asRecord(root.period);
+  const root = vatReportSchema.parse(payload);
   return {
-    period: { from: asString(period.from), to: asString(period.to) },
-    totalSalesAmount: asNumber(root.total_sales_amount),
-    totalTaxAmount: asNumber(root.total_tax_amount),
-    invoiceCount: Math.trunc(asNumber(root.invoice_count)),
+    period: root.period,
+    totalSalesAmount: root.total_sales_amount,
+    totalTaxAmount: root.total_tax_amount,
+    invoiceCount: root.invoice_count,
   };
 }
 

@@ -16,7 +16,7 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 
 ## IN PROGRESS
 - Continuing financial authority review: VAT/credit report lineage, lifecycle eligibility, historic snapshot semantics, and least-authority RPC/table grants.
-- Confirmed next financial defect: historical AR/deposit reconciliation reads current operational balances instead of an as-of event history. Designing a lineage-aware correction without rewriting historical data or manufacturing missing event dates.
+- Historical AR/deposit cutoff repair now passes repository SQL and desktop/mobile browser regressions. Continuing legacy-lineage compatibility and remaining report/tax authority review; hosted deployment is unverified.
 
 ## NEXT
 - Inspect remaining report/snapshot authorities against actual credit, cash, deposit and reversal events; extend persisted lifecycle coverage.
@@ -24,7 +24,7 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 - Governed product/scale/device acceptance items listed in `RECONSTRUCTION_COVERAGE.md`; no invented bulk writes or historical rewrites.
 
 ## BLOCKED (external verification only)
-- Hosted Auth/RLS/schema parity/Storage/Edge configuration and hosted financial journeys require an authorized QA environment. Local authenticated SQL replay and browser-to-SQL journeys are now running; they do not prove hosted GoTrue/JWT/PostgREST parity. No production writes or pushes.
+- Hosted Auth/RLS/schema parity/Storage/Edge configuration and hosted financial journeys require an authorized QA environment. Local authenticated SQL replay and browser-to-SQL journeys are now running; they do not prove hosted GoTrue/JWT/PostgREST parity. No production writes. The expressly authorized GitHub checkpoint push is verified below.
 
 ## REMOVED
 - Duplicated session restoration/cleanup and protected-layout permission map.
@@ -77,9 +77,77 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 - Property/tenant/contract-filtered cash reports also dropped real payments with a nullable `payments.invoice_id`. Fixed by selecting receipt/contract identities, sharing receipt-allocation resolution, and resolving contract scope without multiplying a multi-invoice receipt into several cash movements. Persisted regression + multi-invoice count tests pass.
 - The suspected TRUNCATE exposure in the raw baseline was **not present after replay**: existing migration `20260901000001_restore_dump_acl_lock.sql` already removes it. Added actual rolled-back cross-company TRUNCATE denial and full public-table anon/authenticated privilege audit. No redundant ACL migration was introduced.
 
-### CONFIRMED OPEN — historical as-of drift (FIN-019)
+### Original reproduction — historical as-of drift (FIN-019; repaired below)
 - Disposable SQL diagnostic at as-of **2026-09-08**, before new events: AR subledger/GL both **1000**, deposit subledger/GL both **0**.
 - After recording a **123.456** payment and **500** deposit dated **2026-09-09**, querying the SAME earlier cutoff returned AR subledger **876.544** versus GL **1000**, and deposit subledger **500** versus GL **0**.
 - `wp05_subledger_tenant_receivables` subtracts current paid/credit fields; `wp05_subledger_security_deposits` ignores its cutoff. This is a reproduced repository defect, not a hosted claim. Probe source/output are under `/home/user/validation/continued/asof-probe-source.txt` and `asof-diagnostic.log`; the diagnostic is not a passing correctness regression and is not left in the application test suite.
 - Next repair must derive dated payment/credit/deposit/refund/reversal events, respect posting-period effective dates and immutable lineage, and explicitly handle incomplete historical lineage. Simply summing GL as the “subledger” would conceal reconciliation errors and is not acceptable.
 - VAT return aggregation also needs deeper source/credit/fee/tax-recognition review; no statutory accounting policy or historical correction has been invented to force a quick green result.
+
+
+## Post-push reconstruction — 2026-09-09
+### PRESERVED / CHECKPOINT VERIFIED
+- New branch `reconstruction/checkpoint-20260909` was pushed before reconstruction resumed. Local and remote SHA matched **`58b5da5fb3f8efca66ca0316c01034bfc0379f46`**. All 125 changed paths / 1,654 checked files were preserved exactly. No PR was created; credentials were not written to repository files, remote URLs or the credential store.
+- Subsequent changes below are working-tree reconstruction after that checkpoint; they are not represented as already pushed.
+### COMPLETED (repository evidence)
+- Forward migration `20260909000004_historical_reconciliation_lineage.sql` reconstructs AR and deposit cutoffs from independent operational amounts and source journal **header dates**, retaining fully settled invoices/refunded deposits. Source allocations, credits, claims, refund/reversal transactions and original source balances remain intact; GL line amounts are not copied into subledgers. Existing stable-invoker signatures/grants/RLS are retained, with a migration precondition against authority drift.
+- The original **1000 / 0** earlier-cutoff regression now stays **1000 / 0** after later **123.456 / 500** receipts. Actual SQL lifecycle tests cover cash, credits, approved applications, refunds, compensating reversals, maker/checker receipt VOID with retained allocations, full settlement, company isolation, and an independent GL-only variance that correctly remains FAIL.
+- Unknown settlement dates/counter gaps fail explicitly, including future cutoffs: current counters can include future-dated events, so there is no unsafe `current_date` exemption. This is a read-model safeguard, not a historical correction/backfill. Removed invoice history remains a guarded review boundary.
+- Closed-period regression confirms payment in a new open period leaves the old-period receivable intact. Reversal accounting follows the booked effective date, including original-date restatement; no alternative reversal dating policy was invented.
+- Reconciliation response validation accepts actual numeric/decimal-string contracts and rejects malformed monetary evidence instead of converting it into zero/PASS. Valid empty results remain NO_EVIDENCE in the existing output gate.
+- Posted commands now invalidate the actual `reports-authority` readiness/cash-flow query namespace. A red cache regression reproduced the missed invalidation before the root was added.
+- SQL-backed browser journey now displays real reconciliation and trial-balance reads, checks earlier/current cutoff balances, and repeats after reload on desktop and mobile. Auth and unrelated modules remain mocked; this is not hosted proof.
+### REMOVED
+- Unreferenced duplicate reconciliation implementation/date helper in `statements/accountingReportsService.ts` and its unused raw row type. All consumers retain the one accounting facade/service implementation; no parallel replacement tree or compatibility copy was added.
+### VALIDATION
+- Whole application: **530 files / 3,679 tests PASS** (`/home/user/validation/historical/full-regression.log`). Main and test-source TypeScript checks PASS.
+- Focused SQL/read-model/cache checks: **3 files / 24 tests PASS**; prior expanded deposit/credit lifecycle set **3 files / 29 tests PASS** and period/statement set **3 files / 17 tests PASS**.
+- Extended persisted browser journey: **desktop PASS, mobile PASS**. A mobile test selector initially assumed a desktop table; it now verifies both monetary fields on the actual responsive cards, without bypassing assertions.
+### IN PROGRESS / NEXT
+- Run migration/architecture/contract/build gates for the new forward migration and read boundary; continue VAT/credit/fee source and authorization review, then remaining high-impact persisted workflows.
+### BLOCKED / DEPLOYMENT LIMITS
+- No authorized hosted runtime is available for migration parity, real JWT/PostgREST/RLS and deployment-data compatibility checks. These remain external verification only, not blockers to other repository work.
+- Deployment must inspect incomplete historical lineage and removed invoice cases. No automatic dates, backfill, retrospective journal edits, or statutory tax policy changes are supplied. Existing S08/S09 accounting-approval controls remain required for historical correction. If the new read contract fails on legacy data, surface the error and review it; do not restore a false historical PASS as a fallback.
+- Broad reconstruction is not complete; no governed stage credit is advanced.
+
+## Continued reconstruction — tax authority, fee lifecycle and candidate guards
+### COMPLETED (repository evidence, not hosted acceptance)
+- Migration `20260909000005_tax_posting_read_authority.sql` gives existing VAT reads one private immutable-source authority. OFFICE invoices/credits, OWNER collection allocations, RATE fee snapshots and FIXED daily accrual/reversal events retain their saved tax treatment and booked dates. Independent 2100 checks reject unclassified or mismatched GL postings; there is no source-total copying from GL, historical rewrite, tax-policy invention or public parallel VAT API.
+- Persisted tests cover configured VAT / VAT_ZERO / NON_TAXABLE treatment, collection without double counting, governed receipt VOID, credit/reversal cutoff, cross-company and disabled-identity rejection, private ACLs and GL-only discrepancy errors. Missing/failed VAT evidence no longer appears as a zero KPI.
+- Migration `20260909000006_fixed_fee_tax_history_metadata.sql` repairs reproduced false fixed-fee API metadata. One private invoker helper classifies company/date/version-scoped immutable history: `NO_ACCRUALS` for no evidence, `VERSIONED_FEE_TREATMENT` for fully versioned history, existing review status otherwise. Existing orchestrator/list definitions are replaced only after a precise metadata precondition; posting logic, existing ACLs and historical rows are preserved.
+- Fixed-fee UI now warns about historical tax-review needs only for nonempty, not-fully-versioned history. It does not universally claim that tax was not calculated. Execution and reversal invalidate shared financial reads even when acknowledgements are lost.
+- SQL-backed desktop/mobile fee journeys prove committed-but-lost acknowledgement, retry without duplicate accruals, reload, compensating reversal, retained source history and restored VAT totals. Mobile testing reproduced an unreachable action tray: `height:100%` on the card pushed sibling actions outside paint containment. Shared flex sizing keeps the card and action tray inside their row; fee status is explicitly visible on mobile cards. No forced click or alternative desktop-only test path was used.
+- A further service-boundary regression reproduced **12 failures**: null/empty/failed list, execute and reverse responses were accepted as zero totals or success. Strict response schemas now reject missing or malformed financial evidence and acknowledgements, while accepting PostgreSQL decimal transport and legitimate nullable zero-amount posting metadata. A real governed zero-fee execution/reversal verifies that validation does not fabricate or forbid legitimate zero evidence. Contract precision is preserved separately from posted OMR precision.
+- GL-write and migration guards previously missed uncommitted candidate files. Shared NUL-safe discovery now inspects merge-base to actual worktree plus untracked files, including staged changes and rename/type cases. Guard red regressions became GL **13 PASS** and migration **11 PASS**; actual working-candidate gates pass.
+### REMOVED
+- Dead fixture-only cash-flow normalizer/type/facade exports and obsolete assertions, after route/reference/consumer checks. Canonical GL cash flow remains the sole production authority, with architecture and behavior regressions retained.
+- Permissive fixed-fee response coercion that converted absent/malformed financial evidence into zero or successful reversal identifiers. The existing RPC boundary remains; no duplicate service tree was added.
+### PRESERVED
+- Checkpoint branch and verified remote SHA above; subsequent changes remain uncommitted working-tree reconstruction. No PR, production mutation, credential persistence, ledger backfill, receipt allocation deletion or historical tax recomputation.
+### VALIDATION
+- Before the final strict fee-boundary change: **534 files / 3,721 tests PASS**, both TypeScript projects PASS, production build/PWA generation PASS, all six repository gates PASS; GL guard checked **78** production files. Logs: `/home/user/validation/tax/{full-regression-final-green,types-final,test-types-final,build-final,gates-final}.log`.
+- Browser matrix after shared card repair: **44 PASS / 1 intentional device skip**. Initial run used deliberately invalid placeholder configuration and correctly disabled login; rerunning with public-format synthetic test configuration passed without weakening the configuration guard. This remains mocked auth, not hosted login acceptance.
+- Persisted financial/fee browser journeys: **4 PASS** across desktop/mobile. After strict fee parsing: fee journey **2 PASS** again. Strict service suite **26 PASS**, including the real zero-amount SQL lifecycle. Logs: `browser-matrix-configured.log`, `browser-fees.log`, `browser-fee-contract.log`, `fee-zero-contract.log` in the same validation directory.
+- Final replay after strict fee parsing: **534 files / 3,743 tests PASS** (492.73s), main/test TypeScript PASS, production build/PWA generation PASS, all six gates PASS; GL boundary checked **79** production files. Both guard regression files pass again. Evidence: `/home/user/validation/tax/{full-regression-latest,types-latest,test-types-latest,build-latest,gates-latest,guard-regression-latest}.log`.
+### IN PROGRESS / NEXT
+- Trace remaining owner/vendor payable and due-from-owner historical balances and settlement workflows through the same independent-source/cutoff tests. Continue cross-company authorization, async state/scope and architecture/dependency cleanup; none is declared exhausted by the current green slice.
+### BLOCKED / UNKNOWN
+- Hosted JWT/PostgREST/RLS parity, real deployment data compatibility and production PWA acceptance remain externally unverified. Source-gap deployment review and governed accounting approvals are still required; repository replay does not authorize historical repair.
+- Fixed-fee manual-load date/session races have not yet been reproduced or cleared. Remaining historical control-account families beyond the repaired tenant AR/deposit and VAT paths are not claimed comprehensively audited.
+- Reconstruction remains in progress; no stage-credit change or mission-completion claim.
+
+## Continued reconstruction — owner receivables (1300)
+### COMPLETED / REPRODUCED AND REPAIRED
+- The next real SQL probe found source **0** versus control **125.555** at the earlier cutoff and **100.555** after a **25** recovery. The operational receivable retained the correct amount/outstanding, but the report helper read only legacy expenses. Separate probes reproduced a second recovery failing `GL_EVENT_CONFLICT` and original reversal failing `due_from_owners_outstanding_chk`.
+- Forward migration `20260909000007_owner_receivable_history_and_recovery.sql` adds one private invoker history projection to the existing 1300 helper. Governed receivables, recoveries, offsets and compensating reversals use saved source amounts and linked booked header dates. Missing/duplicated posting links, orphan events and counter gaps fail explicitly. No GL line totals are copied into the source balance.
+- Existing legacy expense evidence remains visible; it is not dropped merely to obtain agreement. Legacy classification/history is still a separate review track, not declared repaired by this addition.
+- Recovery events now use request-specific event identity after the existing company-scoped fingerprint/cache check. Separate partial recoveries work; the same request remains idempotent and changed content remains rejected. Existing posted `recover` events are not renamed or rewritten.
+- The original outstanding constraint is retained verbatim with one additional branch for a compensating reversal's zero outstanding. Original amount and settlement components remain historical facts. No financial rows are backfilled or deleted; original function attributes/ACLs are retained through constrained replacements.
+### VALIDATION
+- Initial governed lifecycle regressions: **4 FAIL / 1 PASS**. Expanded focused suite: **8 PASS**, including earlier/current cutoffs, separate/retried recoveries, recovery/original reversal, company isolation, independent GL discrepancy, missing-link/counter rejection, and an actual pre-07 migration upgrade over already booked recoveries. Upgrade checks preserve original batch IDs/event IDs/dates and old request responses, then allow a new recovery.
+- AR/deposit and VAT suites remained green alongside the initial owner repair (**22 PASS** before the final owner-suite expansion). Evidence: `/home/user/validation/owner-receivable/{source-probe,red,green,green-expanded,upgrade-green}.log`.
+- Broad replay after migration 07: **535 files / 3,751 tests PASS** (533.62s); main/test types and all six gates PASS; GL guard checked **80** production files. Persisted financial/fee desktop/mobile browser regression **4 PASS** again. Build/PWA generation PASS on a 1024 MB heap retry after a 1280 MB run hit the sandbox total-memory limit (137); no source/build checks were disabled. Evidence: `/home/user/validation/owner-receivable/{full-regression,types,test-types,gates,browser-regression,build-retry}.log`. After final migration-boundary precondition tightening: **8 owner lifecycle/upgrade tests PASS**, migration-hygiene and GL-write gates PASS (`precondition-green.log`, `migration-final.log`, `gl-final.log`).
+### IN PROGRESS / NEXT / UNKNOWN
+- Inspect remaining owner/vendor payables, lawful-offset command lifecycles, legacy expense classification, and older public reconciliation entry points. The new projection's offset mapping is not a claim that all offset command flows have been verified.
+- Browser owner-receivable command UI coverage is not established; current proof uses governed SQL commands and the actual report authority. Existing financial UI/browser coverage must not be mislabeled as a new owner-receivable UI journey.
+- Hosted migration/data parity and production authorization remain unverified. No PR or additional push is implied; this is ongoing work after the preserved checkpoint.

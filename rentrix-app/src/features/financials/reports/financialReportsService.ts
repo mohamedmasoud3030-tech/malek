@@ -13,9 +13,7 @@ export {
 } from './statements-reports-service';
 export {
   getVatReturnReport,
-  normalizeCashFlowStatementReport,
   normalizeVatReturnReport,
-  type CashFlowStatementReport,
   type ReportPeriod,
   type StatementReportFilters,
   type VatReturnReport,

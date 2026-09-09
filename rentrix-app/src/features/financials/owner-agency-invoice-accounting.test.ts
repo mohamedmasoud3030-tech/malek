@@ -291,6 +291,16 @@ describe('RC1 owner-agency recurring invoice classification', () => {
     expect(await netCredit('4000')).toBe(0);
   });
 
+  it('VAT return recognizes booked OFFICE invoices, not uncollected OWNER operational obligations', async () => {
+    await db.exec('set role authenticated');
+    try {
+      const { rows } = await db.query<{ result: { total_sales_amount: number; total_tax_amount: number; invoice_count: number } }>(
+        "select public.rpt_vat_return(date_trunc('month',current_date)::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date) as result",
+      );
+      expect(rows[0].result).toMatchObject({ total_sales_amount: 2000, total_tax_amount: 100, invoice_count: 2 });
+    } finally { await db.exec('reset role'); }
+  });
+
   it('preserves invoice lineage when a later agreement version is introduced', async () => {
     const tomorrow = new Date();
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -361,6 +371,23 @@ describe('RC1 collections, credits and historical tax basis', () => {
     expect(await netCredit('2100')).toBe(150);
     expect(await netCredit('4100')).toBe(200);
     expect(await netCredit('4000')).toBe(0);
+    const taxReturn = await db.query<{ result: Record<string, number> }>(
+      "select public.rpt_vat_return(date_trunc('month',current_date)::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date) as result",
+    );
+    expect(taxReturn.rows[0].result).toMatchObject({ total_sales_amount: 3000, total_tax_amount: 150, invoice_count: 3 });
+    // Transaction-isolated governed VOID checks the OWNER collection basis
+    // without changing the shared subsequent original-economics scenarios.
+    await db.exec('begin; set local role authenticated');
+    try {
+      await assumeIdentity(db, MAKER, COMPANY);
+      const request = await rpc('request_receipt_void_atomic', { receipt_id: result.receipt_id, reason: 'Tax collection correction', request_id: 'tax-owner-void-request' });
+      await assumeIdentity(db, CHECKER, COMPANY);
+      await rpc('approve_receipt_void_atomic', { void_request_id: request.void_request_id, request_id: 'tax-owner-void-approval' });
+      const reversedTax = await db.query<{ result: Record<string, number> }>(
+        "select public.rpt_vat_return(date_trunc('month',current_date)::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date) as result",
+      );
+      expect(reversedTax.rows[0].result).toMatchObject({ total_sales_amount: 2000, total_tax_amount: 100 });
+    } finally { await db.exec('rollback'); }
   });
 
   it('credits and reverses the original OFFICE_IS_CREDITOR economic model, even after profile B is activated', async () => {
@@ -886,6 +913,9 @@ describe('RC1 fail-closed and cutover regressions', () => {
     const { rows: invoices } = await db.query<{ id: string }>(
       `select id::text from public.invoices where contract_id = 'd1000000-0000-4000-8000-000000000989'::uuid`,
     );
+    const beforeFee = await db.query<{ result: { total_sales_amount: number; total_tax_amount: number } }>(
+      "select public.rpt_vat_return(date_trunc('month',current_date)::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date) as result",
+    );
     const result = await rpc('record_invoice_payment_atomic', {
       invoice_id: invoices[0]?.id ?? '',
       amount: 1070,
@@ -903,6 +933,19 @@ describe('RC1 fail-closed and cutover regressions', () => {
       [result.receipt_id],
     );
     expect(snapshots[0]).toMatchObject({ tax_code: 'VAT', tax_rate: '5.000', tax_amount: '5.000' });
+    const afterFee = await db.query<{ result: { total_sales_amount: number; total_tax_amount: number } }>(
+      "select public.rpt_vat_return(date_trunc('month',current_date)::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date) as result",
+    );
+    expect(afterFee.rows[0].result.total_sales_amount-beforeFee.rows[0].result.total_sales_amount).toBe(100);
+    expect(afterFee.rows[0].result.total_tax_amount-beforeFee.rows[0].result.total_tax_amount).toBe(5);
+    await assumeIdentity(db, MAKER, COMPANY);
+    const feeVoid = await rpc('request_receipt_void_atomic', { receipt_id: result.receipt_id, reason: 'Fee tax collection correction', request_id: 'tax-fee-void-request' });
+    await assumeIdentity(db, CHECKER, COMPANY);
+    await rpc('approve_receipt_void_atomic', { void_request_id: feeVoid.void_request_id, request_id: 'tax-fee-void-approval' });
+    const reversedFee = await db.query<{ result: Record<string, unknown> }>(
+      "select public.rpt_vat_return(date_trunc('month',current_date)::date,(date_trunc('month',current_date)+interval '1 month - 1 day')::date) as result",
+    );
+    expect(reversedFee.rows[0].result).toEqual(beforeFee.rows[0].result);
   });
 
   it('fails closed for a historical 2000 position until an S08-backed cutover exists', async () => {

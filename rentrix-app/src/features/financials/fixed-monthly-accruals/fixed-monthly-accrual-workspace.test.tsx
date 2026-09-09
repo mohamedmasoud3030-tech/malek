@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render as renderView, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +17,7 @@ vi.mock('@/hooks/use-auth', () => ({
 }));
 // The workspace renders amounts through the company-aware money formatter, so
 // it reads the company settings contract. Mock it to the default contract to
-// keep this suite a pure component test with no QueryClient provider.
+// keep this suite hermetic; the real QueryClient below verifies invalidation.
 vi.mock('@/features/settings/useCompanySettings', async () => {
   const actual = await vi.importActual<typeof import('@/lib/companySettings')>('@/lib/companySettings');
   return { useCompanySettingsContract: () => actual.defaultCompanySettingsContract };
@@ -27,6 +29,11 @@ vi.mock('./fixed-monthly-accrual-service', () => ({
 }));
 
 import { FixedMonthlyAccrualWorkspace } from './fixed-monthly-accrual-workspace';
+let client: QueryClient;
+function render(view: ReactElement) {
+  return renderView(<QueryClientProvider client={client}>{view}</QueryClientProvider>);
+}
+
 
 function context(role: AuthorizationContext['role']): AuthorizationContext {
   return { userId: `user-${role}`, email: `${role.toLowerCase()}@test.local`, role };
@@ -73,11 +80,13 @@ const listResult = {
 describe('fixed monthly accrual Arabic workspace', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     mocks.list.mockResolvedValue(listResult);
   });
 
   afterEach(() => {
     cleanup();
+    client.clear();
   });
 
   it.each(['ADMIN', 'MANAGER', 'ACCOUNTANT'] as const)(
@@ -91,7 +100,7 @@ describe('fixed monthly accrual Arabic workspace', () => {
       fireEvent.click(actionTrigger);
       expect(await screen.findByRole('menuitem', { name: 'عكس' })).toBeTruthy();
       expect(screen.getByText('مسجل')).toBeTruthy();
-      expect(screen.getByText(/الضريبة غير محتسبة حاليًا/)).toBeTruthy();
+      expect(screen.getByText(/توجد استحقاقات تحتاج مراجعة ضريبية/)).toBeTruthy();
       expect(screen.getAllByText('الصافي').length).toBeGreaterThan(0);
       expect(screen.getAllByText('الضريبة').length).toBeGreaterThan(0);
       expect(screen.getAllByText('الإجمالي').length).toBeGreaterThan(0);
@@ -124,4 +133,44 @@ describe('fixed monthly accrual Arabic workspace', () => {
     expect(document.body.textContent).not.toContain('internal_schema');
     expect(document.body.textContent).not.toContain('permission denied');
   });
+  it.each([false, true])('invalidates tax/accounting projections after accrual execution, uncertain=%s', async uncertain => {
+    mocks.authorization = context('ADMIN');
+    if (uncertain) mocks.execute.mockRejectedValue(new Error('response lost'));
+    else mocks.execute.mockResolvedValue({ createdDays: 1, idempotentDays: 0, grossAmount: 10 });
+    const key = ['reports-authority', 'subledger-gl-reconciliation', '2026-09-09'];
+    client.setQueryData(key, { previous: true });
+    render(<FixedMonthlyAccrualWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: /احتساب الاستحقاقات/ }));
+    await waitFor(() => expect(client.getQueryState(key)?.isInvalidated).toBe(true));
+    expect(mocks.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates the same projections after a compensating reversal', async () => {
+    mocks.authorization = context('ACCOUNTANT');
+    mocks.reverse.mockResolvedValue({ accrualId: 'accrual-1' });
+    const key = ['financialReports', 'vatReturn', { dateFrom: '2026-09-01', dateTo: '2026-09-30' }];
+    client.setQueryData(key, { previous: true });
+    render(<FixedMonthlyAccrualWorkspace />);
+    fireEvent.click(await screen.findByRole('button', { name: /إجراءات استحقاق/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'عكس' }));
+    fireEvent.change(screen.getByLabelText('السبب'), { target: { value: 'تصحيح الاستحقاق' } });
+    fireEvent.click(screen.getByRole('button', { name: 'تأكيد العكس' }));
+    await waitFor(() => expect(client.getQueryState(key)?.isInvalidated).toBe(true));
+    expect(mocks.reverse).toHaveBeenCalledWith('accrual-1', 'تصحيح الاستحقاق', expect.any(String));
+  });
+
+  it.each(['VERSIONED_FEE_TREATMENT', 'NO_ACCRUALS'])('does not label %s as missing tax configuration', async status => {
+    mocks.authorization = context('ACCOUNTANT');
+    mocks.list.mockResolvedValue({ ...listResult, taxAuthorityStatus: status,
+      ...(status === 'NO_ACCRUALS' ? { totalCount: 0, returnedCount: 0, accruals: [] } : {
+        accruals: listResult.accruals.map(row => ({ ...row, taxAuthorityStatus: status })),
+      }),
+    });
+    render(<FixedMonthlyAccrualWorkspace />);
+    await waitFor(() => expect(mocks.list).toHaveBeenCalledTimes(1));
+    await screen.findByText(status === 'NO_ACCRUALS' ? 'لا توجد استحقاقات' : 'مسجل');
+    expect(screen.queryByText(/توجد استحقاقات تحتاج مراجعة ضريبية/)).toBeNull();
+    expect(screen.queryByText(/الضريبة غير محتسبة حاليًا/)).toBeNull();
+  });
+
 });

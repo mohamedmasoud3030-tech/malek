@@ -7,7 +7,7 @@ import { invalidateEntity } from './query-keys';
  * This invalidates projections only; it does not invent client-side balances.
  */
 export const financialReadModelRoots = [
-  'invoices', 'receipts', 'financialReports', 'accountingReports',
+  'invoices', 'receipts', 'financialReports', 'accountingReports', 'reports-authority',
   'contract-payments', 'tenant-workspace', 'people', 'owners',
   'owner-financial-authority', 'dashboard-snapshot', 'deposit-invoices',
   'tenant-deposits', 'deposit-claims', 'deposit-refund-events',

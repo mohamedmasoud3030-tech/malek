@@ -349,8 +349,16 @@
 /* In dense card grids keep every card compact. Secondary metadata stays
    available on phones (single column has room for it) and tucks away from
    tablet/desktop where table/detail views already carry the same facts. */
+/* A register item can contain both a card and its action tray. A 100% card
+   height pushes that tray outside the item's paint containment and makes its
+   buttons unreachable on touch screens. Flex sizing keeps both in the row. */
+[data-entity-table-mobile-card] {
+  display: flex;
+  flex-direction: column;
+}
+
 [data-entity-table-mobile-list] [data-entity-card] {
-  height: 100%;
+  flex: 1 1 auto;
   padding: 0.75rem;
 }
 

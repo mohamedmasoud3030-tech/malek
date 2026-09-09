@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
-import { assumeIdentity, createFullReplayedDatabase } from '../p1/replay-bootstrap';
+import { readFileSync } from 'node:fs';
+import { assumeIdentity, createFullReplayedDatabase, repoRoot } from '../p1/replay-bootstrap';
 
 export const COMPANY = 'c2000000-0000-4000-8000-000000000001';
 export const MAKER = 'c2000000-0000-4000-8000-000000000011';
@@ -17,10 +18,17 @@ export const RENT = 1000;
 
 /** Disposable, fully replayed OFFICE_IS_CREDITOR context. Transactions under test
  * must go through governed RPCs; these rows are prerequisite fixture state only. */
-export async function createOfficeCreditorFixture() {
-  const replay = await createFullReplayedDatabase({ writeEvidence: false });
+export async function createOfficeCreditorFixture(options: { taxRate?: number; taxCode?: 'VAT' | 'VAT_ZERO' | 'NON_TAXABLE'; throughMigration?: string } = {}) {
+  const taxRate = options.taxRate ?? 0;
+  assert(Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 100);
+  const taxCode = options.taxCode ?? (taxRate > 0 ? 'VAT' : 'NON_TAXABLE');
+  const replay = await createFullReplayedDatabase({ writeEvidence: false, throughMigration: options.throughMigration });
   assert.deepEqual(replay.failed, []);
   const db = replay.db;
+  // Full business fixtures include canonical catalog seeds even when testing an
+  // upgrade checkpoint. Migration-only authority tests use the replay directly.
+  if (options.throughMigration) await db.exec(readFileSync(`${repoRoot}/supabase/seed.sql`, 'utf8'));
+  const year = new Date().getUTCFullYear();
 
   await db.exec(`
     insert into public.companies (id, name, slug) values
@@ -39,27 +47,27 @@ export async function createOfficeCreditorFixture() {
       ('${COMPANY}', '${MAKER}', 'ADMIN'),
       ('${OTHER_COMPANY}', '${OTHER}', 'ADMIN');
 
-    -- vat_rate 0 keeps the credit split exact (rent only).
+    -- Legacy settings are not the versioned invoice-tax authority.
     insert into public.company_settings
       (id, singleton_key, company_name, currency, default_vat_rate, vat_enabled, vat_rate, company_id)
     values (gen_random_uuid(), true, 'Phase3 Co', 'OMR', 0, false, 0, '${COMPANY}');
     insert into public.company_tax_profiles
       (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
     values
-      ('c2000000-0000-4000-8000-000000000082', '${COMPANY}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${OTHER}', now());
+      ('c2000000-0000-4000-8000-000000000082', '${COMPANY}', 1, '${taxCode}', ${taxRate}, date '2020-01-01', 'ACTIVE', '${MAKER}', '${OTHER}', now());
 
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'P3 Owner', 'P3 Owner', '${COMPANY}');
     insert into public.properties (id, title, name, type, address, company_id)
     values ('${PROPERTY}', 'P3 Property', 'P3 Property', 'residential', 'Muscat', '${COMPANY}');
     insert into public.property_owners (property_id, owner_id, ownership_percentage, is_primary, starts_on, company_id)
-    values ('${PROPERTY}', '${OWNER}', 100, true, date '2026-01-01', '${COMPANY}');
+    values ('${PROPERTY}', '${OWNER}', 100, true, date '${year}-01-01', '${COMPANY}');
     insert into public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
-    values ('${AGREEMENT}', '${OWNER}', '${PROPERTY}', 'property_management', 'RATE', 0, date '2026-01-01', '${COMPANY}');
+    values ('${AGREEMENT}', '${OWNER}', '${PROPERTY}', 'property_management', 'RATE', 0, date '${year}-01-01', '${COMPANY}');
     -- This credit/reversal suite is the OFFICE_IS_CREDITOR AR model; create a
     -- successor version before the contract freezes its source terms.
     update public.owner_agreement_versions
-       set effective_to = date '2025-12-31', superseded_at = now()
+       set effective_to = date '${year - 1}-12-31', superseded_at = now()
      where owner_agreement_id = '${AGREEMENT}'::uuid and superseded_at is null;
     insert into public.owner_agreement_versions
       (id, owner_agreement_id, company_id, version_no, operating_model, collection_role,
@@ -68,7 +76,7 @@ export async function createOfficeCreditorFixture() {
     values
       ('c2000000-0000-4000-8000-000000000081', '${AGREEMENT}', '${COMPANY}', 2,
        'OWNER_AGENCY', 'OFFICE_IS_CREDITOR', 'RATE', 0, 'ON_COLLECTION', false, 0,
-       date '2026-01-01', '${MAKER}');
+       date '${year}-01-01', '${MAKER}');
     update public.owner_agreements
        set current_version_id = 'c2000000-0000-4000-8000-000000000081'::uuid
      where id = '${AGREEMENT}'::uuid;
@@ -78,7 +86,7 @@ export async function createOfficeCreditorFixture() {
     values ('${TENANT}', 'P3 Tenant', 'tenant', '${COMPANY}');
     insert into public.contracts (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
     values ('${CONTRACT}', '${PROPERTY}', '${UNIT}', '${TENANT}', '${AGREEMENT}',
-            date '2026-01-01', date '2026-12-31', ${RENT}, 'active', '${COMPANY}');
+            date '${year}-01-01', date '${year}-12-31', ${RENT}, 'active', '${COMPANY}');
   `);
 
   await assumeIdentity(db, MAKER, COMPANY);

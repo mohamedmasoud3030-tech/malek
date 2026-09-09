@@ -30,6 +30,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { candidateChanges } from './lib/git-candidate-changes.mjs';
 
 const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 const MIGRATIONS_DIR = 'supabase/migrations';
@@ -82,35 +83,15 @@ function parseArgs(argv) {
 }
 
 function gitDiffNameStatus(baseRef) {
-  // Three-dot diff: compare base...HEAD via merge-base, matching the
-  // project's established convention for branch analysis (avoids noise
-  // from unrelated history divergence).
-  const out = execFileSync(
-    'git',
-    ['diff', '--name-status', '--find-renames', `${baseRef}...HEAD`, '--', MIGRATIONS_DIR],
-    { cwd: REPO_ROOT, encoding: 'utf8' },
-  );
-  return out
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split('\t');
-      const status = parts[0];
-      if (status.startsWith('R')) {
-        // rename: status, old path, new path
-        return { status: 'R', oldPath: parts[1], newPath: parts[2] };
-      }
-      return { status: status[0], path: parts[1] };
-    });
+  return candidateChanges(REPO_ROOT, baseRef, [MIGRATIONS_DIR]);
 }
 
 function listBaseFiles(baseRef, dir) {
-  const out = execFileSync('git', ['ls-tree', '-r', '--name-only', baseRef, '--', dir], {
+  const out = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', baseRef, '--', dir], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
   });
-  return new Set(out.split('\n').map((l) => l.trim()).filter(Boolean));
+  return new Set(out.split('\0').filter(Boolean));
 }
 
 function readWorkingFile(relPath) {
@@ -161,7 +142,7 @@ function main() {
       });
     }
 
-    if (entry.status === 'M' && baseMigrationFiles.has(entry.path)) {
+    if (['M', 'T'].includes(entry.status) && baseMigrationFiles.has(entry.path)) {
       violations.push({
         file: entry.path,
         reason: 'A historical migration file present on the base ref was modified.',

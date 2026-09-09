@@ -16,3 +16,14 @@ it('invalidates every financial projection scope without touching unrelated sett
   expect(client.getQueryState(['settings', 'draft'])?.isInvalidated).toBe(false);
   client.clear();
 });
+it('refreshes the actual accounting readiness and cash-flow query keys after posting', async () => {
+  const client = new QueryClient();
+  const keys = [
+    ['reports-authority', 'subledger-gl-reconciliation', '2026-09-09'],
+    ['reports-authority', 'gl-cash-flow', '2026-09-01', '2026-09-30'],
+  ];
+  for (const key of keys) client.setQueryData(key, { previous: true });
+  await invalidateFinancialReadModels(client);
+  for (const key of keys) expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  client.clear();
+});

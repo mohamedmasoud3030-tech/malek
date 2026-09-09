@@ -187,6 +187,27 @@ test('test and fixture files may contain legacy-write examples without affecting
   return dir;
 });
 
+for (const mode of ['untracked', 'staged', 'unstaged']) {
+  test(`new legacy writes are rejected before commit (${mode})`, () => {
+    const path = 'supabase/migrations/20260909000100_worktree.sql';
+    const dir = makeRepo(mode === 'unstaged' ? { [path]: 'select 1;\n' } : {});
+    write(dir, path, "insert into public.journal_entries(id) values ('unsafe');\n");
+    if (mode === 'staged') git(dir, ['add', path]);
+    expectStatus(run(dir), false);
+    return dir;
+  });
+}
+
+test('untracked canonical reads are checked quietly, including unusual filenames', () => {
+  const dir = makeRepo();
+  write(dir, 'rentrix-app/src/read with\nnewline.ts', "const query = 'select * from public.journal_entries';\n");
+  const result = run(dir);
+  expectStatus(result, true);
+  assert(result.stdout.includes('production files checked: 1'), 'new working file was not inspected');
+  assert(!result.stderr.includes('fatal:'), 'expected absent base path must not produce a fatal diagnostic');
+  return dir;
+});
+
 console.log(`\nS03 GL Write Boundary Guard tests: ${passed} passed, ${failed} failed`);
 if (failures.length > 0) {
   for (const { name, error } of failures) console.error(`  - ${name}: ${error.message}`);

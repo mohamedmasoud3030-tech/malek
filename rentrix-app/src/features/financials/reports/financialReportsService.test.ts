@@ -282,22 +282,8 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
-  it('normalizes cash flow and VAT RPC payloads into safe report contracts', async () => {
-    const { normalizeCashFlowStatementReport, normalizeVatReturnReport } = await import('./financialReportsService');
-
-    expect(normalizeCashFlowStatementReport({
-      period: { from: '2026-06-01', to: '2026-06-30' },
-      operating: { receipts: '1500.250', expenses: 400, net_operating: '1100.25' },
-      investing: { note: 'not_applicable_single_office', amount: 0 },
-      financing: { note: 'not_applicable_single_office', amount: '0' },
-      net_change: '1100.25',
-    })).toEqual({
-      period: { from: '2026-06-01', to: '2026-06-30' },
-      operating: { receipts: 1500.25, expenses: 400, netOperating: 1100.25 },
-      investing: { note: 'not_applicable_single_office', amount: 0 },
-      financing: { note: 'not_applicable_single_office', amount: 0 },
-      netChange: 1100.25,
-    });
+  it('normalizes VAT RPC payloads through the canonical facade', async () => {
+    const { normalizeVatReturnReport } = await import('./financialReportsService');
 
     expect(normalizeVatReturnReport({
       period: { from: '2026-06-01', to: '2026-06-30' },

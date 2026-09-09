@@ -233,7 +233,9 @@ describe('production product simplification contract', () => {
       expect(accrual).not.toContain(forbidden);
     }
     expect(accrual).toContain('احتساب الاستحقاقات');
-    expect(accrual).toContain('راجع جاهزية المالية والضريبة قبل التنفيذ');
+    expect(accrual).toContain('توجد استحقاقات تحتاج مراجعة ضريبية');
+    expect(accrual).toContain('راجع المصدر قبل اعتماد الأرقام');
+    expect(accrual).not.toContain('الضريبة غير محتسبة حاليًا');
   });
 
   it('keeps report catalog and readiness copy free of implementation mechanics', () => {

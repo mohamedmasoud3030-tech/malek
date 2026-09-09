@@ -250,6 +250,29 @@ test('renaming a historical migration file fails', () => {
   cleanup(dir);
 });
 
+for (const mode of ['untracked', 'staged']) {
+  test(`rollback migration is rejected before commit (${mode})`, () => {
+    const dir = makeRepo({ 'README.md': 'base\n' });
+    try {
+      const path = 'supabase/migrations/20260909000100_rollback.sql';
+      writeFile(dir, path, 'select 1;\n');
+      if (mode === 'staged') git(dir, ['add', path]);
+      const result = runGuard(dir, 'main');
+      assert(result.status !== 0 && result.stderr.includes('Rule 1'), 'uncommitted rollback was not rejected');
+    } finally { cleanup(dir); }
+  });
+}
+
+test('unstaged edits to historical migrations are immutable too', () => {
+  const path = 'supabase/migrations/20260801000000_initial.sql';
+  const dir = makeRepo({ [path]: 'select 1;\n' });
+  try {
+    writeFile(dir, path, 'select 2;\n');
+    const result = runGuard(dir, 'main');
+    assert(result.status !== 0 && result.stderr.includes('Rule 3'), 'unstaged historical edit was not rejected');
+  } finally { cleanup(dir); }
+});
+
 // ----------------------------------------------------------------------------
 console.log('');
 console.log(`Migration hygiene guard tests: ${passed} passed, ${failed} failed`);

@@ -51,12 +51,14 @@ export function RegulatorySummaryPanels({
   cashFlowError,
   isCashFlowLoading,
   vatReturn,
+  vatReturnError,
   isLoading,
 }: Readonly<{
   cashFlow: CashFlowReport | undefined;
   cashFlowError: unknown;
   isCashFlowLoading: boolean;
   vatReturn: VatReturnReport | undefined;
+  vatReturnError?: unknown;
   isLoading: boolean;
 }>) {
   return (
@@ -102,14 +104,22 @@ export function RegulatorySummaryPanels({
         )}
       </ReportPanel>
 
-      <ReportPanel title="ملخص ضريبة القيمة المضافة" description="الوعاء الضريبي والضريبة والفواتير من التقرير الضريبي المعتمد؛ لا يُعاد تصنيف تحصيلات المالك كإيراد مكتب." icon={Scale}>
+      <ReportPanel title="ملخص ضريبة القيمة المضافة" description="الوعاء والضريبة من الحركات المقيدة ولقطات الضريبة المحفوظة، مع الإشعارات الدائنة والعكس؛ لا تُصنف تحصيلات المالك كإيراد مكتب." icon={Scale}>
         {isLoading ? (
           <ReportPanelSkeleton />
+        ) : vatReturnError ? (
+          <div role="alert" className="p-4 text-sm font-semibold text-destructive">
+            تعذر تحميل ملخص الضريبة. لا تعتمد الأرقام حتى تكتمل مراجعة المصدر.
+          </div>
+        ) : !vatReturn ? (
+          <div role="status" className="p-4 text-sm text-muted-foreground">
+            لا توجد نتيجة ضريبية محملة لهذه الفترة.
+          </div>
         ) : (
           <ResponsiveCardGrid className="p-4" gap="sm">
-            <KpiCard label="الوعاء الخاضع للضريبة" value={formatMoney(vatReturn?.totalSalesAmount ?? 0)} icon={ReceiptText} compact />
-            <KpiCard label="إجمالي الضريبة" value={formatMoney(vatReturn?.totalTaxAmount ?? 0)} icon={Scale} compact />
-            <KpiCard label="عدد الفواتير" value={formatLatinNumber((vatReturn?.invoiceCount ?? 0), 'ar')} icon={ReceiptText} compact />
+            <KpiCard label="الوعاء الخاضع للضريبة" value={formatMoney(vatReturn.totalSalesAmount)} icon={ReceiptText} compact />
+            <KpiCard label="إجمالي الضريبة" value={formatMoney(vatReturn.totalTaxAmount)} icon={Scale} compact />
+            <KpiCard label="عدد الفواتير" value={formatLatinNumber(vatReturn.invoiceCount, 'ar')} icon={ReceiptText} compact />
             <KpiCard label="الفترة" value={vatReturn?.period.from ? 'محددة' : '—'} icon={CalendarRange} sub={vatReturn?.period.from && vatReturn.period.to ? `${vatReturn.period.from} — ${vatReturn.period.to}` : 'لا توجد فترة'} compact />
           </ResponsiveCardGrid>
         )}

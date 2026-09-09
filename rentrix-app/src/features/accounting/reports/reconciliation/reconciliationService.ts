@@ -5,19 +5,28 @@
  * All monetary values are OMR 3dp, derived from the canonical shared monetary API.
  */
 
+import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
-import { normalizeOm3 } from '@/lib/money';
-import type { ReconciliationRow, ReconciliationRpcRow } from '@/features/accounting/reports/contracts';
+import { reportMoneySchema as money, reportCountSchema as count } from '@/lib/report-value-schemas';
+import type { ReconciliationRow } from '@/features/accounting/reports/contracts';
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function asArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
-}
+const rowSchema = z.object({
+  reconciliation_class: z.string().trim().min(1),
+  account_no: z.string().trim().min(1),
+  account_name: z.string().nullable().transform(value => value?.trim() ?? ''),
+  subledger_balance: money,
+  gl_balance: money,
+  variance: money,
+  abs_variance: money.refine(value => value >= 0),
+  currency: z.string().trim().min(1),
+  reconciliation_status: z.enum(['PASS', 'FAIL']),
+  subledger_count: count,
+  gl_count: count,
+});
+const responseSchema = z.union([
+  z.array(rowSchema),
+  z.object({ rows: z.array(rowSchema) }).transform(value => value.rows),
+]);
 
 function todayIsoDate(): string {
   const today = new Date();
@@ -35,27 +44,5 @@ export async function getReconciliationReport(
   const { data, error } = await supabase.rpc('wp05_reconcile_all', { p_as_of });
   if (error) throw error;
 
-  // The generated Supabase type may expose this RPC as a table result or Json.
-  // Normalize both shapes without reaching through a Json union directly.
-  const rows: unknown[] = Array.isArray(data)
-    ? data
-    : asArray(asRecord(data).rows ?? data);
-
-  return rows.map((row: unknown) => {
-    const r = row as ReconciliationRpcRow;
-    return {
-      reconciliation_class: String(r.reconciliation_class ?? '').trim(),
-      account_no: String(r.account_no ?? '').trim(),
-      account_name: String(r.account_name ?? '').trim(),
-      subledger_balance: normalizeOm3(r.subledger_balance),
-      gl_balance: normalizeOm3(r.gl_balance),
-      variance: normalizeOm3(r.variance),
-      abs_variance: normalizeOm3(r.abs_variance),
-      currency: String(r.currency ?? 'OMR').trim() || 'OMR',
-      reconciliation_status:
-        String(r.reconciliation_status ?? '').trim() === 'PASS' ? 'PASS' : 'FAIL',
-      subledger_count: Number(r.subledger_count) || 0,
-      gl_count: Number(r.gl_count) || 0,
-    };
-  });
+  return responseSchema.parse(data);
 }

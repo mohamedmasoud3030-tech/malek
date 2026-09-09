@@ -22,6 +22,7 @@ import {
 export function StatementsSection({
   financialSummary,
   vatReturn,
+  vatReturnError,
   tenantStatement,
   ownerStatement,
   ownerReportPayload,
@@ -43,6 +44,7 @@ export function StatementsSection({
   vatReturn:
     | NonNullable<ReturnType<typeof useVatReturnReport>['data']>
     | undefined;
+  vatReturnError?: unknown;
   tenantStatement: TenantStatementReport | undefined;
   ownerStatement: OwnerStatementReport | undefined;
   ownerReportPayload?: OwnerReportPayload;
@@ -115,6 +117,7 @@ export function StatementsSection({
             cashFlowError={glCashFlowQuery.error}
             isCashFlowLoading={glCashFlowQuery.isLoading}
             vatReturn={vatReturn}
+            vatReturnError={vatReturnError}
             isLoading={isLoading}
           />
         </>

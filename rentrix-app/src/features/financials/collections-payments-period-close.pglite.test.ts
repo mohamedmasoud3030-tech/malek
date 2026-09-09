@@ -603,6 +603,14 @@ describe('Group3 collections, payments & period close', () => {
     // Closed period remains HARD_CLOSED
     const periodCheck = await query<{ status: string }>(`select status from public.accounting_periods where id = $1::uuid`, [periodOldId]);
     expect(periodCheck[0].status).toBe('HARD_CLOSED');
+
+    // Paying in the new open period must not erase the old-period receivable.
+    const historical = await query<{ balance: string; control: string }>(
+      `select s.balance::text, public.wp05_gl_balance($1::uuid,'1201','2020-01-31')::text as control
+         from public.wp05_subledger_tenant_receivables($1::uuid,'2020-01-31') s`, [COMPANY],
+    );
+    expect(Number(historical[0].balance)).toBe(GROSS);
+    expect(Number(historical[0].control)).toBe(GROSS);
   });
 
   it('subledger↔GL balances and OMR 0.001 precision', async () => {

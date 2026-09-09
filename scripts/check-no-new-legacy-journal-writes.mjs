@@ -41,6 +41,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { candidateChanges } from './lib/git-candidate-changes.mjs';
 
 const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], {
   encoding: 'utf8',
@@ -94,12 +95,10 @@ function isProductionTarget(path) {
 }
 
 function changedPaths(baseRef) {
-  const out = execFileSync(
-    'git',
-    ['diff', '--name-only', '--diff-filter=ACMR', `${baseRef}...HEAD`],
-    { cwd: REPO_ROOT, encoding: 'utf8' },
-  );
-  return out.split('\n').map((line) => line.trim()).filter(Boolean).filter(isProductionTarget);
+  return [...new Set(candidateChanges(REPO_ROOT, baseRef, TARGET_ROOTS)
+    .filter(entry => entry.status !== 'D')
+    .map(entry => entry.status === 'R' ? entry.newPath : entry.path)
+    .filter(isProductionTarget))].sort();
 }
 
 function readHead(path) {
@@ -113,6 +112,7 @@ function readAtRef(ref, path) {
       cwd: REPO_ROOT,
       encoding: 'utf8',
       maxBuffer: 20 * 1024 * 1024,
+      stdio: 'pipe',
     });
   } catch {
     return '';

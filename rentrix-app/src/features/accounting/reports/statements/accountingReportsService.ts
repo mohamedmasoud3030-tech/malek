@@ -12,12 +12,10 @@ import type {
   IncomeStatementReport,
   BalanceSheetReport,
   CashFlowReport,
-  ReconciliationRow,
   TrialBalanceRpcRow,
   IncomeStatementRpcResponse,
   BalanceSheetRpcResponse,
   CashFlowRpcResponse,
-  ReconciliationRpcRow,
 } from '@/features/accounting/reports/contracts';
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -28,14 +26,6 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
-}
-
-function todayIsoDate(): string {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,36 +192,4 @@ export async function getCashFlowReport(from: string, to: string): Promise<CashF
     isBalanced: Boolean(response?.is_balanced),
     currency: String(response?.currency ?? 'OMR').trim() || 'OMR',
   };
-}
-
-// ---------------------------------------------------------------------------
-// 5. Reconciliation Report
-// ---------------------------------------------------------------------------
-
-export async function getReconciliationReport(asOf?: string): Promise<ReconciliationRow[]> {
-  const p_as_of = asOf ?? todayIsoDate();
-  const { data, error } = await supabase.rpc('wp05_reconcile_all', { p_as_of });
-  if (error) throw error;
-
-  const rows: unknown[] = Array.isArray(data)
-    ? data
-    : asArray(asRecord(data).rows ?? data);
-
-  return rows.map((row: unknown) => {
-    const r = row as ReconciliationRpcRow;
-    return {
-      reconciliation_class: String(r.reconciliation_class ?? '').trim(),
-      account_no: String(r.account_no ?? '').trim(),
-      account_name: String(r.account_name ?? '').trim(),
-      subledger_balance: normalizeOm3(r.subledger_balance),
-      gl_balance: normalizeOm3(r.gl_balance),
-      variance: normalizeOm3(r.variance),
-      abs_variance: normalizeOm3(r.abs_variance),
-      currency: String(r.currency ?? 'OMR').trim() || 'OMR',
-      reconciliation_status:
-        String(r.reconciliation_status ?? '').trim() === 'PASS' ? 'PASS' : 'FAIL',
-      subledger_count: Number(r.subledger_count) || 0,
-      gl_count: Number(r.gl_count) || 0,
-    };
-  });
 }

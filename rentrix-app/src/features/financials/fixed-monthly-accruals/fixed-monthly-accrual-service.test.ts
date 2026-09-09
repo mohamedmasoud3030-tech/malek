@@ -16,11 +16,13 @@ vi.mock('@/lib/supabase-error', () => ({ handleSupabaseError: mocks.handleSupaba
 describe('fixed monthly daily accrual service boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.rpc.mockReset();
   });
 
   it('lists governed source, posting and reversal fields through the read RPC', async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: {
+        success: true,
         date_from: '2024-02-01',
         date_to: '2024-02-29',
         total_count: 1,
@@ -85,6 +87,7 @@ describe('fixed monthly daily accrual service boundary', () => {
   it('executes with orchestration inputs only and never browser-authored financial data', async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: {
+        success: true,
         date_from: '2024-03-01',
         date_to: '2024-03-10',
         attempted_days: 10,
@@ -123,6 +126,7 @@ describe('fixed monthly daily accrual service boundary', () => {
   it('requests an explicit compensating reversal without mutating the ledger', async () => {
     mocks.rpc.mockResolvedValueOnce({
       data: {
+        success: true,
         accrual_id: 'accrual-1',
         reversal_id: 'reversal-1',
         original_batch_id: 'batch-1',
@@ -168,4 +172,56 @@ describe('fixed monthly daily accrual service boundary', () => {
       'تعذر تنفيذ استحقاقات العمولة الشهرية',
     );
   });
+  describe.each([
+    ['list', () => listFixedMonthlyAccruals('2024-02-01', '2024-02-29')],
+    ['execute', () => executeFixedMonthlyAccruals('2024-02-01', '2024-02-29', 'uncertain-request')],
+    ['reverse', () => reverseFixedMonthlyAccrual('accrual-1', 'تصحيح', 'uncertain-reversal')],
+  ] as const)('%s rejects missing or failed evidence', (_name, run) => {
+    it.each([null, {}, [], { success: false }])('does not convert %j into a successful zero result', async data => {
+      mocks.rpc.mockResolvedValueOnce({ data, error: null });
+      await expect(run()).rejects.toThrow();
+      expect(mocks.handleSupabaseError).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it.each([
+    ['net_amount', null], ['tax_amount', ''], ['gross_amount', 'NaN'],
+    ['net_amount', true], ['gross_amount', '0x10'],
+    ['total_count', -1], ['returned_count', 0.5], ['truncated', 'false'],
+    ['accruals', null],
+  ])('rejects invalid %s instead of inventing a zero register', async (field, value) => {
+    mocks.rpc.mockResolvedValueOnce({ error: null, data: {
+      success: true, date_from: '2024-02-01', date_to: '2024-02-29',
+      total_count: '0', returned_count: '0', reversed_count: '0', truncated: false,
+      net_amount: '0.000', tax_amount: '0.000', gross_amount: '0.000',
+      tax_authority_status: 'NO_ACCRUALS', accruals: [], [field]: value,
+    } });
+    await expect(listFixedMonthlyAccruals('2024-02-01', '2024-02-29')).rejects.toThrow();
+  });
+
+  it('accepts real zero-amount accrual and reversal evidence with legitimately null journal metadata', async () => {
+    const { createOfficeCreditorFixture } = await import('@/test/office-creditor-fixture');
+    const { createFixedFeeAgreementFixture } = await import('@/test/fixed-fee-fixture');
+    const { db } = await createOfficeCreditorFixture();
+    try {
+      const from = `${new Date().toISOString().slice(0, 7)}-01`;
+      await createFixedFeeAgreementFixture(db, from, 0);
+      mocks.rpc.mockImplementation(async (name: string, args: { p_payload: unknown }) => {
+        if (!['list_fixed_monthly_accruals', 'execute_fixed_monthly_accruals_atomic', 'reverse_fixed_monthly_accrual_atomic'].includes(name)) throw new Error('Unexpected RPC');
+        const { rows } = await db.query<{ data: unknown }>(`select public.${name}($1::jsonb) as data`, [JSON.stringify(args.p_payload)]);
+        return { data: rows[0].data, error: null };
+      });
+      const run = await executeFixedMonthlyAccruals(from, from, 'zero-fee-contract');
+      expect(run).toMatchObject({ createdDays: 1, zeroAmountDays: 1, grossAmount: 0 });
+      const register = await listFixedMonthlyAccruals(from, from);
+      expect(register).toMatchObject({ totalCount: 1, taxAuthorityStatus: 'VERSIONED_FEE_TREATMENT' });
+      expect(register.accruals[0]).toMatchObject({ status: 'ZERO_AMOUNT', monthlyContractAmount: 0,
+        journalBatchId: null, postingDate: null, accountingPeriodId: null, latePosting: false,
+      });
+      const reversed = await reverseFixedMonthlyAccrual(register.accruals[0].id, 'Zero fee correction', 'zero-fee-reversal');
+      expect(reversed).toMatchObject({ accrualId: register.accruals[0].id, originalBatchId: null, reversalBatchId: null });
+      expect((await listFixedMonthlyAccruals(from, from)).accruals[0].status).toBe('REVERSED');
+    } finally { await db.close(); }
+  }, 60_000);
+
 });

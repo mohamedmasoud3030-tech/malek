@@ -1,3 +1,5 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateFinancialReadModels } from '@/lib/financial-cache';
 import { Play, RefreshCw, RotateCcw, ShieldAlert } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +51,7 @@ export type FixedMonthlyAccrualWorkspaceProps = Readonly<{
 
 export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyAccrualWorkspaceProps = {}) {
   const { authorization } = useAuth();
+  const queryClient = useQueryClient();
   const { money: formatOmr } = useCompanyFormatters();
   const initialRange = useMemo(currentMonthRange, []);
   const [dateFrom, setDateFrom] = useState(initialRange.from);
@@ -107,6 +110,8 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
     } catch {
       setError('تعذر تنفيذ الاستحقاقات. راجع الإعدادات المطلوبة ثم أعد المحاولة.');
     } finally {
+      // A lost acknowledgement can still represent committed accruals.
+      await invalidateFinancialReadModels(queryClient);
       setIsExecuting(false);
     }
   };
@@ -133,6 +138,7 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
     } catch {
       setError('تعذر عكس الاستحقاق. أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام.');
     } finally {
+      await invalidateFinancialReadModels(queryClient);
       setIsReversing(false);
     }
   };
@@ -281,10 +287,12 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
           </div>
         </div>
 
-        <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-2.5 text-xs leading-5 text-foreground">
-          <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
-          <p><strong>الضريبة غير محتسبة حاليًا:</strong> إعداد الضريبة المطلوب لهذا الاستحقاق غير مكتمل. راجع جاهزية المالية والضريبة قبل التنفيذ.</p>
-        </div>
+        {data && data.totalCount > 0 && data.taxAuthorityStatus !== 'VERSIONED_FEE_TREATMENT' ? (
+          <div className="flex gap-2 rounded-xl border border-warning/30 bg-warning/5 p-2.5 text-xs leading-5 text-foreground">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+            <p><strong>توجد استحقاقات تحتاج مراجعة ضريبية:</strong> بعض السجلات لا تتضمن معالجة ضريبية موثقة. راجع المصدر قبل اعتماد الأرقام.</p>
+          </div>
+        ) : null}
 
         {error ? (
           <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -350,6 +358,7 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
         <EntityTable
           rows={data?.accruals ?? []}
           columns={accrualColumns}
+          mobileBadgeKey="status"
           keyOf={(row) => row.id}
           isLoading={isLoading}
           error={error && !data ? error : undefined}
