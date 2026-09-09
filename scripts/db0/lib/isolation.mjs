@@ -152,6 +152,46 @@ export function findIsolationViolations(schema) {
     }
   }
 
+  // ------------------------------------------------------------------
+  // Tables with NO company_id are outside `tenantTables` and were therefore
+  // never checked at all. That blind spot hid two real cross-company read
+  // leaks (public.users and public.audit_log, SEC-003/SEC-004). A table may
+  // legitimately lack company_id, but only if it is global reference data or
+  // is itself keyed by company. Anything else must be declared here with the
+  // reason it is safe, so a NEW unscoped table fails the gate by default
+  // instead of silently inheriting an exemption.
+  // ------------------------------------------------------------------
+  const UNSCOPED_TABLES = new Map([
+    ['companies', 'company registry itself; rows are fenced by is_company_member(id, auth.uid())'],
+    ['users', 'identity registry; self-read, or admin limited to co-members of the active company'],
+    ['audit_log', 'carries its own company_id since 20260910000000; fenced and append-only'],
+    ['app_permission_catalog', 'global permission vocabulary; no company-owned data'],
+    ['tax_code_catalog', 'global tax reference data'],
+    ['onboarding_requirement_templates', 'global onboarding template data'],
+    ['payment_terms_templates', 'global payment-term templates'],
+    ['automation_jobs', 'global scheduler definitions; manager read only'],
+    ['governance', 'global read-only/locked-period switchboard'],
+    ['financial_operation_idempotency', 'private server-command store; deny-all to browser roles'],
+  ]);
+
+  for (const table of schema.tables) {
+    if (columnsByTable.get(table.name)?.has('company_id')) continue;
+    if (!UNSCOPED_TABLES.has(table.name)) {
+      add(
+        'UNSCOPED_TABLE_UNDECLARED',
+        `${table.name} has no company_id column and is not declared in UNSCOPED_TABLES; prove it holds no company-owned data or add company_id + an RLS fence`,
+      );
+      continue;
+    }
+    if (!table.rls_enabled) {
+      add('RLS_DISABLED', `${table.name} has RLS disabled`);
+      continue;
+    }
+    if ((policiesByTable.get(table.name) ?? []).length === 0) {
+      add('NO_POLICY', `${table.name} has RLS enabled but no policy`);
+    }
+  }
+
   for (const fn of schema.functions) {
     if (!fn.security_definer) continue;
     if (!/search_path/.test(fn.config ?? '')) {

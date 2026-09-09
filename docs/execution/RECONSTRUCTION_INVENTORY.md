@@ -512,6 +512,34 @@ Fixed in the SPEC, not the product: the bank day is now derived from the company
 | `properties.current_value` | `numeric(14,2)` |
 | `tenant_balances.balance_due` | `numeric` |
 
+## SEC-003 / SEC-004 — two proven cross-company read leaks, found and closed (2026-09-10)
+
+Migration `20260910000000_audit_log_and_users_company_isolation.sql`. Both defects were **reproduced with real SQL** under the `authenticated` role with real JWT claims before any fix was written, and the reproduction is preserved as `rentrix-app/src/features/auth/company-unscoped-tables-isolation.pglite.test.ts`.
+
+### Why no existing gate caught them
+The WP-DB0 isolation gate builds its worklist as `tables.filter(t => columns(t).has('company_id'))`. **A table with no `company_id` column was therefore never checked for cross-company reachability at all.** Ten tables sat in that blind spot. Eight are genuinely global reference data; two were leaking.
+
+### SEC-003 — `public.users`
+Policy `users_read_self_or_admin` was `id = auth.uid() OR is_admin()`. `is_admin()` proves the caller is an ADMIN **of their own current company** — it says nothing about the row being read. So an ADMIN of company A could enumerate **every user row in the database**, including users belonging only to company B: email, name, role, status, last_login. Fixed by fencing the admin branch through a new `public.user_is_member_of_active_company(uuid)` predicate (SECURITY DEFINER, pinned `search_path`, reads `company_members` only so it cannot recurse through the policy that uses it). Self-read is preserved verbatim, including the `(select auth.uid())` initplan form from `20260901000063`.
+
+### SEC-004 — `public.audit_log`
+Policy `admin_read_audit_log` was bare `is_admin()` on a table with **no `company_id` column at all** — so an ADMIN of company A could read the entire audit history of every company: actions, entity ids, notes, `old_value`/`new_value`. Only **1 of the 48 audit writers** recorded company attribution (in `details`). Fixed by adding `company_id` with an FK to `companies`, defaulting it from `current_company_id()` so all 48 existing writers become attributed without touching one of them, and fencing the read.
+
+**Historical attribution was recovered only from evidence already in the row** (`details->>'company_id'`). Rows with no such evidence keep `company_id IS NULL` and are invisible to every company admin, because the fence yields NULL rather than true. Withholding unproven history is the fail-closed choice; assigning it to a guessed company would fabricate an audit trail. Nothing was deleted or rewritten — additive attribution over an append-only log.
+
+Also made the log **physically** append-only for browser roles. `20260901000001` grants insert/update/delete on `audit_log` to `authenticated`; no permissive UPDATE/DELETE policy exists today so RLS already denied those verbs, but that safety was implicit and one future permissive policy would have silently unlocked history rewriting. Explicit RESTRICTIVE deny policies now make it gate-visible. Definer-owned writers are unaffected.
+
+### The gate blind spot itself is closed
+`scripts/db0/lib/isolation.mjs` now iterates tables that lack `company_id` and requires each to be declared in an `UNSCOPED_TABLES` allow-list with a written justification, emitting `UNSCOPED_TABLE_UNDECLARED` otherwise. **A new unscoped table now fails the gate by default instead of inheriting a silent exemption.** Verified by negative control: removing one entry reproduces the failure.
+
+### Evidence
+- Reproduction is real: with the migration temporarily moved aside, **6 of 10 tests fail**; with it in place, **10/10 pass**. Not a vacuous suite.
+- `pnpm db0:gate` **7/7** (isolation now covers 107 tenant tables / 254 policies, up from 106/252 — `audit_log` joined the checked set).
+- Independent sweep of all 252 policies: **0** mention `company_id` without binding it to the caller, **0** tautological fences (`company_id IS NOT NULL` / `company_id = company_id`).
+- `pnpm typecheck` clean · `check:migration-hygiene` OK · `check:business-rules` verified · `db:guardian` PASS.
+- Auth/audit/governance/admin-support suites **283/283**. Full sharded regression **552 files / 3,943 tests, 0 assertion failures** (one suite-level 60s hook timeout in `owner-statement-company-isolation.test.ts` under 6-way parallel load; passes 4/4 in 5.8s standalone — a load artifact, not a regression).
+- `password_hash` on `public.users` is vestigial: never written by any migration or application path (Supabase Auth owns credentials). The test asserts the column is empty for **every** row rather than that one read returned null, which would have been an unfalsifiable assertion.
+
 ## Final audit — UI/UX, RTL, responsiveness, accessibility, PWA cache privacy, dead code (2026-09-10)
 
 ### The browser suite needs TWO different builds — running the wrong one produces 26 false failures

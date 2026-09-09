@@ -436,6 +436,7 @@ export type Database = {
           old_value: Json | null;
           new_value: Json | null;
           action_timestamp: string;
+          company_id: string | null;
         };
         Insert: {
           id?: string;
@@ -453,6 +454,7 @@ export type Database = {
           old_value?: Json | null;
           new_value?: Json | null;
           action_timestamp?: string;
+          company_id?: string | null;
         };
         Update: {
           id?: string;
@@ -470,8 +472,17 @@ export type Database = {
           old_value?: Json | null;
           new_value?: Json | null;
           action_timestamp?: string;
+          company_id?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'audit_log_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       automation_jobs: {
         Row: {
@@ -10152,6 +10163,12 @@ export type Database = {
           p_public_note?: string | null;
         };
         Returns: Json;
+      };
+      user_is_member_of_active_company: {
+        Args: {
+          target_user_id: string | null;
+        };
+        Returns: boolean;
       };
       // 2 overloads in the database; all callable signatures are preserved.
       //   void_receipt_atomic(payload jsonb)
