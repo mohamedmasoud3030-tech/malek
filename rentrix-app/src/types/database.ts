@@ -6396,6 +6396,7 @@ export type Database = {
           company_id: string;
           accounting_period_id: string | null;
           review_scope: Json;
+          expense_source_snapshot_version: number | null;
           dataset_fingerprint: string;
           dataset_lineage: string;
           creation_timestamp: string;
@@ -6417,6 +6418,7 @@ export type Database = {
           company_id?: string;
           accounting_period_id?: string | null;
           review_scope?: Json;
+          expense_source_snapshot_version?: number | null;
           dataset_fingerprint: string;
           dataset_lineage: string;
           creation_timestamp?: string;
@@ -6438,6 +6440,7 @@ export type Database = {
           company_id?: string;
           accounting_period_id?: string | null;
           review_scope?: Json;
+          expense_source_snapshot_version?: number | null;
           dataset_fingerprint?: string;
           dataset_lineage?: string;
           creation_timestamp?: string;

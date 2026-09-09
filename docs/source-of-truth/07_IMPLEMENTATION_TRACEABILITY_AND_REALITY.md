@@ -450,3 +450,17 @@ sample without rewriting its original batch, and reverses cleanly. This does
 not approve production correction or complete the OWNER expense write lifecycle.
 Correction dating, review snapshot integrity and coupled settlement/allocation
 remain explicit next work in the live inventory; governed stage credit unchanged.
+
+### Reviewed expense correction source controls
+FIN-007/013/016/019, SEC-001/002: migration11 binds the existing S08/S09 expense
+correction path to immutable server-generated, explicitly scoped source
+snapshots. Nullable provenance prevents trusting pre-upgrade caller JSON.
+Snapshot table reads require the existing financial-report permission and retain
+restrictive company isolation; authorized permission grants still work.
+Independent approval and repeated source checks detect financial/ownership/
+posting drift; source-date posting prevents premature period-opening balances.
+Existing postings/retries/reversals survive upgrade without backfill. The local
+mid-period sample reconciles correctly before/after its economic date and is
+verified in desktop/mobile report UI. Generic OWNER expense creation, coupled
+allocation/settlement/offset flows, command UI and broader audit remain open.
+No production correction, legal certification or governed stage credit implied.
