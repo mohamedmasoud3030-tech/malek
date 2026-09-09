@@ -429,4 +429,19 @@ Verification: focused 8/8; reports/owners/lifecycle 53 files / 400 PASS; full re
 ### Still open (follow-on, not part of this milestone)
 The governed adoption workflow itself — turning a listed unallocated co-owned expense into an authoritative per-owner allocation — still needs its user-facing surface. Until then these expenses are correctly visible-but-unattributed rather than silently split.
 
-`rpt_owner_financial_position` (canonical baseline lines 2183–2197) still carries the same bare-EXISTS co-ownership shape and is NOT yet repaired; it is the next target.
+### `rpt_owner_financial_position` — INVESTIGATED, NO REPAIR NEEDED (baseline text is dead)
+Canonical baseline lines 2183–2197 contain an inline owner-expense selector inside `rpt_owner_financial_position` with the identical bare-EXISTS `property_owners` shape. It was carried on the open list as a fifth unrepaired site. Dumping the LIVE definition after the full 94-migration replay showed that text is **no longer live**: `20260909000014` and `20260909000016` rewrote the function so its period economics come from `public.calculate_owner_net_payout`, which migration18 had already moved onto the sole-owner predicate. The live body contains no `charged_to` and no `property_owners` reference at all. **No migration was written — there was no live defect to repair, and inventing one would have been a parallel implementation of an already-correct path.**
+
+Proved behaviourally rather than by reading the diff: `owner-position-coownership-inheritance.test.ts`, 10 PASS. The report charges the unallocated co-owned 100 to neither owner, attributes the sole-era 70 to its historical owner, agrees exactly with its declared authority `calculate_owner_net_payout`, and structurally asserts the inline selector cannot return. A dedicated TEETH test re-executes the exact baseline bare-EXISTS query against the same fixture and shows it yields 170 + 100 = 270 for a 170 real cost — so the suite demonstrably fails if the defect is reintroduced, rather than passing vacuously.
+
+The same suite locks the two contract properties the report exists for: settled entitlement (`settled_pending_net`, `paid_net`) is reported separately from proven cash (`paid_cash`, `paid_cash_proven_total`); missing cash evidence yields `paid_cash = null` with a disclosed `paid_cash_evidence_missing_count`, never a coerced zero and never a partial total presented as complete; and `remaining_payable` equals the all-time outstanding net rather than a single period's entitlement minus lifetime disbursement. The professional Arabic document mirrors this: every figure is labelled with its scope ("كل الفترات" vs "للفترة"), unproven cash renders "غير مكتمل الإثبات", and no all-period disbursement total is subtracted from a period entitlement anywhere in the document.
+
+### Full LIVE sweep of owner-expense selectors (closes the co-ownership defect class)
+Rather than continue site-by-site, every LIVE function in `public`/`app_private` that reads owner-charged expenses or `due_from_owner` AND touches `property_owners` was enumerated from `pg_proc` after a clean replay. Four carry the repaired predicate — `_owner_statement_expenses`, `calculate_owner_net_payout`, `owner_settlement_reservable_expenses`, `recalculate_owner_balance`. Four retain a `property_owners` reference, each inspected and each correct by design:
+
+- `app_private.expense_correction_source_snapshot` — captures the ownership roster AS OF the expense date as immutable review evidence, and takes `for share` locks. It must record every owner, not pick one.
+- `public.create_expense_with_journal_atomic` — validates that each explicitly supplied allocation names an owner who genuinely held the property at the expense date (`OWNER_EXPENSE_ALLOCATION_OWNER_FORBIDDEN`). Membership validation, not attribution.
+- `public.s08_analyze_expense_misclassification` — DETECTS `owner_count > 1`; that is its purpose.
+- `public.owner_unallocated_shared_expenses` — the visibility surface added by migration18, which exists precisely to list multi-owner expenses.
+
+No unrepaired instance of the defect remains live.
