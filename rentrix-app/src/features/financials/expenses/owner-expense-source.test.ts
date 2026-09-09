@@ -292,7 +292,14 @@ it("joins creation, versioned lawful offset, cash recovery and residual settleme
     ]);
     // Reconstruct the earlier balance after later recovery and payout exist;
     // never use the current outstanding field as the historical balance.
-    expect((await d.query("select subledger_balance::text as source,gl_balance::text as control from public.wp05_reconcile_all($1,$2::date) where account_no='1300'",[COMPANY,at(9)])).rows).toEqual([{source:'210.000',control:'210.000'}]);
+    expect(
+      (
+        await d.query(
+          "select subledger_balance::text as source,gl_balance::text as control from public.wp05_reconcile_all($1,$2::date) where account_no='1300'",
+          [COMPANY, at(9)],
+        )
+      ).rows,
+    ).toEqual([{ source: "210.000", control: "210.000" }]);
   } finally {
     await d.close();
   }
@@ -585,3 +592,141 @@ it("enforces allocation completeness when deferred constraints actually fire", a
   );
   await db.exec("rollback to incomplete_source; set role authenticated");
 });
+
+it("applies an independently approved and validated pre12 S09 plan after upgrade without changing its source", async () => {
+  const { db: d } = await createOfficeCreditorFixture({
+    throughMigration: "20260909000011",
+  });
+  try {
+    await d.query(
+      "insert into public.company_members(company_id,user_id,role) values($1,$2,'ADMIN')",
+      [COMPANY, OTHER],
+    );
+    await d.exec("set role authenticated");
+    const { owner_allocations, allocation_evidence, ...old } = payload();
+    const expense = await command(d, "create_expense_with_journal_atomic", old);
+    const period = (
+      await d.query<{ id: string }>(
+        "select id from public.accounting_periods where company_id=$1 and $2::date between start_date and end_date",
+        [COMPANY, at(9)],
+      )
+    ).rows[0].id;
+    const review = await command(d, "s08_create_frozen_review", {
+      accounting_period_id: period,
+      review_scope: { expense_ids: [expense.expense_id] },
+      dataset_lineage: "pre12-approved-plan",
+    });
+    await d.query(
+      "select public.s08_analyze_frozen_review($1::uuid,'{}','{}','[]')",
+      [review.id],
+    );
+    await assumeIdentity(d, OTHER, COMPANY);
+    await d.query("select public.s08_approve_frozen_review($1::uuid,$2)", [
+      review.id,
+      "Independent source classification approval",
+    ]);
+    await assumeIdentity(d, MAKER, COMPANY);
+    const proposal = {
+      accounting_period_id: period,
+      review_id: review.id,
+      source_type: "expense",
+      source_id: expense.expense_id,
+      source_scope: { dataset_lineage: "pre12-approved-plan" },
+      reason: "Reviewed historical classification",
+      amount: 30.125,
+      debit_account_no: "1300",
+      credit_account_no: "6100",
+      request_id: crypto.randomUUID(),
+    };
+    const correction = await command(
+      d,
+      "s09_create_correction_draft",
+      proposal,
+    );
+    await d.query("select public.s09_validate_correction($1::uuid)", [
+      correction.id,
+    ]);
+    const batches = (
+      await d.query("select * from public.journal_batches order by id")
+    ).rows;
+    const original = (
+      await d.query(
+        "select to_jsonb(e) as data from public.expenses e where id=$1",
+        [expense.expense_id],
+      )
+    ).rows;
+    const frozen = (
+      await d.query(
+        "select to_jsonb(r) as data from public.s08_frozen_reviews r where id=$1",
+        [review.id],
+      )
+    ).rows;
+    await d.exec("reset role");
+    await d.exec(
+      readFileSync(
+        `${repoRoot}/supabase/migrations/20260909000012_owner_expense_allocation_source.sql`,
+        "utf8",
+      ),
+    );
+    await d.exec("set role authenticated");
+    expect(
+      (await d.query("select * from public.journal_batches order by id")).rows,
+    ).toEqual(batches);
+    expect(
+      (
+        await d.query(
+          "select to_jsonb(e)-'owner_allocation_version' as data from public.expenses e where id=$1",
+          [expense.expense_id],
+        )
+      ).rows,
+    ).toEqual(original);
+    expect(
+      (
+        await d.query(
+          "select to_jsonb(r) as data from public.s08_frozen_reviews r where id=$1",
+          [review.id],
+        )
+      ).rows,
+    ).toEqual(frozen);
+    expect((await command(d, "s09_create_correction_draft", proposal)).id).toBe(
+      correction.id,
+    );
+    await d.query("select public.s09_apply_correction($1::uuid)", [
+      correction.id,
+    ]);
+    const applied = (
+      await d.query("select * from public.journal_batches order by id")
+    ).rows;
+    expect(applied).toHaveLength(batches.length + 1);
+    expect(applied).toEqual(expect.arrayContaining(batches));
+    await expect(
+      d.query("select public.s09_apply_correction($1::uuid)", [correction.id]),
+    ).rejects.toThrow(/S09_APPLY_STATUS_INVALID/);
+    expect(
+      (await d.query("select * from public.journal_batches order by id")).rows,
+    ).toEqual(applied);
+    for (const [day, balance] of [
+      [8, "0.000"],
+      [9, "30.125"],
+    ] as const)
+      expect(
+        (
+          await d.query(
+            "select subledger_balance::text as source,gl_balance::text as control from public.wp05_reconcile_all($1,$2::date) where account_no='1300'",
+            [COMPANY, at(day)],
+          )
+        ).rows,
+      ).toEqual([{ source: balance, control: balance }]);
+    // Accounting classification approval does not invent allocation or offset law.
+    await expect(
+      command(d, "create_owner_settlement_draft_atomic", {
+        owner_id: OWNER,
+        period_start: at(1),
+        period_end: at(28),
+        request_id: crypto.randomUUID(),
+      }),
+    ).rejects.toThrow(/LEGACY_EXPENSE_REVIEW_REQUIRED/);
+  } finally {
+    await d.close();
+  }
+}, 60_000);
