@@ -469,17 +469,33 @@ Audit effect: `db0:audit` financial-precision findings **28 → 24**, `owner_bal
 
 Verification: focused 7/7; full regression **550 files / 3927 tests, 0 failures** (sharded run 516 files / 3724 with shard 7 SIGKILLed — INFRA, never counted — re-run solo in 5 chunks, 34 files / 203 PASS, closing the suite); db0 7/7 with **95/95** migrations replayed from clean and idempotency PASS; Guardian PASS all layers; `test:supabase` 84 + 58 + 1 + 1 + 241; business-rules hash unchanged; hygiene PASS; typecheck PASS; no generated-type drift; build/PWA 28 precache entries; browser 6/6 desktop+mobile, retries 0.
 
-### OPEN AUDIT FINDING — 24 remaining OMR precision drifts (recorded, not accepted)
-`pnpm db0:audit` still reports 24 MAJOR `DB0-07` findings after the `owner_balances` repair. They are listed here rather than left implicit. Each needs the same treatment applied above — prove the drift is reachable with a real 3-decimal amount, check dependent views, widen losslessly, do not backfill — and each must be judged individually, because some are not owner-money at all (`lands.purchase_price`, `properties.current_value`) and some are deliberately higher precision (`numeric(18,6)` fee snapshots, `numeric(14,4)` commission rates, which are RATES not amounts and must not be narrowed to 3).
+### OMR precision, second pass — 7 genuinely lossy columns widened, 17 findings analysed as false positives
+`20260909000021_money_columns_omr_precision.sql`. The audit rule flags any money column that is not exactly 3 decimals, which conflates three different situations. Each remaining finding was classified against its LIVE type instead of being swept:
+
+- **UNCONSTRAINED `numeric` (no typmod) — NOT changed, deliberately.** All five `owner_settlements` money columns, `tenant_balances.balance_due`, `commissions.*` and `lands.*`. A bare `numeric` keeps every decimal it is given, so it cannot truncate baisa — verified by round-tripping 12.345 through each. Imposing `numeric(18,3)` here would be a NARROWING that could round POSTED settlement history, the precise thing that must never happen.
+- **Deliberately wider scale — NOT changed.** `owner_agreements.commission_value`, `owner_agreement_versions.commission_value` and `fixed_monthly_daily_accruals.monthly_contract_amount` are `numeric(14,4)`; the contract-registration fee columns are `numeric(18,6)`. These are RATES and fee snapshots, not OMR amounts; narrowing them to 3 decimals would change agreed commercial terms.
+- **Genuinely lossy `numeric(14,2)` — WIDENED (7 columns).** `contract_balances.total_paid/total_invoiced/balance_due`, `bank_accounts.opening_balance`, `units.rent_amount`, `utility_bills.paid_amount`, `properties.purchase_value`. Proved at the storage layer first: writing 12.345 into each returned 12.35, losing 5 baisa. `contract_balances` is the same defect shape as `owner_balances` — a persisted DERIVED table maintained by `recalculate_all_balances` and the invoice/allocation updaters, so the stored balance could disagree with the invoices and receipts backing it.
+
+The same S08 view chain blocks `contract_balances.balance_due`; the capture/restore approach from migration20 is reused, but scoped to the exact `(table, column)` pairs being widened — an initial table-level capture wrongly pulled in `current_property_ownership`, `s08_master_lease_readiness` and `s08_retroactive_version_differences`, which depend on OTHER columns of the same tables and are unaffected by these ALTERs. No row is recomputed or backfilled.
+
+Regression: `money-columns-omr-precision.test.ts` 6 PASS, which also PINS the classification so a future "fix all audit findings" sweep cannot narrow a settlement column or a commission rate by mistake.
+
+Audit effect: DB0-07 findings **28 → 17**, BLOCKERS 0. The remaining 17 are the analysed false positives above, each safe by construction and now covered by an explicit test.
+
+### Browser: a latent midnight date-boundary defect in `owner-payout-bank-cash.spec.ts` (found, diagnosed, fixed)
+After migration21 this spec failed on desktop AND mobile, having passed two hours earlier. It was NOT caused by the migration, and a bisect-style check confirmed it: the spec and the whole `reconciliation/` service are untouched by every commit in this session.
+
+Root cause, proved rather than assumed: the spec created its bank statement line with `new Date().toISOString().slice(0,10)` — the **UTC** day — while the settlement's `paid_at` is `now()` and `bankReconciliationService` matches it with `toCompanyDateKey(..., 'Asia/Muscat')`, the company timezone hardcoded in the fake backend. Between 20:00 and 24:00 UTC, Muscat has already rolled over, so the bank line said `2026-09-09` while the settlement resolved to `2026-09-10`. `datedSettlements` came back empty, the cash-evidence RPC was therefore never called, the injected 503 never happened, and the error state under test could not render — the UI correctly showed "no suggestions" instead. Running with `TZ=UTC` did not help, which confirms the company calendar (not the runner clock) owns the comparison.
+
+Fixed in the SPEC, not the product: the bank day is now derived from the company calendar via `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Muscat' })`, matching exactly what the service compares against. The assertion was not weakened. Verified in the same failing window: 2/2 PASS, then the full owner set 6/6 PASS desktop+mobile at retries 0. **This defect made the suite unreliable for 4 hours of every day and would have recurred indefinitely.**
+
+### OPEN AUDIT FINDING — remaining OMR precision drifts (recorded, not accepted)
+`db0:audit` reports 17 MAJOR `DB0-07` findings after both precision migrations. Every one has been classified above and none is a live truncation defect: they are unconstrained `numeric` columns (lossless, and narrowing them would risk rounding posted history) or intentionally higher-scale rate/fee columns. They are listed for traceability, and `money-columns-omr-precision.test.ts` pins the classification so they cannot be "fixed" into a regression.
 
 | column | current type |
 |---|---|
-| `bank_accounts.opening_balance` | `numeric(14,2)` |
 | `commissions.amount` | `numeric` |
 | `commissions.deal_value` | `numeric` |
-| `contract_balances.total_invoiced` | `numeric(14,2)` |
-| `contract_balances.total_paid` | `numeric(14,2)` |
-| `contract_balances.balance_due` | `numeric(14,2)` |
 | `contract_registration_records.fee_value_snapshot` | `numeric(18,6)` |
 | `contract_registration_requirement_profiles.fee_value` | `numeric(18,6)` |
 | `fixed_monthly_daily_accruals.monthly_contract_amount` | `numeric(14,4)` |
@@ -493,13 +509,8 @@ Verification: focused 7/7; full regression **550 files / 3927 tests, 0 failures*
 | `owner_settlements.office_fee` | `numeric` |
 | `owner_settlements.tax_amount` | `numeric` |
 | `owner_settlements.net_payable` | `numeric` |
-| `properties.purchase_value` | `numeric(14,2)` |
 | `properties.current_value` | `numeric(14,2)` |
 | `tenant_balances.balance_due` | `numeric` |
-| `units.rent_amount` | `numeric(14,2)` |
-| `utility_bills.paid_amount` | `numeric(14,2)` |
-
-Priority order for the next session, worst first: `owner_settlements.*` (bare `numeric`, the settlement money path), `tenant_balances.balance_due` and `contract_balances.*` (persisted balances with the same stored-vs-derived drift shape just fixed on `owner_balances`), then `commissions.*`, then the asset-valuation columns which are the least likely to carry baisa.
 
 ## Intermittent bootstrap stall — diagnosis advanced, root cause NOT yet provable locally (2026-09-09)
 The standing hypothesis was an async auth-callback deadlock: a Supabase `onAuthStateChange` handler that `await`s a PostgREST call re-enters the GoTrue Web Lock and stalls the last `company_members` request on full-page navigation. **That hypothesis is now structurally excluded, by inspection rather than by guessing.** Both registered listeners — `src/hooks/use-auth.tsx:88` and `src/features/onboarding/useOnboarding.ts:66` — contain ZERO `await`/`async` tokens in their callback bodies (`grep -c` = 0 for each). They only call `setState`. A callback that never awaits cannot hold the auth lock across an I/O round trip, so the deadlock class cannot occur on these paths. No auth or Web Locks code was changed to reach this conclusion.

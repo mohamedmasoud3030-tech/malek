@@ -17,7 +17,14 @@ test('bank suggestions and confirmation use posted owner cash, and expose failed
     await db.exec('reset role');
     const bank=(await db.query<{id:string}>('insert into public.bank_accounts(company_id,account_name) values($1,$2) returning id',[COMPANY,'Payout evidence bank'])).rows[0].id;
     await db.exec('set role authenticated');
-    const line=await run('create_bank_statement_line_governed',{bank_account_id:bank,transaction_date:new Date().toISOString().slice(0,10),amount:-979.875,description:'Residual owner payout',reference:'bank-source-proof'});
+    // The bank day must be the COMPANY calendar day, not the UTC day. The
+    // settlement's paid_at is now(), and bankReconciliationService compares it
+    // via toCompanyDateKey(..., 'Asia/Muscat'). Using the UTC date made this
+    // spec fail every day between 20:00 and 24:00 UTC, when Muscat has already
+    // rolled over: datedSettlements came back empty, the cash-evidence RPC was
+    // never called, and the 503 error state under test could not appear.
+    const bankDay=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Muscat',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const line=await run('create_bank_statement_line_governed',{bank_account_id:bank,transaction_date:bankDay,amount:-979.875,description:'Residual owner payout',reference:'bank-source-proof'});
     const batches=(await db.query('select id from public.journal_batches order by id')).rows;
     await installAcceptanceBrowser(page);
     const seed=await installFakeSupabaseBackend(page);
