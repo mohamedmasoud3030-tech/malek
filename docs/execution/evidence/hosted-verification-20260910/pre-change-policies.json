@@ -1,0 +1,1 @@
+[{"tbl":"audit_log","polname":"admin_read_audit_log","using_expr":"is_admin()","check_expr":null,"polpermissive":true,"cmd":"r","roles":"authenticated"},{"tbl":"users","polname":"users_read_self_or_admin","using_expr":"((id = ( SELECT auth.uid() AS uid)) OR is_admin())","check_expr":null,"polpermissive":true,"cmd":"r","roles":"authenticated"}]

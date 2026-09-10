@@ -36,7 +36,32 @@ Note on a false lead: the first probe returned `PGRST205 Could not find the tabl
 
 ---
 
-## 2. CONFIRMED LIVE VULNERABILITIES — both fixes are absent from production
+## 2a. APPLIED TO PRODUCTION — both leaks are now CLOSED (authorized 2026-09-10)
+
+The user explicitly authorized applying **only** `20260910000000` and confirmed **all current production data is test data**. Applied via the management query endpoint; the migration carries its own `begin/commit`.
+
+**Before → after, measured by impersonating the real `authenticated` role with real JWT claims (each probe wrapped in `begin … rollback`):**
+
+| Actor | `users` visible | `audit_log` visible |
+|---|---|---|
+| Admin of company `5138ff36` — **before** | 6 (all) | 41 (all) |
+| Admin of company `5138ff36` — **after** | **2** (own company only) | **0** |
+| Admin of company `ae96d298` — **after** | 6 (all 6 *are* its members) | **7** (its own attributed rows) |
+
+The live policy expressions are now:
+```
+users     :: ((id = (SELECT auth.uid())) OR (is_admin() AND user_is_member_of_active_company(id)))
+audit_log :: (is_admin() AND (company_id = current_company_id()))
+```
+`audit_log.company_id` exists, `user_is_member_of_active_company` exists, and both RESTRICTIVE deny policies (`audit_log_no_client_update`, `audit_log_no_client_delete`) are present.
+
+**Data integrity: nothing lost.** 41 audit rows before and after, 6 users, 2 companies. Of the 41 rows, **7 recovered attribution** from evidence already embedded in `details->>'company_id'`; the remaining **34 stay NULL and are withheld from every admin** rather than being assigned to a guessed company — the fail-closed behaviour the migration was designed for, now confirmed on real data.
+
+**No regression:** a definer-owned audit insert still succeeds and is auto-attributed by the new column default; a VIEWER still reads exactly their own user row; the anon boundary still returns `42501` after a PostgREST schema reload. The smoke transaction was rolled back and left **0** rows.
+
+Recorded in `supabase_migrations.schema_migrations` as version `20260910000000` (ledger now 80 entries) so a future `db push` will not re-run it. Pre-change policy definitions are captured in `pre-change-policies.json` for rollback.
+
+## 2. THE VULNERABILITIES AS FOUND (now fixed — see 2a)
 
 The two defects found and fixed this session in `20260910000000_audit_log_and_users_company_isolation.sql` are **live in production right now**. Verified by reading the actual policy expressions from `pg_policy`:
 
