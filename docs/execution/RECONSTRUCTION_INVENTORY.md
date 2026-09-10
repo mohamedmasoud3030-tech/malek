@@ -51,6 +51,26 @@ A Supabase management token became available and was used against the live `Male
 
 **NEXT:** governed adoption/allocation workflow UI (migration18 follow-on).
 
+## migration16 — owner position cash evidence: BROWSER BLOCKER CLOSED (2026-09-10)
+
+**The interrupted browser run was never a real failure of the fix.** Re-run on the untampered `VITE_E2E=true` production build against the static preview: `e2e/owner-position-cash.spec.ts` **3 PASS** (chromium desktop + tablet + mobile), retries 0.
+
+- **The `property_owners` fixture-relation problem is distinct from the intermittent bootstrap defect, and is now proven by inspection.** The hermetic backend treats `select` as a reserved parameter and skips any filter key containing `.` (`handleTableRequest`), so it has **no PostgREST embed parser at all**. `property_owners` was seeded only as a flat top-level table, so `properties` rows came back without the nested key and `owner-dossier-body.tsx:57` hit `.find()` on `undefined`. The spec now builds the nested relation from **real SQL** (`to_jsonb(p) || jsonb_build_object('property_owners', jsonb_agg(to_jsonb(po)))`). **No production fallback was added**: `listOwnerProperties` uses `property_owners!inner(*)`, and an inner join cannot return a null embed in real PostgREST, so a `?.` there would have masked a fixture defect rather than fixed one. `normalizePropertyWithOwners` remains the single enforcement point for the left-join path (`listPropertiesWithOwners`).
+- **Assertions were not weakened — proven by negative control.** Flipping the incomplete-evidence disclosure in `owner-financial-authority-section.tsx` made the spec **FAIL**; the file was then restored byte-for-byte (`git status` clean). The suite genuinely detects the defect class it claims to cover.
+- **Settled entitlement is displayed separately from proven cash.** Parser invariant (`owner-financial-authority-service.ts:113-115`) rejects any response where `paid_cash` is non-null while evidence is missing, or where `paid_cash <> paid_cash_proven_total`. Missing history yields `paid_cash = null` rendered as **"غير مكتمل الإثبات"** plus a partial total explicitly labelled as not-the-full-figure — never silently coerced to zero and never presented as a complete total.
+- **All-period disbursement is never subtracted from a single period's entitlement.** Every lifecycle figure in `professional-owner-report.ts` is labelled "كل الفترات", and the document states this in-line (lines 330-333, 346-348).
+- Focused proof: `owner-paid-cash-position` + `owner-financial-service` + `owner-position-response-contract` = **25 PASS** on real PGlite SQL.
+
+### Regression found and fixed at the source: forward-carry silently reverted migration15
+
+Running the full financial/owner suite surfaced **3 failures** in `owner-payout-cash-authority.test.ts` — **caused by this session's own `20260910000002` forward-carry.** It runs `create or replace function public.process_bank_reconciliation_match_atomic(jsonb)` with the `20260901000033` body; on a **clean replay** filename order places it *after* `20260909000015`, reverting that migration's two patches. The match authority fell back to reading `s.net_payable` (the **entitlement**) instead of `app_private.owner_settlement_paid_cash` (**proven cash**), and lost `OWNER_PAYOUT_CASH_EVIDENCE_REQUIRED`. That would let a bank line reconcile against an owner payout never actually paid in cash.
+
+**Production was never affected** — there `...015` was applied *after* the forward-carry, so the live function already held both changes (verified `owner_settlement_paid_cash` ×1, `OWNER_PAYOUT_CASH_EVIDENCE_REQUIRED` ×1, legacy needle ×0, `Cross-company` ×10). The defect was **clean-replay-only**, which is exactly what the replay gate exists to catch.
+
+**Fix:** `supabase/migrations/20260910000003_reapply_owner_payout_cash_authority_after_forward_carry.sql` re-applies migration15's DO block, **copied verbatim by line range** (`diff` against lines 69-89 of `...015`: IDENTICAL). Neither merged migration was edited — rewriting merged migrations is the root cause of the anchor-drift class this session spent its time repairing. The block is **strictly idempotent**: for each patch it skips when the replacement is already present exactly once, aborts with `OWNER_PAYOUT_CASH_MATCH_PRECONDITION` on any unrecognised state, and never double-applies. Proven by applying the whole chain **plus OPS-003 a second time**: result `cash_reader 1 / guard 1 / cross_guards 10`, 101 applied, 0 failures. Applied to production HTTP 201 as a **verified no-op** (function length `16886` unchanged); ledger row recorded.
+
+Verification: replay **100/100** · `db0:gate` **7/7** · typecheck clean · migration-hygiene OK · business-rules hash unchanged · financials+owners **933/933 PASS** (was 930 + 3 failed) · browser **3 PASS** desktop/tablet/mobile.
+
 ## IN PROGRESS
 - Continuing financial authority review: VAT/credit report lineage, lifecycle eligibility, historic snapshot semantics, and least-authority RPC/table grants.
 - Historical AR/deposit cutoff repair now passes repository SQL and desktop/mobile browser regressions. Continuing legacy-lineage compatibility and remaining report/tax authority review; hosted deployment is unverified.
