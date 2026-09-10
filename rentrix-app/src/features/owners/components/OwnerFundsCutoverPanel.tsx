@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { EntityForm } from '@/components/ui/entity-form';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
@@ -247,7 +248,7 @@ export function OwnerFundsCutoverPanel() {
       </AsyncContentState>
 
       {canGovern ? (
-        <form
+        <EntityForm.Root
           className="space-y-3 rounded-lg border p-3"
           onSubmit={(event) => {
             event.preventDefault();
@@ -255,69 +256,67 @@ export function OwnerFundsCutoverPanel() {
             createMutation.mutate();
           }}
         >
-          <p className="font-medium">إنشاء مسودة قطع محاسبي (معد)</p>
-          {baselineAlreadyStored ? (
-            <p className="text-sm text-muted-foreground" role="status">
-              يوجد قطع محاسبي محفوظ لهذه الشركة؛ إعادة الإرسال تُعيد نفس المسودة دون تغيير ولا
-              تُستبدل. لا تُعد الواجهة أرصدة تاريخية معتمدة.
-            </p>
-          ) : null}
-          <p className="text-sm text-muted-foreground">
-            الرصيد لا يُدخل هنا: يشتق الخادم رصيد حساب {OWNER_FUNDS_GL_ACCOUNT} وعدد حركاته وبصمته عند
-            تاريخ القطع.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1">
-              <span className="text-sm">تاريخ القطع</span>
-              <Input
-                type="date"
-                aria-label="تاريخ القطع المحاسبي"
-                value={cutoverDate}
-                onChange={(event) => setCutoverDate(event.target.value)}
+          <EntityForm.Section
+            title="إنشاء مسودة قطع محاسبي (معد)"
+            description={`الرصيد لا يُدخل هنا: يشتق الخادم رصيد حساب ${OWNER_FUNDS_GL_ACCOUNT} وعدد حركاته وبصمته عند تاريخ القطع.`}
+          >
+            {baselineAlreadyStored ? (
+              <p className="text-sm text-muted-foreground" role="status">
+                يوجد قطع محاسبي محفوظ لهذه الشركة؛ إعادة الإرسال تُعيد نفس المسودة دون تغيير ولا
+                تُستبدل. لا تُعد الواجهة أرصدة تاريخية معتمدة.
+              </p>
+            ) : null}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <EntityForm.Field label="تاريخ القطع" required>
+                <Input
+                  type="date"
+                  aria-label="تاريخ القطع المحاسبي"
+                  value={cutoverDate}
+                  onChange={(event) => setCutoverDate(event.target.value)}
+                  required
+                />
+              </EntityForm.Field>
+              <EntityForm.Field label="مراجعة S08 معتمدة" required>
+                <Select
+                  aria-label="مراجعة S08 المعتمدة"
+                  value={s08ReviewId}
+                  onChange={(event) => setS08ReviewId(event.target.value)}
+                  required
+                >
+                  <option value="">اختر مراجعة معتمدة…</option>
+                  {approvedReviews.map((review) => (
+                    <option key={review.id} value={review.id}>
+                      {review.datasetLineage || review.id} {review.reviewedAt ? `— ${review.reviewedAt}` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </EntityForm.Field>
+            </div>
+            {reviewsQuery.isError ? (
+              <p className="text-sm" role="alert">
+                تعذر تحميل مراجعات S08 المعتمدة، ولا يمكن إنشاء مسودة بدون مراجعة معتمدة.
+              </p>
+            ) : null}
+            {!reviewsQuery.isError && reviewsQuery.isSuccess && approvedReviews.length === 0 ? (
+              <p className="text-sm" role="status">
+                لا توجد مراجعة S08 معتمدة لهذه الشركة؛ لا يمكن تبني رصيد افتتاحي قبل اعتمادها.
+              </p>
+            ) : null}
+            <EntityForm.Field label="سبب التبني (3 أحرف على الأقل)" required>
+              <Textarea
+                aria-label="سبب التبني"
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                rows={2}
                 required
               />
-            </label>
-            <label className="space-y-1">
-              <span className="text-sm">مراجعة S08 معتمدة</span>
-              <Select
-                aria-label="مراجعة S08 المعتمدة"
-                value={s08ReviewId}
-                onChange={(event) => setS08ReviewId(event.target.value)}
-                required
-              >
-                <option value="">اختر مراجعة معتمدة…</option>
-                {approvedReviews.map((review) => (
-                  <option key={review.id} value={review.id}>
-                    {review.datasetLineage || review.id} {review.reviewedAt ? `— ${review.reviewedAt}` : ''}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          </div>
-          {reviewsQuery.isError ? (
-            <p className="text-sm" role="alert">
-              تعذر تحميل مراجعات S08 المعتمدة، ولا يمكن إنشاء مسودة بدون مراجعة معتمدة.
-            </p>
-          ) : null}
-          {!reviewsQuery.isError && reviewsQuery.isSuccess && approvedReviews.length === 0 ? (
-            <p className="text-sm" role="status">
-              لا توجد مراجعة S08 معتمدة لهذه الشركة؛ لا يمكن تبني رصيد افتتاحي قبل اعتمادها.
-            </p>
-          ) : null}
-          <label className="block space-y-1">
-            <span className="text-sm">سبب التبني (3 أحرف على الأقل)</span>
-            <Textarea
-              aria-label="سبب التبني"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              rows={2}
-              required
-            />
-          </label>
-          <Button type="submit" disabled={!canSubmitDraft || createMutation.isPending}>
-            إنشاء مسودة القطع
-          </Button>
-        </form>
+            </EntityForm.Field>
+          </EntityForm.Section>
+          <EntityForm.Actions
+            submitLabel="إنشاء مسودة القطع"
+            submitDisabled={!canSubmitDraft || createMutation.isPending}
+          />
+        </EntityForm.Root>
       ) : (
         <p className="text-sm text-muted-foreground" role="status">
           إنشاء قطع محاسبي متاح للمدير أو المحاسب فقط، وهو مقيّد أيضاً في الخادم.

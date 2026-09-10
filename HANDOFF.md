@@ -2,13 +2,13 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-10T16:50Z (Asia/Muscat)
+**Last updated:** 2026-09-10T17:40Z (Asia/Muscat)
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `354bc427b68269ada230679ccb4d316baefa65d8`
-**Remote HEAD (actual, verified via ls-remote):** `354bc427b68269ada230679ccb4d316baefa65d8`
-**Local HEAD:** `354bc427b68269ada230679ccb4d316baefa65d8`
-**Working tree:** clean
+**Last work commit (code/schema/evidence):** `4da6a26d0f028f404477e74e741c5fccc3d4990e` → will become new SHA after NOW-1 fix
+**Remote HEAD (actual, verified via ls-remote):** `4da6a26d0f028f404477e74e741c5fccc3d4990e` (before NOW-1 push)
+**Local HEAD:** `4da6a26d0f028f404477e74e741c5fccc3d4990e` (before NOW-1 push)
+**Working tree:** 1 file modified (OwnerFundsCutoverPanel.tsx canonical form fix)
 **Branch tracking:** `origin/reconstruction/checkpoint-20260909`
 
 Confirm tip:
@@ -22,25 +22,39 @@ git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git refs/heads/rec
 
 This section is the **continuous memory** between Arena sessions. It is the authority for what to do next.
 
-### CURRENT STATE (actual, verified 2026-09-10)
+### CURRENT STATE (actual, verified 2026-09-10 17:40Z)
 
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch | `reconstruction/checkpoint-20260909` |
-| Remote HEAD | `354bc427b68269ada230679ccb4d316baefa65d8` — feat(owners): canonical governed adoption surface for owner-funds cutover (G6) |
-| Local HEAD | same |
+| Remote HEAD (before NOW-1 push) | `4da6a26d0f028f404477e74e741c5fccc3d4990e` — docs(handoff): transform to autonomous loop |
+| Local HEAD (before NOW-1 push) | same |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Commits between previous handoff and now | **1**: `354bc427` |
-| Files changed in that commit | 7: HANDOFF.md (9 +-), docs/execution/RECONSTRUCTION_INVENTORY.md (32 ++), OwnerFundsCutoverPanel.tsx (337 +), OwnerSettlementWorkspace.tsx (2 +), owner-funds-cutover-adoption.pglite.test.ts (505 +), owner-funds-cutover-service.test.ts (176 +), owner-funds-cutover-service.ts (430 +) |
-| Working tree | clean |
-| Tracked files | ~1,746 (was 1,743) |
+| Commits between previous handoff and now | **2**: `354bc427` (G6) + `4da6a26d` (autonomous loop transform) |
+| Working tree | 1 modified: `OwnerFundsCutoverPanel.tsx` — raw `<form>` → canonical `EntityForm.Root` (design-system inventory fix) |
+| Tracked files | ~1,746 |
 | Migrations in repo | 100 |
-| Production ledger | 109 rows (pre-baseline squashed) |
-| Unit/integration test files | 555 (was 553, +2 from G6) |
+| Production ledger | 109 rows |
+| Unit/integration test files | 555 |
 | Playwright specs | 29 |
 | pnpm | 10.11.1 restored via /home/user/bin/pnpm |
 | Node | v20.20.2 |
+| Fresh baseline (NOW-1) | typecheck clean, gates 7/7 PASS, replay 100/100, business-rules v2.0.0 382a0b8c unchanged, migration-hygiene OK, guardian PASS, focused financials+owners 137 files / 967 tests PASS, full sharded 554 files / 3977 tests PASS (0 failures) — after fixing raw form violation |
+
+### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30Z)
+
+- `pnpm typecheck`: clean
+- `pnpm db0:gate`: 7/7 PASS (regressions, migration-chain 100/100, idempotency, schema-type-drift, contract, isolation 107 tables / 254 policies, role-model)
+- `node scripts/db0/replay-migrations.mjs`: 100/100 applied, 0 failures
+- `pnpm check:business-rules`: v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79 — unchanged (G6 adds no migration, no accounting rule)
+- `pnpm check:migration-hygiene`: OK (legacy warning non-blocking)
+- `pnpm db:guardian`: PASS all layers (db0-gate, canonical-authority, sensitive-rpc-auth, internal-gl-rpc-boundary, tax-readiness-boundary, security-definer-governance, security-definer-boundary, function-default-acl, strict-governance, governance-migration-safety, migration-hygiene, privileged-key-scan)
+- Focused `src/features/financials src/features/owners`: **137 files / 967 tests PASS** (was 135/933 at e6e2e444; +2 files / +34 tests from G6)
+- Full sharded `run-sharded-regression.mjs`: **554 files / 3977 tests / 0 failures**, 0 INFRA kills — **was failing 1** due to design-system inventory (raw `<form>` in OwnerFundsCutoverPanel.tsx), now fixed to canonical `EntityForm.Root` (allowed because `components/ui` excluded from raw-control check). Classification: previous G6 work **PROVEN INCORRECT** for that specific pattern, now corrected to **PROVEN CORRECT**.
+- No new RLS, precision, or contract drift.
+
+
 
 ### AUDIT OF PREVIOUS EXECUTION (since 75799c3f)
 
@@ -91,65 +105,59 @@ From §A Standing constraints + §J:
 - Fixture backends fail closed (404/PGRST205) on unseeded tables — never answer `200 []`.
 - Must NOT be invented without approved source/user: any accounting treatment not in `docs/source-of-truth/`, any opening balance/cutover date/historical allocation lacking S08/S09 approval, any authorization rule inferred from field name/classification alone, any production data fix.
 
-### PROVEN (evidence-based)
+### PROVEN (evidence-based, fresh after NOW-1)
 
-- Production/repository function parity: 0 semantic differences across 431 functions (measured at e6e2e444, needs re-measure after 354bc427)
-- Migration-chain completion: 100/100 replay
-- RLS/company-isolation corrections: SEC-003/SEC-004 closed in repo and production (6 users/41 audit rows → 2 users/0 audit rows for foreign admin; 41 preserved, 7 attributed, 34 withheld fail-closed)
-- audit-log isolation, users isolation
-- Financial precision: 74/74 OMR money columns at numeric(18,3) + 7 genuinely lossy columns widened (contract_balances, bank_accounts.opening_balance, units.rent_amount, utility_bills.paid_amount, properties.purchase_value)
+- Production/repository function parity: 0 semantic differences across 431 functions (measured at e6e2e444, needs re-measure after 354bc427 + 4da6a26d + this fix — still pending in NEXT-5)
+- Migration-chain completion: **100/100 replay** — freshly measured 2026-09-10 17:40Z, 0 failures
+- RLS/company-isolation: 107 tenant tables / 254 policies, 0 violations; SEC-003/SEC-004 closed in repo and production (6 users/41 audit rows → 2 users/0 audit rows for foreign admin; 41 preserved, 7 attributed, 34 withheld fail-closed)
+- audit-log isolation, users isolation — gates 7/7 PASS
+- Financial precision: 74/74 OMR money columns at numeric(18,3) + 7 genuinely lossy columns widened; business-rules hash **v2.0.0 382a0b8c** unchanged (G6 + form fix add no accounting rule)
 - Owner financial-chain: accrual posting status visible on tablet (b11b5da3), owner-payout cash authority re-applied (298739ad), owner position cash evidence, owner statement settlement authority (paid_at, proven cash, PAID-only)
 - Co-ownership expense handling: unallocated stays unallocated, double-count fixed, stored balance vs statement parity
-- PWA/offline privacy: 0 private API paths in precache, runtime 3/3
+- PWA/offline privacy: 0 private API paths in precache (needs re-measure in NEXT-1)
 - Responsive/tablet corrections, authentication/session consolidation, report and statement corrections
-- G6 allocation UI already existed (owner-expense-allocation-fields.tsx) + governed adoption surface built canonically (354bc427) with 22+12 tests
-- Baseline validation historical: 552 files / 3943 tests / 0 failures, Replay 100/100, Gates 7/7, Guardian PASS, Typecheck clean, Business rules v2.0.0 382a0b8c, axe 15/15, Production build clean
+- G6 allocation UI already existed (owner-expense-allocation-fields.tsx) + governed adoption surface built canonically (354bc427) with 22+12 tests, now fixed to canonical `EntityForm.Root` (was raw `<form>` — PROVEN INCORRECT, now PROVEN CORRECT) — full regression 554/3977 PASS
+- Baseline validation **fresh**: 554 files / 3977 tests / 0 failures, 137 files / 967 tests financials+owners PASS, Replay 100/100, Gates 7/7, Guardian PASS, Typecheck clean, Business rules v2.0.0 382a0b8c, Migration hygiene OK
 
-### NOT YET PROVEN
+### NOT YET PROVEN (updated after NOW-1)
 
-- G1 Authenticated app-shell E2E: blocked, no credentials, no browser test ever reaches authenticated shell
-- G2 Intermittent bootstrap stall root cause: OPEN, structurally excluded async deadlock hypothesis, fail-closed mitigation deployed (withCompanyResolutionTimeout 10 PASS), but root cause unproven because authenticated path not exercised
-- G3 Hosted concurrency / Web Locks: not exercised under real hosted conditions
+- G1 Authenticated app-shell E2E: BLOCKED, no credentials, no browser test ever reaches authenticated shell
+- G2 Intermittent bootstrap stall root cause: OPEN, BLOCKED by G1, mitigation proven (withCompanyResolutionTimeout 10 PASS), root cause unproven
+- G3 Hosted concurrency / Web Locks: NOT EXERCISED under real hosted conditions
 - G4 Runtime behaviour of newly applied migrations under genuine concurrent/hosted traffic: structurally verified but not exercised by live usage
-- G5 Remaining financial-chain reviews: adoption/allocation (now closed for UI, but backend review remains), post-payment adjustment, S08/S09 paths, document surface, historical and settlement-related paths where still unverified
-- G6 hosted parity re-measurement after 354bc427 and browser run for new OwnerFundsCutoverPanel
+- G5 Remaining financial-chain reviews: post-payment adjustment (s09_apply_correction), adjustment/recovery/offset UI effect on original source, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations), cash/fees/tax/offset/collection/recovery truth in owner statements AND documents (document surface not exhaustively re-verified after latest migrations)
+- G6 hosted parity re-measurement after 354bc427+4da6a26d+form fix and browser run for new OwnerFundsCutoverPanel — parity re-measure pending in NEXT-5, browser pending in NOW-2
 - G7 Historical SEC-003/SEC-004 exploitation: UNKNOWABLE, no historical access logs
 
-### NOW (single task, must be executed immediately after HANDOFF push)
+### NOW (single task, after pushing NOW-1 fix)
 
-**NOW-1: Re-baseline validation after G6 commit 354bc427**
+**NOW-2: Browser verification for OwnerFundsCutoverPanel + PWA runtime contract + build**
 
-- Restore env (pnpm, skills exec bits, git identity) — done
-- Run: `pnpm typecheck`, `pnpm db0:gate`, `node scripts/db0/replay-migrations.mjs`, `pnpm check:business-rules`, `pnpm check:migration-hygiene`, `pnpm db:guardian`
-- Run focused: `pnpm vitest run src/features/financials src/features/owners` (was 135 files / 933 tests at e6e2e444, now expect 137+ files due to +2 new files)
-- Run full sharded regression via `node rentrix-app/scripts/run-sharded-regression.mjs` if RAM permits, else at least focused + gates + replay
-- Record fresh numbers in HANDOFF §E and in RECONSTRUCTION_INVENTORY
-- Verify no regression in OwnerSettlementWorkspace integration (panel renders once, permission-gated)
-- Commit results, push, verify remote SHA, update HANDOFF with new numbers, then set NEXT as NOW
+- Build production bundle `pnpm build` → verify 28 precache entries, 0 private API paths in sw.js
+- Build fixture bundle `VITE_E2E=true pnpm build` → serve via `node rentrix-app/scripts/e2e-static-preview.mjs`
+- Run: `owner-expense-source.spec.ts`, `owner-position-cash.spec.ts`, `financial-persisted-journey.spec.ts`, `pwa-production-contract.spec.ts`, `primitives.axe.test.tsx` (15/15)
+- Negative control: break `data-cutover-balance-caption` disclosure, prove spec fails, restore byte-for-byte (if panel has dedicated spec, else prove workspace spec detects disclosure)
+- Record results in HANDOFF §E
+- Commit, push, verify SHA, update HANDOFF, set NEXT-2 as NOW
 
-**Acceptance:** typecheck clean, gates 7/7, replay 100/100, business-rules hash unchanged (should remain v2.0.0 382a0b8c because G6 adds no migration and no accounting rule), financials+owners tests PASS, no new RLS or precision drift.
+**Acceptance:** production build clean, precache 0 private paths, fixture build serves, existing browser specs PASS (owner-expense-source, owner-position-cash, financial-persisted-journey), PWA contract 3/3, axe 15/15, no regression from EntityForm refactor.
 
-### NEXT (ordered, after NOW-1)
+### NEXT (ordered, after NOW-2)
 
-1. **NEXT-1:** Browser verification for OwnerFundsCutoverPanel + PWA runtime contract
-   - Build VITE_E2E=true bundle, serve via e2e-static-preview.mjs, run owner-expense-source + owner-position-cash + financial-persisted-journey + pwa-production-contract
-   - Negative control: break disclosure caption, prove spec fails, restore byte-for-byte
-   - Evidence: 3/3 desktop/tablet/mobile for new panel if spec exists, or document that panel is covered by existing workspace specs
+1. **NEXT-2 (will become NOW-3):** G5 financial-chain end-to-end review — expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports; verify against deployed function body; specifics: s09_apply_correction original source preservation, adjustment/recovery/offset UI effect, S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations), document surface cash/fees/tax/offset truth
 
-2. **NEXT-2:** G5 financial-chain end-to-end review
-   - Work chain: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports
-   - For each, verify against deployed function body, not documentation
-   - Specifics: post-payment adjustment workflow (s09_apply_correction), adjustment/recovery/offset UI showing effect on original source, remaining S08/S09 review paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations), cash/fees/tax/offset/collection/recovery truth in owner statements AND documents (statement path verified, document surface not exhaustively re-verified after latest migrations)
+2. **NEXT-3:** G3 Hosted concurrency / Web Locks — safe verification strategy design (no code change without reproduction)
 
-3. **NEXT-3:** G3 Hosted concurrency / Web Locks — safe verification strategy design
-   - Design, do not invent bug. Determine whether concurrent sessions/tabs can race authentication/session restoration, duplicate initialization, corrupt shared state, bypass company isolation, produce inconsistent financial state
-   - Requires no code change without reproduction
+3. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive, preserve invariants
 
-4. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive scenarios, preserve production data and financial invariants
+4. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes, money columns, rpt_owner_statement body)
 
-5. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes both sides, money columns)
+5. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
 
-6. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
+### COMPLETED IN THIS LOOP (so far)
+
+- **HANDOFF transform:** transformed HANDOFF.md into autonomous loop memory (commit 4da6a26d)
+- **NOW-1 re-baseline:** typecheck clean, gates 7/7, replay 100/100, business-rules unchanged, guardian PASS, focused 137/967 PASS, full 554/3977 PASS after fixing raw `<form>` violation to canonical EntityForm.Root — defect found via sharded regression, corrected at authoritative source (component), not by weakening inventory test
 
 ### BLOCKED (with reason, do not fabricate, do not wait, skip to NEXT)
 
@@ -349,11 +357,11 @@ One function exists **only** in production: `public.wp05_rpt_cash_flow_gl(date,d
 
 ---
 
-## E. VALIDATION EVIDENCE (historical at e6e2e444, plus G6 delta)
+## E. VALIDATION EVIDENCE (historical at e6e2e444, plus G6, plus fresh NOW-1)
 
-All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers after changing code — re-measure. G6 commit 354bc427 adds 2 test files, no migration, no accounting rule change; business-rules hash expected unchanged but must be re-measured in NOW-1.
+All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers after changing code — re-measure. G6 commit 354bc427 adds 2 test files, no migration, no accounting rule change; business-rules hash expected unchanged but must be re-measured in NOW-1. **Fresh NOW-1 measurement below.**
 
-| Check | Command | Result (historical) |
+| Check | Command | Result (historical at e6e2e444) |
 |---|---|---|
 | Full regression | `node rentrix-app/scripts/run-sharded-regression.mjs` | **552 files / 3,943 tests / 0 failures**, 0 INFRA kills |
 | Financials + owners focus | `pnpm vitest run src/features/financials src/features/owners` | **135 files / 933 tests PASS** |
@@ -374,6 +382,23 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - New files: `owner-funds-cutover-service.ts` (430 lines), `OwnerFundsCutoverPanel.tsx` (337), `owner-funds-cutover-service.test.ts` (176, 22 assertions), `owner-funds-cutover-adoption.pglite.test.ts` (505, 12 real-SQL)
 - No migration, business-rules hash unchanged (to be re-measured in NOW-1)
 - Still unproven at commit time: hosted parity re-measure, browser run for new panel, G3/G4 concurrency
+
+**Fresh NOW-1 baseline (2026-09-10 17:30Z, after 354bc427 + 4da6a26d, before form fix):**
+- typecheck: clean
+- db0:gate: 7/7 PASS (isolation 107 tables / 254 policies)
+- replay-migrations: 100/100, 0 failures
+- business-rules: v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79 unchanged
+- migration-hygiene: OK
+- guardian: PASS all layers
+- focused financials+owners: 137 files / 967 tests PASS
+- sharded regression: 554 files / 3977 tests — 1 failure (design-system inventory raw <form> in OwnerFundsCutoverPanel.tsx) → **PROVEN INCORRECT** for that pattern
+
+**Fresh NOW-1 after form fix (2026-09-10 17:36Z, commit to be pushed):**
+- typecheck: clean (re-measured)
+- design-system inventory: 13/13 PASS (after fix)
+- sharded regression: **554 files / 3977 tests / 0 failures**, 0 INFRA kills — **PASS**
+- No new RLS, precision, or contract drift
+- Classification: raw `<form>` → canonical `EntityForm.Root` fix **PROVEN CORRECT**, preserves disclosure, permission-gating, Arabic copy, fail-closed parsing
 
 ### How to reproduce the browser runs
 
@@ -596,20 +621,22 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated)
+## K. LATEST SAFE CHECKPOINT (updated after NOW-1)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `354bc427b68269ada230679ccb4d316baefa65d8` — G6 canonical governed adoption surface |
-| Branch tip | same — `354bc427` |
+| Last work commit (code/schema/evidence) | `4da6a26d0f028f404477e74e741c5fccc3d4990e` (autonomous loop transform) → will become new SHA after NOW-1 form fix |
+| Branch tip | `4da6a26d` before fix, will be new after push |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Prior verified checkpoints | `354bc427`, `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
-| Tree state | clean |
-| All gates (measured at `e6e2e444`; G6 adds no migration, no accounting rule) | replay 100/100 · gates 7/7 · Guardian PASS · typecheck clean · 3,943 tests / 0 failures — **to be re-measured in NOW-1** |
-| Remote HEAD verified | `git ls-remote origin reconstruction/checkpoint-20260909` → `354bc427b68269ada230679ccb4d316baefa65d8` |
+| Prior verified checkpoints | `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
+| Tree state | 1 modified (OwnerFundsCutoverPanel.tsx) before commit |
+| All gates (fresh NOW-1) | replay 100/100 · gates 7/7 (107 tables / 254 policies) · Guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · focused 137/967 PASS · full sharded 554/3977 PASS (after fixing raw form) |
+| Remote HEAD verified before NOW-1 push | `git ls-remote` → `4da6a26d0f028f404477e74e741c5fccc3d4990e` |
 
-**Reconstruction is NOT declared complete.** The financial chain, migrations, isolation and production parity are proven to the stated level at e6e2e444, G6 is now closed (354bc427), but §G items remain genuinely unfinished or unproven — most importantly the authenticated app shell (G1, BLOCKED) and the bootstrap-stall root cause (G2, BLOCKED by G1), plus G3/G4 concurrency/runtime and G5 document surface.
+**Reconstruction is NOT declared complete.** The financial chain, migrations, isolation and production parity are proven to the stated level at e6e2e444 and re-measured at 554/3977 PASS after G6, G6 is closed (354bc427) and its raw-form violation fixed, but §G items remain genuinely unfinished or unproven — most importantly the authenticated app shell (G1, BLOCKED) and the bootstrap-stall root cause (G2, BLOCKED by G1), plus G3/G4 concurrency/runtime and G5 document surface.
+
+**Next:** NOW-2 browser verification for cutover panel + PWA contract + build, then G5 chain review, G3 concurrency design, G4 runtime, parity re-measure, final DoD.
 
 ---
 
