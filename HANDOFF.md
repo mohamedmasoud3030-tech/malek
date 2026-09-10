@@ -2,14 +2,14 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-10T18:45Z (Asia/Muscat)
+**Last updated:** 2026-09-10T19:27Z (Asia/Muscat) — user requested stop after verifying upload
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `50be359a306df45e5a5298299ff125ad97d34126` — fix(owners): canonical EntityForm for cutover panel + re-baseline validation after G6 (NOW-1)
-**Remote HEAD (actual, verified via ls-remote):** `50be359a306df45e5a5298299ff125ad97d34126`
-**Local HEAD:** same
-**Working tree:** clean
-**Branch tracking:** `origin/reconstruction/checkpoint-20260909`
+**Last work commit (code/schema/evidence):** `aac5aa14fabd71b26235b0215c25d9f0eeccb5ec` — docs(handoff): record NOW-2 browser verification — PWA 3/3, owner specs 12/12, axe 15/15, set NOW-3 G5 chain review
+**Remote HEAD (actual, verified via ls-remote 19:22Z):** `aac5aa14fabd71b26235b0215c25d9f0eeccb5ec`
+**Local HEAD:** same `aac5aa14fabd71b26235b0215c25d9f0eeccb5ec`
+**Working tree:** **clean** — verified `git status` clean after restoring skills exec bits, no mode changes
+**Branch tracking:** `origin/reconstruction/checkpoint-20260909` — in sync, 0 ahead/behind
 
 Confirm tip:
 ```bash
