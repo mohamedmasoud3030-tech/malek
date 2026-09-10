@@ -12,8 +12,8 @@ You are the Arena AI coding agent taking over the MALEK / Rentrix reconstruction
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch (the ONLY permitted branch) | `reconstruction/checkpoint-20260909` |
-| Last work commit (code + evidence + ledger) | `9fac02ac` — G5 owner-receivable offset surface |
-| Branch tip | the docs-only commit that updated `HANDOFF.md` + this file (child of `9fac02ac`) |
+| Last work commit (code + evidence + ledger) | `411167f6` — G5 recovery + S09 correction surfaces |
+| Branch tip | the docs-only commit that updated `HANDOFF.md` + this file (child of `411167f6`) |
 
 The tip is a docs-only child of that SHA, so it will differ. Confirm the real tip and that your checkout matches it before doing anything:
 
@@ -75,7 +75,7 @@ execute → focused tests → actually-saved SQL → browser → diff review →
 - **G2 — Intermittent bootstrap stall: root cause OPEN.** The async-auth-callback deadlock hypothesis is *structurally excluded* (both `onAuthStateChange` listeners contain zero `await`), and the `withCompanyResolutionTimeout` fail-closed mitigation is proven — but the cause is unproven. Blocked by G1.
 - **G3 — Hosted concurrency / Web Locks: not exercised.**
 - **G4 — Runtime behaviour of the 11 recently applied migrations under real traffic: not exercised.**
-- **G5 — PARTIALLY CLOSED at `9fac02ac`; this is your highest-priority remaining work.** An audit of all 92 production `.rpc(` call sites against the live database found four financially significant RPCs granted to `authenticated` with **no UI at all**. One is now closed (`offset_owner_receivable_atomic` → `OwnerReceivableOffsetPanel`, proven in replay, not hosted). **Still backend-complete but UI-absent:** `recover_owner_receivable_atomic`, `s09_create_correction_draft`, `s09_apply_correction`. Build each the same way — read the deployed function body first, fail-closed parsers, no client-side money arithmetic, one canonical mount, real-SQL tests. Then: governed historical adoption/allocation; remaining S08/S09 sources, cache/rebuild, permissions, read limits, retries, reconciliations; document-surface re-verification after the latest migrations.
+- **G5 — the four audited UI-absent RPCs are now CLOSED** (`offset_owner_receivable_atomic`, `recover_owner_receivable_atomic`, `s09_create_correction_draft`, `s09_apply_correction`), each with a canonical surface proven against real SQL in replay — **but none has a hosted browser run**. **Still open and highest-priority:** `s09_reverse_correction` is deployed and granted with **no UI**; correction coverage exists only for `source_type='expense'`; governed historical adoption/allocation; remaining S08/S09 sources, cache/rebuild, permissions, read limits, retries, reconciliations; document-surface re-verification.
 - **G6 — Possible missing UI** for backend-complete adoption/allocation. **Unconfirmed — verify a surface does not already exist before building one.**
 - **G7 — Whether the historical SEC-003/SEC-004 leaks were ever exploited: unknowable** (no access logs). Do not claim they were not.
 
@@ -84,7 +84,7 @@ execute → focused tests → actually-saved SQL → browser → diff review →
 1. **Step 0 — Restore and verify** the environment and baseline (above). Do not edit before `git status` is clean and the branch tip is confirmed.
 2. **Step 1 — Highest priority: unblock G1 → G2.** Ask the user for `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` or a disposable QA target — this is a genuine external blocker, not a routine decision. If provided, run the authenticated specs and attempt a traced reproduction of the bootstrap stall, then fix the proven cause. If not provided, record the blocker explicitly and proceed to Step 2. **Do not guess at auth or Web Locks.**
 3. **Step 2 — Resolve G6 by inspection first.** `grep` the owners/financials features for the adoption/allocation RPCs from `20260909000012` / `...018`. If a surface exists, mark it resolved with the file path as evidence. Only if genuinely absent, build **one** canonical surface, with a browser spec plus a **negative control** (break the disclosure, prove the spec fails, restore byte-for-byte).
-4. **Step 3 — Close the rest of G5.** Start with the three UI-absent RPCs named above, following the `OwnerReceivableOffsetPanel` pattern in `9fac02ac` (`owner-receivable-offset-service.ts` + `owner-receivable-offset.pglite.test.ts` are the reference implementation). Then work the full chain: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports. Verify against the **deployed** function body, not documentation. Any gap → forward migration + focused SQL test.
+4. **Step 3 — Close the rest of G5.** Start with `s09_reverse_correction`, following the pattern now established three times (`owner-receivable-offset-service.ts`, `owner-receivable-recovery-service.ts`, `s09-correction-service.ts`, each with a `*.pglite.test.ts` beside it). **In this sandbox run `node scripts/run-sharded-regression.mjs 20`** — at 12 shards a shard gets SIGKILLed by the memory limit and silently hides ~309 tests. Then work the full chain: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports. Verify against the **deployed** function body, not documentation. Any gap → forward migration + focused SQL test.
 5. **Step 4 — Re-verify parity and re-measure everything.** Re-run the normalised repo↔production function-hash comparison and the full validation matrix. **Never present `HANDOFF.md`'s recorded numbers as current results.**
 6. **Step 5 — Checkpoint after each step** using the discipline above, then continue to the next area.
 
