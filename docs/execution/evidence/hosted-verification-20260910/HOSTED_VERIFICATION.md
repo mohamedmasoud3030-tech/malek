@@ -218,7 +218,7 @@ Repo carries **99** migration files; hosted ledger has **108** rows. Matching by
 **Data integrity — every row count identical to `pre-financial-baseline.json`:**
 journal_batches 26 · journal_lines 70 · owner_balances 5 · expenses 4 · contracts 16 · invoices 14 · properties 7 · units 19 · contract_balances 12 · bank_accounts 1 · utility_bills 4 · audit_log 41 · users 6.
 
-**OMR precision now correct** — `numeric(18,3)` on `contract_balances.total_paid` / `total_invoiced` / `balance_due`, `bank_accounts.opening_balance`, `units.rent_amount`, `utility_bills.paid_amount`, `properties.purchase_value`, and all 4 `owner_balances` money columns. Deliberately left `numeric(14,2)`: `properties.current_value` (a valuation) and `utility_bills.current_reading` (a meter reading) — neither is OMR ledger money.
+**OMR precision now correct** — `numeric(18,3)` on `contract_balances.total_paid` / `total_invoiced` / `balance_due`, `bank_accounts.opening_balance`, `units.rent_amount`, `utility_bills.paid_amount`, `properties.purchase_value`, and all 4 `owner_balances` money columns. Deliberately left at scale 2: `properties.current_value` (a valuation) and `utility_bills.current_reading` (a meter reading) — neither is OMR ledger money. **Corrected in §8.4:** the complete scale-2 set is 7 columns, not 2; this line undercounted by filtering on `(14,2)` only. All 7 are non-money (rates, hours, valuation, meter readings) and identical in repo and production.
 
 **Security sweep:** 107 tenant tables · **0** RLS-disabled · 260 policies · **0** SECURITY DEFINER functions missing `search_path` · **0** anon grants · **0** non-`security_invoker` views.
 
@@ -233,3 +233,71 @@ journal_batches 26 · journal_lines 70 · owner_balances 5 · expenses 4 · cont
 - All of **Priority 1** — migration16 owner financial position and the professional document — untouched by this work.
 
 > **Credential hygiene:** the Supabase access token and GitHub PAT used for this session were held in-process only and were never written to any file. **Both should now be revoked.**
+
+---
+
+## 8. FULL REPO↔PRODUCTION PARITY PROOF (2026-09-10, later)
+
+Section 7 proved the *ledger* was complete. This section proves the *schema itself* agrees, which is the stronger claim and the one that actually matters.
+
+### 8.1 Method
+
+A raw `pg_get_functiondef` hash is useless for this comparison: production stores minified bodies (comments stripped, whitespace collapsed), so 26 functions looked different while being identical code. The comparison therefore normalizes **comments, all whitespace, semicolons, and `public.` schema prefixes**, then hashes, on both sides, for every function in `public` + `app_private`.
+
+### 8.2 Result — zero drift
+
+| Check | Repo (clean replay) | Production | Verdict |
+|---|---|---|---|
+| Functions compared | 431 | 432 | — |
+| **Semantically different** | — | — | **0** |
+| Present only in production | — | 1 | benign (below) |
+| Columns at `numeric(18,3)` | 74 | 74 | identical |
+| Columns at scale 2 | 7 | 7 | identical set |
+
+The 26 raw-text differences — including `custom_access_token_hook` (JWT claims), `role_has_app_permission`, `update_tenant_balance`, `guard_journal_line_rc1_revenue_scope` and `wp05_reconcile_all` — are **entirely** comments/formatting. Worked examples: `wp05_reconcile_all` differs only by `current_company_id()` vs `public.current_company_id()`; `role_has_app_permission` differs by **one trailing semicolon** after `end`.
+
+**`custom_access_token_hook` is byte-equivalent after normalization.** This is the function that mints JWT claims, so its parity is the most security-relevant single result here.
+
+### 8.3 The one production-only function is not drift
+
+```sql
+CREATE OR REPLACE FUNCTION public.wp05_rpt_cash_flow_gl(p_from date, p_to date)
+ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$ begin
+  perform app_private.require_financial_reports_view();
+  return app_private.financial_cash_flow_gl_core(p_from, p_to);
+end; $function$
+```
+
+It is the permission wrapper left behind when `20260901000064` relocated the body to `app_private` (§7.2). It **adds** an authorization check, is `SECURITY DEFINER` with a pinned `search_path`, and **no application code calls it** (`grep` over `rentrix-app/src/` returns nothing). Production is ahead here, not divergent.
+
+### 8.4 Money precision — earlier note corrected
+
+§7.5 said "only 2 `numeric(14,2)` remain". That undercounted because it filtered on `(14,2)` specifically. The complete scale-2 set is **7 columns**, identical in repo and production, and **none is OMR ledger money**:
+
+| Column | Type | Why scale 2 is correct |
+|---|---|---|
+| `company_settings.vat_rate` | `numeric(5,2)` | percentage rate |
+| `invoices.tax_rate` | `numeric(5,2)` | percentage rate |
+| `maintenance_records.response_time_hours` | `numeric(10,2)` | duration in hours |
+| `properties.current_value` | `numeric(14,2)` | valuation, not a ledger posting |
+| `utility_bills.consumption_units` | `numeric(14,2)` | metered units |
+| `utility_bills.current_reading` | `numeric(14,2)` | meter reading |
+| `utility_bills.previous_reading` | `numeric(14,2)` | meter reading |
+
+All **74** true money columns are `numeric(18,3)` on both sides. The OMR 3-decimal (baisa) requirement is met.
+
+### 8.5 `rpt_owner_statement` authority — independently re-verified on both sides
+
+Probed the deployed body rather than trusting the inventory note. Identical on both (4,519 chars):
+
+| Probe | Repo | Production |
+|---|---|---|
+| legacy `s.date` | 0 | 0 |
+| legacy `s.amount` | 0 | 0 |
+| `owner_settlement_paid_cash` | 3 | 3 |
+| `s.paid_at` | 3 | 3 |
+| `_owner_statement_expenses` | 1 | 1 |
+
+Settlement movements key on `paid_at`, value on **proven cash**, and the `status='PAID' and paid_at is not null` filter means a CANCELLED settlement is no longer presented as a deduction. The three defects recorded in commit `8d1d5e75` are closed in both places.

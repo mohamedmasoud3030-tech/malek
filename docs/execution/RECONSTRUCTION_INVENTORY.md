@@ -71,6 +71,25 @@ Running the full financial/owner suite surfaced **3 failures** in `owner-payout-
 
 Verification: replay **100/100** · `db0:gate` **7/7** · typecheck clean · migration-hygiene OK · business-rules hash unchanged · financials+owners **933/933 PASS** (was 930 + 3 failed) · browser **3 PASS** desktop/tablet/mobile.
 
+## REPO ↔ PRODUCTION PARITY: PROVEN ZERO DRIFT (2026-09-10)
+
+Section 7 of `HOSTED_VERIFICATION.md` proved the migration *ledger* was complete. This proves the *schema itself* agrees — the stronger and more meaningful claim. Full detail in **§8** of that file.
+
+**Method matters here.** A raw `pg_get_functiondef` hash is worthless for this: production stores minified bodies, so 26 functions looked different while being identical code. The comparison normalizes comments, whitespace, semicolons and `public.` prefixes on both sides before hashing.
+
+| Check | Repo (clean replay) | Production | Verdict |
+|---|---|---|---|
+| Functions compared | 431 | 432 | — |
+| **Semantically different** | — | — | **0** |
+| Present only in production | — | 1 | benign permission wrapper |
+| Columns at `numeric(18,3)` | 74 | 74 | identical |
+| Columns at scale 2 | 7 | 7 | identical set, none is money |
+
+- **`custom_access_token_hook` — the JWT claim minter — is byte-equivalent after normalization.** The most security-relevant single result here. So are `role_has_app_permission` (differs by one trailing semicolon), `update_tenant_balance`, `guard_journal_line_rc1_revenue_scope` and `wp05_reconcile_all` (differs only by `current_company_id()` vs `public.current_company_id()`).
+- **The one production-only function is not drift.** `public.wp05_rpt_cash_flow_gl(date,date)` is the wrapper left by `20260901000064`'s relocation: it *adds* `require_financial_reports_view()`, is `SECURITY DEFINER` with a pinned `search_path`, and no app code calls it.
+- **Money precision, earlier note corrected.** The prior "only 2 `numeric(14,2)` remain" undercounted by filtering on `(14,2)`. The real scale-2 set is 7 columns — `vat_rate`, `tax_rate` (percentage rates), `response_time_hours` (duration), `properties.current_value` (valuation), and three `utility_bills` meter/consumption columns. **No OMR ledger money is at scale 2**; all 74 money columns are `numeric(18,3)` on both sides.
+- **`rpt_owner_statement` re-verified against the deployed body on both sides** (identical, 4,519 chars): legacy `s.date` 0, legacy `s.amount` 0, `owner_settlement_paid_cash` 3, `s.paid_at` 3, `_owner_statement_expenses` 1. The three defects recorded in `8d1d5e75` are closed in production, not just in the repo.
+
 ## IN PROGRESS
 - Continuing financial authority review: VAT/credit report lineage, lifecycle eligibility, historic snapshot semantics, and least-authority RPC/table grants.
 - Historical AR/deposit cutoff repair now passes repository SQL and desktop/mobile browser regressions. Continuing legacy-lineage compatibility and remaining report/tax authority review; hosted deployment is unverified.
