@@ -100,6 +100,28 @@ Surfaced by running the financial browser specs during the audit, **not** by a t
 - Verified: `financial-persisted-journey` **6 PASS** (desktop/tablet/mobile, was 1 failing on tablet); accrual + entity-table unit suites **44 PASS**; typecheck clean.
 - **Separately, one apparent failure was INFRA, not a defect:** `reconstruction-financial-read-model` was SIGKILLed by the 1.9 GB sandbox during the parallel run and passes **6/6** in isolation. Reported as INFRA rather than counted as a product verdict.
 
+## COMPREHENSIVE AUDIT — status after the 2026-09-10 session
+
+| Dimension | Verdict | Evidence |
+|---|---|---|
+| Repo ↔ production schema parity | **PASS** | 431/432 functions, **0 semantic differences**; 74/74 money columns `numeric(18,3)` |
+| Migrations | **PASS** | ledger 109, 0 unapplied; clean replay **100/100**; `db0:gate` **7/7** |
+| Business logic / calculation correctness | **PASS** | full regression **552 files / 3,943 tests / 0 failures**, 0 INFRA kills |
+| Historical integrity | **PASS** | owner-funds events append-only (trigger-proven); S09 corrections post compensating batches, originals retained |
+| Permissions / auth / RLS / isolation | **PASS** | 107 tenant tables, 0 RLS-disabled, 260 policies, 0 definers missing `search_path`, 0 anon grants; `custom_access_token_hook` byte-equivalent to repo |
+| Reports & documents | **PASS** | `rpt_owner_statement` verified on the deployed body both sides; all-period totals never subtracted from a single period |
+| UI/UX + RTL + responsive + a11y | **PASS** (1 defect found & fixed) | 95 browser assertions across 5 viewports × light/dark; axe **15/15**; tablet status-column defect fixed |
+| PWA / offline / cache privacy | **PASS** | production-contract **3/3** at runtime; **0** `rest/v1`/`auth/v1`/`storage/v1` entries in the precache manifest |
+| Security / secrets | **PASS** | Guardian **PASS** (5 layers incl. privileged-key scan + function-default-ACL) |
+| Unused files & dependencies | **PASS** | 8/8 runtime deps referenced; 0 unreferenced sources |
+| Regression coverage | **PASS** | 3,943 tests; negative control proves the owner-position spec actually fails when the logic is broken |
+
+**Genuinely NOT proven (unchanged, and not claimable without new inputs):**
+- **Authenticated app shell** — every spec that logs in is gated on `E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD`, which are unavailable. This is the same coverage gap that blocks root-causing the intermittent bootstrap stall. Diagnosis remains: the async-auth-callback deadlock hypothesis is *structurally excluded* (both `onAuthStateChange` listeners contain zero `await`), and `withCompanyResolutionTimeout` is a proven fail-closed mitigation — but the root cause is **OPEN**.
+- **Hosted concurrency / Web Locks** under contention.
+- **Runtime behaviour of the newly-applied migrations under real traffic** — applied and structurally verified, not exercised by live usage.
+- Whether the two historical leaks (SEC-003/SEC-004) were **ever exploited** — no historical access logs exist.
+
 ## IN PROGRESS
 - Continuing financial authority review: VAT/credit report lineage, lifecycle eligibility, historic snapshot semantics, and least-authority RPC/table grants.
 - Historical AR/deposit cutoff repair now passes repository SQL and desktop/mobile browser regressions. Continuing legacy-lineage compatibility and remaining report/tax authority review; hosted deployment is unverified.
