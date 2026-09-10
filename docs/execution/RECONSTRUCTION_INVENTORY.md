@@ -723,10 +723,12 @@ live, granted `EXECUTE` to `authenticated`, and had **no user-facing surface at 
 
 | RPC | Surface before | Surface now |
 |---|---|---|
-| `offset_owner_receivable_atomic` | none | `OwnerReceivableOffsetPanel` (this entry) |
-| `recover_owner_receivable_atomic` | none | **still none — open** |
-| `s09_create_correction_draft` | none | **still none — open** |
-| `s09_apply_correction` | none | **still none — open** |
+| `offset_owner_receivable_atomic` | none | `OwnerReceivableOffsetPanel` |
+| `recover_owner_receivable_atomic` | none | `OwnerReceivableRecoveryPanel` |
+| `s09_create_correction_draft` | none | `S09CorrectionPanel` |
+| `s09_apply_correction` | none | `S09CorrectionPanel` |
+
+**All four are now closed.** See the G5 completion entry at the end of this document.
 
 This is the same class of defect as G6: backend-complete, UI-absent. Operators could not apply a
 lawful offset, and therefore could not see its effect on the original receivable.
@@ -777,3 +779,69 @@ the original receivable; the effect is expressed as a movement plus a reduced re
 - `recover_owner_receivable_atomic`, `s09_create_correction_draft` and `s09_apply_correction` remain
   **backend-complete but UI-absent** — the remaining part of G5.
 - Hosted concurrency (G3/G4) and hosted repo↔production parity were not re-measured in this session.
+
+---
+
+## G5 — remaining UI-absent financial RPCs: CLOSED (local/replay)
+
+**Status:** COMPLETED — all four RPCs identified in the coverage audit now have a canonical surface.
+Proven against real SQL. Not yet exercised in a hosted browser.
+
+### What was built in this pass
+
+| Capability | Service | Surface | Mounted in |
+|---|---|---|---|
+| Cash recovery (`recover_owner_receivable_atomic`) | `owner-receivable-recovery-service.ts` | `OwnerReceivableRecoveryPanel.tsx` | `OwnerSettlementWorkspace` (1 line) |
+| Post-close correction (`s09_create_correction_draft` → `s09_validate_correction` → `s09_apply_correction`) | `s09-correction-service.ts` | `S09CorrectionPanel.tsx` | `expenses-page.tsx` (1 line) |
+
+Both follow the `OwnerReceivableOffsetPanel` pattern exactly: the deployed function body was read
+first, parsers fail closed, no client-side money arithmetic, one canonical mount, real-SQL tests.
+**No migration was added; the canonical business-rules hash is unchanged at `382a0b8c…`.**
+
+### Effect on the original source — the G5 requirement
+
+- **Recovery:** the original receivable amount is displayed unchanged beside the total recovered, the
+  remaining outstanding, and the posted GL batch id. Proven in real SQL: after recovering 50 then 150
+  of a 200 receivable, `amount` is still `200`, `recovered_amount` is `200`, `outstanding` is `0`,
+  status `RECOVERED`. The principal is never rewritten.
+- **S09 correction:** proven in real SQL that applying a correction leaves the ORIGINAL journal batch
+  byte-identical (same line count, same total `30.125`), while the correction posts a **separate
+  balanced batch**. The stored row links both (`original_journal_batch_id` + `correction_journal_batch_id`),
+  so lineage is preserved rather than replaced. Posted history is never edited.
+
+### Discipline enforced
+- `s09_apply_correction` refuses anything not in `VALIDATED` state — the DRAFT → VALIDATED → APPLIED
+  chain is surfaced as three explicit operator steps, not collapsed into one button.
+- The role asymmetry is surfaced honestly: draft/validate are ADMIN/MANAGER, but **apply is
+  ACCOUNTANT or ADMIN** — a MANAGER cannot apply, and the panel says so instead of failing silently.
+- An `APPLIED` correction with no posted batch is rejected by the parser (`S09_APPLIED_WITHOUT_BATCH`)
+  rather than displayed as successful.
+- Recovery is restricted to the two cash accounts the server accepts (`1111`, `1120`); the server
+  still re-checks, and the client list never becomes the authority.
+- The hard-closed-period message explicitly states the period must **not** be reopened to hide a
+  difference — the fix belongs in an open period under approved accounting rules.
+
+### Defects found while building and fixed at source
+1. **Two invented permission keys.** The S09 panel initially used `financial.reports.manage` and
+   `financial.journal.post`, neither of which exists in `appPermissions`. Caught by grepping the
+   authoritative catalog. Remapped onto existing permissions — **no new permission key was invented,
+   and the catalog was not edited to make the code pass.**
+2. **A semantic-tone vocabulary re-spelled locally.** The design-system inventory guard caught
+   `'neutral' | 'warning' | 'success' | 'danger'` being re-declared instead of importing the shared
+   `SemanticTone` type. Fixed by importing it.
+3. **A self-colliding test fixture.** Three S09 tests failed on
+   `s08_frozen_reviews_company_period_fingerprint_uidx` because S08 reviews are deduplicated per
+   (company, period, fingerprint). Fixed with per-test transaction isolation (the pattern already
+   used by `expense-correction-source-control.test.ts`) — not by weakening the assertions.
+4. **A memory-killed shard was masking ~309 tests.** The 12-shard run reported `3737 tests` with
+   `SHARD 5: INFRA — killed by SIGKILL`. Re-running with 20 shards yields **4046 tests, 0 failures,
+   0 INFRA kills**. A shard killed by the sandbox memory limit is INFRA, never a product verdict, and
+   its absence must not be read as a smaller passing suite.
+
+### Not proven here (state plainly)
+- Proven **locally / in replay only**. No hosted browser run and no authenticated E2E for either panel.
+- The S09 panel is mounted in the expenses workspace because corrections in this repo are anchored to
+  expense reviews (`source_type='expense'`). Other source types are supported by the server and the
+  service, but only the expense path has real-SQL coverage here.
+- `s09_reverse_correction` exists and is granted, but has **no surface** — the next UI-absent item.
+- Hosted concurrency (G3/G4) and hosted repo↔production parity were not re-measured.

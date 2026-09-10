@@ -20,6 +20,7 @@ import {
 } from './operational-expenses';
 import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpenses';
 import { Alert } from '@/components/ui/alert';
+import { S09CorrectionPanel } from '../components/S09CorrectionPanel';
 
 const expenseSchema = z.object({
   owner_allocations: z.array(z.object({owner_id:z.string(),amount:z.coerce.number(),owner_agreement_id:z.string().optional()})).optional(),
@@ -211,6 +212,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
             isUpdateExpenseSuccess={updateExpense.isSuccess}
           />
         </section>
+        <S09CorrectionPanel />
       </div>
     </EmbeddableWorkspace>
   );

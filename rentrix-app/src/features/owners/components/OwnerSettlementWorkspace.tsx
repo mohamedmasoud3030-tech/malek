@@ -59,6 +59,7 @@ import {
 import { scopeOwnerRows } from '../owner-settlement-scope';
 import { OwnerFundsCutoverPanel } from './OwnerFundsCutoverPanel';
 import { OwnerReceivableOffsetPanel } from './OwnerReceivableOffsetPanel';
+import { OwnerReceivableRecoveryPanel } from './OwnerReceivableRecoveryPanel';
 
 const settlementsQueryKey = ['owner-settlements'] as const;
 const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
@@ -400,6 +401,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
 
       <OwnerFundsCutoverPanel />
       {ownerId ? <OwnerReceivableOffsetPanel ownerId={ownerId} /> : null}
+      {ownerId ? <OwnerReceivableRecoveryPanel ownerId={ownerId} /> : null}
       <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-3 shadow-card sm:p-4" aria-label="سجل تسويات الملاك">
         <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
           {settlements.length} تسوية مسجلة · اضغط الإجراءات للمعاينة والاعتماد والصرف
