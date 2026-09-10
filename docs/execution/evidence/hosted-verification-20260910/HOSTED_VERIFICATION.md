@@ -132,3 +132,41 @@ Corroborated structurally rather than trusting the ledger:
 The two policy fixes are small, additive, forward-only and idempotent (verified: re-applies cleanly 3×). They are the highest-value change available and are **not** coupled to the 26 financial migrations — `20260910000000` touches only `users`/`audit_log` policies plus one new predicate function, and depends on nothing from the `20260909*` chain.
 
 Applying the financial chain to production is a much larger decision: it alters money-column precision on tables that already hold posted history, and must not be done without an authorized backup, a rehearsal against a restored copy, and an accounting review of the precision migration's view capture/restore.
+
+---
+
+## 6. Financial chain apply — 20 of 27 applied, then a HARD STOP at a real drift
+
+The user authorized applying the remaining chain, stating all current production data is test data. Each migration was applied atomically and recorded in `supabase_migrations.schema_migrations` only on success.
+
+**Applied successfully (20):** `20260901000069`, `20260904000000`–`20260904000002`, `20260909000000`–`20260909000014`, plus `20260910000000` (security) and `20260910000001` (new, see below).
+
+Ledger went **79 → 98**. **Zero data change**: every row count is byte-identical to the pre-apply baseline (`pre-financial-baseline.json`) — journal_batches 26, journal_lines 70, owner_balances 5, expenses 4, contracts 16, invoices 14, properties 7, units 19, contract_balances 12, bank_accounts 1, utility_bills 4, audit_log 41, users 6. Security posture re-verified after the halt: 0 RLS-disabled tenant tables, 0 definers without `search_path`, 0 anon grants, 0 views not `security_invoker`.
+
+### The systemic cause: anchor-based patching vs. a rewritten migration
+
+**24 migrations in this repository modify existing functions by string-patching the output of `pg_get_functiondef()`** against exact-text anchors. That technique assumes the stored function text matches the repository byte-for-byte. On the hosted database it frequently does not, because the hosted database applied the **pre-squash originals** while the repository files were later rewritten.
+
+This is an **immutable-migration violation**: e.g. repo commit `8258c528` edited `20260901000038` *after* production had already applied it. The rule "a merged migration is immutable; fixes are new forward migrations" exists precisely to prevent this, and the divergence is the cost of having broken it.
+
+**Case 1 — `20260909000012` (RESOLVED).** Aborted at `OWNER_EXPENSE_MAINTENANCE_CONTRACT_PRECONDITION`; 4 of its 5 anchors did not match. Proven to be **whitespace-only**: stripping all whitespace from the hosted and repository definitions of `close_maintenance_with_expense` yields the identical 3165 characters (hosted `'charged_to',v_charged_to,` vs repo `'charged_to', v_charged_to,`). Fixed by new migration **`20260910000001_normalize_maintenance_close_anchors.sql`**, which restores the canonical text. Its body was **captured mechanically from a clean replay**, not hand-written — an earlier hand-written attempt was caught by its own verification step as wrong and discarded. It refuses to act unless the hosted body is whitespace-identical to the canonical text, and returns quietly when the 6-arg overload is absent, so it is order-independent and a no-op on a fresh chain. After applying it, all 5 anchors matched and `...012`, `...013`, `...014` applied cleanly.
+
+**Case 2 — `20260909000015` (NOT RESOLVED, correctly halted).** Aborts at `OWNER_PAYOUT_CASH_MATCH_PRECONDITION`. This one is **not** cosmetic: the hosted `process_bank_reconciliation_match_atomic` is **12,961 chars vs the repository's 16,662**, and genuinely lacks the `20260901000033` fail-closed hardening (`OWNER_PAYOUT_NOT_PAID`, `RECONCILIATION_ENTITY_COMPANY_MISMATCH`, the `net_payable` company/status read). Production applied three smaller pre-squash migrations (`20260824060415/060451/060503`, ~28 KB total) where the repository now carries one 35 KB `20260901000033`.
+
+Attempting to apply repo `20260901000033` **also** aborted, at `RC1_WP05_CASH_FLOW_GUARD_ANCHOR_NOT_FOUND` — a *nested* anchor guard, one level deeper. **Work stopped there rather than improvising further.**
+
+### Why the stop is the correct outcome
+
+Every guard that fired did its job: each refused to patch a function whose text it did not recognise, and each aborted its transaction leaving no partial state. Forcing past them would mean either weakening the guards or hand-reconstructing production function bodies — both of which would risk silently dropping real authorization logic (`20260901000033` is exactly the fail-closed reconciliation hardening). That is not a safe unattended action on a database, even one holding test data.
+
+### Remaining: 7 migrations
+
+`20260909000015`, `...016`, `...017`, `...018`, `...019`, `...020`, `...021` — the owner payout/position/statement authority, the co-ownership allocation pair, and both OMR precision repairs. Production therefore still has **`owner_balances` at 0 of 7 columns in `numeric(18,3)`** and the 7 `numeric(14,2)` money columns that cannot represent a baisa.
+
+**Recommended path (not taken unattended):**
+1. Reconcile `process_bank_reconciliation_match_atomic` first, the same way `20260910000001` reconciled the maintenance function — but only after diffing the hosted body against repo `20260901000033` **statement by statement**, since this is real logic drift and a whitespace-equality proof is not available.
+2. Re-run the nested `RC1_WP05` guard's own anchor check and resolve it the same way.
+3. Then apply `...015` through `...021` in order.
+4. Because these are anchor-patches over drifted text, each step needs its own before/after verification rather than a bulk apply.
+
+The deeper fix is to stop rewriting merged migrations. While the repository and the hosted database disagree on the text of already-applied functions, every future anchor-based migration is at risk of the same halt.
