@@ -33,9 +33,20 @@ Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledge
 | Unused files & dependencies | PASS | 0 of 8 deps unused; 0 of 683 sources unreferenced |
 | Regression coverage | PASS | 552 files / 3,943 tests |
 
-**BLOCKED (unchanged, needs credentials/hosting — not repository work):**
-- Intermittent bootstrap stall root cause: requires authenticated e2e (`E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD` unavailable). Diagnosis narrowed to the two synchronous `onAuthStateChange` listeners + `withCompanyResolutionTimeout`; **not** guessed at or "fixed" blind.
-- Hosted JWT/PostgREST/concurrency proof for every migration in this session, including `20260910000000`. Local replay proves repository behaviour only.
+**HOSTED VERIFICATION — 2026-09-10 (read-only; see `docs/execution/evidence/hosted-verification-20260910/`)**
+
+A Supabase management token became available and was used **read-only** against the live `Malek-Plus` project. No DDL, no DML, no migration applied.
+
+- ✅ **Hosted JWT/PostgREST anon boundary is now PROVEN, not inferred.** Live REST returns `42501 permission denied` for `companies`/`users`/`audit_log`/`owner_balances`; `anon` holds **0** grants; root discovery is 401 with 0 exposed paths. This closes the long-standing "local SQL with mocked auth cannot prove PostgREST" gap.
+- ✅ Live structural isolation: 105 tenant tables, **0** RLS-disabled, **0** without policy, **0** definers missing `search_path`, **0** views not `security_invoker`.
+- 🚨 **SEC-003 and SEC-004 are LIVE IN PRODUCTION.** The vulnerable policies were read verbatim from `pg_policy`; `audit_log.company_id` and `user_is_member_of_active_company` do not exist there. Exploitable on real data: 2 companies with **disjoint** membership, each with its own ADMIN, 6 users, 41 audit rows.
+- 🚨 **27 repository migrations are not applied to production** — the whole `20260909*` owner-financial chain, the `20260904*` hardening, and this session's security fix. (18 further "missing" files are already applied under squash-renumbered versions; that part is not a real gap.)
+- 🚨 **Production money precision is not OMR-correct**: only 42 money columns are `numeric(18,3)`; 27 are unconstrained `numeric` and 11 are `numeric(14,2)`, which cannot represent a baisa.
+
+**BLOCKED (still genuinely blocked):**
+- Intermittent bootstrap stall root cause: requires authenticated e2e (`E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD` unavailable). A management token does not provide a browser session. Diagnosis narrowed to the two synchronous `onAuthStateChange` listeners + `withCompanyResolutionTimeout`; **not** guessed at or "fixed" blind.
+- Hosted **concurrency** proof (Web Locks, contended RPCs): not exercised.
+- Applying any migration to production: **awaiting explicit authorization**, plus a backup and a rehearsal against a restored copy. Standing instruction is "no unauthorized production changes or production data fixes", and the financial chain alters precision on tables already holding posted history.
 
 **NEXT:** governed adoption/allocation workflow UI (migration18 follow-on).
 
