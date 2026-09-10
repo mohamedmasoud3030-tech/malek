@@ -170,3 +170,66 @@ Every guard that fired did its job: each refused to patch a function whose text 
 4. Because these are anchor-patches over drifted text, each step needs its own before/after verification rather than a bulk apply.
 
 The deeper fix is to stop rewriting merged migrations. While the repository and the hosted database disagree on the text of already-applied functions, every future anchor-based migration is at risk of the same halt.
+
+---
+
+## 7. CHAIN FULLY APPLIED — and a correction to section 6 (2026-09-10, later same day)
+
+**Outcome: production ledger 98 → 108 rows. Zero unapplied migrations remain. Zero rows of data changed.**
+
+Section 6 above is preserved as the honest record of what was known at the time, but **two of its conclusions were wrong**. Both are corrected here.
+
+### 7.1 Correction: "Case 2 is real missing logic" — partly wrong
+
+Section 6 claimed the two `20260909000015` anchor needles were absent from production. **They were present.** The error was methodological: production renders `pg_get_functiondef` output **without spaces after commas**, so an exact-string `grep` for `select s.net_payable, s.company_id, ...` scored 0 against a body that contained that exact logic. Re-testing whitespace-normalized found **both needles exactly once each.**
+
+**Lesson (now a standing rule): never conclude logic is missing from a hosted function by exact-string grep. Normalize whitespace first.** A raw byte-length delta is likewise not evidence of drift — the 12,961 vs 16,662 gap was mostly formatting.
+
+### 7.2 Correction: `wp05_rpt_cash_flow_gl` — production was AHEAD, not behind
+
+The nested `RC1_WP05_CASH_FLOW_GUARD_ANCHOR_NOT_FOUND` guard was not drift. Production's `public.wp05_rpt_cash_flow_gl(date,date)` is only **323 chars** because migration `20260901000064` **moved** the function to `app_private` and renamed it `financial_cash_flow_gl_core`; the public name is now a thin wrapper. The relocated body (5,346 chars) **already contained byte-identical hardened text** to what `20260901000033`'s DO block intended to install — no `current_user` branch, guard reads `if public.current_company_id() is null or public.current_company_id() <> v_company_id then raise 'WP05_COMPANY_ISOLATION_VIOLATION'`. The objective was already satisfied; only the anchor lookup was stale.
+
+**Lesson: before repairing a failing anchor, check whether a later migration moved or renamed the target.**
+
+### 7.3 The drift that WAS real, and how it was fixed
+
+Statement-level diff (whitespace-stripped, split on `;`) of `process_bank_reconciliation_match_atomic`: repo **156** statements vs production **132**, with **14 present only in the repo** —
+
+- 11 × `Cross-company <entity> match rejected.` guards (`42501`)
+- 2 × duplicate-match guards, receipt and expense (`23514`)
+- 1 × the enriched `audit_log` write carrying `old_value` / `new_value`
+
+Production contained **zero** occurrences of `Cross-company`. **Mitigating factor:** all 8 hosted entity lookups were already scoped `and <alias>.company_id = v_company_id`, so the missing guards were defence-in-depth rather than an open cross-company door. No evidence of exploitation; no data anomaly found.
+
+**Fix:** `supabase/migrations/20260910000002_rc1_bank_reconciliation_hardening_forward_carry.sql` — a *forward-carry*, not an edit to the merged migration. It reproduces lines 1–776 of `20260901000033` **verbatim (copied by line range, never retyped)**, omitting only the obsolete wp05 DO block at 777–798 and its three trailing grants, re-wrapped in a single `begin;`/`commit;`.
+
+Verified after apply: function now **16,655 chars** with **10 cross-company guards**; both `...015` needles match exactly once.
+
+### 7.4 Ledger repair: two silently-missing rows
+
+`20260909000012` and `20260909000014` had executed successfully — every schema effect present (`expense_owner_allocations`, `expenses.owner_allocation_version`, `guard_expense_owner_allocation`, the 8-arg `close_maintenance_with_expense`, the settlement quote fn) — but **their `schema_migrations` rows were absent.** Cause: both files contain `$s$`, which collided with the dollar-quote tag used by the recording step, so the bookkeeping INSERT failed while the DDL had already committed. Rows were re-inserted using base64 encoding to make the tag collision impossible.
+
+**Lesson: executing migration SQL is not applying a migration — the ledger row must be confirmed, not assumed.**
+
+### 7.5 Final verification
+
+Repo carries **99** migration files; hosted ledger has **108** rows. Matching by version **and** name: **0 truly unapplied.** 18 repo files are recorded under earlier renumbered (pre-squash) versions; 27 ledger rows are pre-baseline squashed history with no repo file. Both sets are expected.
+
+**Data integrity — every row count identical to `pre-financial-baseline.json`:**
+journal_batches 26 · journal_lines 70 · owner_balances 5 · expenses 4 · contracts 16 · invoices 14 · properties 7 · units 19 · contract_balances 12 · bank_accounts 1 · utility_bills 4 · audit_log 41 · users 6.
+
+**OMR precision now correct** — `numeric(18,3)` on `contract_balances.total_paid` / `total_invoiced` / `balance_due`, `bank_accounts.opening_balance`, `units.rent_amount`, `utility_bills.paid_amount`, `properties.purchase_value`, and all 4 `owner_balances` money columns. Deliberately left `numeric(14,2)`: `properties.current_value` (a valuation) and `utility_bills.current_reading` (a meter reading) — neither is OMR ledger money.
+
+**Security sweep:** 107 tenant tables · **0** RLS-disabled · 260 policies · **0** SECURITY DEFINER functions missing `search_path` · **0** anon grants · **0** non-`security_invoker` views.
+
+**Local gates at this commit:** replay **99/99** · `db0:gate` **7/7** · typecheck clean · migration-hygiene OK · business-rules `v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79` (unchanged) · guardian **PASS 4/4**.
+
+### 7.6 Still NOT proven
+
+- Runtime behaviour of the newly-applied migrations under **real traffic** — applied and structurally verified, not exercised.
+- Hosted **concurrency / Web Locks**.
+- The **intermittent bootstrap stall** (still needs `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`).
+- Whether the two live leaks were **ever exploited** (no historical access logs available).
+- All of **Priority 1** — migration16 owner financial position and the professional document — untouched by this work.
+
+> **Credential hygiene:** the Supabase access token and GitHub PAT used for this session were held in-process only and were never written to any file. **Both should now be revoked.**
