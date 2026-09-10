@@ -709,3 +709,71 @@ Each link below was checked against the LIVE post-replay definition, not against
 - `OWNER_FUNDS_CUTOVER_STALE_REVIEW_REQUIRED` now has real-SQL coverage **locally/in replay** (it had none before). Hosted behaviour under concurrent traffic (G3/G4) is still not exercised.
 - No browser/E2E spec was executed for this panel in this session (see HANDOFF §E for what was measured).
 - Hosted repo↔production parity was **not** re-measured in this session; only local gates/replay were.
+
+---
+
+## G5 — lawful offset of an owner receivable (effect on the original source): CLOSED (local/replay)
+
+**Status:** COMPLETED — surface built, wired once, proven against real SQL. Not yet exercised in a hosted browser.
+
+### The gap that was found (evidence-based, not assumed)
+All 92 production `.rpc(` call sites were enumerated and cross-checked against the live database
+(`pg_proc` + `has_function_privilege('authenticated', …)`). Four financially significant RPCs were
+live, granted `EXECUTE` to `authenticated`, and had **no user-facing surface at all**:
+
+| RPC | Surface before | Surface now |
+|---|---|---|
+| `offset_owner_receivable_atomic` | none | `OwnerReceivableOffsetPanel` (this entry) |
+| `recover_owner_receivable_atomic` | none | **still none — open** |
+| `s09_create_correction_draft` | none | **still none — open** |
+| `s09_apply_correction` | none | **still none — open** |
+
+This is the same class of defect as G6: backend-complete, UI-absent. Operators could not apply a
+lawful offset, and therefore could not see its effect on the original receivable.
+
+### What was built
+One canonical surface, mounted **once** (`{ownerId ? <OwnerReceivableOffsetPanel ownerId={ownerId} /> : null}`)
+inside the existing `OwnerSettlementWorkspace`. No new route, no parallel tree, **no migration**, no
+accounting-rule change — the canonical business-rules hash is unchanged at
+`382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79`.
+
+The panel answers the G5 question directly: the **original amount is displayed unchanged** beside the
+total offsets applied, the remaining outstanding, and the posted GL batch id. An offset never rewrites
+the original receivable; the effect is expressed as a movement plus a reduced remainder.
+
+| File | Role |
+|---|---|
+| `rentrix-app/src/features/owners/services/owner-receivable-offset-service.ts` | fail-closed parsers, `p_payload` envelope, approved-settlement loader, Arabic guard translation |
+| `rentrix-app/src/features/owners/components/OwnerReceivableOffsetPanel.tsx` | the surface: original → offsets → outstanding + GL proof, role-scoped, right-gated |
+| `rentrix-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | hosts the panel once |
+| `rentrix-app/src/features/owners/services/owner-receivable-offset-service.test.ts` | 22 pure unit assertions |
+| `rentrix-app/src/features/owners/services/owner-receivable-offset.pglite.test.ts` | 11 real-PostgreSQL assertions against the deployed function body |
+
+### Discipline enforced in code
+- **The right to offset is only ever read, never inferred.** `lawful_offset_right` is parsed as a strict
+  boolean; a missing/《yes》 value raises `OWNER_RECEIVABLE_OFFSET_RIGHT_UNPROVEN` rather than defaulting.
+  When it is false the form is closed and the reason is stated, not silently hidden.
+- **No client-side money arithmetic.** Every figure rendered is a server-maintained column or a server
+  response field. A row whose components contradict `outstanding` (`amount − recovered − offset − waived`)
+  is rejected as `OWNER_RECEIVABLE_ARITHMETIC_CONTRADICTION` instead of being displayed.
+- **A "success" without GL proof is refused** (`OWNER_RECEIVABLE_OFFSET_UNPOSTED`).
+- Sub-baisa amounts and empty identifiers/effective dates are rejected client-side before reaching the ledger.
+
+### Defects found by building against real SQL (all fixed at source)
+1. **A vacuous isolation test.** The owner-mismatch case was wrapped in `if (other)` and the fixture never
+   produced that row, so the assertion never executed and the test passed for the wrong reason. Rewritten to
+   forge the adverse APPROVED settlement unconditionally and assert the row exists first; it now genuinely
+   exercises `DUE_FROM_OWNER_OFFSET_OWNER_MISMATCH`. (It failed twice with real errors — RLS `permission denied`,
+   then the `owner_settlements_approval_state_check` constraint — before passing, confirming it is not vacuous.)
+2. **Empty effective date / request id were forwarded to the server.** `buildApplyOwnerOffsetPayload` validated
+   the amount and evidence but not the identifiers, so a blank effective date could have reached the ledger as a
+   posting date. Now rejected client-side. Found by a unit test, fixed in the service — not by weakening the test.
+3. **Three repo-wide contract guards were violated by the new code** and fixed at source, not allowlisted:
+   hand-written currency text in a `.tsx` (money-contract guard), empty-state descriptions without a guidance
+   verb, and an Arabic-Indic digit in a user-facing string (Latin-numeral guard).
+
+### Not proven here (state plainly)
+- Proven **locally / in replay only**. No hosted browser run, no authenticated E2E for this panel.
+- `recover_owner_receivable_atomic`, `s09_create_correction_draft` and `s09_apply_correction` remain
+  **backend-complete but UI-absent** — the remaining part of G5.
+- Hosted concurrency (G3/G4) and hosted repo↔production parity were not re-measured in this session.
