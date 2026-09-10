@@ -90,6 +90,16 @@ Section 7 of `HOSTED_VERIFICATION.md` proved the migration *ledger* was complete
 - **Money precision, earlier note corrected.** The prior "only 2 `numeric(14,2)` remain" undercounted by filtering on `(14,2)`. The real scale-2 set is 7 columns — `vat_rate`, `tax_rate` (percentage rates), `response_time_hours` (duration), `properties.current_value` (valuation), and three `utility_bills` meter/consumption columns. **No OMR ledger money is at scale 2**; all 74 money columns are `numeric(18,3)` on both sides.
 - **`rpt_owner_statement` re-verified against the deployed body on both sides** (identical, 4,519 chars): legacy `s.date` 0, legacy `s.amount` 0, `owner_settlement_paid_cash` 3, `s.paid_at` 3, `_owner_statement_expenses` 1. The three defects recorded in `8d1d5e75` are closed in production, not just in the repo.
 
+## AUDIT FINDING — reversed accruals were invisible on tablet (found and fixed 2026-09-10)
+
+Surfaced by running the financial browser specs during the audit, **not** by a test that was already failing in CI.
+
+- **Defect:** in `fixed-monthly-accrual-workspace.tsx` the `status` column was `priority: 'secondary'`. `resolveTabletColumns` (`entity-table.tsx:236-246`) keeps only the first **1–2** secondary columns — with 4 stable columns here (`date`, `propertyOwner`, `gross`, `actions`) the limit is 2, and `monthly` + `net` come first. **`status` was therefore dropped entirely at 768px**, so a REVERSED accrual ("تم العكس") looked identical to a live one on tablet. Posting state is not a secondary detail; it is the column that says whether the money is real.
+- **Pre-existing, not a regression from this session** — `git diff 81ee3671..HEAD` shows the workspace, the spec and `entity-table.tsx` were all untouched by this work.
+- **Fixed at the authoritative source** (`priority: 'primary'`), matching how automation, communication, billing-readiness and lands workspaces already treat status. The shared table component was **not** weakened and the assertion was **not** relaxed.
+- Verified: `financial-persisted-journey` **6 PASS** (desktop/tablet/mobile, was 1 failing on tablet); accrual + entity-table unit suites **44 PASS**; typecheck clean.
+- **Separately, one apparent failure was INFRA, not a defect:** `reconstruction-financial-read-model` was SIGKILLed by the 1.9 GB sandbox during the parallel run and passes **6/6** in isolation. Reported as INFRA rather than counted as a product verdict.
+
 ## IN PROGRESS
 - Continuing financial authority review: VAT/credit report lineage, lifecycle eligibility, historic snapshot semantics, and least-authority RPC/table grants.
 - Historical AR/deposit cutoff repair now passes repository SQL and desktop/mobile browser regressions. Continuing legacy-lineage compatibility and remaining report/tax authority review; hosted deployment is unverified.

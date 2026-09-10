@@ -188,7 +188,16 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
     {
       key: 'status',
       header: 'الحالة',
-      priority: 'secondary',
+      // MUST stay 'primary'. The tablet layout keeps only the first one or two
+      // 'secondary' columns (resolveTabletColumns), and this table already has
+      // 'monthly' and 'net' ahead of this one -- so as 'secondary' the status
+      // badge was silently dropped at 768px. That hid REVERSED ("تم العكس")
+      // from the operator, i.e. a reversed accrual looked identical to a live
+      // one on tablet. Posting state is not a secondary detail; it is the
+      // column that says whether the money is real. Other governed workspaces
+      // (automation, communication, billing readiness, lands) already treat
+      // status as 'primary' for the same reason.
+      priority: 'primary',
       render: (row) => {
         const status = statusPresentation(row);
         return (
