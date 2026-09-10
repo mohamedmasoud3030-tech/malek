@@ -338,7 +338,14 @@ Backend authorities exist and are tested; these remain **reviews**, not known de
 - Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations.
 - Cash/fees/tax/offset/collection/recovery truth in owner statements **and documents** — statement path verified; the full document surface is not exhaustively re-verified after the latest migrations.
 
-### G6. UI surfaces for backend-complete capabilities — **VERIFY BEFORE BUILDING**
+### G6. UI surfaces for backend-complete capabilities — **RESOLVED (inspection + one canonical build)**
+
+**Verified first, built second (2026-09-10, later session):**
+- Allocation/adoption-of-expenses UI **already existed** — `features/financials/expenses/owner-expense-allocation-fields.tsx` (hosted in `expenses-section.tsx` and `maintenance-detail-resolve-overlays.tsx`, browser-covered by `e2e/owner-expense-source.spec.ts`). Nothing was built for it.
+- Governed **historical adoption** (owner-funds cutover) had **no application call sites** although both RPCs are granted to `authenticated`. One canonical surface was built: `features/owners/services/owner-funds-cutover-service.ts` + `features/owners/components/OwnerFundsCutoverPanel.tsx`, hosted once in `OwnerSettlementWorkspace.tsx` (see `docs/execution/RECONSTRUCTION_INVENTORY.md`).
+- Real-SQL testing of the panel found and fixed one real defect (idempotent envelope read as an unknown status) and corrected one wrong instruction (the app cannot re-baseline a drifted draft).
+
+**Still unproven:** hosted parity re-measurement for this session, browser execution for the new panel, G3/G4 concurrency.
 The prior ledger listed "governed adoption/allocation workflow UI (migration18 follow-on)" as NEXT. **This was never confirmed as missing.** The next agent must first establish whether a UI exists (`grep` the owners/financials features for the allocation/adoption RPCs) before building anything — building a parallel surface would violate "one capability = one approved implementation".
 
 ### G7. Whether SEC-003/SEC-004 were ever exploited — **UNKNOWABLE HERE**

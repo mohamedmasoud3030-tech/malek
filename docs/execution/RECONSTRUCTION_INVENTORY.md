@@ -677,3 +677,35 @@ Each link below was checked against the LIVE post-replay definition, not against
 - **Opening/closing balance and historical cutoff — ALREADY CORRECT, governed, and fail-closed.** `public.owner_funds_event_cutovers` carries an APPROVED, S08-review-backed `opening_balance` with maker/checker enforced in a CHECK constraint (`approved_by <> created_by`, `approval_request_id` required, 3-decimal rounding). `wp05_subledger_owner_payables` uses `opening_balance + Σ post-cutover deltas`; asking for a position BEFORE the cutover raises `OWNER_FUNDS_PRE_CUTOVER_REPORT_REVIEW_REQUIRED` (23514) instead of inventing or zeroing a missing balance. With no cutover but existing events it sums events only; with neither it falls back to positive `owner_balances` — no implicit blend. Regression: `owner-agency-invoice-accounting.test.ts` 17 PASS, including "fails closed for a historical 2000 position until an S08-backed cutover exists".
 - **Correcting wrong owner-funds events append-only — ALREADY ENFORCED IN THE DATABASE.** `trg_owner_funds_event_immutable` fires BEFORE DELETE OR UPDATE on `public.owner_funds_events`. Probed live: both UPDATE and DELETE raise `OWNER_FUNDS_EVENT_IMMUTABLE: owner-funds control events are append-only; use a compensating entry`. The compensating direction is a first-class part of the model, not a convention — `source_type` admits `INVOICE_CREDIT_REVERSAL`, `RECEIPT_VOID_REVERSAL` and `OWNER_OFFSET_REVERSAL`, each written as a NEW event referencing the original's id. The original is never rewritten.
 - **Post-payment adjustment / S08–S09 correction workflow — VERIFIED, original source preserved.** `s09_apply_correction` posts a NEW journal batch via `post_journal_event` and records it as `correction_journal_batch_id` alongside the retained `original_journal_batch_id`; it never updates or deletes the original posting. The correction row carries `before_evidence`/`after_evidence`, an idempotency unique index, and a period FK, and writes are gated by the `malik.s09_correction_change_authorized` flag. `s09_create_correction_draft` refuses an expense source already adopted into the receivable subledger (`OWNER_EXPENSE_USE_RECEIVABLE_ADJUSTMENT`, 23514, added by migration12) so an adopted expense is corrected through the receivable adjustment path rather than a second competing mechanism. Regression: 53 PASS across `expense-correction-source-control` (16), `expense-history-diagnostic` (12), `owner-expense-source` and `collections-payments-period-close`, including "applies an independently approved and validated pre12 S09 plan after upgrade without changing its source" and "preserves old posted corrections and refuses to trust pre-upgrade caller snapshot JSON".
+
+## G6 — governed historical adoption (owner-funds cutover): CLOSED
+
+**Verification first, build second.** The prior ledger listed "governed adoption/allocation workflow UI" as NEXT but unconfirmed. Inspection result:
+
+- **ALLOCATION UI ALREADY EXISTS — resolved with evidence, nothing built.**
+  `rentrix-app/src/features/financials/expenses/owner-expense-allocation-fields.tsx`, hosted in
+  `rentrix-app/src/features/financials/components/expenses-section.tsx` (when `charged_to=OWNER`) and
+  `rentrix-app/src/features/maintenance/components/maintenance-detail-resolve-overlays.tsx`, with browser coverage
+  `rentrix-app/e2e/owner-expense-source.spec.ts`. No parallel surface was created.
+- **GOVERNED ADOPTION SURFACE WAS GENUINELY ABSENT — one canonical surface built.**
+  `public.create_owner_funds_cutover_atomic` / `public.approve_owner_funds_cutover_atomic` are GRANTED to
+  `authenticated` and enforce role + S08-approval + maker/checker + stale-baseline refusal + idempotency, but had
+  **zero application call sites** (only PGlite suites and generated types).
+
+### Files (single capability = single implementation)
+| File | Role |
+|---|---|
+| `rentrix-app/src/features/owners/services/owner-funds-cutover-service.ts` | fail-closed evidence parser, `p_payload` RPC envelope, Arabic guard translation, disclosure authority |
+| `rentrix-app/src/features/owners/components/OwnerFundsCutoverPanel.tsx` | the surface: derived baseline + evidence, maker/checker, stale/immutability disclosure, role-scoped rendering |
+| `rentrix-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | hosts the panel once (no second route, no parallel tree) |
+| `rentrix-app/src/features/owners/services/owner-funds-cutover-service.test.ts` | 22 unit assertions (pure) |
+| `rentrix-app/src/features/owners/services/owner-funds-cutover-adoption.pglite.test.ts` | 12 real-PostgreSQL assertions against the deployed function bodies |
+
+### Defects found by building the surface against real SQL (both fixed)
+1. **False failure on a legitimate idempotent re-submission.** The deployed idempotent branch returns the EXISTING row nested under a `cutover` key (`{success, idempotent:true, cutover:{...}}`) with NO top-level `status`; a flat-shape-only parser reports `OWNER_FUNDS_CUTOVER_STATUS_UNKNOWN` for a lawful response. Parser now reads both envelopes; the lawful-status requirement is unchanged (regression-locked in the unit suite).
+2. **Incorrect guidance, then corrected.** An initial message told the approver to "create a fresh draft from a new S08 review" after a stale-baseline refusal. Real SQL disproved it: there is exactly ONE baseline row per company (`PRIMARY KEY (company_id)`) and re-create returns the existing row idempotently, so the app CANNOT re-baseline over a drifted draft. Message and test now state that truthfully; a regression test proves re-create neither adds a row nor re-derives the balance.
+
+### Not proven here (state plainly)
+- `OWNER_FUNDS_CUTOVER_STALE_REVIEW_REQUIRED` now has real-SQL coverage **locally/in replay** (it had none before). Hosted behaviour under concurrent traffic (G3/G4) is still not exercised.
+- No browser/E2E spec was executed for this panel in this session (see HANDOFF §E for what was measured).
+- Hosted repo↔production parity was **not** re-measured in this session; only local gates/replay were.

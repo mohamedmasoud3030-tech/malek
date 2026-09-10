@@ -57,6 +57,7 @@ import {
   type ProcessPayoutPayload,
 } from '../services/owner-settlements-service';
 import { scopeOwnerRows } from '../owner-settlement-scope';
+import { OwnerFundsCutoverPanel } from './OwnerFundsCutoverPanel';
 
 const settlementsQueryKey = ['owner-settlements'] as const;
 const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
@@ -396,6 +397,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
         <EntityForm.ErrorSummary message="أكمل اسم الشركة والعملة في الإعدادات لتفعيل طباعة كشوف التسوية دون بيانات افتراضية." />
       ) : null}
 
+      <OwnerFundsCutoverPanel />
       <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-3 shadow-card sm:p-4" aria-label="سجل تسويات الملاك">
         <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
           {settlements.length} تسوية مسجلة · اضغط الإجراءات للمعاينة والاعتماد والصرف
