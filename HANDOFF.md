@@ -2,14 +2,14 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-10T19:27Z (Asia/Muscat) — user requested stop after verifying upload
+**Last updated:** 2026-09-10T20:35Z (Asia/Muscat) — final sync after PAT push, user requested stop
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `aac5aa14fabd71b26235b0215c25d9f0eeccb5ec` — docs(handoff): record NOW-2 browser verification — PWA 3/3, owner specs 12/12, axe 15/15, set NOW-3 G5 chain review
-**Remote HEAD (actual, verified via ls-remote 19:22Z):** `aac5aa14fabd71b26235b0215c25d9f0eeccb5ec`
-**Local HEAD:** same `aac5aa14fabd71b26235b0215c25d9f0eeccb5ec`
-**Working tree:** **clean** — verified `git status` clean after restoring skills exec bits, no mode changes
-**Branch tracking:** `origin/reconstruction/checkpoint-20260909` — in sync, 0 ahead/behind
+**Last work commit (code/schema/evidence):** `a0760e98c82ee56b0e350686f66085068c71043c` — docs(handoff): final sync — verify remote aac5aa14, clean tree, user stop request
+**Remote HEAD (actual, verified via ls-remote 20:32Z):** `a0760e98c82ee56b0e350686f66085068c71043c`
+**Local HEAD:** same `a0760e98c82ee56b0e350686f66085068c71043c`
+**Working tree:** **clean** — verified `git status` clean, skills exec bits restored, no mode changes
+**Branch tracking:** `origin/reconstruction/checkpoint-20260909` — in sync, 0 ahead/behind, push confirmed
 
 Confirm tip:
 ```bash
@@ -22,17 +22,17 @@ git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git refs/heads/rec
 
 This section is the **continuous memory** between Arena sessions. It is the authority for what to do next.
 
-### CURRENT STATE (actual, verified 2026-09-10 18:45Z)
+### CURRENT STATE (actual, verified 2026-09-10 20:35Z — after PAT push)
 
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch | `reconstruction/checkpoint-20260909` |
-| Remote HEAD | `50be359a306df45e5a5298299ff125ad97d34126` — fix(owners): canonical EntityForm for cutover panel + re-baseline validation after G6 (NOW-1) |
-| Local HEAD | same |
+| Remote HEAD | `a0760e98c82ee56b0e350686f66085068c71043c` — docs(handoff): final sync after PAT push |
+| Local HEAD | same `a0760e98c82ee56b0e350686f66085068c71043c` |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Commits since previous handoff | **3**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline) |
-| Working tree | clean |
+| Commits since previous handoff | **5**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `a0760e98` (final sync) |
+| Working tree | **clean** — verified after PAT push, 0 modified |
 | Tracked files | ~1,746 |
 | Migrations in repo | 100 |
 | Production ledger | 109 rows |
@@ -41,7 +41,8 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
 | Fresh baseline (NOW-1) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c, migration-hygiene OK, guardian PASS, focused 137/967 PASS, full sharded 554/3977 PASS (0 failures) |
-| Browser (NOW-2) | production build 28 precache / 428.87 KiB / 0 private paths, PWA contract 3/3 PASS, axe 15/15 PASS, owner-position-cash 3/3, owner-expense-source 3/3, financial-persisted-journey 6/6, owner-payout-bank-cash 3/3 — all PASS |
+| Browser (NOW-2) | production build 28 precache / 428.87 KiB / 0 private paths, PWA contract 3/3 PASS, axe 15/15 PASS, owner-position-cash 3/3, owner-expense-source 3/3, financial-persisted-journey 6/6, owner-payout-bank-cash 3/3 — all PASS, pushed to remote |
+| Push verification | `git ls-remote` 20:32Z → `a0760e98`, `git rev-parse HEAD` same, `git status` clean |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
 
@@ -214,25 +215,25 @@ The reconstruction mission:
 
 ---
 
-## B. CURRENT REPOSITORY STATE (updated after NOW-2)
+## B. CURRENT REPOSITORY STATE (updated after final PAT push 20:35Z)
 
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch (only permitted) | `reconstruction/checkpoint-20260909` |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Last work commit (code/schema/evidence) | `50be359a306df45e5a5298299ff125ad97d34126` — fix(owners): canonical EntityForm + re-baseline validation (NOW-1) |
-| Branch tip | same — `50be359a` |
-| Remote HEAD (verified) | `50be359a306df45e5a5298299ff125ad97d34126` |
+| Last work commit (code/schema/evidence) | `a0760e98c82ee56b0e350686f66085068c71043c` — docs(handoff): final sync after PAT push |
+| Branch tip | same — `a0760e98` |
+| Remote HEAD (verified 20:32Z via ls-remote) | `a0760e98c82ee56b0e350686f66085068c71043c` |
 | Local HEAD | same |
-| Working tree at this handoff | **clean** |
+| Working tree at this handoff | **clean** — 0 modified, 0 staged, after skills exec bits restore |
 | Tracked files | ~1,746 |
-| Commits ahead of `origin/main` | 39 (37 at original handoff + G6 + loop transform + NOW-1 fix) |
+| Commits ahead of `origin/main` | 40 (37 at original handoff + G6 + loop transform + NOW-1 fix + NOW-2 + final sync) |
 | Migrations in repo | **100** |
 | Production migration ledger | **109 rows** |
 | Unit/integration test files | 555 |
 | Playwright e2e specs | 29 |
-| Fresh validation (NOW-1+NOW-2) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c, 554 files / 3977 tests / 0 failures, browser 18 specs PASS (owner-position 3, owner-expense-source 3, financial-journey 6, payout-bank-cash 3, PWA 3, axe 15) |
+| Fresh validation (NOW-1+NOW-2) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c, 554 files / 3977 tests / 0 failures, browser 18 specs PASS, push verified |
 
 Confirm the true branch tip on arrival:
 
@@ -638,22 +639,22 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated after NOW-2)
+## K. LATEST SAFE CHECKPOINT (updated after final PAT push 20:35Z — STOP)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `50be359a306df45e5a5298299ff125ad97d34126` — NOW-1 re-baseline + canonical EntityForm fix |
-| Branch tip | same — `50be359a` |
+| Last work commit (code/schema/evidence) | `a0760e98c82ee56b0e350686f66085068c71043c` — final sync after PAT push, user requested stop |
+| Branch tip | same — `a0760e98` |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Prior verified checkpoints | `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
-| Tree state | clean |
-| All gates (fresh NOW-1+NOW-2) | replay 100/100 · gates 7/7 (107/254) · Guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c · migration-hygiene OK · focused 137/967 PASS · full sharded 554/3977 PASS · design-system inventory 13/13 · axe 15/15 · production build 28 precache / 428.87 KiB / 0 private paths · PWA contract 3/3 · browser owner-position 3/3 + owner-expense-source 3/3 + financial-journey 6/6 + payout-bank-cash 3/3 |
-| Remote HEAD verified after NOW-1 | `50be359a306df45e5a5298299ff125ad97d34126` |
+| Prior verified checkpoints | `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
+| Tree state | **clean** — 0 modified after skills restore, verified 20:35Z |
+| All gates (fresh NOW-1+NOW-2) | replay 100/100 · gates 7/7 (107/254) · Guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c · migration-hygiene OK · focused 137/967 PASS · full sharded 554/3977 PASS · design-system inventory 13/13 · axe 15/15 · production build 28 precache / 428.87 KiB / 0 private paths · PWA contract 3/3 · browser owner-position 3/3 + owner-expense-source 3/3 + financial-journey 6/6 + payout-bank-cash 3/3 · push verified a0760e98 |
+| Remote HEAD verified | `a0760e98c82ee56b0e350686f66085068c71043c` via `git ls-remote` 20:32Z + `git push` exit 0 |
 
-**Reconstruction is NOT declared complete.** The financial chain, migrations, isolation and production parity are proven to the stated level at e6e2e444 and re-measured at 554/3977 PASS + 18 browser specs PASS after G6+fix, G6 is closed (354bc427) and its raw-form violation fixed (50be359a), but §G items remain genuinely unfinished or unproven — most importantly the authenticated app shell (G1, BLOCKED) and the bootstrap-stall root cause (G2, BLOCKED by G1), plus G3/G4 concurrency/runtime and G5 document surface (NOW-3).
+**Reconstruction is NOT declared complete — STOPPED per user request after verifying upload.** Financial chain, migrations, isolation and production parity proven to stated level at e6e2e444 and re-measured at 554/3977 PASS + 18 browser specs PASS after G6+fix, G6 closed (354bc427) and raw-form violation fixed (50be359a), NOW-2 browser verified and pushed (aac5aa14), final sync pushed (a0760e98). §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, G5 document surface + S08/S09 review NOW-3 pending, G7 unknowable.
 
-**Next:** NOW-3 G5 financial-chain end-to-end review (post-payment adjustment, S08/S09, document surface), then G3 concurrency design, G4 runtime, parity re-measure, final DoD.
+**Next when resumed:** NOW-3 G5 financial-chain end-to-end review (post-payment adjustment, S08/S09, document surface), then G3 concurrency design, G4 runtime, parity re-measure, final DoD.
 
 ---
 
