@@ -418,6 +418,16 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - No new RLS, precision, or contract drift
 - Classification: raw `<form>` → canonical `EntityForm.Root` fix **PROVEN CORRECT**, preserves disclosure, permission-gating, Arabic copy, fail-closed parsing
 
+**Fresh NOW-3 / G5 measurement (2026-09-11, commit `9fac02ac`) — THIS IS THE LATEST MEASURED EVIDENCE:**
+- typecheck: clean (re-measured)
+- sharded regression: **4010 tests / 0 failures**, 0 INFRA kills — **PASS** (was 3977; +33 from the new G5 suites)
+- axe suite (excluded from the sharded runner, run explicitly): **15/15 PASS**
+- db0:gate: **7/7 PASS**  ·  guardian: **PASS**  ·  migration-hygiene: **OK**
+- business-rules: `v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79` — **unchanged** (correct: no migration was added)
+- owners feature suite: 29 files / 241 tests PASS
+- Scope of change: 6 files, +1410 lines, **0 migrations**, 0 accounting-rule files
+- **Not measured in this session:** hosted browser/E2E for the new panel, hosted concurrency, hosted repo↔production parity re-measure
+
 ### How to reproduce the browser runs
 
 ```bash
@@ -534,10 +544,30 @@ No contended-RPC or concurrent-session testing has been performed against the ho
 ### G4. Runtime behaviour of newly-applied migrations under real traffic — **NOT EXERCISED**
 The 11 migrations applied on 2026-09-10 are structurally verified (parity, row counts, probes) but have not been exercised by live usage.
 
-### G5. Remaining financial-chain review items
-Backend authorities exist and are tested; these remain **reviews**, not known defects:
-- Governed historical **adoption/allocation** of expenses — allocation UI exists, governed adoption UI now exists (G6), but unblocking legacy settlements only after correct legal/accounting review remains.
-- Post-payment adjustment workflow, and adjustment/recovery/offset interfaces showing their effect on the **original source**.
+### G5. Remaining financial-chain review items — **PARTIALLY CLOSED (commit 9fac02ac)**
+
+An audit of **all 92 production `.rpc(` call sites** against the live database
+(`pg_proc` + `has_function_privilege('authenticated', …)`) established a concrete, evidence-based
+finding rather than a suspicion: four financially significant RPCs were live, granted `EXECUTE` to
+`authenticated`, and had **no user-facing surface at all**.
+
+| RPC | Surface |
+|---|---|
+| `offset_owner_receivable_atomic` | **CLOSED** — `OwnerReceivableOffsetPanel` (9fac02ac) |
+| `recover_owner_receivable_atomic` | **OPEN — backend-complete, UI-absent** |
+| `s09_create_correction_draft` | **OPEN — backend-complete, UI-absent** |
+| `s09_apply_correction` | **OPEN — backend-complete, UI-absent** |
+
+**Closed:** *adjustment/offset interface showing its effect on the original source* for the offset
+path. The panel displays the original amount unchanged beside the offsets applied, the remaining
+outstanding, and the posted GL batch id — an offset never rewrites the original receivable. Proven by
+11 real-PostgreSQL assertions against the **deployed** function body plus 22 pure unit assertions.
+No migration; canonical business-rules hash unmoved. Proven **locally / in replay only** — no hosted
+browser run for this panel.
+
+**Still open:**
+- Governed historical **adoption/allocation** of expenses — allocation UI exists, governed adoption UI exists (G6), but unblocking legacy settlements only after correct legal/accounting review remains.
+- **Recovery** interface (`recover_owner_receivable_atomic`) and the **post-payment correction** workflow (`s09_create_correction_draft` / `s09_apply_correction`) — both backend-complete with **no UI**; each needs the same treatment the offset path just received.
 - Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations.
 - Cash/fees/tax/offset/collection/recovery truth in owner statements **and documents** — statement path verified; the full document surface is not exhaustively re-verified after the latest migrations.
 
@@ -607,7 +637,12 @@ Follow in order. Do not skip ahead.
 - **Validation:** focused unit tests + a browser spec with a **negative control** (break the disclosure, prove the spec fails, restore byte-for-byte).
 
 ### Step 3 — Close the G5 review items
-Work the chain end to end: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports. For each, verify against the **deployed** function body, not documentation. Any gap → forward migration + focused SQL test.
+**Highest-priority remaining G5 item:** build the missing surfaces for `recover_owner_receivable_atomic`
+and for the S09 correction pair (`s09_create_correction_draft` / `s09_apply_correction`), following the
+pattern established by `OwnerReceivableOffsetPanel` in 9fac02ac — read the deployed function body first,
+strict fail-closed parsers, no client-side money arithmetic, one canonical mount, real-SQL tests.
+
+Then work the chain end to end: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports. For each, verify against the **deployed** function body, not documentation. Any gap → forward migration + focused SQL test.
 
 ### Step 4 — Re-verify parity and re-measure
 Re-run the §D parity comparison (normalised function hashes both sides) and the full §E matrix. **Never reuse this document's numbers as current.**
@@ -652,9 +687,9 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 | All gates (fresh NOW-1+NOW-2) | replay 100/100 · gates 7/7 (107/254) · Guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c · migration-hygiene OK · focused 137/967 PASS · full sharded 554/3977 PASS · design-system inventory 13/13 · axe 15/15 · production build 28 precache / 428.87 KiB / 0 private paths · PWA contract 3/3 · browser owner-position 3/3 + owner-expense-source 3/3 + financial-journey 6/6 + payout-bank-cash 3/3 · push verified a0760e98 |
 | Remote HEAD verified | `a0760e98c82ee56b0e350686f66085068c71043c` via `git ls-remote` 20:32Z + `git push` exit 0 |
 
-**Reconstruction is NOT declared complete — STOPPED per user request after verifying upload.** Financial chain, migrations, isolation and production parity proven to stated level at e6e2e444 and re-measured at 554/3977 PASS + 18 browser specs PASS after G6+fix, G6 closed (354bc427) and raw-form violation fixed (50be359a), NOW-2 browser verified and pushed (aac5aa14), final sync pushed (a0760e98). §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, G5 document surface + S08/S09 review NOW-3 pending, G7 unknowable.
+**Reconstruction is NOT declared complete.** Financial chain, migrations, isolation and production parity proven to stated level at e6e2e444; re-measured at 554/3977 PASS + 18 browser specs PASS after G6+fix (G6 closed 354bc427, raw-form violation fixed 50be359a, NOW-2 browser verified aac5aa14, final sync a0760e98); **latest measurement 4010 tests / 0 failures at `9fac02ac` after the G5 offset surface**. §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, **G5 partially closed — the offset surface now exists and is proven in replay, but `recover_owner_receivable_atomic` and the S09 correction pair are still backend-complete with no UI**, document surface + remaining S08/S09 review pending, G7 unknowable.
 
-**Next when resumed:** NOW-3 G5 financial-chain end-to-end review (post-payment adjustment, S08/S09, document surface), then G3 concurrency design, G4 runtime, parity re-measure, final DoD.
+**Next when resumed:** finish G5 — build the missing surfaces for `recover_owner_receivable_atomic` and the S09 correction pair (`s09_create_correction_draft` / `s09_apply_correction`) following the `OwnerReceivableOffsetPanel` pattern in `9fac02ac`; then the remaining S08/S09 review paths and the document surface; then G3 concurrency design, G4 runtime, parity re-measure, final DoD.
 
 ---
 
