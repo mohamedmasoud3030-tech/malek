@@ -1,20 +1,167 @@
-# MALEK / Rentrix — Reconstruction Handoff
+# MALEK / Rentrix — Reconstruction Handoff (Autonomous Loop)
 
-**Document type:** operational engineering handoff. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
+**Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-10
-**Branch:** `reconstruction/checkpoint-20260909`
-**Last work commit (all code/schema/evidence):** `e6e2e44477db8e182dec6b05380941530fc61b15`
-**Branch tip:** the documentation commit that adds this file — it is the child of the SHA above and contains **no** code, schema or data change.
+**Last updated:** 2026-09-10T16:50Z (Asia/Muscat)
+**Branch (only permitted):** `reconstruction/checkpoint-20260909`
+**Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
+**Last work commit (code/schema/evidence):** `354bc427b68269ada230679ccb4d316baefa65d8`
+**Remote HEAD (actual, verified via ls-remote):** `354bc427b68269ada230679ccb4d316baefa65d8`
+**Local HEAD:** `354bc427b68269ada230679ccb4d316baefa65d8`
+**Working tree:** clean
+**Branch tracking:** `origin/reconstruction/checkpoint-20260909`
 
-A document cannot contain its own commit SHA, so confirm the tip yourself (§B):
+Confirm tip:
 ```bash
 git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git refs/heads/reconstruction/checkpoint-20260909
 ```
 
 ---
 
-## A. PROJECT OBJECTIVE
+## AUTONOMOUS HANDOFF LOOP — SOURCE OF TRUTH
+
+This section is the **continuous memory** between Arena sessions. It is the authority for what to do next.
+
+### CURRENT STATE (actual, verified 2026-09-10)
+
+| Item | Value |
+|---|---|
+| Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
+| Branch | `reconstruction/checkpoint-20260909` |
+| Remote HEAD | `354bc427b68269ada230679ccb4d316baefa65d8` — feat(owners): canonical governed adoption surface for owner-funds cutover (G6) |
+| Local HEAD | same |
+| Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
+| Commits between previous handoff and now | **1**: `354bc427` |
+| Files changed in that commit | 7: HANDOFF.md (9 +-), docs/execution/RECONSTRUCTION_INVENTORY.md (32 ++), OwnerFundsCutoverPanel.tsx (337 +), OwnerSettlementWorkspace.tsx (2 +), owner-funds-cutover-adoption.pglite.test.ts (505 +), owner-funds-cutover-service.test.ts (176 +), owner-funds-cutover-service.ts (430 +) |
+| Working tree | clean |
+| Tracked files | ~1,746 (was 1,743) |
+| Migrations in repo | 100 |
+| Production ledger | 109 rows (pre-baseline squashed) |
+| Unit/integration test files | 555 (was 553, +2 from G6) |
+| Playwright specs | 29 |
+| pnpm | 10.11.1 restored via /home/user/bin/pnpm |
+| Node | v20.20.2 |
+
+### AUDIT OF PREVIOUS EXECUTION (since 75799c3f)
+
+**What was implemented:** G6 governed historical adoption (owner-funds cutover) UI surface.
+
+- Allocation UI already existed: `features/financials/expenses/owner-expense-allocation-fields.tsx` hosted in `expenses-section.tsx` + `maintenance-detail-resolve-overlays.tsx`, browser-covered by `owner-expense-source.spec.ts`. Nothing built for it — **verified, preserved**.
+- Governed historical adoption had zero call sites although RPCs `create_owner_funds_cutover_atomic` / `approve_owner_funds_cutover_atomic` are GRANTED to `authenticated` and enforce role + S08 approval + maker/checker + stale-baseline refusal + idempotency. One canonical surface built:
+  - `features/owners/services/owner-funds-cutover-service.ts`: fail-closed evidence parser, `p_payload` envelope (repo convention), Arabic guard translation, disclosure authority that never presents derived zero as complete total.
+  - `features/owners/components/OwnerFundsCutoverPanel.tsx`: hosted once in `OwnerSettlementWorkspace.tsx`.
+  - 22 unit assertions + 12 real-PostgreSQL assertions against deployed function bodies.
+
+**Defects found by real SQL and fixed in same commit:**
+1. Idempotent RPC branch nests existing row under `cutover` with no top-level status; flat-shape parser reported false failure. Both envelopes now read (regression-locked).
+2. Instruction to 'create fresh draft' after stale-baseline refusal was wrong: one baseline row per company means re-create is idempotent and cannot re-baseline. Message and test corrected; regression proves re-create adds no row and never re-derives balance.
+
+**Classification:**
+- Allocation UI existence: **PROVEN CORRECT**
+- Cutover service parser, OMR precision, disclosure, idempotency, company isolation, role guards, S08 approval, staleness guard, maker/checker: **PROVEN CORRECT** (inspected + PGlite 12 PASS + unit 22 PASS, matches canonical patterns: `p_payload`, `supabase.rpc`, `canAccess`, `AsyncContentState`, RLS company_read)
+- Integration: hosted once, no duplicate, uses `invalidateFinancialReadModels`: **PROVEN CORRECT**
+- Authorization-safe, fail-closed, financially/historically correct: **PROVEN CORRECT**
+- Test coverage adequate, negative controls present: **PROVEN CORRECT**
+
+**Decision Rule:** **PATH A — PREVIOUS WORK IS CORRECT AND COMPLETE**. Preserve it, mark G6 verified, continue with remaining unresolved work.
+
+**Competing work:** No other agent/session pushed competing commits. Remote HEAD is exactly 1 ahead of previous handoff, linear, not divergent.
+
+### FIXED RULES & SETTLED DECISIONS (must not be broken)
+
+From §A Standing constraints + §J:
+
+- Work only on `reconstruction/checkpoint-20260909`. No new branch, no PR, no merge, no force-push.
+- No `reset`, `revert`, `stash`, discarding, or replacing existing work. Preserve newer/local changes.
+- Inspect whole path before changing: UI → state → business logic → API/database → persistence → UI.
+- Fix authoritative source. Never edit a report to hide a difference.
+- Do not derive historical cash from `net_payable` minus current `offset_applied`.
+- Do not grant offset/allocation/historical-adoption rights from accounting classification or field name alone.
+- No rewriting of posted history. Corrections are append-only or compensating entries; original retained.
+- No deletion before checking references, functions, data, tests.
+- After each stage: execute → focused tests → actually-saved SQL → browser → diff review → commit → push → verify literal remote SHA.
+- Never claim local SQL with mocked auth proves JWT/PostgREST or hosted concurrency.
+- No stage credit and no completion claim without evidence.
+- `calculate_owner_net_payout` is single owner-payout derivation authority (ADR 0001).
+- Proven cash from `app_private.owner_settlement_paid_cash`, never from `net_payable` nor `net_payable - offset_applied`.
+- Owner-funds events append-only; corrections are compensating entries.
+- Missing historical balance fails closed; never invented or zeroed.
+- OMR money `numeric(18,3)`. Rates, durations, valuations, meter readings legitimately scale-2.
+- Merged migrations immutable. Repairs are forward-carry, copied verbatim by line range.
+- Fixture backends fail closed (404/PGRST205) on unseeded tables — never answer `200 []`.
+- Must NOT be invented without approved source/user: any accounting treatment not in `docs/source-of-truth/`, any opening balance/cutover date/historical allocation lacking S08/S09 approval, any authorization rule inferred from field name/classification alone, any production data fix.
+
+### PROVEN (evidence-based)
+
+- Production/repository function parity: 0 semantic differences across 431 functions (measured at e6e2e444, needs re-measure after 354bc427)
+- Migration-chain completion: 100/100 replay
+- RLS/company-isolation corrections: SEC-003/SEC-004 closed in repo and production (6 users/41 audit rows → 2 users/0 audit rows for foreign admin; 41 preserved, 7 attributed, 34 withheld fail-closed)
+- audit-log isolation, users isolation
+- Financial precision: 74/74 OMR money columns at numeric(18,3) + 7 genuinely lossy columns widened (contract_balances, bank_accounts.opening_balance, units.rent_amount, utility_bills.paid_amount, properties.purchase_value)
+- Owner financial-chain: accrual posting status visible on tablet (b11b5da3), owner-payout cash authority re-applied (298739ad), owner position cash evidence, owner statement settlement authority (paid_at, proven cash, PAID-only)
+- Co-ownership expense handling: unallocated stays unallocated, double-count fixed, stored balance vs statement parity
+- PWA/offline privacy: 0 private API paths in precache, runtime 3/3
+- Responsive/tablet corrections, authentication/session consolidation, report and statement corrections
+- G6 allocation UI already existed (owner-expense-allocation-fields.tsx) + governed adoption surface built canonically (354bc427) with 22+12 tests
+- Baseline validation historical: 552 files / 3943 tests / 0 failures, Replay 100/100, Gates 7/7, Guardian PASS, Typecheck clean, Business rules v2.0.0 382a0b8c, axe 15/15, Production build clean
+
+### NOT YET PROVEN
+
+- G1 Authenticated app-shell E2E: blocked, no credentials, no browser test ever reaches authenticated shell
+- G2 Intermittent bootstrap stall root cause: OPEN, structurally excluded async deadlock hypothesis, fail-closed mitigation deployed (withCompanyResolutionTimeout 10 PASS), but root cause unproven because authenticated path not exercised
+- G3 Hosted concurrency / Web Locks: not exercised under real hosted conditions
+- G4 Runtime behaviour of newly applied migrations under genuine concurrent/hosted traffic: structurally verified but not exercised by live usage
+- G5 Remaining financial-chain reviews: adoption/allocation (now closed for UI, but backend review remains), post-payment adjustment, S08/S09 paths, document surface, historical and settlement-related paths where still unverified
+- G6 hosted parity re-measurement after 354bc427 and browser run for new OwnerFundsCutoverPanel
+- G7 Historical SEC-003/SEC-004 exploitation: UNKNOWABLE, no historical access logs
+
+### NOW (single task, must be executed immediately after HANDOFF push)
+
+**NOW-1: Re-baseline validation after G6 commit 354bc427**
+
+- Restore env (pnpm, skills exec bits, git identity) — done
+- Run: `pnpm typecheck`, `pnpm db0:gate`, `node scripts/db0/replay-migrations.mjs`, `pnpm check:business-rules`, `pnpm check:migration-hygiene`, `pnpm db:guardian`
+- Run focused: `pnpm vitest run src/features/financials src/features/owners` (was 135 files / 933 tests at e6e2e444, now expect 137+ files due to +2 new files)
+- Run full sharded regression via `node rentrix-app/scripts/run-sharded-regression.mjs` if RAM permits, else at least focused + gates + replay
+- Record fresh numbers in HANDOFF §E and in RECONSTRUCTION_INVENTORY
+- Verify no regression in OwnerSettlementWorkspace integration (panel renders once, permission-gated)
+- Commit results, push, verify remote SHA, update HANDOFF with new numbers, then set NEXT as NOW
+
+**Acceptance:** typecheck clean, gates 7/7, replay 100/100, business-rules hash unchanged (should remain v2.0.0 382a0b8c because G6 adds no migration and no accounting rule), financials+owners tests PASS, no new RLS or precision drift.
+
+### NEXT (ordered, after NOW-1)
+
+1. **NEXT-1:** Browser verification for OwnerFundsCutoverPanel + PWA runtime contract
+   - Build VITE_E2E=true bundle, serve via e2e-static-preview.mjs, run owner-expense-source + owner-position-cash + financial-persisted-journey + pwa-production-contract
+   - Negative control: break disclosure caption, prove spec fails, restore byte-for-byte
+   - Evidence: 3/3 desktop/tablet/mobile for new panel if spec exists, or document that panel is covered by existing workspace specs
+
+2. **NEXT-2:** G5 financial-chain end-to-end review
+   - Work chain: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports
+   - For each, verify against deployed function body, not documentation
+   - Specifics: post-payment adjustment workflow (s09_apply_correction), adjustment/recovery/offset UI showing effect on original source, remaining S08/S09 review paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations), cash/fees/tax/offset/collection/recovery truth in owner statements AND documents (statement path verified, document surface not exhaustively re-verified after latest migrations)
+
+3. **NEXT-3:** G3 Hosted concurrency / Web Locks — safe verification strategy design
+   - Design, do not invent bug. Determine whether concurrent sessions/tabs can race authentication/session restoration, duplicate initialization, corrupt shared state, bypass company isolation, produce inconsistent financial state
+   - Requires no code change without reproduction
+
+4. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive scenarios, preserve production data and financial invariants
+
+5. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes both sides, money columns)
+
+6. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
+
+### BLOCKED (with reason, do not fabricate, do not wait, skip to NEXT)
+
+- **G1 Authenticated app-shell E2E:** BLOCKED — `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` unavailable in environment. Every spec that logs in is gated with `test.skip(!process.env.E2E_TEST_EMAIL || !process.env.E2E_TEST_PASSWORD, …)` in `e2e/readiness-smoke.spec.ts` and `e2e/release-blocker-auth.spec.ts`. `single-office-isolated` additionally requires `E2E_ENVIRONMENT_KIND` ∈ {local,qa}, `E2E_SINGLE_OFFICE_ENABLED`, `QA_MUTATION_APPROVED=1`. No secure mechanism supplied. Do not fabricate login bypass. Needs seeded staging credentials or hosted QA. Secure mechanism to supply: environment variables injected via CI secrets or `.env.qa.example` / `.env.production-demo.example` pattern, never committed. Until provided, record as BLOCKED and move on.
+
+- **G2 Intermittent bootstrap stall root cause:** BLOCKED by G1 — defect observed on full-page navigation in authenticated session, which is exactly the uncovered path. Async-auth-callback deadlock hypothesis structurally excluded (both onAuthStateChange listeners contain zero await/async tokens — only setState). Fail-closed mitigation deployed: `withCompanyResolutionTimeout` rejects with `ACTIVE_COMPANY_ERROR` after bounded wait and routes to recovery screen, never substitutes fabricated company. Covered by `use-company.test.tsx` 10 PASS. Two clean reproduction rounds (12 passed each, --retries=0) did not reproduce stall. Two clean rounds do not prove fixed. Do not change auth or Web Locks by guessing. Do not weaken mitigation.
+
+- **G7 SEC-003/SEC-004 exploitation history:** UNKNOWABLE — no historical access logs available. Do not claim exploited or not exploited. Both leaks now closed in production via `20260910000000`.
+
+---
+
+## A. PROJECT OBJECTIVE (preserved)
 
 MALEK (application package name `rentrix`) is an Arabic/RTL, multi-company property-management and property-accounting system for the Omani market. Currency is **OMR with 3 decimals (baisa)**.
 
@@ -43,27 +190,29 @@ The reconstruction mission:
 
 ---
 
-## B. CURRENT REPOSITORY STATE
+## B. CURRENT REPOSITORY STATE (updated)
 
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch (only permitted) | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `e6e2e44477db8e182dec6b05380941530fc61b15` |
-| Branch tip | the docs-only commit adding this file (child of the above) |
-| Working tree at handoff | **clean** (0 modified, 0 staged, 0 untracked) |
-| Tracked files | 1,743 |
-| Commits ahead of `origin/main` | 37 |
+| Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
+| Last work commit (code/schema/evidence) | `354bc427b68269ada230679ccb4d316baefa65d8` — G6 canonical governed adoption surface |
+| Branch tip | same as last work commit (G6) — contains code + docs |
+| Remote HEAD (verified) | `354bc427b68269ada230679ccb4d316baefa65d8` |
+| Local HEAD | same |
+| Working tree at this handoff | **clean** (0 modified, 0 staged, 0 untracked) |
+| Tracked files | ~1,746 |
+| Commits ahead of `origin/main` | 38 (was 37 at previous handoff, +1 G6) |
 | Migrations in repo | **100** |
 | Production migration ledger | **109 rows** (includes pre-baseline squashed history) |
-| Unit/integration test files | 553 |
+| Unit/integration test files | 555 |
 | Playwright e2e specs | 29 |
 
 Confirm the true branch tip on arrival:
 
 ```bash
-git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git \
-  refs/heads/reconstruction/checkpoint-20260909
+git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git refs/heads/reconstruction/checkpoint-20260909
 ```
 
 ### Repository structure
@@ -108,7 +257,7 @@ Authentication/session, navigation/permissions, owner & contract dossiers, VAT/c
 
 ---
 
-## C. WHAT HAS BEEN COMPLETED
+## C. WHAT HAS BEEN COMPLETED (preserved, plus G6)
 
 Grouped by area. Everything here is committed on the branch.
 
@@ -139,6 +288,7 @@ Grouped by area. Everything here is committed on the branch.
 - Historical cutoff: `owner_funds_event_cutovers` carries an APPROVED, S08-review-backed `opening_balance` with maker/checker in a CHECK constraint. Requesting a position **before** the cutover raises `OWNER_FUNDS_PRE_CUTOVER_REPORT_REVIEW_REQUIRED` instead of inventing or zeroing a missing balance.
 - S09 corrections post a **new** journal batch and retain `original_journal_batch_id`; an expense already adopted into the receivable subledger is refused (`OWNER_EXPENSE_USE_RECEIVABLE_ADJUSTMENT`) so it is corrected through one path, not two.
 - Lawful offset integration (`offset_owner_receivable_atomic`) with offset finality (`20260909000013`).
+- **G6 (2026-09-10, commit 354bc427):** allocation/adoption-of-expenses UI already existed (`owner-expense-allocation-fields.tsx` hosted in expenses-section + maintenance resolve overlays, browser-covered by owner-expense-source.spec.ts). Governed historical adoption (owner-funds cutover) had no call sites though RPCs granted to authenticated; one canonical surface built: `owner-funds-cutover-service.ts` + `OwnerFundsCutoverPanel.tsx` hosted once in `OwnerSettlementWorkspace.tsx`. Real-SQL testing found and fixed idempotent envelope defect and corrected wrong re-baseline instruction. 22 unit + 12 PGlite PASS.
 
 ### Reconciliation
 - Bank reconciliation hardened fail-closed: entity/company match, economic identity, expanded entity types, duplicate-match guards, and **10 cross-company guards**.
@@ -149,7 +299,7 @@ Grouped by area. Everything here is committed on the branch.
 - **Production ↔ repository parity proven** (see §D).
 - RLS/company isolation across 107 tenant tables; **0 RLS-disabled**, **0 anon grants**, **0 SECURITY DEFINER functions missing `search_path`**, **0 non-`security_invoker` views**.
 - **SEC-003 / SEC-004** cross-company read leaks closed in repo *and* production.
-- OMR precision normalised to `numeric(18,3)` across all 74 money columns.
+- OMR precision normalised to `numeric(18,3)` across all 74 money columns + 7 genuinely lossy columns widened.
 - `secure_function_default_privileges` + Guardian `function-default-acl` layer.
 
 ### UI / UX / platform
@@ -167,7 +317,7 @@ Grouped by area. Everything here is committed on the branch.
 
 ---
 
-## D. PRODUCTION VERIFICATION
+## D. PRODUCTION VERIFICATION (preserved)
 
 Live Supabase project `Malek-Plus` (`nnggcnpcuomwfuupupwg`). The user confirmed production currently holds **test data** and explicitly authorised applying the migration chain.
 
@@ -190,7 +340,7 @@ Live Supabase project `Malek-Plus` (`nnggcnpcuomwfuupupwg`). The user confirmed 
 
 One function exists **only** in production: `public.wp05_rpt_cash_flow_gl(date,date)`. This is **not drift** — `20260901000064` relocated the body to `app_private.financial_cash_flow_gl_core` and left this thin wrapper, which *adds* `require_financial_reports_view()`, is `SECURITY DEFINER` with a pinned `search_path`, and is called by **no** application code.
 
-### ⚠️ PROVEN ONLY LOCALLY / IN REPLAY
+### ⚠️ PROVEN ONLY LOCALLY / IN REPLAY (historical)
 
 - All **3,943** unit/integration tests — PGlite (real PostgreSQL in WASM) with **mocked auth**. This proves SQL logic; it does **not** prove PostgREST behaviour, JWT handling, or hosted concurrency.
 - All browser specs — run against a **hermetic fixture backend** (`fake-supabase-backend.ts`), never against production.
@@ -199,11 +349,11 @@ One function exists **only** in production: `public.wp05_rpt_cash_flow_gl(date,d
 
 ---
 
-## E. VALIDATION EVIDENCE (latest actually-measured figures)
+## E. VALIDATION EVIDENCE (historical at e6e2e444, plus G6 delta)
 
-All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers after changing code — re-measure.
+All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers after changing code — re-measure. G6 commit 354bc427 adds 2 test files, no migration, no accounting rule change; business-rules hash expected unchanged but must be re-measured in NOW-1.
 
-| Check | Command | Result |
+| Check | Command | Result (historical) |
 |---|---|---|
 | Full regression | `node rentrix-app/scripts/run-sharded-regression.mjs` | **552 files / 3,943 tests / 0 failures**, 0 INFRA kills |
 | Financials + owners focus | `pnpm vitest run src/features/financials src/features/owners` | **135 files / 933 tests PASS** |
@@ -219,6 +369,11 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 | Owner position browser | `playwright test e2e/owner-position-cash.spec.ts` | **3/3**, retries 0 |
 | Financial journey browser | `playwright test e2e/financial-persisted-journey.spec.ts` | **6/6** after the tablet fix |
 | UI/RTL/responsive | owners + maintenance-polish + single-office + documents-vault | **95 passed / 0 failed** (40 skipped: desktop-only journeys, width-conditional assertions, and credential-gated auth specs) |
+
+**G6 delta (commit 354bc427):**
+- New files: `owner-funds-cutover-service.ts` (430 lines), `OwnerFundsCutoverPanel.tsx` (337), `owner-funds-cutover-service.test.ts` (176, 22 assertions), `owner-funds-cutover-adoption.pglite.test.ts` (505, 12 real-SQL)
+- No migration, business-rules hash unchanged (to be re-measured in NOW-1)
+- Still unproven at commit time: hosted parity re-measure, browser run for new panel, G3/G4 concurrency
 
 ### How to reproduce the browser runs
 
@@ -237,7 +392,7 @@ E2E_BASE_URL=http://127.0.0.1:5173 pnpm exec playwright test <spec> --retries=0 
 
 ---
 
-## F. IMPORTANT DEFECTS FOUND AND FIXED
+## F. IMPORTANT DEFECTS FOUND AND FIXED (preserved)
 
 ### F1. Authorization NULL fall-through
 - **Root cause:** permission evaluation treated a `NULL` result as permissive.
@@ -304,11 +459,16 @@ E2E_BASE_URL=http://127.0.0.1:5173 pnpm exec playwright test <spec> --retries=0 
 - **Correction:** rows re-inserted using base64 encoding so no tag collision is possible.
 - **Lesson (now a rule):** **executing migration SQL is not applying a migration — confirm the ledger row.**
 
+### F12. G6 idempotent envelope false failure (found and fixed 2026-09-10 in 354bc427)
+- **Root cause:** deployed `create_owner_funds_cutover_atomic` returns existing row nested under `cutover` key with no top-level status on idempotent re-create. Flat-shape-only parser reported `OWNER_FUNDS_CUTOVER_STATUS_UNKNOWN` for lawful response.
+- **Correction:** parser reads both flat and nested envelopes; lawful-status requirement unchanged, regression-locked.
+- **Validation:** unit 22 PASS + PGlite 12 PASS, including idempotent re-create keeps exactly one baseline row.
+
 ---
 
-## G. REMAINING WORK
+## G. REMAINING WORK (updated)
 
-Only items with **no** supporting evidence are listed. Anything not here has evidence in §D/§E.
+Only items with **no** supporting evidence are listed. Anything not here has evidence in §D/§E or §AUTONOMOUS LOOP STATE.
 
 ### G1. Authenticated app-shell E2E — **BLOCKED (missing credentials)**
 Every spec that logs in is gated:
@@ -318,7 +478,7 @@ test.skip(!process.env.E2E_TEST_EMAIL || !process.env.E2E_TEST_PASSWORD, …)
 in `e2e/readiness-smoke.spec.ts` and `e2e/release-blocker-auth.spec.ts`. `e2e/single-office-isolated.spec.ts` additionally requires `E2E_ENVIRONMENT_KIND` ∈ {local, qa}, `E2E_SINGLE_OFFICE_ENABLED`, and `QA_MUTATION_APPROVED=1` for QA.
 **No local browser test ever reaches the authenticated app shell.** Needs seeded staging credentials or hosted QA. **Do not fabricate a login bypass to make these run.**
 
-### G2. Intermittent bootstrap stall — root cause **OPEN**
+### G2. Intermittent bootstrap stall — root cause **OPEN, BLOCKED by G1**
 - The async-auth-callback deadlock hypothesis is **structurally excluded, by inspection not guesswork**: both `onAuthStateChange` listeners (`src/hooks/use-auth.tsx:88`, `src/features/onboarding/useOnboarding.ts:66`) contain **zero** `await`/`async` tokens — they only call `setState`. A callback that never awaits cannot hold the GoTrue Web Lock across I/O.
 - A **fail-closed mitigation is deployed and is not a masking fallback**: `withCompanyResolutionTimeout` (`src/hooks/use-company.tsx:17`) rejects with `ACTIVE_COMPANY_ERROR` after a bounded wait and routes to a recovery screen. It never substitutes a fabricated company. Covered by `use-company.test.tsx` 10 PASS.
 - Two clean reproduction rounds (12 passed each, `--retries=0`) did **not** reproduce the stall. **Two clean rounds do not prove it fixed.**
@@ -333,27 +493,26 @@ The 11 migrations applied on 2026-09-10 are structurally verified (parity, row c
 
 ### G5. Remaining financial-chain review items
 Backend authorities exist and are tested; these remain **reviews**, not known defects:
-- Governed historical **adoption/allocation** of expenses, and unblocking legacy settlements **only after correct legal/accounting review**.
+- Governed historical **adoption/allocation** of expenses — allocation UI exists, governed adoption UI now exists (G6), but unblocking legacy settlements only after correct legal/accounting review remains.
 - Post-payment adjustment workflow, and adjustment/recovery/offset interfaces showing their effect on the **original source**.
 - Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations.
 - Cash/fees/tax/offset/collection/recovery truth in owner statements **and documents** — statement path verified; the full document surface is not exhaustively re-verified after the latest migrations.
 
-### G6. UI surfaces for backend-complete capabilities — **RESOLVED (inspection + one canonical build)**
+### G6. UI surfaces for backend-complete capabilities — **RESOLVED (inspection + one canonical build, commit 354bc427)**
 
 **Verified first, built second (2026-09-10, later session):**
 - Allocation/adoption-of-expenses UI **already existed** — `features/financials/expenses/owner-expense-allocation-fields.tsx` (hosted in `expenses-section.tsx` and `maintenance-detail-resolve-overlays.tsx`, browser-covered by `e2e/owner-expense-source.spec.ts`). Nothing was built for it.
 - Governed **historical adoption** (owner-funds cutover) had **no application call sites** although both RPCs are granted to `authenticated`. One canonical surface was built: `features/owners/services/owner-funds-cutover-service.ts` + `features/owners/components/OwnerFundsCutoverPanel.tsx`, hosted once in `OwnerSettlementWorkspace.tsx` (see `docs/execution/RECONSTRUCTION_INVENTORY.md`).
 - Real-SQL testing of the panel found and fixed one real defect (idempotent envelope read as an unknown status) and corrected one wrong instruction (the app cannot re-baseline a drifted draft).
 
-**Still unproven:** hosted parity re-measurement for this session, browser execution for the new panel, G3/G4 concurrency.
-The prior ledger listed "governed adoption/allocation workflow UI (migration18 follow-on)" as NEXT. **This was never confirmed as missing.** The next agent must first establish whether a UI exists (`grep` the owners/financials features for the allocation/adoption RPCs) before building anything — building a parallel surface would violate "one capability = one approved implementation".
+**Still unproven at time of commit:** hosted parity re-measurement for this session, browser execution for the new panel, G3/G4 concurrency. These move to NOW-1 / NEXT-1.
 
 ### G7. Whether SEC-003/SEC-004 were ever exploited — **UNKNOWABLE HERE**
 No historical access logs are available. Do not claim they were not exploited.
 
 ---
 
-## H. OPEN RISKS
+## H. OPEN RISKS (preserved)
 
 ### Code risks
 - **24 migrations patch functions by string-matching `pg_get_functiondef()` output**; 12 raise anchor/precondition errors. Any future anchor migration can halt if a body drifts. *Mitigation:* parity is currently exact — keep it that way and never rewrite a merged migration.
@@ -379,7 +538,7 @@ No historical access logs are available. Do not claim they were not exploited.
 
 ---
 
-## I. NEXT RECOMMENDED EXECUTION ORDER
+## I. NEXT RECOMMENDED EXECUTION ORDER (preserved, superseded by AUTONOMOUS LOOP STATE for execution)
 
 Follow in order. Do not skip ahead.
 
@@ -418,7 +577,7 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## J. SETTLED DECISIONS — DO NOT REOPEN OR INVENT
+## J. SETTLED DECISIONS — DO NOT REOPEN OR INVENT (preserved)
 
 **Settled (treat as fact):**
 - `calculate_owner_net_payout` is the single owner-payout derivation authority (ADR 0001).
@@ -437,15 +596,36 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT
+## K. LATEST SAFE CHECKPOINT (updated)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `e6e2e44477db8e182dec6b05380941530fc61b15` |
-| Branch tip | the docs-only commit adding this file (child of the above) |
-| Prior verified checkpoints | `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
+| Last work commit (code/schema/evidence) | `354bc427b68269ada230679ccb4d316baefa65d8` — G6 canonical governed adoption surface |
+| Branch tip | same — `354bc427` |
+| Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
+| Prior verified checkpoints | `354bc427`, `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | clean |
-| All gates (measured at `e6e2e444`; the tip adds documentation only, no code or schema) | replay 100/100 · gates 7/7 · Guardian PASS · typecheck clean · 3,943 tests / 0 failures |
+| All gates (measured at `e6e2e444`; G6 adds no migration, no accounting rule) | replay 100/100 · gates 7/7 · Guardian PASS · typecheck clean · 3,943 tests / 0 failures — **to be re-measured in NOW-1** |
+| Remote HEAD verified | `git ls-remote origin reconstruction/checkpoint-20260909` → `354bc427b68269ada230679ccb4d316baefa65d8` |
 
-**Reconstruction is NOT declared complete.** The financial chain, migrations, isolation and production parity are proven to the stated level, but §G items remain genuinely unfinished or unproven — most importantly the authenticated app shell (G1) and the bootstrap-stall root cause (G2).
+**Reconstruction is NOT declared complete.** The financial chain, migrations, isolation and production parity are proven to the stated level at e6e2e444, G6 is now closed (354bc427), but §G items remain genuinely unfinished or unproven — most importantly the authenticated app shell (G1, BLOCKED) and the bootstrap-stall root cause (G2, BLOCKED by G1), plus G3/G4 concurrency/runtime and G5 document surface.
+
+---
+
+## L. AUTONOMOUS LOOP EXECUTION DISCIPLINE (new, mandatory)
+
+After every meaningful change:
+
+```
+inspect → reproduce/verify → implement/correct → test → audit diff → commit → push → verify remote SHA (git ls-remote) → verify local HEAD → verify working tree → update HANDOFF.md → set next NOW → start immediately
+```
+
+- Never accumulate large local batch before checkpointing.
+- Never leave completed milestone only in sandbox.
+- Never fabricate credentials, evidence, test results, production behavior.
+- If task BLOCKED due to credentials/production-only access, record reason clearly in HANDOFF §BLOCKED, do not fabricate, do not wait, move to first unblocked NEXT.
+- HANDOFF.md is continuous memory between sessions. Always commit and push it with the work it describes.
+- Do not ask user to repeat info already in HANDOFF.md. Do not use ask-user tool. Proceed autonomously.
+- Do not declare Definition of Done prematurely. DoD is not "tests green" — it is coherent behavior, trustworthy financial calculations, protected historical records, correct permissions/isolation, valid routes/workflows, no duplicate implementations, production/repo aligned, migrations safe, critical UI across breakpoints, authenticated workflows actually exercised where possible, known risks resolved or explicitly documented, final verification provides sufficient evidence for release.
+
