@@ -1,5 +1,5 @@
 import { Building2, CalendarClock, DoorOpen } from 'lucide-react';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, type SemanticTone } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import {
@@ -36,6 +36,13 @@ import {
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportDocumentActions } from './report-document-actions';
 
+/** Vacancy age bands: 60+ days is critical, 30+ is elevated, otherwise informational. */
+function vacancyTone(daysVacant: number): SemanticTone {
+  if (daysVacant >= 60) return 'danger';
+  if (daysVacant >= 30) return 'warning';
+  return 'info';
+}
+
 export function OccupancySection({
   occupancyRows,
   vacancyAnalytics,
@@ -60,6 +67,9 @@ export function OccupancySection({
   const occupancyChange = vacancyAnalytics.occupancyChangePoints;
   const occupancyChangeLabel = `${occupancyChange >= 0 ? '+' : ''}${occupancyChange.toFixed(1)} نقطة`;
   const nonRentableCount = vacancyAnalytics.nonRentableUnits;
+  const averageVacancyLabel = historyComplete
+    ? `${vacancyAnalytics.averageVacancyDays} يوم`
+    : 'غير متاح';
 
   const {
     companySettings: documentSettings,
@@ -144,7 +154,7 @@ export function OccupancySection({
       totalSummary: [
         `الإشغال: ${roundedOccupancyRate}%`,
         `الشغور: ${roundedVacancyRate}%`,
-        `متوسط الشغور: ${historyComplete ? `${vacancyAnalytics.averageVacancyDays} يوم` : 'غير متاح'}`,
+        `متوسط الشغور: ${averageVacancyLabel}`,
         `القيمة المرجعية للشواغر: ${vacancyAnalytics.referenceVacantRent}`,
         `التغير عن الشهر السابق: ${historyComplete ? occupancyChangeLabel : 'غير متاح'}`,
       ].join(' | '),
@@ -318,31 +328,28 @@ export function OccupancySection({
             </div>
           ) : (
             <ReportList>
-              {vacancyAnalytics.vacantRows.slice(0, 12).map((row) => (
+              {vacancyAnalytics.vacantRows.slice(0, 12).map((row) => {
+                const lastContractLabel = row.lastContractEndDate
+                  ? `آخر عقد انتهى ${date(row.lastContractEndDate)}`
+                  : 'لم يسبق تأجيرها في السجل';
+                return (
                 <ReportListRow
                   key={row.unitId}
                   title={`وحدة ${row.unitNumber}`}
-                  subtitle={`${row.propertyTitle} · ${row.lastContractEndDate ? `آخر عقد انتهى ${date(row.lastContractEndDate)}` : 'لم يسبق تأجيرها في السجل'}`}
+                  subtitle={`${row.propertyTitle} · ${lastContractLabel}`}
                   meta={
                     row.referenceRent !== null
                       ? `مرجعي ${money(row.referenceRent)}`
                       : 'السعر المرجعي غير مسجل'
                   }
                   value={
-                    <StatusBadge
-                      tone={
-                        row.daysVacant >= 60
-                          ? 'danger'
-                          : row.daysVacant >= 30
-                            ? 'warning'
-                            : 'info'
-                      }
-                    >
+                    <StatusBadge tone={vacancyTone(row.daysVacant)}>
                       {number(row.daysVacant)} يوم
                     </StatusBadge>
                   }
                 />
-              ))}
+                );
+              })}
             </ReportList>
           )}
         </ReportPanel>

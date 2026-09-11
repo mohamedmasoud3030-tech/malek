@@ -52,6 +52,10 @@ export const OfficePulse = memo(function OfficePulse({
   const overdueCount = snapshot?.arrears.overdueCount ?? 0;
   const over90Count = snapshot?.arrears.over90Count ?? 0;
   const averageDaysOverdue = snapshot?.arrears.averageDaysOverdue ?? 0;
+  const over90Suffix = over90Count > 0 ? ` · منها ${over90Count} تجاوزت 90 يوماً` : '';
+  const arrearsSub = overdueCount > 0
+    ? `${overdueCount} فاتورة متأخرة · متوسط ${averageDaysOverdue} يوم${over90Suffix}`
+    : 'لا توجد متأخرات مسجلة';
 
   const pulseLinkClass =
     'group block min-w-0 rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary';
@@ -119,11 +123,7 @@ export const OfficePulse = memo(function OfficePulse({
           <KpiCard
             label="المتأخرات"
             value={money(totalOverdue)}
-            sub={
-              overdueCount > 0
-                ? `${overdueCount} فاتورة متأخرة · متوسط ${averageDaysOverdue} يوم${over90Count > 0 ? ` · منها ${over90Count} تجاوزت 90 يوماً` : ''}`
-                : 'لا توجد متأخرات مسجلة'
-            }
+            sub={arrearsSub}
             icon={AlertOctagon}
             accent={
               totalOverdue === 0

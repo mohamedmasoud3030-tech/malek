@@ -41,6 +41,27 @@ type CollectionMovementProps = Readonly<{
   isLoading: boolean;
 }>;
 
+function describeCollectionMovementNote(
+  isLoading: boolean,
+  hasMovement: boolean,
+  busiestDay: DailyCollectionReportRow | undefined,
+  topMethodRow: readonly [string, number] | undefined,
+): string {
+  if (isLoading) {
+    return 'جارٍ تحميل حركة التحصيل المعتمدة.';
+  }
+  if (!hasMovement) {
+    return 'لا توجد دفعات أو إيصالات في هذه الفترة؛ وسّع النطاق الزمني أو راجع فلاتر النطاق.';
+  }
+  if (!busiestDay) {
+    return 'لا يوجد جدول تحصيل يومي ضمن الفترة، لكن توجد إيصالات معروضة أدناه.';
+  }
+  const topMethodNote = topMethodRow
+    ? `، وأكثر طرق السداد استخدامًا ${formatPaymentMethodLabel(topMethodRow[0])}`
+    : '';
+  return `أعلى حركة سُجلت يوم ${formatDate(busiestDay.paymentDate)} بقيمة ${formatMoney(busiestDay.totalPaid)}${topMethodNote}. مؤشرات الفوترة والكفاءة التنفيذية تبقى في ملخص التحصيل.`;
+}
+
 /**
  * حركة التحصيل — answers "what actually moved during this period?". It stays
  * transaction/movement-oriented: daily movement, payment-method mix, receipt
@@ -230,13 +251,7 @@ export function CollectionMovementSection({
         <div className="space-y-4">
           <ReceiptLinksPanel rows={receiptRows} isLoading={isLoading} />
           <ReportInsightNote title="قراءة الحركة">
-            {isLoading
-              ? 'جارٍ تحميل حركة التحصيل المعتمدة.'
-              : !hasMovement
-                ? 'لا توجد دفعات أو إيصالات في هذه الفترة؛ وسّع النطاق الزمني أو راجع فلاتر النطاق.'
-                : busiestDay
-                  ? `أعلى حركة سُجلت يوم ${formatDate(busiestDay.paymentDate)} بقيمة ${formatMoney(busiestDay.totalPaid)}${methodRows[0] ? `، وأكثر طرق السداد استخدامًا ${formatPaymentMethodLabel(methodRows[0][0])}` : ''}. مؤشرات الفوترة والكفاءة التنفيذية تبقى في ملخص التحصيل.`
-                  : 'لا يوجد جدول تحصيل يومي ضمن الفترة، لكن توجد إيصالات معروضة أدناه.'}
+            {describeCollectionMovementNote(isLoading, hasMovement, busiestDay, methodRows[0])}
           </ReportInsightNote>
         </div>
       </ReportColumns>

@@ -31,16 +31,20 @@ export function InvoicePreviewDialog({
 }>) {
   const grossAmount = invoice ? getInvoiceGrossAmount(invoice) : 0;
   const remaining = invoice ? getInvoiceRemainingAmount(invoice) : 0;
+  const invoiceContracts = invoice?.contracts;
+  const invoiceUnitLabel = invoiceContracts?.units?.unit_number ? `وحدة ${invoiceContracts.units.unit_number}` : '';
+  const invoiceDescription = invoiceContracts
+    ? `${invoiceContracts.people?.full_name ?? 'مستأجر غير محدد'} · ${invoiceContracts.properties?.title ?? 'عقار غير محدد'} · ${invoiceUnitLabel}`
+    : undefined;
+  const invoicePropertyTitle = invoiceContracts?.properties?.title;
+  const invoiceUnitSuffix = invoiceContracts?.units?.unit_number ? ` · وحدة ${invoiceContracts.units.unit_number}` : '';
 
   return (
     <EntityPreviewDialog
       open={open}
       onOpenChange={onOpenChange}
       title={invoice ? (invoice.reference ?? 'فاتورة بلا مرجع') : 'معاينة الفاتورة'}
-      description={invoice ? invoice.contracts
-        ? `${invoice.contracts.people?.full_name ?? 'مستأجر غير محدد'} · ${invoice.contracts.properties?.title ?? 'عقار غير محدد'} · ${invoice.contracts.units?.unit_number ? `وحدة ${invoice.contracts.units.unit_number}` : ''}`
-        : undefined
-      : undefined}
+      description={invoiceDescription}
       status={invoice ? (
         <StatusBadge tone={getInvoiceStatusTone(invoice.status)}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>
       ) : undefined}
@@ -68,9 +72,7 @@ export function InvoicePreviewDialog({
             { label: 'المستأجر', value: invoice.contracts?.people?.full_name ?? 'غير محدد' },
             {
               label: 'العقار / الوحدة',
-              value: invoice.contracts?.properties?.title
-                ? `${invoice.contracts.properties.title}${invoice.contracts.units?.unit_number ? ` · وحدة ${invoice.contracts.units.unit_number}` : ''}`
-                : 'غير محدد',
+              value: invoicePropertyTitle ? `${invoicePropertyTitle}${invoiceUnitSuffix}` : 'غير محدد',
             },
             { label: 'فترة الفاتورة', value: billingPeriodLabel(invoice) },
             { label: 'تاريخ الاستحقاق', value: invoice.due_date ? formatDate(invoice.due_date) : '—' },
