@@ -41,7 +41,7 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
 | Fresh baseline (NOW-8, 2026-09-11 07:00-07:25Z) | typecheck clean, gates 7/7, guardian PASS all layers, migration-hygiene OK (needs `origin/main` ref — see §B), business-rules v2.0.0 382a0b8c unchanged, s09+S08 suite 27/27, canonical documents suite 38/38, entity-form **9/9** (incl. G3 double-submit race lock), design-system inventory 13/13, full sharded 20-shard **559 files / 4066 tests / 0 failures / 0 INFRA — PASS** |
-| Push verification | **BLOCKED** — `git push` → `could not read Username for 'https://github.com'`. No PAT, no SSH key, no credential helper, no token env var in this sandbox. Remote tip verified `bcdf6944` at 04:28Z. |
+| Push verification | **DONE 2026-09-11 ~10:05Z** — user supplied a PAT; `git push` of `HEAD:refs/heads/reconstruction/checkpoint-20260909` succeeded (`bcdf6944..a99e4295`); remote SHA verified via `git ls-remote`: `a99e4295ba2f91af1dcdc59a15683ed56d9487c2` == local HEAD. Hosted runs dispatched on the pushed SHA: `ci.yml` run 34579002427 + `browser-readiness.yml` run 34579004391 (full self-contained e2e matrix, run_staging=false — no secrets needed). This HANDOFF update itself is committed and pushed immediately after. |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
 
@@ -146,7 +146,29 @@ From §A Standing constraints + §J:
 
 ### NOW (single task)
 
-**NOW-13: PARKED — every remaining item is externally blocked; no locally executable work remains**
+**NOW-14: record the hosted GitHub Actions outcomes for the pushed SHA (runs dispatched 2026-09-11 ~10:07Z)**
+
+(NOW-4…NOW-12 COMPLETE and **PUSHED** — remote tip verified `a99e4295ba2f91af1dcdc59a15683ed56d9487c2`
+== local HEAD via `git ls-remote`; NOW-13 park record partially fired: the PAT resume trigger
+occurred. The PAT is conversation-scoped — used inline, never written to any file or `.git/config`.)
+
+- In progress at dispatch time: **ci.yml run 34579002427** (Typecheck, Lint & Build — first hosted
+  build of the reconstruction branch) and **browser-readiness.yml run 34579004391** (full
+  self-contained Playwright device matrix — includes the three NOW-11/12 panel specs; this is the
+  first HOSTED browser execution of the panels).
+- Steps: (1) poll `GET /repos/mohamedmasoud3030-tech/malek/actions/runs?branch=reconstruction/checkpoint-20260909`
+  (PAT in Authorization header; needs a fresh PAT if expired). (2) Record conclusions verbatim in
+  §K + DoD checklist G1 row + this block; on failure, download job logs before diagnosing — a
+  hosted runner environment difference is INFRA-class until proven otherwise; a genuine failure
+  reproduces locally first (never fix blind). (3) Then re-park: everything else (G2, G3-hosted
+  soaks, G4, parity, G7) needs a deployed app + Supabase access, which the GitHub PAT does NOT
+  provide; the governance decision still needs an approved source.
+- Do NOT re-audit NOW-4…NOW-12 territory.
+
+**Acceptance:** hosted run outcomes recorded verbatim (pass or fail, with run ids), or a precise
+BLOCKED record if the PAT expired before completion. No fabrication of hosted results.
+
+### Historical park record (NOW-13, superseded 2026-09-11 ~10:05Z by the PAT arrival)
 
 (NOW-4 `9ca483b4`, NOW-5 `9767ef03`, NOW-6 `342b18ca`, NOW-7 `bb45a0d0`, NOW-8 `035db0e2`,
 NOW-9 `6a66f692`, NOW-10 docs sweep + DoD checklist, NOW-11 `ec4654bc` S09+cutover panel browser
@@ -189,9 +211,11 @@ executable bits the sandbox may strip — mode-only drift, restore with chmod, n
 
 ### NEXT (ordered, after NOW-13 — all externally blocked)
 
-1. **Push + G1 credentials (resume trigger: a PAT appears in the sandbox):** push the local
-   commits, verify the remote SHA, then run the hosted checks specified in the DoD checklist
-   (G2, G3-hosted C1/C3/C5/C6/C8, G7 evidence attempt).
+1. ~~**Push + G1 credentials**~~ — **DONE 2026-09-11 ~10:05Z**: PAT supplied, pushed
+   `bcdf6944..a99e4295`, remote SHA verified via `git ls-remote`; hosted ci.yml + browser-readiness
+   dispatched on the pushed SHA (NOW-14 records outcomes). Still needs hosted RUNTIME access
+   (deployed app + Supabase): G2 bootstrap-stall diagnosis, G3-hosted two-tab soaks
+   C1/C3/C5/C6/C8, G4, parity re-measure, G7 evidence attempt.
 
 2. **Governance decision needed (user/approved source, do not invent):** non-enumerated S09
    `source_type` labels are bound only to the APPROVED S08 review with no source-existence check
@@ -233,7 +257,7 @@ NOW-10 `84e258cd`+`76a461c8`; browser coverage of all five G5/G6 panels incl. fa
 
 ### BLOCKED (with reason, do not fabricate, do not wait, skip to NEXT)
 
-- **PUSH / checkpoint-to-remote (since 2026-09-11 05:11Z):** BLOCKED — **no GitHub credential of any kind exists in this sandbox.** `git push` fails with `could not read Username for 'https://github.com'`. Exhaustively probed: no token env vars, no `~/.git-credentials`, no `~/.netrc`, no credential helper, no `gh` CLI, no `~/.ssh` keys (SSH to github.com fails host-key/auth). This is the situation §D predicted: prior PATs were in-process only and are revoked/expired. **Local commits are safe and must not be discarded**: `9ca483b4` (NOW-4 work) sits on top of remote `bcdf6944`, linear, working tree clean. **The moment a PAT is supplied:** `git push origin reconstruction/checkpoint-20260909` then verify with `git ls-remote` that the remote tip equals local HEAD, and update this file. Do NOT fabricate a push confirmation. Do NOT switch branches or remotes. Everything else in the loop continues locally per §L (execute → test → commit), with pushes batched when unblocked.
+- **PUSH / checkpoint-to-remote — UNBLOCKED 2026-09-11 ~10:05Z.** (Historical record: blocked since 05:11Z — no GitHub credential of any kind existed in the sandbox; `git push` failed with `could not read Username`; exhaustively probed env/`~/.git-credentials`/`~/.netrc`/helpers/`gh`/SSH.) The user supplied a PAT in-conversation; the push of all local work succeeded (`bcdf6944..a99e4295`) and the remote SHA was verified via `git ls-remote` to equal local HEAD `a99e4295ba2f91af1dcdc59a15683ed56d9487c2`. **The PAT is conversation-scoped: it was used inline per command, never written to any file, never stored in `.git/config` (push used a one-off URL), and must never be committed.** If it expires, pushes stop again — record and park, do not fabricate. Hosted GitHub Actions runs were then dispatched on the pushed SHA (ci.yml + browser-readiness.yml full e2e matrix; both accepted 204, in progress at 10:07Z): these are the first HOSTED runs of the reconstruction branch.
 
 - **G1 Authenticated app-shell E2E:** BLOCKED — `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` unavailable in environment. Every spec that logs in is gated with `test.skip(!process.env.E2E_TEST_EMAIL || !process.env.E2E_TEST_PASSWORD, …)` in `e2e/readiness-smoke.spec.ts` and `e2e/release-blocker-auth.spec.ts`. `single-office-isolated` additionally requires `E2E_ENVIRONMENT_KIND` ∈ {local,qa}, `E2E_SINGLE_OFFICE_ENABLED`, `QA_MUTATION_APPROVED=1`. No secure mechanism supplied. Do not fabricate login bypass. Needs seeded staging credentials or hosted QA. Secure mechanism to supply: environment variables injected via CI secrets or `.env.qa.example` / `.env.production-demo.example` pattern, never committed. Until provided, record as BLOCKED and move on.
 
@@ -822,23 +846,23 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 09:50Z — NOW-4…NOW-12 committed locally, push BLOCKED, NOW-13 PARKED)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 10:05Z — NOW-4…NOW-12 PUSHED to remote and verified; hosted runs dispatched; NOW-14 monitors them)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `d6713ec0` — NOW-12: recovery panel browser spec + fail-closed refusal proof (e2e-only; last src change `035db0e2`) — **LOCAL ONLY** |
-| Local branch tip | `d6713ec0` (17 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`, `91f2ad71`, `035db0e2`, `4973dc4e`, `6a66f692`, `269ed0b3`, `84e258cd`, `76a461c8`, `ec4654bc`, `322b5f9f`, `d6713ec0`) |
-| Remote branch tip | `bcdf6944` — verified via `git ls-remote` 2026-09-11 04:28Z |
+| Last work commit (code/schema/evidence) | `d6713ec0` — NOW-12: recovery panel browser spec + fail-closed refusal proof (e2e-only; last src change `035db0e2`) — **ON REMOTE** |
+| Local branch tip | `a99e4295` (this HANDOFF-update commit is made on top and pushed immediately after — check `git log` for the docs SHA; all 17 prior commits `9ca483b4`…`a99e4295` are on the remote) |
+| Remote branch tip | `a99e4295ba2f91af1dcdc59a15683ed56d9487c2` — **verified via `git ls-remote` 2026-09-11 ~10:05Z** (was `bcdf6944`) |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
 | All gates (fresh NOW-8, unchanged by docs-only NOW-9/10 and e2e-only NOW-11/12) | entity-form 9/9 · s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4066 PASS, 0 INFRA** · inventory 13/13 · gates 7/7 · guardian PASS · typecheck clean (re-run at NOW-12 over all three new e2e specs) · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) · **NEW NOW-11/12: playwright 9/9 (S09 + cutover + recovery panels × desktop/tablet/mobile, zero retries in matrix run)** |
-| Push status | **BLOCKED — no credential in sandbox** (see §BLOCKED). Do not claim pushed. Do not fabricate a remote SHA. |
+| Push status | **PUSHED & VERIFIED 2026-09-11 ~10:05Z** — remote tip == local HEAD `a99e4295` via `git ls-remote`. PAT was conversation-scoped (never stored in any file or in `.git/config`). Hosted runs dispatched on the pushed SHA: ci.yml 34579002427, browser-readiness.yml 34579004391 (in progress at time of writing — NOW-14 records the outcomes). |
 
-**Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc`+NOW-12 `d6713ec0` e2e-only over identical src) + playwright 9/9 at `d6713ec0`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked; NOW-12 added a browser-proven server-side stale-read refusal with zero state change); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), and ALL FIVE G5/G6 panels now browser-proven locally (S09 incl. reversal + cutover at `ec4654bc`; offset + payout in owner-expense-source.spec.ts; recovery + fail-closed refusal at `d6713ec0`) — but no HOSTED browser run covers any panel, seventeen commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc`+NOW-12 `d6713ec0` e2e-only over identical src) + playwright 9/9 at `d6713ec0`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked; NOW-12 added a browser-proven server-side stale-read refusal with zero state change); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), and ALL FIVE G5/G6 panels now browser-proven locally (S09 incl. reversal + cutover at `ec4654bc`; offset + payout in owner-expense-source.spec.ts; recovery + fail-closed refusal at `d6713ec0`) — but all seventeen work commits are ON the remote (verified `a99e4295`, 2026-09-11 ~10:05Z) with the first hosted CI + browser-readiness runs dispatched on that SHA (outcomes pending — NOW-14), and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
 
-**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`d6713ec0` or newer); (2) governance decision on non-enumerated source types (needs approved source — do not invent); (3) G4 hosted runtime, parity re-measure, hosted checks (G2, G3-hosted, G7) — externally blocked. ALL locally executable reconstruction work is COMPLETE (NOW-4…NOW-12; NOW-13 is the park record). If resumed without new external inputs: verify this park record is still accurate — do not re-audit NOW-4…NOW-12 territory.
+**Next when resumed:** (1) ~~push~~ DONE — remote tip verified `a99e4295` (2026-09-11 ~10:05Z); NOW-14 = record the hosted ci.yml (run 34579002427) + browser-readiness (run 34579004391) outcomes in this file and the DoD checklist (query: `GET /repos/mohamedmasoud3030-tech/malek/actions/runs?branch=reconstruction/checkpoint-20260909`); (2) governance decision on non-enumerated source types (needs approved source — do not invent); (3) G4 hosted runtime, parity re-measure, hosted runtime checks (G2, G3-hosted soaks, G7) — still need a deployed app + Supabase access, which the GitHub PAT does NOT provide. ALL locally executable reconstruction work is COMPLETE (NOW-4…NOW-12). If the PAT expired: park again, do not fabricate.
 
 ---
 
