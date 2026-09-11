@@ -25,6 +25,7 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
+  higherIsBetterTone,
 } from '@/components/ui/report-section-primitives';
 
 type OperationsOverviewProps = Readonly<{
@@ -347,13 +348,7 @@ export function OperationsOverviewSection({
                     label="معدل إنجاز الطلبات"
                     value={completionRatio}
                     helper={`${formatLatinNumber(completedRequests, 'ar')} منجز من ${formatLatinNumber(actionableRequests, 'ar')} غير ملغى`}
-                    tone={
-                      completionRatio >= 75
-                        ? 'good'
-                        : completionRatio >= 40
-                          ? 'warning'
-                          : 'critical'
-                    }
+                    tone={higherIsBetterTone(completionRatio, 75, 40)}
                   />
                 )}
               </div>

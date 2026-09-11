@@ -185,6 +185,53 @@ export function OccupancySection({
     });
   };
 
+  const occupancySummaryTone = (rate: number): 'good' | 'warning' | undefined => {
+    if (rate >= 90) return 'good';
+    if (rate < 75) return 'warning';
+    return undefined;
+  };
+  const occupancyChangeInsight = (() => {
+    if (isLoading) return 'جارٍ تحميل بيانات الإشغال المعتمدة.';
+    if (!historyComplete) return 'تعذر اكتمال تاريخ العقود؛ لن نحسب تغيرًا تاريخيًا من بيانات ناقصة.';
+    return `الإشغال الآن ${formatLatinNumber(roundedOccupancyRate, 'ar')}% مقابل ${formatLatinNumber(Math.round(vacancyAnalytics.previousMonthOccupancyRate), 'ar')}% في ${date(vacancyAnalytics.previousMonthEnd)}؛ التغير ${occupancyChangeLabel}.`;
+  })();
+
+  const renderVacancyList = () => {
+    if (!historyComplete) {
+      return (
+        <div className="p-4">
+          <ReportState message="تاريخ العقود غير مكتمل؛ تم إيقاف تحليل مدة الشغور حتى لا نعرض أيامًا مضللة." />
+        </div>
+      );
+    }
+    if (vacancyAnalytics.vacantRows.length === 0) {
+      return (
+        <div className="p-4">
+          <ReportState message="لا توجد وحدات شاغرة حاليًا." />
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderRiskList = () => {
+    if (!historyComplete) {
+      return (
+        <div className="p-4">
+          <ReportState message="تاريخ العقود غير مكتمل؛ لن نصنف عقودًا كمرشحة للشغور من قراءة ناقصة." />
+        </div>
+      );
+    }
+    if (vacancyAnalytics.vacancyRiskRows.length === 0) {
+      return (
+        <div className="p-4">
+          <ReportState message="لا توجد عقود قريبة من الانتهاء بلا تجديد أو عقد لاحق ظاهر في السجل." />
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
@@ -195,12 +242,7 @@ export function OccupancySection({
             label: 'نسبة الإشغال',
             value: `${roundedOccupancyRate}%`,
             detail: `${number(vacancyAnalytics.occupiedUnits)} من ${number(totalUnits)} وحدة`,
-            tone:
-              occupancyRate >= 90
-                ? 'good'
-                : occupancyRate < 75
-                  ? 'warning'
-                  : undefined,
+            tone: occupancySummaryTone(occupancyRate),
           },
           {
             label: 'نسبة الشغور',
@@ -231,11 +273,7 @@ export function OccupancySection({
       />
 
       <ReportInsightNote title="تغير الإشغال مقارنة بالشهر السابق">
-        {isLoading
-          ? 'جارٍ تحميل بيانات الإشغال المعتمدة.'
-          : !historyComplete
-            ? 'تعذر اكتمال تاريخ العقود؛ لن نحسب تغيرًا تاريخيًا من بيانات ناقصة.'
-          : `الإشغال الآن ${formatLatinNumber(roundedOccupancyRate, 'ar')}% مقابل ${formatLatinNumber(Math.round(vacancyAnalytics.previousMonthOccupancyRate), 'ar')}% في ${date(vacancyAnalytics.previousMonthEnd)}؛ التغير ${occupancyChangeLabel}.`}
+        {occupancyChangeInsight}
       </ReportInsightNote>
 
       <ReportColumns>
@@ -318,15 +356,7 @@ export function OccupancySection({
           icon={DoorOpen}
           isLoading={isLoading}
         >
-          {!historyComplete ? (
-            <div className="p-4">
-              <ReportState message="تاريخ العقود غير مكتمل؛ تم إيقاف تحليل مدة الشغور حتى لا نعرض أيامًا مضللة." />
-            </div>
-          ) : vacancyAnalytics.vacantRows.length === 0 ? (
-            <div className="p-4">
-              <ReportState message="لا توجد وحدات شاغرة حاليًا." />
-            </div>
-          ) : (
+          {renderVacancyList() || (
             <ReportList>
               {vacancyAnalytics.vacantRows.slice(0, 12).map((row) => {
                 const lastContractLabel = row.lastContractEndDate
@@ -361,15 +391,7 @@ export function OccupancySection({
           icon={CalendarClock}
           isLoading={isLoading}
         >
-          {!historyComplete ? (
-            <div className="p-4">
-              <ReportState message="تاريخ العقود غير مكتمل؛ لن نصنف عقودًا كمرشحة للشغور من قراءة ناقصة." />
-            </div>
-          ) : vacancyAnalytics.vacancyRiskRows.length === 0 ? (
-            <div className="p-4">
-              <ReportState message="لا توجد عقود قريبة من الانتهاء بلا تجديد أو عقد لاحق ظاهر في السجل." />
-            </div>
-          ) : (
+          {renderRiskList() || (
             <ReportList>
               {vacancyAnalytics.vacancyRiskRows.slice(0, 12).map((row) => (
                 <ReportListRow

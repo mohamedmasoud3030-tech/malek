@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Fingerprint, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -130,15 +130,7 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
       </header>
 
       <AsyncContentState
-        status={
-          receivablesQuery.isLoading
-            ? 'loading'
-            : receivablesQuery.isError
-              ? 'error'
-              : receivables.length === 0
-                ? 'empty'
-                : 'ready'
-        }
+        status={resolveAsyncContentStatus({ isLoading: receivablesQuery.isLoading, isError: receivablesQuery.isError, isEmpty: receivables.length === 0 })}
         error={receivablesQuery.error}
         emptyTitle="لا توجد مديونيات"
         emptyDescription="سجّل مديونية على المالك أولاً لتتمكن من إجراء مقاصة مقابل مستحقاته المعتمدة."
@@ -193,15 +185,7 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
               </div>
 
               <AsyncContentState
-                status={
-                  offsetsQuery.isLoading
-                    ? 'loading'
-                    : offsetsQuery.isError
-                      ? 'error'
-                      : (offsetsQuery.data ?? []).length === 0
-                        ? 'empty'
-                        : 'ready'
-                }
+                status={resolveAsyncContentStatus({ isLoading: offsetsQuery.isLoading, isError: offsetsQuery.isError, isEmpty: (offsetsQuery.data ?? []).length === 0 })}
                 error={offsetsQuery.error}
                 emptyTitle="لا توجد حركات مقاصة"
                 emptyDescription="سيظهر هنا سجل حركات المقاصة مع القيود المحاسبية المرحَّلة بعد تنفيذ أول مقاصة."

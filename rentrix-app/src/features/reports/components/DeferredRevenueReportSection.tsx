@@ -1,15 +1,32 @@
-import { CalendarRange, Download, FileSpreadsheet, Link2, Printer, Scale, WalletCards } from 'lucide-react';
+import {
+  CalendarRange,
+  Download,
+  FileSpreadsheet,
+  Link2,
+  Printer,
+  Scale,
+  WalletCards,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
+import {
+  formatMoney,
+  formatShortId,
+} from '@/features/financials/components/financials-formatters';
 import type { DeferredRevenueAudit } from '../reports-insights';
-import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
+import {
+  buildReportCsvFilename,
+  downloadCsv,
+} from '../reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
-import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
+import {
+  toReportDocumentPayload,
+  type ReportDocumentData,
+} from '@/services/documents/documentPayloadAdapters';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -18,6 +35,7 @@ import {
   ReportPanel,
   ReportProgress,
   ReportState,
+  higherIsBetterTone,
 } from '@/components/ui/report-section-primitives';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatLatinNumber } from '@/lib/formatters';
@@ -209,7 +227,7 @@ export function DeferredRevenueReportSection({
                 label="تغطية ربط الإيصالات"
                 value={linkCoverage}
                 helper={`${formatLatinNumber(audit.linkedReceiptsCount, 'ar')} من ${formatLatinNumber(audit.postedReceiptsCount, 'ar')} إيصالات منشورة`}
-                tone={linkCoverage >= 90 ? 'good' : linkCoverage >= 70 ? 'warning' : 'critical'}
+                tone={higherIsBetterTone(linkCoverage, 90, 70)}
               />
               <div className="grid grid-cols-2 gap-2">
                 <SourceMetric label="إيصالات مرتبطة" value={audit.linkedReceiptsCount} amount={audit.linkedReceiptsAmount} />

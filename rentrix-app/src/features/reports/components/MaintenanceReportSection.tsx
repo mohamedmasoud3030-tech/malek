@@ -46,6 +46,7 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
+  higherIsBetterTone,
 } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportDocumentActions } from './report-document-actions';
@@ -496,13 +497,7 @@ export function MaintenanceReportSection({
             label="معدل الإنجاز"
             value={completionRate}
             helper={`${formatLatinNumber(completedCount, 'ar')} منجز من ${formatLatinNumber(actionableCount, 'ar')} غير ملغى`}
-            tone={
-              completionRate >= 75
-                ? 'good'
-                : completionRate >= 40
-                  ? 'warning'
-                  : 'critical'
-            }
+            tone={higherIsBetterTone(completionRate, 75, 40)}
           />
         ) : isLoading ? (
           <ReportState
@@ -521,26 +516,14 @@ export function MaintenanceReportSection({
           label="تغطية الإسناد"
           value={assignmentCoverage}
           helper={`${formatLatinNumber(assignedCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
-          tone={
-            assignmentCoverage >= 90
-              ? 'good'
-              : assignmentCoverage >= 70
-                ? 'warning'
-                : 'critical'
-          }
+          tone={higherIsBetterTone(assignmentCoverage, 90, 70)}
         />
         <ReportProgress
           isLoading={isLoading}
           label="تغطية الجدولة"
           value={schedulingCoverage}
           helper={`${formatLatinNumber(scheduledCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
-          tone={
-            schedulingCoverage >= 85
-              ? 'good'
-              : schedulingCoverage >= 60
-                ? 'warning'
-                : 'critical'
-          }
+          tone={higherIsBetterTone(schedulingCoverage, 85, 60)}
         />
       </div>
 

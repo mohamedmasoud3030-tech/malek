@@ -45,7 +45,7 @@ interface AsyncContentStateProps {
  *
  * @example
  * <AsyncContentState
- *   status={contractQuery.isLoading ? 'loading' : contractQuery.isError ? 'error' : !contractQuery.data ? 'empty' : 'ready'}
+ *   status={resolveAsyncContentStatus({ isLoading: contractQuery.isLoading, isError: contractQuery.isError, isEmpty: !contractQuery.data })}
  *   error={contractQuery.error}
  *   errorTitle="تعذر تحميل العقد"
  *   emptyTitle="العقد غير موجود"

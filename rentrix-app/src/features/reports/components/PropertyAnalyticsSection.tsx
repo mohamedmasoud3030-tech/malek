@@ -26,6 +26,8 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
+  higherIsBetterTone,
+  lowerIsBetterTone,
 } from '@/components/ui/report-section-primitives';
 import { ReportDocumentActions } from './report-document-actions';
 import { formatLatinNumber } from '@/lib/formatters';
@@ -314,13 +316,7 @@ export function PropertyAnalyticsSection({
             label="نسبة الإشغال"
             value={scope.occupancyRate}
             helper={`${metricCount(scope.occupied)} من ${metricCount(scope.units)} وحدة (مشغولة + شاغرة + غير قابلة للتأجير)`}
-            tone={
-              scope.occupancyRate >= 90
-                ? 'good'
-                : scope.occupancyRate >= 75
-                  ? 'warning'
-                  : 'critical'
-            }
+            tone={higherIsBetterTone(scope.occupancyRate, 90, 75)}
           />
         ) : null}
         {highestExpenseShare != null && highestExpenseProperty ? (
@@ -329,13 +325,7 @@ export function PropertyAnalyticsSection({
             label="تركيز المصروفات في أعلى عقار"
             value={highestExpenseShare}
             helper={`${highestExpenseProperty.propertyTitle ?? highestExpenseProperty.propertyId} · ${formatMoney(highestExpenseProperty.total)}`}
-            tone={
-              highestExpenseShare <= 40
-                ? 'good'
-                : highestExpenseShare <= 60
-                  ? 'warning'
-                  : 'critical'
-            }
+            tone={lowerIsBetterTone(highestExpenseShare, 40, 60)}
           />
         ) : null}
       </div>

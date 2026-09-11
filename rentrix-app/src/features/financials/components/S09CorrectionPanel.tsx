@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileWarning, Fingerprint, ScrollText, ShieldCheck, Undo2 } from 'lucide-react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -181,15 +181,7 @@ export function S09CorrectionPanel() {
       </header>
 
       <AsyncContentState
-        status={
-          correctionsQuery.isLoading
-            ? 'loading'
-            : correctionsQuery.isError
-              ? 'error'
-              : corrections.length === 0
-                ? 'empty'
-                : 'ready'
-        }
+        status={resolveAsyncContentStatus({ isLoading: correctionsQuery.isLoading, isError: correctionsQuery.isError, isEmpty: corrections.length === 0 })}
         error={correctionsQuery.error}
         emptyTitle="لا توجد تصحيحات"
         emptyDescription="سيظهر هنا سجل التصحيحات مع القيد الأصلي وقيد التصحيح بعد إنشاء أول مسودة."
