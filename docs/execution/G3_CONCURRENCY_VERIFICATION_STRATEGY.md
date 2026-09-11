@@ -25,7 +25,13 @@ The app uses **no** `navigator.locks` calls (grep-verified, zero hits). That is 
 
 ## 3. Residual risks (recorded, not fixed — no reproduction)
 
-- R1: ~15 `submitDisabled` call sites pass NO `isSubmitting` at all (e.g. `expenses-section.tsx`, `maintenance-request-form.tsx`, `property-form-modal.tsx`). The C4 fix cannot protect them (nothing ORs in). Their handlers were not individually audited in this NOW; server request-id/lifecycle gates remain the backstop. Follow-up: per-site audit adding `isSubmitting` (mechanical, one prop each) — deferred to keep this change evidence-scoped.
+- R1: **CLOSED by the NOW-9 full audit (appendix §5) — no gap remains.** The provisional estimate
+  ("~15 call sites pass no `isSubmitting`") was wrong: site-by-site inspection of all 47
+  `EntityForm.Actions` usages and all 14 raw `type="submit"` buttons found every mutation-submitting
+  surface pending-gated (via `isSubmitting`, a pending term inside `submitDisabled`, or a handler-level
+  `isPending` early-return), with exactly two non-gated surfaces, both in evidence class (c)
+  (double-submit unreachable / no mutation): the onboarding waiver dialog and the admin-support
+  search form. Zero code changes were required in NOW-9.
 - R2: Two TABS (not two clicks) submitting the same create-form generate DIFFERENT client request ids, so server request-id dedupe does not merge them; protection there is lifecycle/uniqueness gates (settlement status, review fingerprint, deposit claim conflicts). For free-create entities (e.g. a second identical expense) duplicate rows remain possible by design — that is an accounting-visibility question, not a corruption race.
 - R3: Hosted verification of every "hosted check" column above is BLOCKED by G1 (no credential/preview backend). This document is the executable plan for the moment G1 unblocks.
 
@@ -34,3 +40,49 @@ The app uses **no** `navigator.locks` calls (grep-verified, zero hits). That is 
 - Fix + reproduction: `rentrix-app/src/components/ui/entity-form.tsx` (Actions disabled logic), `rentrix-app/src/components/ui/entity-form.test.ts` (G3 double-submit race test, red→green).
 - Server-side race locks: `rentrix-app/src/features/financials/services/s09-correction.pglite.test.ts` (27/27; fingerprint-drift approval block, duplicate-approval refusal, single-reversal, cross-company list isolation).
 - Surveyed, unchanged: `src/lib/supabase.ts`, `src/hooks/use-auth.tsx`, `src/lib/financial-cache.ts`, `src/features/auth/session-storage.ts`, all five G5/G6 panels' `isPending` gates.
+
+## 5. NOW-9 audit appendix — double-submit guard class, per-surface verdicts (complete)
+
+Method: exhaustive grep of `EntityForm.Actions` (47 usages / 34 product files), raw
+`<Button type="submit">` (14), and `mobile-form-stepper` footer; each site classified as
+(a) button pending-gated, (b) handler-guarded, or (c) no reachable mutation double-fire.
+
+| Surface | Verdict | Gate |
+|---|---|---|
+| admin-support triage + proposal Actions | (a) | `isSubmitting` + pending term in `submitDisabled` |
+| admin-support search submit (raw) | (c) | read-only query; no mutation to duplicate |
+| change-password Actions | (a) | `isSubmitting` |
+| commissions-view Actions | (a) | `isSubmitting={isSaving}` |
+| communication-hub Actions | (a) | `isSubmitting={isSaving}` |
+| ContractFormFields Actions (×2, + stepper consumer) | (a) | `isSubmitting={submitting}`; stepper footer uses `submitDisabled \|\| isSubmitting` |
+| ContractEvidenceSection registration/decision/review Actions | (a) | `isSubmitting={mutations.*.isPending}` |
+| ContractEvidenceSection inspection submit + draft (raw) | (a) | `disabled={saveInspection.isPending \|\| completeInspection.isPending}` / draft gated |
+| Contract renewal / short-stay / termination dialogs | (a) | `isSubmitting` + pending term |
+| contract-approval-workflow Actions | (a) | `isSubmitting={isPending}` |
+| expenses-section Actions | (a) | `isSubmitting={isSavingExpense}` |
+| quick-payment-form Actions | (a) | `isSubmitting={isPending}` |
+| deposit-action-forms create/claim/refund/reject Actions (×4) | (a) | `isSubmitting={*Mut.isPending}` (reject ORs all three mutations) |
+| receipts-page void Actions | (a) | `isSubmitting={isLoading}` |
+| bank-csv-import Actions | (a) | `isSubmitting={isParsing \|\| isImporting}` |
+| bank-reconciliation line/match Actions (×2) | (a) | `isSubmitting={ctrl.*.isPending}` |
+| tax-profile create tax/fee Actions (×2) | (a) | `isSubmitting={*Mut.isPending}` |
+| UserRolesWorkspace decision Actions | (a) | `isSubmitting` + pending term |
+| lands-view Actions | (a) | `isSubmitting={isSaving}` |
+| leads-view Actions | (a) | `isSubmitting={isSaving}` |
+| maintenance resolve overlay + request form | (a) | `isSubmitting` |
+| **OnboardingChecklist waiver Actions** | **(c)** | no pending gate, but `submitWaiver` sets `waiverFor=null` in the same discrete click → overlay unmounts before any second click (React flushes discrete events synchronously); failure surfaces via `waiveMutation.onError` toast; server RPC enforces ADMIN/reason/waivability (`onboarding-rpc-authority.test.ts`) |
+| OwnerAgreementsManager agreement + amendment Actions (stepper consumer) | (a) | `isSubmitting={saving}` / `{versionMutation.isPending}` |
+| OwnerFundsCutoverPanel create Actions | (a) | pending term inside `submitDisabled` |
+| OwnerSettlementWorkspace payout + draft Actions | (a)+(b) | `isSubmitting` on both; payout handler also early-returns on `isPending` |
+| owner-form-dialog / owner-relationships / person-form-modal | (a) | `isSubmitting` |
+| property-form-modal create + update Actions | (a) | `isSubmitting` |
+| service-provider-form-dialog Actions; categories dialog raw submit | (a) | `isSubmitting={saveMutation.isPending}` / `disabled={isSaving}` |
+| S09CorrectionPanel create + reverse raw submits; row action buttons | (a) | `disabled={createMutation.isPending}` / `reverseMutation.isPending` (+reason) / validate/apply/reverse row buttons gated |
+| OwnerReceivableOffsetPanel / RecoveryPanel raw submits | (a) | `disabled={applyMutation.isPending}` / `{recoverMutation.isPending}` |
+| unit-form-modal / utilities meter+bill Actions | (a) | `isSubmitting` |
+| login-page / password-recovery raw submits (×3) | (a) | `disabled={isSubmitting …}` + `aria-busy` |
+| ai-assistant send (raw) | (a) | `disabled={pending …}` |
+| settings-save-bar submit (raw) | (a) | `disabled={isSaving}` |
+
+Result: **0 ungated mutation surfaces remain** → NOW-9 required **zero code changes**; the NOW-8
+component fix (`submitDisabled || isSubmitting`) plus existing call-site wiring complete the class.
