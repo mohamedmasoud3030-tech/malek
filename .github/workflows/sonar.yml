@@ -32,6 +32,19 @@ jobs:
             exit 1
           fi
           echo "SONAR_TOKEN is configured."
+      - name: Validate SONAR_TOKEN against SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -uo pipefail
+          validate="$(curl -s -u "${SONAR_TOKEN}:" https://sonarcloud.io/api/authentication/validate)"
+          echo "authentication/validate => ${validate}"
+          projects="$(curl -s -u "${SONAR_TOKEN}:" 'https://sonarcloud.io/api/projects/search?organization=mohamedmasoud3030-tech&ps=5')"
+          echo "projects/search => ${projects}" | head -c 800; echo
+          if ! printf '%s' "${validate}" | grep -q '"valid":true'; then
+            echo "::error::SONAR_TOKEN was rejected by SonarCloud (expired, revoked or wrong organization)."
+            exit 1
+          fi
       - name: Install sonar-scanner-cli
         run: |
           set -euo pipefail
@@ -51,6 +64,7 @@ jobs:
             "-Dsonar.host.url=https://sonarcloud.io"
             "-Dsonar.projectKey=mohamedmasoud3030-tech_rentrixxx"
             "-Dsonar.organization=mohamedmasoud3030-tech"
+            "-Dsonar.scanner.skipJreProvisioning=true"
           )
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             # Analyze the PR head as its own branch; PR decoration is not
