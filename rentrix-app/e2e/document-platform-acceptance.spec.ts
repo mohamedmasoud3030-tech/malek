@@ -62,7 +62,10 @@ test.beforeEach(async ({}, testInfo) => {
 function isExpectedHermeticRealtimeDnsError(text: string): boolean {
   const isKnownHermeticHost =
     text.includes('example.supabase.co') ||
-    text.includes('invalid.supabase.local');
+    text.includes('invalid.supabase.local') ||
+    // The e2e identity host (playwright.config + browser-readiness env) uses
+    // the RFC-2606 `.invalid` TLD, which can never resolve.
+    text.includes('e2e.supabase.invalid');
   return (
     isKnownHermeticHost &&
     text.includes('/realtime/v1/websocket') &&

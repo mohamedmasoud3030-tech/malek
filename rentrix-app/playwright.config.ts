@@ -55,8 +55,13 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
         env: {
-          VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? 'https://example.supabase.co',
-          VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? 'test-anon-key',
+          // Hermetic e2e identity: the RFC-2606 `.invalid` TLD can never
+          // resolve, and the values must PASS resolvePublicSupabaseConfig
+          // (placeholder hosts/keys fail closed and would disable the login
+          // form the login/readiness specs exercise). All data-plane traffic
+          // is intercepted by the fake backend regardless of host.
+          VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? 'https://e2e.supabase.invalid',
+          VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? 'e2e-browser-public-key',
           VITE_E2E: 'true',
         },
       },

@@ -49,7 +49,12 @@ const featureDependencyAllowList = new Map([
   // operational analytics report types — operational workflows only;
   // accounting statements stay authoritative under reports.
   ['finance', new Set(['auth', 'financials'])],
-  ['financials', new Set(['auth', 'contracts', 'properties', 'settings'])],
+  // financials/expenses reads the owners feature hooks (usePropertyOwners /
+  // useOwnerAgreements) so an OWNER-charged expense can only be allocated to a
+  // real owner with an active agreement (migration-12 allocation/evidence law).
+  // The seam is hook-only — no owners presentation or data-plane modules are
+  // imported; owners→financials remains the reverse reviewed seam.
+  ['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings'])],
   // governance-hub composes settings/system/audit/auth workspaces under /settings.
   ['governance-hub', new Set(['auth', 'audit', 'settings', 'system'])],
   // maintenance reads the shared document-print readiness seam

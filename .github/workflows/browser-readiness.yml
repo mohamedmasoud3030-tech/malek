@@ -44,7 +44,13 @@ jobs:
       matrix:
         project: [chromium-desktop, chromium-tablet, chromium-mobile]
     env:
-      VITE_SUPABASE_URL: https://e2e.invalid.supabase.local
+      # Hermetic e2e identity. Must PASS resolvePublicSupabaseConfig: the
+      # shared policy rejects placeholder hosts (any *.invalid.supabase.local /
+      # *.example.supabase.co suffix) and placeholder keys, which would
+      # fail-close the login form the login/readiness specs exercise. The
+      # RFC-2606 `.invalid` TLD can never resolve; all data-plane traffic is
+      # intercepted by the fake backend regardless of host.
+      VITE_SUPABASE_URL: https://e2e.supabase.invalid
       VITE_SUPABASE_ANON_KEY: e2e-browser-public-key
       E2E_WORKERS: '2'
     steps:
