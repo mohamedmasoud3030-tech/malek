@@ -42,7 +42,7 @@ jobs:
     name: local preflight / no Production access
     if: ${{ inputs.action == 'local-preflight' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
@@ -64,6 +64,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      # `supabase migration list --local` needs a running local Postgres; without
+      # it the evidence step dies on 127.0.0.1:54322 connection-refused, which is
+      # why every local-preflight run before this failed. Ephemeral runner-local
+      # stack only: no Production secret, no network path to the live database.
+      - name: Start ephemeral local Supabase stack
+        run: pnpm exec supabase start
       - name: Build local migration evidence
         env:
           APPROVED_SHA: ${{ inputs.approved_sha }}
