@@ -2,14 +2,14 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-10T20:35Z (Asia/Muscat) — final sync after PAT push, user requested stop
+**Last updated:** 2026-09-11T05:15Z (Asia/Muscat) — NOW-4 complete (s09_reverse_correction surface + list-envelope defect fix); **push BLOCKED — no GitHub credential exists in this sandbox**
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `a0760e98c82ee56b0e350686f66085068c71043c` — docs(handoff): final sync — verify remote aac5aa14, clean tree, user stop request
-**Remote HEAD (actual, verified via ls-remote 20:32Z):** `a0760e98c82ee56b0e350686f66085068c71043c`
-**Local HEAD:** same `a0760e98c82ee56b0e350686f66085068c71043c`
-**Working tree:** **clean** — verified `git status` clean, skills exec bits restored, no mode changes
-**Branch tracking:** `origin/reconstruction/checkpoint-20260909` — in sync, 0 ahead/behind, push confirmed
+**Last work commit (code/schema/evidence):** `9ca483b4` — G5: surface s09_reverse_correction and fix the S09 list-envelope parser — **LOCAL ONLY, not pushed**
+**Remote HEAD (actual, verified via ls-remote 2026-09-11 04:28Z):** `bcdf6944672c46c2417b48562654036cca26c82d`
+**Local HEAD:** `9ca483b4` — **1 ahead of remote**; push blocked solely by missing credentials (see §BLOCKED)
+**Working tree:** **clean** — verified `git status`, no mode changes
+**Branch tracking:** `origin/reconstruction/checkpoint-20260909`
 
 Confirm tip:
 ```bash
@@ -22,27 +22,26 @@ git ls-remote https://github.com/mohamedmasoud3030-tech/malek.git refs/heads/rec
 
 This section is the **continuous memory** between Arena sessions. It is the authority for what to do next.
 
-### CURRENT STATE (actual, verified 2026-09-10 20:35Z — after PAT push)
+### CURRENT STATE (actual, verified 2026-09-11 05:15Z — after NOW-4, push blocked)
 
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch | `reconstruction/checkpoint-20260909` |
-| Remote HEAD | `a0760e98c82ee56b0e350686f66085068c71043c` — docs(handoff): final sync after PAT push |
-| Local HEAD | same `a0760e98c82ee56b0e350686f66085068c71043c` |
+| Remote HEAD | `bcdf6944` — docs: G5 UI-absent RPCs closed (verified via ls-remote 04:28Z) |
+| Local HEAD | `9ca483b4` — G5: surface s09_reverse_correction + list-envelope fix — **1 ahead, NOT PUSHED (no credential in sandbox)** |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Commits since previous handoff | **5**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `a0760e98` (final sync) |
-| Working tree | **clean** — verified after PAT push, 0 modified |
+| Commits since previous handoff | **10**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `0d187c48` (final checkpoint docs), `9fac02ac` (G5 offset), `95a0a2af` (docs), `411167f6` (G5 recovery+S09), `bcdf6944` (docs), `9ca483b4` (NOW-4 reverse — **local only**) |
+| Working tree | **clean** — 0 modified |
 | Tracked files | ~1,746 |
-| Migrations in repo | 100 |
+| Migrations in repo | 100 (**0 added by NOW-4**) |
 | Production ledger | 109 rows |
-| Unit/integration test files | 555 |
+| Unit/integration test files | 559 |
 | Playwright specs | 29 |
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
-| Fresh baseline (NOW-1) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c, migration-hygiene OK, guardian PASS, focused 137/967 PASS, full sharded 554/3977 PASS (0 failures) |
-| Browser (NOW-2) | production build 28 precache / 428.87 KiB / 0 private paths, PWA contract 3/3 PASS, axe 15/15 PASS, owner-position-cash 3/3, owner-expense-source 3/3, financial-persisted-journey 6/6, owner-payout-bank-cash 3/3 — all PASS, pushed to remote |
-| Push verification | `git ls-remote` 20:32Z → `a0760e98`, `git rev-parse HEAD` same, `git status` clean |
+| Fresh baseline (NOW-4, 2026-09-11 04:40-05:00Z) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c unchanged, migration-hygiene OK (needs `origin/main` ref — see §B), guardian PASS all layers, focused financials+owners **142 files / 1045 tests PASS**, full sharded 20-shard **559 files / 4055 tests / 0 failures / 0 INFRA — PASS**, axe **15/15 PASS** |
+| Push verification | **BLOCKED** — `git push` → `could not read Username for 'https://github.com'`. No PAT, no SSH key, no credential helper, no token env var in this sandbox. Remote tip verified `bcdf6944` at 04:28Z. |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
 
@@ -134,49 +133,67 @@ From §A Standing constraints + §J:
 - Baseline validation **fresh**: 554 files / 3977 tests / 0 failures, 137 files / 967 tests financials+owners PASS, Replay 100/100, Gates 7/7, Guardian PASS, Typecheck clean, Business rules v2.0.0 382a0b8c, Migration hygiene OK — **PROVEN BY UNIT/INTEGRATION TEST + REPLAY**
 - Browser verification **fresh after G6+fix**: production build clean, PWA 3/3, owner-position-cash 3/3, owner-expense-source 3/3, financial-persisted-journey 6/6, owner-payout-bank-cash 3/3, axe 15/15 — **PROVEN BY BROWSER TEST**
 
-### NOT YET PROVEN (updated after NOW-2)
+### NOT YET PROVEN (updated after NOW-4)
 
 - G1 Authenticated app-shell E2E: BLOCKED, no credentials, no browser test ever reaches authenticated shell — **NOT YET PROVEN**
 - G2 Intermittent bootstrap stall root cause: OPEN, BLOCKED by G1, mitigation proven (withCompanyResolutionTimeout 10 PASS), root cause unproven — **NOT YET PROVEN**
 - G3 Hosted concurrency / Web Locks: NOT EXERCISED under real hosted conditions — **NOT YET PROVEN**
 - G4 Runtime behaviour of newly applied migrations under genuine concurrent/hosted traffic: structurally verified but not exercised by live usage — **NOT YET PROVEN**
-- G5 Remaining financial-chain reviews: post-payment adjustment (s09_apply_correction) original source preservation, adjustment/recovery/offset UI effect on original source, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations), cash/fees/tax/offset/collection/recovery truth in owner statements AND documents (document surface not exhaustively re-verified after latest migrations) — **NOT YET PROVEN**
+- G5 Remaining financial-chain reviews: non-expense `source_type` correction coverage (NOW-5), remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations), cash/fees/tax/offset/collection/recovery truth in owner statements AND documents (document surface not exhaustively re-verified after latest migrations), and hosted browser coverage for all five G5/G6 panels — **NOT YET PROVEN**
+- G5 closure durability: `9ca483b4` exists **only in this sandbox** until the push blocker clears — remote does not yet carry the reverse surface or the list-envelope fix — **NOT YET PUSHED**
 - G6 hosted parity re-measurement after 354bc427+4da6a26d+50be359a — parity re-measure pending in NEXT-5 — **NOT YET PROVEN**
 - G7 Historical SEC-003/SEC-004 exploitation: UNKNOWABLE, no historical access logs — **NOT YET PROVEN / UNKNOWABLE**
 
-### NOW (single task, after pushing NOW-2)
+### NOW (single task)
 
-**NOW-3: G5 financial-chain end-to-end review — post-payment adjustment + S08/S09 + document surface**
+**NOW-5: extend S09 correction coverage beyond `source_type='expense'`**
 
-- Inspect chain: expense → source evidence → classification → allocation → offset → settlement → ledger → balance → historical cutoff → reports
-- Verify against deployed function body, not documentation
-- Specifics:
-  - `s09_apply_correction` posts NEW journal batch via `post_journal_event`, retains `original_journal_batch_id`, never updates/deletes original; carries before_evidence/after_evidence, idempotency unique index, period FK, gated by `malik.s09_correction_change_authorized` flag; `s09_create_correction_draft` refuses expense already adopted into receivable subledger (`OWNER_EXPENSE_USE_RECEIVABLE_ADJUSTMENT`) — verify live definition and existing 53 PASS suite
-  - Adjustment/recovery/offset UI showing effect on original source (due_from_owners, owner_settlements)
-  - Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations
-  - Cash/fees/tax/offset/collection/recovery truth in owner statements AND documents — statement path verified (rpt_owner_statement 4,519 chars identical), document surface not exhaustively re-verified after latest migrations — need to verify `documentPayloadAdapters.ts` and `professional-owner-report.ts` still read proven cash, not entitlement
-- For every finding: reproduce → identify authoritative source → determine if defect → fix only if proven → add regression coverage → run relevant gates → commit → push → verify SHA → update HANDOFF
-- Commit, push, verify SHA, update HANDOFF, set NEXT-3 as NOW
+(NOW-4 — the `s09_reverse_correction` surface — is COMPLETE locally at `9ca483b4`, proven in replay;
+its push is the only thing blocked, by missing credentials, not by work.)
 
-**Acceptance:** No new defect found OR defect fixed with forward migration + PGlite + unit + browser proof; document surface verified to read proven cash (paid_cash, paid_at, PAID-only), not invented or zeroed; S08/S09 paths fail-closed.
+- Read the deployed `s09_create_correction_draft` / `s09_validate_correction` / `s09_apply_correction`
+  bodies for every source-type-specific branch (expense is the only one with real-SQL coverage today;
+  migration 12 added the `OWNER_EXPENSE_USE_RECEIVABLE_ADJUSTMENT` refusal for adopted expenses).
+- For each other source type the server supports: prove with real SQL that the chain either works
+  end to end (original preserved, separate balanced batch, lineage stored) or fails closed with a
+  named guard — never silently mis-posts.
+- The panel's `sourceType` is already a free-text input; if a source type needs a different anchor
+  than an expense review, surface that honestly rather than forcing the expense shape.
+- For every finding: reproduce → identify authoritative source → determine if defect → fix only if
+  proven → add regression coverage → run relevant gates → commit → (push when unblocked) → update HANDOFF.
 
-### NEXT (ordered, after NOW-3)
+**Acceptance:** every source type the deployed bodies accept has either a real-SQL PASS chain or a
+proven fail-closed refusal; no client-side money arithmetic; no new permission keys; no migration
+unless a genuine defect is found (then forward-only + replay + gates).
 
-1. **NEXT-3 (will become NOW-4):** G3 Hosted concurrency / Web Locks — safe verification strategy design (no code change without reproduction) — determine whether concurrent sessions/tabs can race auth/session restoration, duplicate initialization, corrupt shared state, bypass company isolation, produce inconsistent financial state
+### NEXT (ordered, after NOW-5)
 
-2. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive, preserve invariants
+1. **NOW-6:** document surface + remaining S08/S09 review paths — verify `documentPayloadAdapters.ts`
+   and `professional-owner-report.ts` still read proven cash (paid_cash, paid_at, PAID-only), not
+   entitlement; then sources, cache/rebuild, permissions, read limits, retries, reconciliations
 
-3. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes both sides, money columns, rpt_owner_statement body)
+2. **NEXT-3:** G3 Hosted concurrency / Web Locks — safe verification strategy design (no code change without reproduction) — determine whether concurrent sessions/tabs can race auth/session restoration, duplicate initialization, corrupt shared state, bypass company isolation, produce inconsistent financial state
 
-4. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
+3. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive, preserve invariants
+
+4. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes both sides, money columns, rpt_owner_statement body)
+
+5. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
+
+6. **Browser coverage for the four G5/G6 panels** (offset, recovery, S09 incl. reversal, cutover) —
+   needs fixture-backend seeding for `s09_corrections`, `s08_frozen_reviews`,
+   `owner_funds_event_cutovers`, `due_from_owners` movements; until then they remain local/replay-proven only
 
 ### COMPLETED IN THIS LOOP (so far)
 
+- **NOW-4 (local `9ca483b4`, 2026-09-11 04:28-05:15Z): `s09_reverse_correction` surface + list-envelope defect fix.** Last UI-absent RPC from the coverage audit closed inside the existing `S09CorrectionPanel` (fourth lifecycle step DRAFT→VALIDATED→APPLIED→**REVERSED**, ACCOUNTANT/ADMIN gate surfaced, mandatory non-empty reason, one canonical mount, no new permission key, no migration). Real-SQL proof against the deployed body: original expense batch **byte-identical** after reversal, correction batch **preserved** (same lines) and only flipped to REVERSED, compensating batch separate/POSTED/balanced/equal-and-opposite, stored row keeps full 3-batch lineage + reason in `after_evidence`; guards proven (non-APPLIED refused, empty reason refused, MANAGER refused, ACCOUNTANT accepted, second reversal refused with exactly one compensating batch). **Defect found and fixed at source:** `loadS09Corrections` demanded a bare array but the deployed `s09_list_corrections` returns `{company_id, corrections:[…]}` — the read model failed closed on every real response; fixed via `parseS09ListEnvelope`, regression-locked by feeding unmodified RPC output through the client parser (same class as F12). Strictness added: REVERSED-without-reversal-batch rejected; contradictory nested envelope rejected. Evidence: s09 suite 18/18, focused 142/1045, sharded 20-shard **559/4055 / 0 failures / 0 INFRA**, axe 15/15, gates 7/7, replay 100/100, guardian PASS, hygiene OK, typecheck clean, business-rules unchanged — **PROVEN BY UNIT/INTEGRATION TEST + REPLAY (local only; not pushed, not browser-proven)**
 - **HANDOFF transform (4da6a26d):** transformed HANDOFF.md into autonomous loop memory, verified G6 correct, set NOW-1, BLOCKED G1/G2/G7 with reason, no fabrication
 - **NOW-1 re-baseline (50be359a):** typecheck clean, gates 7/7 (107 tables/254 policies), replay 100/100, business-rules v2.0.0 382a0b8c unchanged, guardian PASS, focused 137/967 PASS, full 554/3977 PASS after fixing raw `<form>` violation to canonical `EntityForm.Root` — defect found via sharded regression, corrected at authoritative source (component), not by weakening inventory test — **PROVEN BY UNIT/INTEGRATION TEST + REPLAY**
 - **NOW-2 browser verification (2026-09-10 18:20-18:45Z):** production build 28 precache / 428.87 KiB / 0 private paths, fixture build VITE_E2E, owner-position-cash 3/3, owner-expense-source 3/3, financial-persisted-journey 6/6, owner-payout-bank-cash 3/3, PWA contract 3/3, axe 15/15, design-system inventory 13/13 — **PROVEN BY BROWSER TEST + BUILD**
 
 ### BLOCKED (with reason, do not fabricate, do not wait, skip to NEXT)
+
+- **PUSH / checkpoint-to-remote (since 2026-09-11 05:11Z):** BLOCKED — **no GitHub credential of any kind exists in this sandbox.** `git push` fails with `could not read Username for 'https://github.com'`. Exhaustively probed: no token env vars, no `~/.git-credentials`, no `~/.netrc`, no credential helper, no `gh` CLI, no `~/.ssh` keys (SSH to github.com fails host-key/auth). This is the situation §D predicted: prior PATs were in-process only and are revoked/expired. **Local commits are safe and must not be discarded**: `9ca483b4` (NOW-4 work) sits on top of remote `bcdf6944`, linear, working tree clean. **The moment a PAT is supplied:** `git push origin reconstruction/checkpoint-20260909` then verify with `git ls-remote` that the remote tip equals local HEAD, and update this file. Do NOT fabricate a push confirmation. Do NOT switch branches or remotes. Everything else in the loop continues locally per §L (execute → test → commit), with pushes batched when unblocked.
 
 - **G1 Authenticated app-shell E2E:** BLOCKED — `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` unavailable in environment. Every spec that logs in is gated with `test.skip(!process.env.E2E_TEST_EMAIL || !process.env.E2E_TEST_PASSWORD, …)` in `e2e/readiness-smoke.spec.ts` and `e2e/release-blocker-auth.spec.ts`. `single-office-isolated` additionally requires `E2E_ENVIRONMENT_KIND` ∈ {local,qa}, `E2E_SINGLE_OFFICE_ENABLED`, `QA_MUTATION_APPROVED=1`. No secure mechanism supplied. Do not fabricate login bypass. Needs seeded staging credentials or hosted QA. Secure mechanism to supply: environment variables injected via CI secrets or `.env.qa.example` / `.env.production-demo.example` pattern, never committed. Until provided, record as BLOCKED and move on.
 
@@ -215,25 +232,24 @@ The reconstruction mission:
 
 ---
 
-## B. CURRENT REPOSITORY STATE (updated after final PAT push 20:35Z)
+## B. CURRENT REPOSITORY STATE (updated 2026-09-11 05:15Z — after NOW-4, push blocked)
 
 | Item | Value |
 |---|---|
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch (only permitted) | `reconstruction/checkpoint-20260909` |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Last work commit (code/schema/evidence) | `a0760e98c82ee56b0e350686f66085068c71043c` — docs(handoff): final sync after PAT push |
-| Branch tip | same — `a0760e98` |
-| Remote HEAD (verified 20:32Z via ls-remote) | `a0760e98c82ee56b0e350686f66085068c71043c` |
-| Local HEAD | same |
-| Working tree at this handoff | **clean** — 0 modified, 0 staged, after skills exec bits restore |
+| Last work commit (code/schema/evidence) | `9ca483b4` — G5: surface s09_reverse_correction + list-envelope fix — **LOCAL ONLY, not pushed** |
+| Local branch tip | `9ca483b4` (1 ahead of remote) |
+| Remote HEAD (verified 04:28Z via ls-remote) | `bcdf6944672c46c2417b48562654036cca26c82d` |
+| Working tree at this handoff | **clean** — 0 modified, 0 staged |
 | Tracked files | ~1,746 |
-| Commits ahead of `origin/main` | 40 (37 at original handoff + G6 + loop transform + NOW-1 fix + NOW-2 + final sync) |
-| Migrations in repo | **100** |
+| Commits ahead of `origin/main` | **49 local / 48 on remote** (`9ca483b4` pending push) — measured `git rev-list --count origin/main..HEAD` |
+| Migrations in repo | **100** (unchanged by NOW-4) |
 | Production migration ledger | **109 rows** |
-| Unit/integration test files | 555 |
+| Unit/integration test files | 559 |
 | Playwright e2e specs | 29 |
-| Fresh validation (NOW-1+NOW-2) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c, 554 files / 3977 tests / 0 failures, browser 18 specs PASS, push verified |
+| Fresh validation (NOW-4) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c unchanged, guardian PASS, migration-hygiene OK, focused 142/1045, sharded 20-shard 559/4055 / 0 failures / 0 INFRA, axe 15/15 — **push NOT verified (blocked)** |
 
 Confirm the true branch tip on arrival:
 
@@ -275,6 +291,14 @@ These are **not** repository defects. Expect them and fix them silently:
    ```
    (`skills/skill-creator/scripts/__init__.py` and `utils.py` are legitimately **644**.)
 5. **Playwright browsers are not persistent.** `pnpm exec playwright install chromium --with-deps`.
+5b. **A single-branch clone has no `origin/main` ref**, and `check:migration-hygiene` (also run as a
+    guardian layer) aborts with `Unable to resolve a base ref (tried origin/main, main)`. Fix silently:
+    `git fetch origin main:refs/remotes/origin/main` (a plain `git fetch origin main` only writes
+    FETCH_HEAD under the single-branch refspec and is NOT enough). This is an environment artifact,
+    not a repository defect.
+5c. **pnpm may be absent.** `corepack enable` fails with EACCES on `/usr/bin`; instead:
+    `mkdir -p /home/user/bin && printf '#!/bin/sh\nexec corepack pnpm "$@"\n' > /home/user/bin/pnpm && chmod +x /home/user/bin/pnpm`
+    then `export PATH="/home/user/bin:$PATH"` (corepack resolves the pinned 10.11.1 from `packageManager`).
 6. **Sandbox RAM is ~1.9 GB.** Use `node rentrix-app/scripts/run-sharded-regression.mjs` for the full suite. A `SIGKILL`/`signal=null` worker death is **INFRA, not a test verdict** — re-run that spec in isolation before drawing any conclusion.
 
 ### Architecture areas already reconstructed
@@ -428,7 +452,7 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - Scope of change: 6 files, +1410 lines, **0 migrations**, 0 accounting-rule files
 - **Not measured in this session:** hosted browser/E2E for the new panel, hosted concurrency, hosted repo↔production parity re-measure
 
-**Fresh G5-completion measurement (2026-09-11, commit `411167f6`) — THIS IS THE LATEST MEASURED EVIDENCE:**
+**Fresh G5-completion measurement (2026-09-11, commit `411167f6`):**
 - sharded regression **at 20 shards**: **4046 tests / 0 failures / 0 INFRA kills** — **PASS**
 - ⚠️ The same suite at 12 shards reported only `3737 tests` because **SHARD 5 was SIGKILLed by the sandbox memory limit**, masking ~309 tests. A SIGKILLed shard is INFRA, never a product verdict, and its absence must not be read as a smaller passing suite. **Use `node scripts/run-sharded-regression.mjs 20` in this sandbox.**
 - axe suite (run explicitly, excluded from the runner): **15/15 PASS**
@@ -436,6 +460,16 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - business-rules `v2.0.0 382a0b8c…` — **unchanged** (no migration added)
 - Scope: 8 files, **0 migrations**, 0 accounting-rule files
 - **Not measured:** hosted browser/E2E for either new panel, hosted concurrency, hosted parity re-measure
+
+**Fresh NOW-4 measurement (2026-09-11 04:40-05:00Z, commit `9ca483b4` — local only) — THIS IS THE LATEST MEASURED EVIDENCE:**
+- s09 suite: **18/18 PASS** (9 pre-existing + 9 new: 6 real-SQL against the deployed `s09_reverse_correction` body, 3 pure-parser)
+- focused `src/features/financials src/features/owners`: **142 files / 1045 tests PASS**
+- sharded regression **20 shards**: **559 files / 4055 tests / 0 failures / 0 INFRA kills — PASS** (was 4046; +9 from the new reversal tests)
+- axe suite (run explicitly): **15/15 PASS**
+- typecheck clean · db0:gate **7/7** · replay **100/100** · guardian **PASS all layers** · migration-hygiene **OK**
+- business-rules `v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79` — **unchanged** (no migration added, 0 accounting-rule files)
+- Scope: 4 files (+676/−12), **0 migrations**, 0 new permission keys, 0 new mounts
+- **Not measured:** hosted browser/E2E for the panel, hosted concurrency, hosted parity re-measure, **push (blocked — no credential)**
 
 ### How to reproduce the browser runs
 
@@ -526,6 +560,12 @@ E2E_BASE_URL=http://127.0.0.1:5173 pnpm exec playwright test <spec> --retries=0 
 - **Correction:** parser reads both flat and nested envelopes; lawful-status requirement unchanged, regression-locked.
 - **Validation:** unit 22 PASS + PGlite 12 PASS, including idempotent re-create keeps exactly one baseline row.
 
+### F13. S09 list-envelope false failure (found and fixed 2026-09-11 in `9ca483b4`)
+- **Root cause:** deployed `s09_list_corrections` returns `jsonb_build_object('company_id',…,'corrections',[…])` — an OBJECT with rows nested — but `loadS09Corrections` demanded a bare top-level array, so the S09 panel's read model raised `S09_LIST_RESPONSE_INVALID` on **every genuine response**: fail-closed, but the corrections list could never render. Introduced in 411167f6; missed there because no test fed the deployed body's output through the loader.
+- **Correction:** `parseS09ListEnvelope` reads the deployed envelope and rejects a bare array; same class as F12. Also tightened: `parseS09Correction` rejects a REVERSED row with no reversal batch id (`S09_REVERSED_WITHOUT_BATCH`), and `parseReverseS09Result` rejects a top-level `reversal_batch_id` that contradicts the nested `reverse_journal_batch` envelope (`S09_RESPONSE_CONTRADICTION`).
+- **Validation:** regression feeds the unmodified RPC output from real SQL through the client parser and asserts the envelope is not a bare array; s09 suite 18/18 PASS; sharded 559/4055 PASS.
+- **Production affected:** no (surface was never deployed; the defect would have made the new panel's list unusable).
+
 ---
 
 ## G. REMAINING WORK (updated)
@@ -566,6 +606,7 @@ finding rather than a suspicion: four financially significant RPCs were live, gr
 | `recover_owner_receivable_atomic` | **CLOSED** — `OwnerReceivableRecoveryPanel` (411167f6) |
 | `s09_create_correction_draft` | **CLOSED** — `S09CorrectionPanel` (411167f6) |
 | `s09_apply_correction` | **CLOSED** — `S09CorrectionPanel` (411167f6) |
+| `s09_reverse_correction` | **CLOSED** — `S09CorrectionPanel` reversal step (`9ca483b4`, **local only — push blocked**) |
 
 All four RPCs found by the audit now have a canonical surface. The S09 chain is surfaced as three
 explicit steps (DRAFT → VALIDATED → APPLIED) because the server refuses to apply anything not
@@ -580,12 +621,22 @@ outstanding, and the posted GL batch id — an offset never rewrites the origina
 No migration; canonical business-rules hash unmoved. Proven **locally / in replay only** — no hosted
 browser run for this panel.
 
+**`s09_reverse_correction` — CLOSED at `9ca483b4` (local only, push blocked):** fourth lifecycle step
+surfaced in the existing `S09CorrectionPanel`; real-SQL proof that reversal preserves BOTH the
+original source batch (byte-identical `to_jsonb` snapshot) and the correction batch (lines intact,
+status flips to REVERSED), with a separate balanced equal-and-opposite compensating batch and full
+3-batch lineage on the stored row. Building it also exposed and fixed a real defect at source:
+`loadS09Corrections` expected a bare array while the deployed `s09_list_corrections` returns
+`{company_id, corrections:[…]}`, so the read model failed closed on **every** genuine response and
+the list could never render — same class as F12, now regression-locked by feeding unmodified RPC
+output from real SQL through the client parser.
+
 **Still open:**
 - Governed historical **adoption/allocation** of expenses — allocation UI exists, governed adoption UI exists (G6), but unblocking legacy settlements only after correct legal/accounting review remains.
-- **`s09_reverse_correction`** is deployed and granted but has **no surface** — the next UI-absent item.
-- Only the `source_type='expense'` correction path has real-SQL coverage; other source types are supported by the server and the service but are unproven here.
+- Only the `source_type='expense'` correction path has real-SQL coverage; other source types are supported by the server and the service but are unproven here (**NOW-5**).
 - Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations.
 - Cash/fees/tax/offset/collection/recovery truth in owner statements **and documents** — statement path verified; the full document surface is not exhaustively re-verified after the latest migrations.
+- No hosted browser run covers any of the five G5/G6 panels (offset, recovery, S09 create/validate/apply, S09 reverse, cutover) — the fixture backend seeds none of their tables.
 
 ### G6. UI surfaces for backend-complete capabilities — **RESOLVED (inspection + one canonical build, commit 354bc427)**
 
@@ -691,22 +742,23 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated after final PAT push 20:35Z — STOP)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 05:15Z — NOW-4 committed locally, push BLOCKED)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `a0760e98c82ee56b0e350686f66085068c71043c` — final sync after PAT push, user requested stop |
-| Branch tip | same — `a0760e98` |
+| Last work commit (code/schema/evidence) | `9ca483b4` — G5: surface s09_reverse_correction + list-envelope fix — **LOCAL ONLY** |
+| Local branch tip | `9ca483b4` (1 ahead of remote) |
+| Remote branch tip | `bcdf6944` — verified via `git ls-remote` 2026-09-11 04:28Z |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Prior verified checkpoints | `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
-| Tree state | **clean** — 0 modified after skills restore, verified 20:35Z |
-| All gates (fresh NOW-1+NOW-2) | replay 100/100 · gates 7/7 (107/254) · Guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c · migration-hygiene OK · focused 137/967 PASS · full sharded 554/3977 PASS · design-system inventory 13/13 · axe 15/15 · production build 28 precache / 428.87 KiB / 0 private paths · PWA contract 3/3 · browser owner-position 3/3 + owner-expense-source 3/3 + financial-journey 6/6 + payout-bank-cash 3/3 · push verified a0760e98 |
-| Remote HEAD verified | `a0760e98c82ee56b0e350686f66085068c71043c` via `git ls-remote` 20:32Z + `git push` exit 0 |
+| Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
+| Tree state | **clean** — 0 modified, no mode changes |
+| All gates (fresh NOW-4) | s09 18/18 · focused 142/1045 PASS · sharded 20-shard **559/4055 PASS, 0 INFRA** · axe 15/15 · replay 100/100 · gates 7/7 · guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK |
+| Push status | **BLOCKED — no credential in sandbox** (see §BLOCKED). Do not claim pushed. Do not fabricate a remote SHA. |
 
-**Reconstruction is NOT declared complete.** Financial chain, migrations, isolation and production parity proven to stated level at e6e2e444; re-measured at 554/3977 PASS + 18 browser specs PASS after G6+fix (G6 closed 354bc427, raw-form violation fixed 50be359a, NOW-2 browser verified aac5aa14, final sync a0760e98); **latest measurement 4046 tests / 0 failures at `411167f6`**. §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, **G5 — all four audited UI-absent RPCs now have surfaces proven in replay, but `s09_reverse_correction` remains UI-absent and no hosted browser run covers any of the new panels**, document surface + remaining S08/S09 review pending, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4055 tests / 0 failures / 0 INFRA at `9ca483b4` (local).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs (offset, recovery, s09 draft/apply, s09 reverse) now have surfaces proven in replay, but only `source_type='expense'` has real-SQL coverage, no hosted browser run covers any panel, and the reverse work is not yet on the remote**, document surface + remaining S08/S09 review pending, G7 unknowable.
 
-**Next when resumed:** build the `s09_reverse_correction` surface (the last UI-absent RPC), extend correction coverage beyond `source_type='expense'`, then the remaining S08/S09 review paths and the document surface; then G3 concurrency design, G4 runtime, parity re-measure, final DoD.
+**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD; (2) NOW-5 — extend S09 correction coverage beyond `source_type='expense'`; (3) NOW-6 — document surface (`documentPayloadAdapters.ts`, `professional-owner-report.ts`) + remaining S08/S09 review paths; (4) G3 concurrency design, G4 runtime, parity re-measure, final DoD.
 
 ---
 
