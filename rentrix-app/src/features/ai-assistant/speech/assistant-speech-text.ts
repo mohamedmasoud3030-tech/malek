@@ -127,6 +127,18 @@ function isoDateToSpeechWords(yearRaw: string, monthRaw: string, dayRaw: string)
   return `${day} ${monthName} ${yearRaw}`;
 }
 
+/** True for lines that are a Markdown horizontal rule (---, ***, ___). */
+function isMarkdownHorizontalRule(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed.length < 3) return false;
+  const marker = trimmed.charAt(0);
+  if (marker !== '-' && marker !== '*' && marker !== '_') return false;
+  for (let index = 1; index < trimmed.length; index += 1) {
+    if (trimmed.charAt(index) !== marker) return false;
+  }
+  return true;
+}
+
 function stripMarkdownSyntax(text: string): string {
   let output = text;
 
@@ -138,13 +150,13 @@ function stripMarkdownSyntax(text: string): string {
   output = output.replace(/<[^>\n]{1,200}>/g, ' ');
   // Images → alt text, links → link text.
   output = output.replace(/!\[([^\]]*)\]\([^)\s]*\)/g, '$1');
-  output = output.replace(/\[([^\]]+)\]\((?:#[^)\s]*|[^)\s]*)\)/g, '$1');
-  output = output.replace(/\[([^\]]+)\]/g, '$1');
+  output = output.replace(/\[([^[\]]+)\]\([^)\s]*\)/g, '$1');
+  output = output.replace(/\[([^[\]]+)\]/g, '$1');
   // Bare URLs are UI-only artifacts for speech.
   output = output.replace(/https?:\/\/[^\s)\]»،؛]+/gi, ' ');
   // Table separator rows (| --- | :---: |). Horizontal whitespace only in the
   // anchors — \s would swallow trailing newlines and glue the remaining rows.
-  output = output.replace(/^[ \t]*\|?[ \t:|-]+\|[ \t:|-]*$/gm, '');
+  output = output.replace(/^[ \t]*\|?(?:[ \t:-]*\|)+[ \t:|-]*$/gm, '');
   // Remaining table rows: join cells.
   output = output.replace(/^[ \t]*\|(.+)\|[ \t]*$/gm, (_match, cells: string) =>
     cells
@@ -157,7 +169,7 @@ function stripMarkdownSyntax(text: string): string {
   // horizontal rules.
   output = output.replace(/(^|\s)#{1,6}\s+/g, '$1');
   output = output.replace(/^>\s?/gm, '');
-  output = output.replace(/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/gm, '');
+  output = output.split('\n').map((line) => (isMarkdownHorizontalRule(line) ? '' : line)).join('\n');
   // Emphasis / strikethrough markers. Single-asterisk emphasis is only
   // stripped when it is not a math multiplication (digits on both sides).
   output = output.replace(/\*\*([^*]+)\*\*/g, '$1');
@@ -165,8 +177,8 @@ function stripMarkdownSyntax(text: string): string {
   output = output.replace(/~~([^~]+)~~/g, '$1');
   output = output.replace(/(?<![\d*])\*([^*\n]+)\*(?![\d*])/g, '$1');
   // List bullets and markers (keep ordered numbers, drop the punctuation).
-  output = output.replace(/^\s*(?:•|‣|◦|[-*+])\s+/gm, '');
-  output = output.replace(/^\s*(\d+)[.)]\s+/gm, '$1 ');
+  output = output.replace(/^[^\S\n]*(?:•|‣|◦|[-*+])\s+/gm, '');
+  output = output.replace(/^[^\S\n]*(\d+)[.)]\s+/gm, '$1 ');
   // Stray table pipes and backslashes.
   output = output.replace(/\|/g, ' ');
   output = output.replace(/\\/g, '');
@@ -202,6 +214,25 @@ function normalizeNumbersForSpeech(text: string): string {
 }
 
 /**
+ * Replaces every newline (plus surrounding spaces/tabs) with a single space
+ * in one pass — the linear stand-in for the old "spaces, newlines, spaces"
+ * collapse regex.
+ */
+function collapseLinesToSpaces(value: string): string {
+  return value
+    .split('\n')
+    .map((segment) => {
+      let start = 0;
+      let end = segment.length;
+      while (start < end && (segment.charAt(start) === ' ' || segment.charAt(start) === '\t')) start += 1;
+      while (end > start && (segment.charAt(end - 1) === ' ' || segment.charAt(end - 1) === '\t')) end -= 1;
+      return segment.slice(start, end);
+    })
+    .filter((segment) => segment.length > 0)
+    .join(' ');
+}
+
+/**
  * Builds the speech variant of an assistant response.
  * The returned string is only ever handed to the speech engine.
  */
@@ -210,8 +241,7 @@ export function buildAssistantSpeechText(raw: string): string {
   const latin = toLatinDigits(raw);
   const plain = stripMarkdownSyntax(latin);
   const spoken = normalizeNumbersForSpeech(plain);
-  const cleaned = spoken
-    .replace(/[ \t]*\n+[ \t]*/g, ' ')
+  const cleaned = collapseLinesToSpaces(spoken)
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
   return cleaned;

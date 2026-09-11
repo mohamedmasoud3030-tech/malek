@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { containsDigitRun } from '@/lib/digit-run';
+import { containsDigitRun, containsEmailLikeToken } from '@/lib/linear-text-guards';
 
 export type AppNotification = Readonly<{
   id: string;
@@ -11,18 +11,18 @@ export type AppNotification = Readonly<{
   type: string | null;
 }>;
 
-// Email alternative anchors the first dot deterministically (`[^\s@.]*\.`
-// cannot disagree about which dot terminates the domain prefix) so the
-// pattern stays linear; long digit runs are checked by containsDigitRun
-// for the same reason. Both err on the masking side for odd inputs.
-const sensitivePreviewPattern = /password|token|secret|authorization\s*:|[^\s@]+@[^\s@.]*\.[^\s@]+/i;
+// Word-shaped secrets stay a regex (fixed literals, linear). Email-like
+// tokens and long digit runs go through the linear scanners: an unanchored
+// `class+ literal` email regex degrades super-linearly on hostile text,
+// and notification payloads are exactly that surface.
+const sensitivePreviewPattern = /password|token|secret|authorization\s*:/i;
 const identifierInUrlPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|@/i;
 const allowedLinkPrefixes = ['/dashboard', '/settings', '/contracts', '/financials', '/maintenance', '/reports', '/help'];
 
 export function sanitizeNotificationPreview(value: unknown, fallback: string, maxLength: number): string {
   if (typeof value !== 'string') return fallback;
   const trimmed = value.trim();
-  if (!trimmed || sensitivePreviewPattern.test(trimmed) || containsDigitRun(trimmed, 8)) return fallback;
+  if (!trimmed || sensitivePreviewPattern.test(trimmed) || containsEmailLikeToken(trimmed) || containsDigitRun(trimmed, 8)) return fallback;
   return trimmed.slice(0, maxLength);
 }
 
