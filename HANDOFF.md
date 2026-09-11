@@ -146,7 +146,25 @@ From §A Standing constraints + §J:
 
 ### NOW (single task)
 
-**NOW-17: PARKED — first LIVE production database measurement done; remaining items need owner-side decisions (DB password, project slot, ledger reconciliation, root-domain staging)**
+**NOW-17 COMPLETE — BRANCH MERGED INTO `main` (owner instruction, 2026-09-11 ~14:35Z): fast-forward `fe2a5911..a3001df5`, main == branch == `a3001df5`, ls-remote verified.**
+
+Merge-blocker audit performed immediately before the merge (all clean):
+1. CI green at the EXACT tip: run **34608542846 SUCCESS** at `a3001df5` (build + heavy-validation);
+   also green one commit earlier (34606847261 at `02309b13`).
+2. `main` was at `fe2a5911` = a verified ANCESTOR of the branch tip → clean fast-forward, zero
+   conflict surface; no branch protection on `main` (API-verified).
+3. The 26 migrations the branch adds relative to old main (`20260909000000`…`20260910000003`)
+   are **ALL already applied live AND content-identical** (normalized full-text compare of the
+   live ledger's stored statements vs the repo files: 26/26) — production already runs exactly
+   this canonical schema; merging introduces NO new repo↔live drift.
+4. No auto-deploy fires on push: `ci.yml` is workflow_dispatch-only;
+   `supabase-ai-assistant-production-sync` triggers only on a main CI **run** conclusion and is
+   additionally gated behind the `production` environment (required reviewers).
+5. The pre-existing ledger drift (27 ledger-only vs 18 re-stamped repo versions — NOW-16
+   evidence) is UNCHANGED by this merge and remains a governance decision (NOW-18 trigger 1).
+The merge does NOT deploy anything to Production and does NOT run any migration there.
+
+**NOW-18: PARKED — remaining items need owner-side decisions (DB password, project slot, ledger reconciliation, root-domain staging)**
 
 **NOW-16 COMPLETE `84871680` (pushed, remote==local verified):** operator supplied a fresh GitHub
 PAT (admin+push, replaces the expired one), a Supabase **management token**, and a QA test user.
@@ -196,7 +214,7 @@ That access was used read-only against Production plus one non-destructive role 
   which GitHub Pages (project subpath `/malek/`) cannot satisfy, and the preflight script is a
   locked policy source that must not be edited.
 
-**NOW-17 remaining queue — each needs one owner-side decision, exact resume triggers:**
+**NOW-18 remaining queue — each needs one owner-side decision, exact resume triggers:**
 1. **Ledger reconciliation (governance):** decide how to reconcile 27 ledger-only vs 18 re-stamped
    repo versions (see the crosswalk evidence) before ANY `db push`; then G4 `deploy` inputs
    (reviewed SHA + inspect run + owner backup reference + rollback plan).
@@ -344,6 +362,8 @@ NOW-10 `84e258cd`+`76a461c8`; browser coverage of all five G5/G6 panels incl. fa
 = NOW-11 `ec4654bc` + NOW-12 `d6713ec0`.)
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-17 (2026-09-11 ~14:35Z; owner instruction "حدّث الحالة وادمج الفرع فورًا إذا لا يوجد موانع"): BRANCH MERGED INTO `main` — fast-forward `fe2a5911..a3001df5`, verified.** Blocker audit before merging: CI run 34608542846 SUCCESS at the exact tip `a3001df5` (and 34606847261 at `02309b13`); main unprotected and a verified ancestor → clean fast-forward, no conflicts; the 26 branch-added migrations (`20260909*`/`20260910*` series) probed against the live ledger: **26/26 already applied AND content-identical** (normalized full-text compare of ledger `statements` vs repo files) — production already runs this exact canonical schema, so the merge adds no new drift; no auto-deploy on push (CI is dispatch-only; ai-assistant-production-sync needs a main CI run + the reviewer-gated `production` environment). Post-merge: `git ls-remote` shows `main` == `reconstruction/checkpoint-20260909` == `a3001df5`; this record commit was then pushed to BOTH refs to keep them identical. The pre-existing 27-vs-18 ledger drift is untouched by the merge and stays parked as governance decision (NOW-18 trigger 1). Nothing was deployed to Production; no migration was run there.
 
 - **NOW-16 (2026-09-11 13:05-13:55Z; commits `0e4ca375` + `84871680` — PUSHED, remote==local verified): operator access arrived (new GitHub PAT + Supabase management token + QA user) → first LIVE production measurements taken, live-readiness gate permanently unblocked, one stale gate expectation fixed, one 12-year-class drift finding documented with full evidence.** (a) Verified all credentials; pushed the pending NOW-15 record commit. (b) Identified the Production project: `nnggcnpcuomwfuupupwg` "Malek-Plus (live)" ap-southeast-1 (the 4th project "starting" is a DIFFERENT application — events/warehouse domain, 103-row unrelated ledger; excluded). (c) **G6 live parity measured read-only** via the Management API query endpoint: 109 ledger rows vs 100 repo files; 82 exact matches; 18 repo-only = re-stamped versions of applied migrations (13 content-identical modulo comments/whitespace — verified by normalized full-text compare against the ledger's stored `statements`; 5 diverged with local hardened variants never applied); 9 ledger-only direct-production hotfixes never committed to any branch (full SQL archived). Live catalog probes: rc1 trigger present, cross-company guards in 4 functions, `v_existing_match_id` hardening absent. → `db push` UNSAFE until governance reconciles; evidence package `docs/execution/evidence/live-parity-20260911/`. (d) **Created `live_readiness_ro`** (login, non-super, ONLY `pg_read_all_data`; write refused 42501 — probed) and set `SUPABASE_READONLY_DB_URL` after discovering: direct host IPv6-only (runners have no IPv6), pooler cluster is **aws-1** (aws-0 ENOTFOUND), pooler requires tenant-suffixed usernames, and custom roles are NOT accepted by Supavisor on the postgres username — verified working from sandbox via pg8000 through `aws-1-ap-southeast-1.pooler.supabase.com:5432`. (e) Dispatched `supabase-live-readiness` (first real executions ever): run 34605268416 exposed the stale `sessions` expectation → fixed at source in `verify-supabase-live-readiness.sh` with reasoning inlined (no migration ever created `public.sessions`; types and app code never referenced it; all 12 other required tables present live) → run **34605721349** at `84871680`: readiness step **SUCCESS** (missing tables=none, missing functions=none, RLS-gaps=0, migration_count=109), parity step FAILURE = the true drift, exactly as the detect-only script is designed to report. (f) Set `SUPABASE_PROJECT_REF`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASSWORD`, `PRODUCTION_SUPABASE_PROJECT_REF` secrets. (g) Verified blockers instead of assuming: QA project creation refused by Supabase free-plan limit (owner at 2-project cap; 4 projects exist); QA==production hard-refused by `agent-qa-preflight.mjs`; `Production` GitHub environment has required_reviewers=owner (self-review allowed → approvable with this PAT once `SUPABASE_DB_PASSWORD` exists); G1 staging via GitHub Pages impossible (locked preflight fetches `/build-proof.json` from origin ROOT; Pages serves under `/malek/`). Parked as NOW-17 with six exact owner-decision triggers.
 
@@ -963,14 +983,14 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 13:55Z — NOW-16 COMPLETE: first live production measurements + live-readiness unblocked & green; branch PUSHED, remote==local)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 14:40Z — NOW-17 COMPLETE: **branch MERGED into `main`** (fast-forward, CI-green at exact tip, 26/26 branch-added migrations verified already-live & content-identical); main == branch == `a3001df5` + this record commit)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
 | Last work commit (code/schema/evidence) | `84871680` — NOW-16: stale `sessions` expectation removed from verify-supabase-live-readiness.sh (gate-infra-only) + live-parity evidence package; last product-src change remains `035db0e2` NOW-8 — **ON REMOTE** |
 | Local branch tip | `84871680` (+ this HANDOFF-update commit pushed immediately after — remote and local kept equal at every step, `git ls-remote`-verified) |
-| Remote branch tip | `848716802da1a2597da582403ce307e1d0fa6513` — **verified via `git ls-remote` 2026-09-11 ~13:45Z** |
+| Remote branch tip | `a3001df51c311e090a509a76368fd3669faaf23f` — **verified via `git ls-remote` 2026-09-11 ~14:35Z**; **`main` == same SHA (MERGED, fast-forward from `fe2a5911`)** |
 | Hosted CI at tip | CI run 34587311312 **SUCCESS at `6af81c70` (docs tip, attempt 2)** — attempt 1 had one INFRA-class flake (permission-catalog pglite full-replay test hit its 5s timeout under runner load, 1/4069; identical job green at `337a3046` and on the clean rerun — a timed-out worker under load is INFRA, not a verdict). Code-identical green before it: CI run 34584434977 **SUCCESS** at `337a3046` (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) — not re-dispatched over docs/CI-infra-only deltas (evidence continuity over identical product code) · **NEW NOW-15: supabase-production-migrations local-preflight run 34600286733 SUCCESS at `ce0fbb33` (first green ever, 1/1173) — artifact `production-local-preflight-34600286733` · CI run 34601411676 SUCCESS at tip `73e92261` (build + heavy-validation; docs/CI-infra-only delta) · **NEW NOW-16: supabase-live-readiness run 34605721349 at `84871680` — readiness step SUCCESS (first live-DB gate pass in repo history); parity step FAILURE = true ledger drift (109 live vs 100 repo; see evidence package), detect-only by design** |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |

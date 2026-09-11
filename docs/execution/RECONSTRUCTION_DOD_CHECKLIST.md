@@ -1,6 +1,6 @@
 # Reconstruction — Definition of Done checklist & release evidence index (NOW-10)
 
-**Branch:** `reconstruction/checkpoint-20260909` · **Date:** 2026-09-11 · **Local HEAD at authoring:** `269ed0b3` (12 commits ahead of remote `bcdf6944`; push BLOCKED — no credential in sandbox)
+**Branch:** `reconstruction/checkpoint-20260909` — **MERGED into `main` 2026-09-11 (fast-forward `fe2a5911..a3001df5`, CI-green at exact tip run 34608542846; main == branch)** · **Date:** 2026-09-11 · **Local HEAD at authoring:** `269ed0b3` (12 commits ahead of remote `bcdf6944`; push BLOCKED — no credential in sandbox — superseded: everything since pushed and merged)
 
 Rules applied: no stage credit without evidence; blocked ≠ done; every verdict points at a commit,
 test count, or log. Numbers are measured, not estimated.
@@ -54,9 +54,18 @@ test count, or log. Numbers are measured, not estimated.
 
 ## 4. DoD verdict
 
-**Reconstruction is NOT declared complete.** Everything locally executable in the §G queue is done
-and evidenced; what remains is externally blocked: push (credential), G1/G2/G4/G7 + hosted G3 checks
-(hosted access), parity re-measure (production access), hosted browser coverage of the five panels
-(fixture seeding + G1), and the non-enumerated-source-type governance decision (approved source).
-The moment a credential appears: push, verify remote SHA equals local HEAD, then execute the hosted
-plan in `G3_CONCURRENCY_VERIFICATION_STRATEGY.md` §1 (last column) and the parity re-measure.
+**Reconstruction is NOT declared complete — but it is MERGED and every agent-executable gate is green.**
+Status 2026-09-11 (NOW-17): branch merged into `main` (fast-forward `fe2a5911..a3001df5`, CI-green
+at the exact tip, run 34608542846). Done and evidenced since the original verdict: push + remote-SA
+verification at every step; hosted CI FULL GREEN; hosted browser matrix FULL GREEN (172/172 desktop
+incl. all five G5/G6 panel journeys); G4 evidence pipeline fixed and first-ever green (run
+34600286733); live-readiness gate permanently unblocked (read-only role + secret) and GREEN against
+the live database (run 34605721349); parity RE-MEASURED live — drift found and fully evidenced
+(`docs/execution/evidence/live-parity-20260911/`: 27 ledger-only vs 18 re-stamped repo versions;
+exactly one confirmed functional gap live — the 20260901000026 dedupe guard; all 26 branch-added
+migrations verified already-applied and content-identical live).
+What remains is owner-gated, with exact triggers in HANDOFF.md §"NOW-18": ledger reconciliation
+decision before any `db push` (BACKUP_RESTORE_RUNBOOK path); `SUPABASE_DB_PASSWORD` for the
+sanctioned production-inspect artifact; a Supabase project slot for the QA journey; a root-domain
+staging host for G1 hosted E2E; the S09 `source_type` governance decision; and G2/G3-hosted which
+need that deployed runtime.
