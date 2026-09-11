@@ -28,9 +28,14 @@ select 'migration_count=' || count(*)
 from supabase_migrations.schema_migrations;
 
 with required_tables(table_name) as (
+  -- 'sessions' was removed from this list: no migration in supabase/migrations
+  -- ever created a public.sessions table (verified: zero `create table ... sessions`
+  -- hits across all 100 canonical migrations), the generated types expose no such
+  -- table, and no app code references it. Session state lives in Supabase Auth
+  -- (auth.sessions), which is not part of the public schema contract. Keeping the
+  -- entry made this check report a permanent false gap against the live database.
   values
     ('users'),
-    ('sessions'),
     ('properties'),
     ('units'),
     ('contracts'),

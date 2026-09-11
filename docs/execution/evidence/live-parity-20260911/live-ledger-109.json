@@ -1,0 +1,438 @@
+[
+ {
+  "version": "20260821172857",
+  "name": "archive_duplicate_contract_draft_and_enforce_uniqueness"
+ },
+ {
+  "version": "20260821175402",
+  "name": "require_active_contract_before_invoice_posting"
+ },
+ {
+  "version": "20260824055153",
+  "name": "revoke_recalculate_unit_statuses"
+ },
+ {
+  "version": "20260824055235",
+  "name": "revoke_internal_and_trigger_rpc_execute"
+ },
+ {
+  "version": "20260824055925",
+  "name": "browser_rpc_canonical_identity_guards"
+ },
+ {
+  "version": "20260824055944",
+  "name": "fix_soft_delete_contract_atomic_uuid_casts"
+ },
+ {
+  "version": "20260824055959",
+  "name": "mark_app_notification_read_governed_rpc"
+ },
+ {
+  "version": "20260824060022",
+  "name": "restore_system_inspection_templates"
+ },
+ {
+  "version": "20260824060033",
+  "name": "expand_bank_reconciliation_entity_types"
+ },
+ {
+  "version": "20260824060104",
+  "name": "fix_bank_reconciliation_rpc_validation"
+ },
+ {
+  "version": "20260824060120",
+  "name": "harden_bank_reconciliation_economic_identity"
+ },
+ {
+  "version": "20260824060134",
+  "name": "secure_function_default_privileges"
+ },
+ {
+  "version": "20260824060153",
+  "name": "normalize_financial_precision_to_omr_3dp"
+ },
+ {
+  "version": "20260824060222",
+  "name": "fix_bank_reconciliation_audit_schema"
+ },
+ {
+  "version": "20260824060255",
+  "name": "rc1_business_rules_closeout"
+ },
+ {
+  "version": "20260824060320",
+  "name": "rc1_business_rules_closeout_update_commission_completion"
+ },
+ {
+  "version": "20260824060337",
+  "name": "rc1_commission_deal_identity_omr_precision"
+ },
+ {
+  "version": "20260824060415",
+  "name": "rc1_bank_reconciliation_fail_closed"
+ },
+ {
+  "version": "20260824060451",
+  "name": "rc1_bank_reconciliation_fail_closed_process_completion"
+ },
+ {
+  "version": "20260824060503",
+  "name": "rc1_bank_reconciliation_fail_closed_wp05_guard_completion"
+ },
+ {
+  "version": "20260824060542",
+  "name": "collections_payments_period_close_fixes"
+ },
+ {
+  "version": "20260828122738",
+  "name": "frontend_backend_contract_acl_storage_fix"
+ },
+ {
+  "version": "20260830071342",
+  "name": "atomicity_test_demo_invoice_v4"
+ },
+ {
+  "version": "20260830223142",
+  "name": "ai_assistant_postgrest_rpc_repair"
+ },
+ {
+  "version": "20260830223912",
+  "name": "recreate_ai_assistant_authorization_rpc"
+ },
+ {
+  "version": "20260901000000",
+  "name": "canonical_baseline"
+ },
+ {
+  "version": "20260901000001",
+  "name": "restore_dump_acl_lock"
+ },
+ {
+  "version": "20260901000002",
+  "name": "ai_assistant_budget_idempotency"
+ },
+ {
+  "version": "20260901000003",
+  "name": "self_service_support_requests"
+ },
+ {
+  "version": "20260901000004",
+  "name": "communication_preview_foundation"
+ },
+ {
+  "version": "20260901000005",
+  "name": "admin_support_operations_foundation"
+ },
+ {
+  "version": "20260901000006",
+  "name": "background_job_foundation"
+ },
+ {
+  "version": "20260901000007",
+  "name": "restrict_recalculate_invoice_status"
+ },
+ {
+  "version": "20260901000008",
+  "name": "company_members_six_role_constraint"
+ },
+ {
+  "version": "20260901000009",
+  "name": "company_members_six_role_authority"
+ },
+ {
+  "version": "20260901000010",
+  "name": "contracts_one_live_draft_per_unit_tenant"
+ },
+ {
+  "version": "20260901000011",
+  "name": "require_active_contract_before_invoice_posting"
+ },
+ {
+  "version": "20260901000012",
+  "name": "canonical_authority_foundation"
+ },
+ {
+  "version": "20260901000013",
+  "name": "sensitive_rpc_authorization_hardening"
+ },
+ {
+  "version": "20260901000014",
+  "name": "security_definer_boundary_hardening"
+ },
+ {
+  "version": "20260901000015",
+  "name": "sensitive_rpc_canonical_role_boundary"
+ },
+ {
+  "version": "20260901000016",
+  "name": "security_definer_governance_hardening"
+ },
+ {
+  "version": "20260901000017",
+  "name": "canonical_permission_boundary_completion"
+ },
+ {
+  "version": "20260901000018",
+  "name": "revoke_wp05_internal_rpc"
+ },
+ {
+  "version": "20260901000035",
+  "name": "tenant_scoped_attachment_storage"
+ },
+ {
+  "version": "20260901000037",
+  "name": "short_stay_lease_mode"
+ },
+ {
+  "version": "20260901000038",
+  "name": "maintenance_completion_and_utility_actual_payer"
+ },
+ {
+  "version": "20260901000039",
+  "name": "owner_employee_effective_permissions"
+ },
+ {
+  "version": "20260901000040",
+  "name": "owner_permission_override_guards"
+ },
+ {
+  "version": "20260901000041",
+  "name": "employee_permission_dependencies"
+ },
+ {
+  "version": "20260901000042",
+  "name": "tenant_portal_secure_link"
+ },
+ {
+  "version": "20260901000043",
+  "name": "tenant_portal_snapshot_hardening"
+ },
+ {
+  "version": "20260901000044",
+  "name": "external_portal_read_links"
+ },
+ {
+  "version": "20260901000045",
+  "name": "owner_portal_canonical_projection"
+ },
+ {
+  "version": "20260901000046",
+  "name": "tenant_portal_canonical_projection"
+ },
+ {
+  "version": "20260901000047",
+  "name": "short_stay_date_driven_expiry"
+ },
+ {
+  "version": "20260901000048",
+  "name": "unit_short_stay_reference_rate"
+ },
+ {
+  "version": "20260901000049",
+  "name": "extend_short_stay_atomic"
+ },
+ {
+  "version": "20260901000050",
+  "name": "granular_authority_patch_preflight"
+ },
+ {
+  "version": "20260901000051",
+  "name": "granular_employee_action_permissions"
+ },
+ {
+  "version": "20260901000052",
+  "name": "granular_employee_permission_projection"
+ },
+ {
+  "version": "20260901000053",
+  "name": "maintenance_transition_permission_alignment"
+ },
+ {
+  "version": "20260901000054",
+  "name": "granular_write_boundary_alignment"
+ },
+ {
+  "version": "20260901000055",
+  "name": "permission_boundary_closeout"
+ },
+ {
+  "version": "20260901000056",
+  "name": "revoke_browser_execute_internal_gl_rpcs"
+ },
+ {
+  "version": "20260901000057",
+  "name": "governed_bank_statement_line_writes"
+ },
+ {
+  "version": "20260901000058",
+  "name": "bank_statement_permission_alignment"
+ },
+ {
+  "version": "20260901000059",
+  "name": "deposit_claim_owner_funds_lineage"
+ },
+ {
+  "version": "20260901000060",
+  "name": "deposit_claim_owner_funds_reversal_idempotency"
+ },
+ {
+  "version": "20260901000061",
+  "name": "fix_terminate_contract_uuid_casts"
+ },
+ {
+  "version": "20260901000062",
+  "name": "owner_portal_vault_company_scope"
+ },
+ {
+  "version": "20260901000063",
+  "name": "rls_auth_initplan_optimization"
+ },
+ {
+  "version": "20260901000064",
+  "name": "financial_report_rpc_permission_boundary"
+ },
+ {
+  "version": "20260901000065",
+  "name": "financial_reports_view_permission_catalog"
+ },
+ {
+  "version": "20260901000066",
+  "name": "canonical_cash_flow_rpc_transition"
+ },
+ {
+  "version": "20260901000067",
+  "name": "repair_legacy_cash_flow_compatibility"
+ },
+ {
+  "version": "20260901000069",
+  "name": "atomic_property_ownership_payload"
+ },
+ {
+  "version": "20260901015736",
+  "name": "ai_assistant_postgrest_rpc_repair"
+ },
+ {
+  "version": "20260901082930",
+  "name": "ai_assistant_postgrest_rpc_repair_repo_sync"
+ },
+ {
+  "version": "20260901083347",
+  "name": "repair_financial_report_public_wrappers"
+ },
+ {
+  "version": "20260904000000",
+  "name": "bound_anonymous_portal_projections"
+ },
+ {
+  "version": "20260904000001",
+  "name": "authoritative_permission_catalog_parity"
+ },
+ {
+  "version": "20260904000002",
+  "name": "tax_authority_readiness_browser_boundary"
+ },
+ {
+  "version": "20260909000000",
+  "name": "total_role_predicates"
+ },
+ {
+  "version": "20260909000001",
+  "name": "deposit_claim_credit_eligibility"
+ },
+ {
+  "version": "20260909000002",
+  "name": "deposit_receipt_command_integrity"
+ },
+ {
+  "version": "20260909000003",
+  "name": "tenant_statement_settlement_ledger"
+ },
+ {
+  "version": "20260909000004",
+  "name": "historical_reconciliation_lineage"
+ },
+ {
+  "version": "20260909000005",
+  "name": "tax_posting_read_authority"
+ },
+ {
+  "version": "20260909000006",
+  "name": "fixed_fee_tax_history_metadata"
+ },
+ {
+  "version": "20260909000007",
+  "name": "owner_receivable_history_and_recovery"
+ },
+ {
+  "version": "20260909000008",
+  "name": "lawful_offset_identity_and_scope"
+ },
+ {
+  "version": "20260909000009",
+  "name": "reconciliation_entry_authority"
+ },
+ {
+  "version": "20260909000010",
+  "name": "expense_history_diagnostic_lineage"
+ },
+ {
+  "version": "20260909000011",
+  "name": "expense_correction_review_source"
+ },
+ {
+  "version": "20260909000012",
+  "name": "owner_expense_allocation_source"
+ },
+ {
+  "version": "20260909000013",
+  "name": "owner_offset_settlement_finality"
+ },
+ {
+  "version": "20260909000014",
+  "name": "owner_settlement_payment_quote"
+ },
+ {
+  "version": "20260909000015",
+  "name": "owner_payout_cash_authority"
+ },
+ {
+  "version": "20260909000016",
+  "name": "owner_position_cash_evidence"
+ },
+ {
+  "version": "20260909000017",
+  "name": "owner_statement_settlement_authority"
+ },
+ {
+  "version": "20260909000018",
+  "name": "owner_expense_coownership_allocation_authority"
+ },
+ {
+  "version": "20260909000019",
+  "name": "owner_balance_coownership_completion"
+ },
+ {
+  "version": "20260909000020",
+  "name": "owner_balances_omr_precision"
+ },
+ {
+  "version": "20260909000021",
+  "name": "money_columns_omr_precision"
+ },
+ {
+  "version": "20260910000000",
+  "name": "audit_log_and_users_company_isolation"
+ },
+ {
+  "version": "20260910000001",
+  "name": "normalize_maintenance_close_anchors"
+ },
+ {
+  "version": "20260910000002",
+  "name": "rc1_bank_reconciliation_hardening_forward_carry"
+ },
+ {
+  "version": "20260910000003",
+  "name": "reapply_owner_payout_cash_authority_after_forward_carry"
+ }
+]
