@@ -168,7 +168,10 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
       'sm:static sm:mx-0 sm:flex sm:flex-row-reverse sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-1 sm:shadow-none',
       className,
     )}>
-      <Button data-entity-form-submit type="submit" variant={submitVariant} disabled={submitDisabled ?? isSubmitting} className="min-h-11 min-w-0 w-full sm:w-auto">{submitLabel}</Button>
+      {/* G3 double-submit guard: a caller-supplied submitDisabled expresses
+          validation state and must never RE-ENABLE the button mid-submit —
+          pending always disables (`||`, not `??`). */}
+      <Button data-entity-form-submit type="submit" variant={submitVariant} disabled={submitDisabled || isSubmitting} className="min-h-11 min-w-0 w-full sm:w-auto">{submitLabel}</Button>
       {onCancel ? <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting} className="min-h-11 min-w-0 w-full sm:w-auto">{cancelLabel}</Button> : null}
     </div>
   );

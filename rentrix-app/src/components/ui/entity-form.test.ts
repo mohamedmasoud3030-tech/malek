@@ -94,6 +94,35 @@ describe('shared entity form composition', () => {
     expect(html).toContain('grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.42fr)]');
   });
 
+  it('keeps the submit button disabled while submitting even when submitDisabled is caller-controlled (G3 double-submit race)', () => {
+    // Reproduction of the concurrency trap: `disabled={submitDisabled ?? isSubmitting}`
+    // lets a caller-supplied submitDisabled (validation-only at 20+ call sites,
+    // e.g. communication hub, lands, utilities) silently override the pending
+    // guard — a second click during a slow mutation re-fires onSubmit.
+    // Note: Button classes contain `disabled:` Tailwind variants, so match the
+    // rendered attribute (`disabled=""`), not the bare substring.
+    const html = renderToStaticMarkup(createElement(EntityForm.Actions, {
+      submitLabel: 'حفظ',
+      isSubmitting: true,
+      submitDisabled: false,
+    }));
+    expect(html).toContain('data-entity-form-submit');
+    expect(html).toContain('disabled=""');
+
+    // And the explicit contract in both directions stays intact.
+    const idle = renderToStaticMarkup(createElement(EntityForm.Actions, {
+      submitLabel: 'حفظ',
+      isSubmitting: false,
+      submitDisabled: false,
+    }));
+    expect(idle).not.toContain('disabled=""');
+    const blocked = renderToStaticMarkup(createElement(EntityForm.Actions, {
+      submitLabel: 'حفظ',
+      submitDisabled: true,
+    }));
+    expect(blocked).toContain('disabled=""');
+  });
+
   it('marks form-level save errors as live alerts beside the action area', () => {
     const html = renderToStaticMarkup(createElement(EntityForm.ErrorSummary, {
       message: 'تعذر حفظ الوحدة',
