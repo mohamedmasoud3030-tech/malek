@@ -125,6 +125,8 @@ export type OwnerStatementPayload = {
   totalExpenses: number;
   totalCommission: number;
   netAmount: number;
+  /** Truthful settlement lifecycle label from the document registry; never inferred from amounts. */
+  statusLabel?: string | null;
   transactions: StatementTransaction[];
 };
 

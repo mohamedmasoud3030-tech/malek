@@ -190,7 +190,7 @@ export const documentTemplateRegistry: readonly DocumentTemplateEntry[] = [
     templateVersion: 1,
     supportedOutputs: OUTPUTS,
     requiredData: ['ownerName', 'totalRent', 'totalExpenses', 'totalCommission', 'netAmount', 'transactions'],
-    optionalData: ['periodFrom', 'periodTo', 'propertyTitle'],
+    optionalData: ['periodFrom', 'periodTo', 'propertyTitle', 'statusLabel'],
     businessReference: { field: 'ownerName', absentBehavior: 'omit', displayAsDocumentNo: false },
     statusLabels: {},
     signatureRoles: ['accountant', 'general_manager'],

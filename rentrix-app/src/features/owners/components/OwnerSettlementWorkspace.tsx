@@ -39,6 +39,7 @@ import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { toOwnerStatementDocumentPayload, type OwnerStatementData } from '@/services/documents/documentPayloadAdapters';
+import { getDocumentTemplateEntry, truthfulStatusLabel } from '@/services/documents/documentRegistry';
 import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
   approveOwnerSettlement,
@@ -192,7 +193,14 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
     payoutMutation.reset();
   };
 
-  const buildOwnerStatementData = (settlement: OwnerSettlementRecord) => ({
+  const buildOwnerStatementData = (settlement: OwnerSettlementRecord) => {
+    // The statement document must carry the settlement's TRUE lifecycle label
+    // from the document registry (pending/approved/paid/cancelled wording), so a
+    // cancelled settlement never prints as a live payable and an approved one
+    // never reads as paid. Same authority the professional owner report uses.
+    const settlementEntry = getDocumentTemplateEntry('owner_settlement');
+    const rawStatus = String(settlement.status).toLowerCase();
+    return {
     ownerName: settlement.owner_name,
     periodFrom: settlement.period_start,
     periodTo: settlement.period_end,
@@ -201,6 +209,9 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
     totalExpenses: settlement.owner_expenses + settlement.fee_vat_amount,
     totalCommission: settlement.management_fee_amount,
     netAmount: settlement.net_payable_amount,
+    statusLabel: settlementEntry
+      ? (truthfulStatusLabel(settlementEntry, rawStatus) ?? rawStatus)
+      : rawStatus,
     transactions: [
       {
         date: settlement.period_start,
@@ -231,7 +242,8 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
           }]
         : []),
     ],
-  });
+    };
+  };
 
   const handlePrint = (settlement: OwnerSettlementRecord) => {
     // Guard inside the async boundary so the handler fails closed with a

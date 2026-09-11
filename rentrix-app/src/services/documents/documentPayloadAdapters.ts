@@ -88,6 +88,7 @@ export const toOwnerStatementDocumentPayload = (data: OwnerStatementData): Owner
   totalExpenses: data.totalExpenses,
   totalCommission: data.totalCommission,
   netAmount: data.netAmount,
+  statusLabel: data.statusLabel ?? null,
   transactions: data.transactions,
 });
 

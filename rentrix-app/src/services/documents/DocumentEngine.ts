@@ -402,6 +402,10 @@ function buildOwnerStatementModel(entry: DocumentTemplateEntry, settings: Docume
     kpis: [
       kpi('اسم المالك', payload.ownerName),
       kpi('العقار', payload.propertyTitle),
+      // Truthful lifecycle label supplied by the caller from the document
+      // registry (e.g. a CANCELLED settlement prints as "…ملغي"). Omitted when
+      // absent — never inferred from amounts, never invented here.
+      ...(payload.statusLabel ? [kpi('حالة التسوية', payload.statusLabel)] : []),
       kpi('إجمالي الإيجارات', money(payload.totalRent, ctx)),
       kpi('إجمالي المصروفات', money(payload.totalExpenses, ctx)),
       kpi('عمولة إدارة الأملاك', money(payload.totalCommission, ctx)),

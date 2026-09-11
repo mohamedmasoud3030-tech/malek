@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { DocumentDataError, documentEngine } from './DocumentEngine';
 import type { DocumentCompanySettings } from './companyIdentity';
 import { collectDocumentTextChunks } from './DocumentRenderer';
+import { getDocumentTemplateEntry, truthfulStatusLabel } from './documentRegistry';
 
 const settings: DocumentCompanySettings = {
   companyName: 'شركة الأفق لإدارة الأملاك',
@@ -164,6 +165,46 @@ describe('canonical buildDocument — financial pass-through', () => {
       settings,
       payload: { ownerName: '', totalRent: 0, totalExpenses: 0, totalCommission: 0, netAmount: 0, transactions: [] },
     })).toThrow(/بيانات المستند ناقصة أو غير صالحة/);
+  });
+
+  it('owner statement carries the truthful settlement lifecycle label when supplied, and never invents one', () => {
+    const base = {
+      ownerName: 'أحمد المالكي',
+      periodFrom: '2026-07-01',
+      periodTo: '2026-07-31',
+      totalRent: 1500,
+      totalExpenses: 50,
+      totalCommission: 150,
+      netAmount: 1300,
+      transactions: [],
+    };
+    // A CANCELLED settlement must read as cancelled on the printed document —
+    // the amounts alone would otherwise present a dead settlement as a live
+    // payable (the F5 misrepresentation class, on the document surface).
+    const cancelled = documentEngine.buildDocument('owner_statement', {
+      settings,
+      payload: { ...base, statusLabel: 'كشف تسوية مالك ملغي' },
+    });
+    const statusKpi = cancelled.kpis.find((kpi) => kpi.label === 'حالة التسوية');
+    expect(statusKpi?.value).toBe('كشف تسوية مالك ملغي');
+    expect(collectDocumentTextChunks(cancelled).join(' ')).toContain('ملغي');
+
+    // No label supplied → no status KPI at all: the engine never guesses a
+    // lifecycle state from the amounts.
+    const withoutStatus = documentEngine.buildDocument('owner_statement', {
+      settings,
+      payload: base,
+    });
+    expect(withoutStatus.kpis.find((kpi) => kpi.label === 'حالة التسوية')).toBeUndefined();
+
+    // Lock the registry vocabulary the settlement workspace resolves these
+    // labels from, so the printed wording cannot silently degrade to raw enum
+    // values for any lifecycle state.
+    const entry = getDocumentTemplateEntry('owner_settlement');
+    expect(truthfulStatusLabel(entry, 'pending')).toContain('بانتظار الاعتماد');
+    expect(truthfulStatusLabel(entry, 'approved')).toContain('معتمد للصرف');
+    expect(truthfulStatusLabel(entry, 'paid')).toContain('مصروف ومسدد');
+    expect(truthfulStatusLabel(entry, 'cancelled')).toContain('ملغي');
   });
 });
 

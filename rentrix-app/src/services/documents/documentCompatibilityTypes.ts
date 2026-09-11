@@ -56,6 +56,13 @@ export interface OwnerStatementData {
   totalExpenses: number;
   totalCommission: number;
   netAmount: number;
+  /**
+   * Truthful lifecycle label of the settlement this statement was built from,
+   * resolved through the document registry (e.g. "…ملغي" for a cancelled
+   * settlement). Never derived from amounts: an approved or cancelled
+   * settlement must not read as a live payable.
+   */
+  statusLabel?: string | null;
   transactions: Array<{
     date: string;
     type: string;
