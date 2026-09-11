@@ -274,11 +274,7 @@ export async function loadApprovedS08Reviews(): Promise<S08ApprovedReview[]> {
 }
 
 export function createS09RequestId(prefix = 's09'): string {
-  const unique =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return `${prefix}-${unique}`;
+  return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
 export type CreateS09DraftInput = {
