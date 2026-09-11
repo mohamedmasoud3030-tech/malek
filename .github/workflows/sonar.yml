@@ -100,7 +100,9 @@ jobs:
           # results stay queryable (this organization's plan blocks anonymous
           # reads of non-main branch data) and replace the stale 2026-08-07
           # snapshot. The scanned tree is the PR head, i.e. main + the
-          # remediation commits in this branch.
+          # remediation commits in this branch. CI autoconfig is disabled so
+          # the scanner does not re-route the report into a PR analysis.
+          ARGS+=("-Dsonar.ci.autoconfig.disabled=true")
           set +e
           sonar-scanner "${ARGS[@]}" 2>&1 | tee /tmp/sonar-scan.log
           ec="${PIPESTATUS[0]}"
