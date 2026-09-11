@@ -69,6 +69,12 @@ const REVIEWED = new Map([
   // features/financials/tax-authority/tax-readiness-boundary.ts, whose literal
   // rpc payload the primary scanner resolves automatically.
   ['rpc-payload|features/owners/services/owner-settlements-service.ts|create_owner_settlement_draft_atomic', 1],
+  // s09_reverse_correction is called with a variable payload by design: the
+  // pure fail-closed builder buildReverseS09Args (trim + empty-reason refusal,
+  // typed ReverseS09Args {p_correction_id, p_reason}) is the single argument
+  // source, regression-locked by the s09 pglite suite (NOW-4 `9ca483b4`) and
+  // browser-proven end-to-end (e2e/s09-correction-panel-journey.spec.ts).
+  ['rpc-payload|features/financials/services/s09-correction-service.ts|s09_reverse_correction', 1],
 ]);
 
 const RECEIPT_DYNAMIC_TARGET = {
