@@ -2,12 +2,12 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-11T06:55Z (Asia/Muscat) — NOW-4 + NOW-5 + NOW-6 + NOW-7 complete locally; **push BLOCKED — no GitHub credential exists in this sandbox**
+**Last updated:** 2026-09-11T07:25Z (Asia/Muscat) — NOW-4…NOW-8 complete locally; **push BLOCKED — no GitHub credential exists in this sandbox**
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `bb45a0d0` — G5/NOW-7: S08 review surface on the deployed list RPC; lifecycle/fingerprint/permission/retry locks — **LOCAL ONLY, not pushed**
+**Last work commit (code/schema/evidence):** `035db0e2` — G3/NOW-8: concurrency strategy + EntityForm double-submit fix — **LOCAL ONLY, not pushed**
 **Remote HEAD (actual, verified via ls-remote 2026-09-11 04:28Z):** `bcdf6944672c46c2417b48562654036cca26c82d`
-**Local HEAD:** `bb45a0d0` — **7 ahead of remote** (`9ca483b4` NOW-4, `61eb62ad` docs, `9767ef03` NOW-5, `c2084123` docs, `342b18ca` NOW-6, `faa4980a` docs, `bb45a0d0` NOW-7); push blocked solely by missing credentials (see §BLOCKED)
+**Local HEAD:** `035db0e2` — **9 ahead of remote** (`9ca483b4` NOW-4, `61eb62ad` docs, `9767ef03` NOW-5, `c2084123` docs, `342b18ca` NOW-6, `faa4980a` docs, `bb45a0d0` NOW-7, `91f2ad71` docs, `035db0e2` NOW-8); push blocked solely by missing credentials (see §BLOCKED)
 **Working tree:** **clean** — verified `git status`, no mode changes
 **Branch tracking:** `origin/reconstruction/checkpoint-20260909`
 
@@ -29,18 +29,18 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch | `reconstruction/checkpoint-20260909` |
 | Remote HEAD | `bcdf6944` — docs: G5 UI-absent RPCs closed (verified via ls-remote 04:28Z) |
-| Local HEAD | `bb45a0d0` — **7 ahead, NOT PUSHED (no credential in sandbox)**: `9ca483b4` (NOW-4 reverse surface + F13 fix), `61eb62ad` (docs), `9767ef03` (NOW-5 non-expense coverage), `c2084123` (docs), `342b18ca` (NOW-6 document status truth), `faa4980a` (docs), `bb45a0d0` (NOW-7 S08 review surface) |
+| Local HEAD | `035db0e2` — **9 ahead, NOT PUSHED (no credential in sandbox)**: `9ca483b4` (NOW-4), `61eb62ad` (docs), `9767ef03` (NOW-5), `c2084123` (docs), `342b18ca` (NOW-6), `faa4980a` (docs), `bb45a0d0` (NOW-7), `91f2ad71` (docs), `035db0e2` (NOW-8 G3 strategy + double-submit fix) |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Commits since previous handoff | **16**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `0d187c48` (final checkpoint docs), `9fac02ac` (G5 offset), `95a0a2af` (docs), `411167f6` (G5 recovery+S09), `bcdf6944` (docs), then **local-only**: `9ca483b4` (NOW-4), `61eb62ad` (docs), `9767ef03` (NOW-5), `c2084123` (docs), `342b18ca` (NOW-6), `faa4980a` (docs), `bb45a0d0` (NOW-7) |
+| Commits since previous handoff | **18**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `0d187c48` (final checkpoint docs), `9fac02ac` (G5 offset), `95a0a2af` (docs), `411167f6` (G5 recovery+S09), `bcdf6944` (docs), then **local-only**: `9ca483b4` (NOW-4), `61eb62ad` (docs), `9767ef03` (NOW-5), `c2084123` (docs), `342b18ca` (NOW-6), `faa4980a` (docs), `bb45a0d0` (NOW-7), `91f2ad71` (docs), `035db0e2` (NOW-8) |
 | Working tree | **clean** — 0 modified |
 | Tracked files | ~1,746 |
-| Migrations in repo | 100 (**0 added by NOW-4/NOW-5/NOW-6/NOW-7**) |
+| Migrations in repo | 100 (**0 added by NOW-4…NOW-8**) |
 | Production ledger | 109 rows |
 | Unit/integration test files | 559 |
 | Playwright specs | 29 |
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
-| Fresh baseline (NOW-7, 2026-09-11 06:25-06:55Z) | typecheck clean, gates 7/7, guardian PASS all layers, migration-hygiene OK (needs `origin/main` ref — see §B), business-rules v2.0.0 382a0b8c unchanged, s09+S08 suite **27/27**, canonical documents suite 38/38, workspace 6/6, design-system inventory 13/13, axe+entity-form 23/23, full sharded 20-shard **559 files / 4065 tests / 0 failures / 0 INFRA — PASS** |
+| Fresh baseline (NOW-8, 2026-09-11 07:00-07:25Z) | typecheck clean, gates 7/7, guardian PASS all layers, migration-hygiene OK (needs `origin/main` ref — see §B), business-rules v2.0.0 382a0b8c unchanged, s09+S08 suite 27/27, canonical documents suite 38/38, entity-form **9/9** (incl. G3 double-submit race lock), design-system inventory 13/13, full sharded 20-shard **559 files / 4066 tests / 0 failures / 0 INFRA — PASS** |
 | Push verification | **BLOCKED** — `git push` → `could not read Username for 'https://github.com'`. No PAT, no SSH key, no credential helper, no token env var in this sandbox. Remote tip verified `bcdf6944` at 04:28Z. |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
@@ -137,7 +137,7 @@ From §A Standing constraints + §J:
 
 - G1 Authenticated app-shell E2E: BLOCKED, no credentials, no browser test ever reaches authenticated shell — **NOT YET PROVEN**
 - G2 Intermittent bootstrap stall root cause: OPEN, BLOCKED by G1, mitigation proven (withCompanyResolutionTimeout 10 PASS), root cause unproven — **NOT YET PROVEN**
-- G3 Hosted concurrency / Web Locks: NOT EXERCISED under real hosted conditions — **NOT YET PROVEN**
+- G3 Hosted concurrency / Web Locks: local verification strategy + per-scenario verdicts committed (`docs/execution/G3_CONCURRENCY_VERIFICATION_STRATEGY.md`, NOW-8 `035db0e2`); one proven client defect fixed (EntityForm double-submit trap); hosted checks C1/C3/C5/C6/C8 remain BLOCKED by G1 — **PARTIALLY PROVEN (local); HOSTED NOT YET PROVEN**
 - G4 Runtime behaviour of newly applied migrations under genuine concurrent/hosted traffic: structurally verified but not exercised by live usage — **NOT YET PROVEN**
 - G5 Remaining financial-chain reviews: non-expense `source_type` correction coverage **PROVEN (NOW-5, `9767ef03`)**, cash/fees/tax/offset/collection/recovery truth in owner statements AND documents **PROVEN (NOW-6, `342b18ca` — one defect found, fixed, locked)**, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations) **PROVEN (NOW-7, `bb45a0d0` — one F13-class defect found, fixed, locked; no-LIMIT read behaviour recorded as governance note)**; hosted browser coverage for all five G5/G6 panels — **NOT YET PROVEN**
 - G5 closure durability: `9ca483b4` exists **only in this sandbox** until the push blocker clears — remote does not yet carry the reverse surface or the list-envelope fix — **NOT YET PUSHED**
@@ -146,36 +146,31 @@ From §A Standing constraints + §J:
 
 ### NOW (single task)
 
-**NOW-8: G3 hosted concurrency / Web Locks — safe verification strategy design (no code change without reproduction)**
+**NOW-9: complete the proven double-submit guard class (NOW-8 residual R1) — every mutation-submitting form surface pending-gated**
 
-(NOW-4 — `s09_reverse_correction` surface + F13 list-envelope fix — COMPLETE at local `9ca483b4`.
-NOW-5 — non-expense S09 coverage — COMPLETE at local `9767ef03`.
-NOW-6 — document surface truth — COMPLETE at local `342b18ca`.
-NOW-7 — remaining S08/S09 review paths — COMPLETE at local `bb45a0d0`. All proven in replay; their
-push is the only thing blocked, by missing credentials, not by work.)
+(NOW-4 `9ca483b4`, NOW-5 `9767ef03`, NOW-6 `342b18ca`, NOW-7 `bb45a0d0`, NOW-8 `035db0e2` — all
+COMPLETE locally; push is the only thing blocked, by missing credentials, not by work.)
 
-- Determine whether concurrent sessions/tabs can race auth/session restoration, duplicate
-  initialization, corrupt shared state, bypass company isolation, or produce inconsistent financial
-  state. Design the verification strategy FIRST; touch code only where a race is actually
-  reproduced (local reproduction counts: two vitest workers / two PGlite sessions / two mocked tabs
-  against the same client modules; hosted-browser reproduction remains BLOCKED by G1).
-- Survey targets: auth/session bootstrap (`useAuth`, supabase client singleton, session restore),
-  initialization paths (bootstrap/stall territory is G2-BLOCKED — design around it, do not re-run
-  it), shared caches (`financial-cache` invalidation), mutation idempotency at the client
-  (request-id generators), and Web Locks usage if any (`navigator.locks`).
-- Server-side double-write protection is already locked for S08/S09 (lifecycle gates, request-id
-  unique indexes, fingerprint checks — NOW-4/5/7); the open question is the CLIENT under
-  concurrency: duplicate mounts, duplicate submits, stale-session writes, cross-company leakage
-  via cached identities.
-- Deliverable: a written strategy in `docs/execution/` (per-scenario: how to reproduce locally,
-  what evidence would prove/disprove, what the fix authority would be) + any locally reproduced
-  race fixed at source with regression locks. No speculative hardening without reproduction.
+- NOW-8 proved and fixed the shared-component trap (`EntityForm.Actions`: `submitDisabled ?? isSubmitting`
+  → `||`). Residual R1: ~15 call sites pass **no** `isSubmitting` at all (e.g. `expenses-section.tsx`,
+  `maintenance-request-form.tsx`, `property-form-modal.tsx`, `deposit-action-forms.tsx`,
+  `receipts-page.tsx`, `bank-reconciliation-page.tsx`, `owner-relationships.tsx`,
+  `OnboardingChecklist.tsx`, `change-password-page.tsx`, `commissions-view.tsx`, `quick-payment-form.tsx`,
+  `unit-form-modal.tsx`, `service-provider-form-dialog.tsx`, `mobile-form-stepper.tsx` consumers), so the
+  component fix cannot protect them. The defect CLASS is already reproduced (NOW-8 C4) — this NOW
+  completes it mechanically: for each site, verify whether a pending gate exists (isSubmitting prop,
+  submitDisabled pending term, or handler-level `isPending` early-return); where none exists, add the
+  `isSubmitting` prop from the owning mutation. NO logic invention, no other refactors.
+- Also sweep non-EntityForm submit surfaces (plain `<Button type="submit">` / onClick mutate) for the
+  same class — the four G5/G6 panels were verified gated in NOW-8; the sweep covers the rest.
+- Method: inspect each site → reproduce locally ONLY where a gap is found (static-markup or jsdom test
+  pattern from `entity-form.test.ts`) → minimal prop-level fix → lock → gates → commit → HANDOFF.
 
-**Acceptance:** strategy document committed; every locally reproducible race either fixed at source
-with regression coverage or recorded with evidence why it is not a defect; zero code changes where
-nothing was reproduced; gates green; HANDOFF updated.
+**Acceptance:** every mutation-submitting form surface either (a) pending-gated at the button, or
+(b) guarded in its submit handler, or (c) recorded with evidence why no mutation is reachable
+double-click; regressions lock the changed sites; 20-shard suite green; HANDOFF updated.
 
-### NEXT (ordered, after NOW-8)
+### NEXT (ordered, after NOW-9)
 
 1. **Governance decision needed (user/approved source, do not invent):** non-enumerated S09
    `source_type` labels are bound only to the APPROVED S08 review with no source-existence check
@@ -193,6 +188,8 @@ nothing was reproduced; gates green; HANDOFF updated.
    `owner_funds_event_cutovers`, `due_from_owners` movements; until then they remain local/replay-proven only
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-8 (local `035db0e2`, 2026-09-11 07:00-07:25Z): G3 concurrency verification strategy + EntityForm double-submit fix.** Surveyed all G3 questions; per-scenario verdicts with evidence in `docs/execution/G3_CONCURRENCY_VERIFICATION_STRATEGY.md` (C1–C8 matrix, Web Locks verdict: lawfully absent — supabase-js owns cross-tab auth coordination, the database owns write ordering; residual risks R1–R3 recorded, hosted checks specified as an executable plan for when G1 unblocks). **One proven defect, reproduced red-first and fixed at the shared source (C4):** `EntityForm.Actions` computed `disabled={submitDisabled ?? isSubmitting}` — any caller-supplied `submitDisabled` (35 call sites, ~20 validation-only) silently overrode the pending guard → submit stayed clickable mid-mutation → double-submit race on every such form. Fixed to `submitDisabled || isSubmitting` (pending ALWAYS disables); locked in `entity-form.test.ts` (asserts the rendered `disabled=""` attribute — Button classes contain `disabled:` Tailwind variants so bare-substring matching is wrong). Evidence: entity-form 9/9, sharded 20-shard **559/4066 / 0 failures / 0 INFRA**, gates 7/7, guardian PASS, hygiene OK, typecheck clean, business-rules v2.0.0 382a0b8c unchanged, 0 migrations — **PROVEN LOCALLY (hosted concurrency checks BLOCKED by G1)**
 
 - **NOW-7 (local `bb45a0d0`, 2026-09-11 06:25-06:55Z): remaining S08/S09 review paths.** **Proven defect (F12/F13 class) fixed at source:** both `loadApprovedS08Reviews` implementations (S09 correction service + owner-funds cutover service) hand-rolled direct `s08_frozen_reviews` SELECTs — since migration 11 that read requires `financial.reports.view` (RLS tightened to stop frozen-evidence exposure), stricter than the server's own S09-anchor/cutover-governance contracts and revocable per-employee → panels break for users the server accepts; meanwhile the deployed metadata RPC `s08_list_frozen_reviews` (granted to `authenticated`, company-scoped, metadata-only) had ZERO client callers. Both loaders now call the RPC through a new strict `parseS08ReviewListEnvelope` (`{company_id, reviews:[…]}`, fail-closed `S08_LIST_RESPONSE_INVALID`, APPROVED filter + prior ordering preserved). Four new real-SQL locks (suite 23→27): envelope contract incl. **no evidence-key leakage** (analysis_results/reconciliation_evidence/exceptions/review_scope/review_notes/reviewer_id/snapshot never exposed) fed unmodified through the client parser; foreign-company isolation; **fingerprint integrity** (dataset changed under ANALYZED review → approval refused `S08_FINGERPRINT_CHANGED_UNDER_REVIEW`; `s08_verify_fingerprint` reports matches=false without mutating); permissions/retries (duplicate approval refused = no double writes; MANAGER refused approval; rejection requires non-empty reason before lifecycle; APPROVED is final; row unchanged after every refusal). **Verified non-defects (recorded, not changed):** deployed list RPCs have no LIMIT (inventing one needs an approved source); cutover table read has its own lawful RLS and no deployed list RPC; S08 analyze/reconcile functions have no client surface by design. Evidence: s09+S08 suite **27/27**, sharded 20-shard **559/4065 / 0 failures / 0 INFRA**, gates 7/7, guardian PASS, hygiene OK, typecheck clean, business-rules v2.0.0 382a0b8c unchanged, 0 migrations — **PROVEN BY UNIT/INTEGRATION TEST + REPLAY (local only; not pushed)**
 
@@ -485,7 +482,15 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - Scope: 4 files (+676/−12), **0 migrations**, 0 new permission keys, 0 new mounts
 - **Not measured:** hosted browser/E2E for the panel, hosted concurrency, hosted parity re-measure, **push (blocked — no credential)**
 
-**Fresh NOW-7 measurement (2026-09-11 06:25-06:55Z, commit `bb45a0d0` — local only) — THIS IS THE LATEST MEASURED EVIDENCE:**
+**Fresh NOW-8 measurement (2026-09-11 07:00-07:25Z, commit `035db0e2` — local only) — THIS IS THE LATEST MEASURED EVIDENCE:**
+- entity-form suite: **9/9 PASS** (+1 G3 double-submit race lock, red before the component fix)
+- sharded regression **20 shards**: **559 files / 4066 tests / 0 failures / 0 INFRA kills — PASS** (was 4065; +1)
+- typecheck clean · db0:gate **7/7** · guardian **PASS all layers** · migration-hygiene **OK**
+- business-rules `v2.0.0 382a0b8c…` — **unchanged** (0 migrations)
+- Scope: 2 src files (+33/−1) + 1 strategy doc, 0 migrations, 0 new permission keys
+- **Not measured:** hosted browser/E2E, hosted concurrency (G1-blocked; plan committed), parity re-measure, **push (blocked — no credential)**
+
+**Prior NOW-7 measurement (2026-09-11 06:25-06:55Z, commit `bb45a0d0` — local only):**
 - s09+S08 suite: **27/27 PASS** (+4 real-SQL: envelope/evidence-leak lock, company isolation, fingerprint-drift approval block, permission/retry locks)
 - sharded regression **20 shards**: **559 files / 4065 tests / 0 failures / 0 INFRA kills — PASS** (was 4061; +4; first run had 1 SIGKILLed shard from a concurrent vitest I was running — INFRA per §L, clean rerun is the verdict)
 - typecheck clean · db0:gate **7/7** · guardian **PASS all layers** · migration-hygiene **OK**
@@ -782,23 +787,23 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 06:55Z — NOW-4 + NOW-5 + NOW-6 + NOW-7 committed locally, push BLOCKED)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 07:25Z — NOW-4…NOW-8 committed locally, push BLOCKED)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `bb45a0d0` — G5/NOW-7: S08 review surface via deployed list RPC + lifecycle/fingerprint/permission/retry locks — **LOCAL ONLY** |
-| Local branch tip | `bb45a0d0` (7 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`) |
+| Last work commit (code/schema/evidence) | `035db0e2` — G3/NOW-8: concurrency strategy + EntityForm double-submit fix — **LOCAL ONLY** |
+| Local branch tip | `035db0e2` (9 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`, `91f2ad71`, `035db0e2`) |
 | Remote branch tip | `bcdf6944` — verified via `git ls-remote` 2026-09-11 04:28Z |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
-| All gates (fresh NOW-7) | s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4065 PASS, 0 INFRA** · inventory 13/13 · axe+entity-form 23/23 · gates 7/7 · guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) |
+| All gates (fresh NOW-8) | entity-form 9/9 · s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4066 PASS, 0 INFRA** · inventory 13/13 · gates 7/7 · guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) |
 | Push status | **BLOCKED — no credential in sandbox** (see §BLOCKED). Do not claim pushed. Do not fabricate a remote SHA. |
 
-**Reconstruction is NOT declared complete.** **Latest measurement: 4065 tests / 0 failures / 0 INFRA at `bb45a0d0` (local).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN (G3 local-strategy design is NOW-8), **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, and the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), but no hosted browser run covers any panel, seven commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4066 tests / 0 failures / 0 INFRA at `035db0e2` (local).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — locally proven (strategy + C1–C8 verdicts committed at `035db0e2`; one client defect found, fixed, locked); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, and the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), but no hosted browser run covers any panel, nine commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
 
-**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`bb45a0d0` or newer); (2) NOW-8 — G3 concurrency safe-verification-strategy design (no code change without reproduction); (3) governance decision on non-enumerated source types (needs approved source — do not invent); (4) G4 runtime, parity re-measure, final DoD.
+**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`035db0e2` or newer); (2) NOW-9 — complete the double-submit guard class across the ~15 unprotected EntityForm call sites + non-EntityForm submit sweep; (3) governance decision on non-enumerated source types (needs approved source — do not invent); (4) G4 runtime, parity re-measure, final DoD sweep.
 
 ---
 
