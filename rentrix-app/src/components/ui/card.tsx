@@ -42,8 +42,10 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
   return <div data-card-header className={cn('space-y-1 p-3.5 sm:p-4', className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-[15px] font-bold leading-6 sm:text-[16px]', className)} {...props} />;
+export function CardTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+  // Children are rendered explicitly (not only via the spread) so accessibility
+  // analysis can see the heading has content.
+  return <h3 className={cn('text-[15px] font-bold leading-6 sm:text-[16px]', className)} {...props}>{children}</h3>;
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

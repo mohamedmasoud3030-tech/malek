@@ -230,6 +230,9 @@ const HeaderUserMenu = memo(function HeaderUserMenu({
               ref={menuItemListRef}
               role="menu"
               aria-label="قائمة المستخدم"
+              // tabIndex -1: the menu container must be programmatically
+              // focusable (ARIA menu pattern) without joining the tab ring.
+              tabIndex={-1}
               className="space-y-0.5 p-1.5"
             >
               {canOpenSettings ? (
