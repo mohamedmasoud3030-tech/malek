@@ -142,7 +142,7 @@ export function AutomationCenterView() {
   const ruleActions = (rule: AutomationRule) => {
     const queueSupported = ['contract_expiry', 'overdue_invoice', 'maintenance_overdue'].includes(rule.rule_type);
     return (
-      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <div className="flex">
         <ActionMenu
           label={`إجراءات ${rule.name}`}
           items={[

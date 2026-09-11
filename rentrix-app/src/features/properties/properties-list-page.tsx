@@ -224,8 +224,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 render: (property) => (
                   <div
                     className="flex items-center justify-end"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
                   >
                     <ActionMenu
                       label={`إجراءات ${property.title ?? "العقار"}`}

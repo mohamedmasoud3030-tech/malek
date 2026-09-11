@@ -98,7 +98,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
       header: 'إجراءات',
       priority: 'actions',
       render: (provider) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات ${provider.name}`}
             items={[

@@ -220,7 +220,7 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
       header: 'الإجراء',
       priority: 'actions',
       render: (row) => canReverse && row.status !== 'REVERSED' ? (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات استحقاق ${formatCompactDate(row.accrualDate)}`}
             items={[{

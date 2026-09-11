@@ -226,7 +226,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
     { key: 'context', header: 'السياق', priority: 'secondary', render: (receipt) => formatReceiptContext(receipt) },
     { key: 'status', header: 'الحالة', priority: 'secondary', render: (receipt) => <StatusBadge tone={getReceiptStatusTone(receipt.status)}>{formatReceiptStatusLabel(receipt.status)}</StatusBadge> },
     { key: 'actions', header: 'الإجراءات', priority: 'actions', render: (receipt) => (
-      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <div className="flex">
         <ActionMenu
           label={`إجراءات الإيصال ${receipt.receipt_number}`}
           items={[

@@ -103,7 +103,7 @@ export function LandsView({
   };
 
   const rowActions = (row: LandRecord) => (
-    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+    <div className="flex">
       <ActionMenu
         label={`إجراءات ${row.name || row.plot_no || 'الأرض'}`}
         items={[

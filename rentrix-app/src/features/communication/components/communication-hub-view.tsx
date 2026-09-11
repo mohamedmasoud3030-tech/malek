@@ -74,7 +74,7 @@ export function CommunicationHubView({
   const clearFilters = () => onFiltersChange({ query: '', channel: 'all', status: 'all' });
 
   const rowActions = (row: CommunicationRecord) => (
-    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+    <div className="flex">
       <ActionMenu
         label={`إجراءات ${row.contact_name}`}
         items={[

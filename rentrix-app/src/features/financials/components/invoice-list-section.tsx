@@ -263,7 +263,7 @@ export function InvoiceListSection({
           ...(onExportInvoice ? [{ id: 'pdf', label: 'PDF', icon: Download, onClick: () => onExportInvoice(invoice.id) }] : []),
         ];
         return (
-          <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-end">
             <ActionMenu
               variant="labeled"
               label={`إجراءات ${invoice.reference ?? 'الفاتورة'}`}

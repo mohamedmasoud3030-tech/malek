@@ -61,7 +61,7 @@ export function OverdueInvoicesTable({ rows, onSelectInvoice, onCollectInvoice }
             priority: 'actions' as const,
             header: 'إجراء',
             render: (row: OverdueInvoiceReportRow) => (
-              <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+              <div className="flex">
                 <ActionMenu
                   label={`إجراءات ${row.invoiceReference ?? 'الفاتورة'}`}
                   items={[{

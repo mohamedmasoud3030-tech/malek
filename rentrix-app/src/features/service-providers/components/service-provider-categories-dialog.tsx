@@ -67,7 +67,7 @@ export function ServiceProviderCategoriesDialog({ open, onOpenChange }: Readonly
     { key: 'name', header: 'النوع', render: (category) => <span className="font-bold">{category.name}</span> },
     { key: 'description', header: 'الوصف', render: (category) => category.description ?? '—' },
     { key: 'actions', header: 'إجراءات', priority: 'actions', render: (category) => (
-      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <div className="flex">
         <ActionMenu
           label={`إجراءات نوع الخدمة ${category.name}`}
           items={[

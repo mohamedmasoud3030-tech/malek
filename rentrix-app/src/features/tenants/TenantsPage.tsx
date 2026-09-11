@@ -145,8 +145,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       render: (tenant) => (
         <div
           className="flex items-center"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
         >
           <ActionMenu
             label={`إجراءات ${tenant.person.full_name}`}

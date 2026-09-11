@@ -415,7 +415,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (meter) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات العداد ${meter.meter_number}`}
             items={[{
@@ -489,7 +489,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       key: 'actions', priority: 'actions' as const,
       header: 'إجراء',
       render: (bill) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات ${bill.bill_number ?? 'فاتورة المرافق'}`}
             items={[

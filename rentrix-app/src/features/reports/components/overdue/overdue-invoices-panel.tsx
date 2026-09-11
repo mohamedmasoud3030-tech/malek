@@ -79,7 +79,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
       header: 'إجراء',
       priority: 'actions',
       render: (row) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات ${row.invoiceReference ?? 'الفاتورة'}`}
             items={[{ id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setSelected(row) }]}

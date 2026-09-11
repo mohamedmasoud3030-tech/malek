@@ -124,7 +124,7 @@ export function UnitsList({
       header: "إجراءات",
       priority: "actions",
       render: (unit) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات وحدة ${unit.unit_number}`}
             items={[
