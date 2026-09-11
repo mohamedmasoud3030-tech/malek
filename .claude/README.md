@@ -6,7 +6,7 @@ This directory contains the repository-scoped Claude Code helpers used by Claude
 
 - `agents/`: a small vendored subset of Anthropic's official `feature-dev` agents (`code-explorer`, `code-architect`, `code-reviewer`).
 - `skills/frontend-design/`: Anthropic's official `frontend-design` skill, vendored so cloud sessions do not depend on runtime plugin installation.
-- `skills/{architecture-decision,implementation-planning,implementation,review,database}/`: thin Claude discovery adapters pointing to canonical root `skills/` procedures.
+- `skills/{architecture-decision,review,database}/`: thin Claude discovery adapters pointing to canonical root `skills/` procedures. (The `implementation` and `implementation-planning` adapters were removed together with their canonical skills in the 2026-09-11 post-merge trim; they remain recoverable from git history.)
 - `commands/`: MALEK-specific autonomous task and final-review workflows.
 - `rules/`: small path-aware guardrails for Git, frontend/UI, database/finance, and validation.
 

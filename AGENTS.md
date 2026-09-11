@@ -17,13 +17,13 @@ The Canonical Pack contains eight documents covering product scope, operating mo
 
 Canonical task skills live under `skills/`; start with `skills/README.md`. They are agent-agnostic repository procedures.
 
-- `architecture-decision` — architecture, durable trade-offs, ADRs and threat modeling.
-- `implementation-planning` — executable plans for non-trivial approved changes.
-- `implementation` — default coding/refactor/bug-fix workflow, including source verification, prove-it testing and old-code cleanup.
-- `review` — risk-routed final review, report-only unless fixes are requested.
 - `database` — SQL, migrations, RPCs, RLS, grants, indexes and DB contracts.
+- `review` — risk-routed final review, report-only unless fixes are requested.
+- `architecture-decision` — architecture, durable trade-offs, ADRs and threat modeling.
 
-Specialized skills kept because they match current work are `frontend-design`, `webapp-testing` and `skill-creator`.
+The set was trimmed on 2026-09-11 to the skills matching the remaining work profile.
+`implementation`, `implementation-planning`, `frontend-design`, `webapp-testing` and
+`skill-creator` were removed and remain recoverable from git history.
 
 Load only what the task needs. Project/canonical rules outrank generic skill advice. Verify changing framework/library behavior against the repository-pinned version and official sources instead of assuming a remembered API.
 
