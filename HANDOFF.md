@@ -41,7 +41,7 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
 | Fresh baseline (NOW-8, 2026-09-11 07:00-07:25Z) | typecheck clean, gates 7/7, guardian PASS all layers, migration-hygiene OK (needs `origin/main` ref — see §B), business-rules v2.0.0 382a0b8c unchanged, s09+S08 suite 27/27, canonical documents suite 38/38, entity-form **9/9** (incl. G3 double-submit race lock), design-system inventory 13/13, full sharded 20-shard **559 files / 4066 tests / 0 failures / 0 INFRA — PASS** |
-| Push verification | **DONE — remote == local `337a3046`** (six push/verify cycles 2026-09-11 10:05-10:45Z, each verified via `git ls-remote`). Hosted CI at tip: CI 34584434977 SUCCESS + Browser Readiness 34585751072 SUCCESS (full record in the NOW-14 block and §K). |
+| Push verification | **DONE — remote == local at every step; final tip `6af81c70`** (eight push/verify cycles 2026-09-11 10:05-11:15Z, each verified via `git ls-remote`). Hosted CI at the final tip: run 34587311312 SUCCESS (attempt 2; attempt-1 single 5s-timeout flake classified INFRA, clean rerun 4069/4069) · Browser Readiness 34585751072 SUCCESS at `337a3046` (code-identical to tip). Full record in the NOW-14 block and §K. |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
 
@@ -882,7 +882,7 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 | Last work commit (code/schema/evidence) | `337a3046` — NOW-14 gate fixes: reviewed dynamic contract registry entry (gate-infra-only; last product-src change remains `035db0e2` NOW-8; `bc3b0c4c` touched one vitest lock file) — **ON REMOTE** |
 | Local branch tip | `337a3046` (+ this HANDOFF-update commit pushed immediately after — remote and local have been kept equal at every NOW-14 step) |
 | Remote branch tip | `337a30463a9ddb96113d07f933d50f3789108e7a` — **verified via `git ls-remote` 2026-09-11 ~09:35Z** |
-| Hosted CI at tip | CI run 34584434977 **SUCCESS** (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) |
+| Hosted CI at tip | CI run 34587311312 **SUCCESS at `6af81c70` (docs tip, attempt 2)** — attempt 1 had one INFRA-class flake (permission-catalog pglite full-replay test hit its 5s timeout under runner load, 1/4069; identical job green at `337a3046` and on the clean rerun — a timed-out worker under load is INFRA, not a verdict). Code-identical green before it: CI run 34584434977 **SUCCESS** at `337a3046` (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) — not re-dispatched over the docs-only delta (evidence continuity over identical code) |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
