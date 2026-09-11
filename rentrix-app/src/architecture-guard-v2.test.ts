@@ -31,7 +31,11 @@ describe('architecture guard v2 contract', () => {
   });
 
   it('keeps financials independent from reports and removes the retired finance-hub edge', () => {
-    expect(guard).toContain("['financials', new Set(['auth', 'contracts', 'properties', 'settings'])]");
+    // financials→owners is a reviewed hook-only seam (usePropertyOwners /
+    // useOwnerAgreements: an OWNER-charged expense may only be allocated to a
+    // real owner with an active agreement — migration-12 allocation law).
+    // The exact-set literal keeps the reports and finance-hub edges removed.
+    expect(guard).toContain("['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings'])]");
     expect(guard).not.toContain("['finance-hub'");
   });
 
