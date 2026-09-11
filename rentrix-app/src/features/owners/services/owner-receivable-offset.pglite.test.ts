@@ -25,7 +25,6 @@ import {
 import { assumeIdentity } from '../../../p1/replay-bootstrap';
 import {
   OwnerReceivableEvidenceError,
-  applyOwnerReceivableOffset,
   buildApplyOwnerOffsetPayload,
   parseApplyOwnerOffsetResult,
   parseOwnerReceivable,

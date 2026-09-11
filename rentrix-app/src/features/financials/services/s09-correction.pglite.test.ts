@@ -979,7 +979,9 @@ describe('S08 review surface — list RPC, fingerprint integrity, permissions, r
   });
 
   it('approval is blocked when the dataset changed under review; verify reports the drift without mutating', async () => {
-    const reviewA = await makeApprovedReview();
+    // The approved review's own creation is the setup; the binding is not read
+    // because the drift below is what the assertion targets.
+    await makeApprovedReview();
     // Dataset change #1: a new COMPANY expense posting (new journal batch).
     // COMPANY responsibility needs no owner allocation evidence (migration 12
     // only gates OWNER-charged expenses) and changes the fingerprint the same way.

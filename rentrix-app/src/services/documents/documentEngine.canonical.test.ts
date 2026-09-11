@@ -201,6 +201,7 @@ describe('canonical buildDocument — financial pass-through', () => {
     // labels from, so the printed wording cannot silently degrade to raw enum
     // values for any lifecycle state.
     const entry = getDocumentTemplateEntry('owner_settlement');
+    if (!entry) throw new Error('owner_settlement template entry missing from the registry');
     expect(truthfulStatusLabel(entry, 'pending')).toContain('بانتظار الاعتماد');
     expect(truthfulStatusLabel(entry, 'approved')).toContain('معتمد للصرف');
     expect(truthfulStatusLabel(entry, 'paid')).toContain('مصروف ومسدد');
