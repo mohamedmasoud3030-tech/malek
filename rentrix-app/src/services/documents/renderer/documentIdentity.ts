@@ -84,18 +84,18 @@ export function canonicalSerialize(value: unknown, seen: WeakSet<object> = new W
     if (objectValue instanceof Map) {
       const entries = [...objectValue.entries()]
         .map(([key, entry]) => `${canonicalSerialize(key, seen)}=>${canonicalSerialize(entry, seen)}`)
-        .sort();
+        .sort((a, b) => a.localeCompare(b));
       return `m{${entries.join(',')}}`;
     }
 
     if (objectValue instanceof Set) {
-      const entries = [...objectValue.values()].map((entry) => canonicalSerialize(entry, seen)).sort();
+      const entries = [...objectValue.values()].map((entry) => canonicalSerialize(entry, seen)).sort((a, b) => a.localeCompare(b));
       return `t{${entries.join(',')}}`;
     }
 
     // Plain object: sort keys for order-independence.
     const record = objectValue as Record<string, unknown>;
-    const keys = Object.keys(record).sort();
+    const keys = Object.keys(record).sort((a, b) => a.localeCompare(b));
     const body = keys.map((key) => `s${key.length}:${key}:${canonicalSerialize(record[key], seen)}`).join(',');
     return `o{${body}}`;
   } catch {

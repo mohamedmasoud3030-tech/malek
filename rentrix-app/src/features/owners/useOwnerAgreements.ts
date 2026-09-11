@@ -25,7 +25,7 @@ export function useAgreementCoverage(propertyId: string, startDate: string, endD
 }
 
 export function useOwnerAgreementVersions(agreementIds: readonly string[]) {
-  const stableIds = [...agreementIds].sort();
+  const stableIds = [...agreementIds].sort((a, b) => a.localeCompare(b));
   return useQuery({
     queryKey: ['owner_agreement_versions', stableIds],
     queryFn: () => listOwnerAgreementVersions(stableIds),

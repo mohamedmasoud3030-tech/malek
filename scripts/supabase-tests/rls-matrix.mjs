@@ -294,7 +294,7 @@ async function expectRpcDenied(db, identity, sql, spec) {
   const result = await queryAs(db, identity, sql);
   record({
     ...spec,
-    status: !result.ok && isDenied(result.error) ? 'pass' : result.ok ? 'fail' : 'fail',
+    status: !result.ok && isDenied(result.error) ? 'pass' : 'fail',
     detail: result.ok
       ? `RPC unexpectedly succeeded: ${JSON.stringify(result.value).slice(0, 160)}`
       : isDenied(result.error)

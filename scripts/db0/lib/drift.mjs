@@ -403,7 +403,7 @@ export function buildDrift({ schema, types, frontend }) {
   for (const [name, overloads] of dbFunctions) {
     const byArgumentSet = new Map();
     for (const overload of overloads) {
-      const signature = functionArgumentNames(overload.args).sort().join(',');
+      const signature = functionArgumentNames(overload.args).sort((a, b) => a.localeCompare(b)).join(',');
       if (!byArgumentSet.has(signature)) byArgumentSet.set(signature, []);
       byArgumentSet.get(signature).push(overload);
     }

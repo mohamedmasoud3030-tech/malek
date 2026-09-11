@@ -12,7 +12,7 @@ export class RetryableCommandStore {
   run<Result>(operation: string, payload: Record<string, unknown>, submit: (requestId: string) => Promise<Result>): Promise<Result> {
     // Command payloads are flat RPC field maps. Sort keys so property insertion
     // order cannot accidentally turn a retry into a second financial event.
-    const identity = JSON.stringify([operation, Object.keys(payload).sort().map((key) => [key, payload[key]])]);
+    const identity = JSON.stringify([operation, Object.keys(payload).sort((a, b) => a.localeCompare(b)).map((key) => [key, payload[key]])]);
     const entry = this.entries.get(identity) ?? { requestId: this.createId() };
     this.entries.set(identity, entry);
     if (entry.pending) return entry.pending as Promise<Result>;
