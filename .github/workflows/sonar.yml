@@ -62,12 +62,15 @@ jobs:
           if [ "${BRANCH}" != "main" ]; then
             ARGS+=("-Dsonar.branch.name=${BRANCH}")
           fi
+          set +e
           sonar-scanner "${ARGS[@]}" 2>&1 | tee /tmp/sonar-scan.log
-          exit "${PIPESTATUS[0]}"
-      - name: Upload scan log
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: sonar-scan-log
-          path: /tmp/sonar-scan.log
-          if-no-files-found: ignore
+          ec="${PIPESTATUS[0]}"
+          set -e
+          if [ "${ec}" -ne 0 ]; then
+            # Artifact storage quota is exhausted on this repository, so surface
+            # the scanner failure through check-run annotations instead.
+            tail -n 80 /tmp/sonar-scan.log | while IFS= read -r line; do
+              printf '::error title=sonar-scanner::%s\n' "${line}"
+            done
+          fi
+          exit "${ec}"
