@@ -139,74 +139,78 @@ From §A Standing constraints + §J:
 - G2 Intermittent bootstrap stall root cause: OPEN, BLOCKED by G1, mitigation proven (withCompanyResolutionTimeout 10 PASS), root cause unproven — **NOT YET PROVEN**
 - G3 Hosted concurrency / Web Locks: local verification strategy + per-scenario verdicts committed (`docs/execution/G3_CONCURRENCY_VERIFICATION_STRATEGY.md`, NOW-8 `035db0e2`); one proven client defect fixed (EntityForm double-submit trap); NOW-9 (`6a66f692`) closed residual R1 with a full per-surface audit — 0 ungated mutation surfaces remain, zero further code changes needed; hosted checks C1/C3/C5/C6/C8 remain BLOCKED by G1 — **PROVEN LOCALLY; HOSTED NOT YET PROVEN**
 - G4 Runtime behaviour of newly applied migrations under genuine concurrent/hosted traffic: structurally verified but not exercised by live usage — **NOT YET PROVEN**
-- G5 Remaining financial-chain reviews: non-expense `source_type` correction coverage **PROVEN (NOW-5, `9767ef03`)**, cash/fees/tax/offset/collection/recovery truth in owner statements AND documents **PROVEN (NOW-6, `342b18ca` — one defect found, fixed, locked)**, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations) **PROVEN (NOW-7, `bb45a0d0` — one F13-class defect found, fixed, locked; no-LIMIT read behaviour recorded as governance note)**; hosted browser coverage for all five G5/G6 panels — **NOT YET PROVEN** (LOCAL sandbox browser coverage: S09 incl. reversal ✓ + cutover ✓ at NOW-11 `ec4654bc` 6/6; offset+payout ✓ owner-expense-source.spec.ts; recovery ✗ → NOW-12)
+- G5 Remaining financial-chain reviews: non-expense `source_type` correction coverage **PROVEN (NOW-5, `9767ef03`)**, cash/fees/tax/offset/collection/recovery truth in owner statements AND documents **PROVEN (NOW-6, `342b18ca` — one defect found, fixed, locked)**, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations) **PROVEN (NOW-7, `bb45a0d0` — one F13-class defect found, fixed, locked; no-LIMIT read behaviour recorded as governance note)**; hosted browser coverage for all five G5/G6 panels — **NOT YET PROVEN** (LOCAL sandbox browser coverage COMPLETE: S09 incl. reversal ✓ + cutover ✓ NOW-11 `ec4654bc`; recovery ✓ + fail-closed refusal ✓ NOW-12 `d6713ec0`; offset+payout ✓ owner-expense-source.spec.ts — playwright 9/9 matrix)
 - G5 closure durability: `9ca483b4` exists **only in this sandbox** until the push blocker clears — remote does not yet carry the reverse surface or the list-envelope fix — **NOT YET PUSHED**
 - G6 hosted parity re-measurement after 354bc427+4da6a26d+50be359a — parity re-measure pending in NEXT-5 — **NOT YET PROVEN**
 - G7 Historical SEC-003/SEC-004 exploitation: UNKNOWABLE, no historical access logs — **NOT YET PROVEN / UNKNOWABLE**
 
 ### NOW (single task)
 
-**NOW-12: browser coverage of the owner receivable RECOVERY panel + fail-closed refused-operation paths**
+**NOW-13: PARKED — every remaining item is externally blocked; no locally executable work remains**
 
 (NOW-4 `9ca483b4`, NOW-5 `9767ef03`, NOW-6 `342b18ca`, NOW-7 `bb45a0d0`, NOW-8 `035db0e2`,
 NOW-9 `6a66f692`, NOW-10 docs sweep + DoD checklist, NOW-11 `ec4654bc` S09+cutover panel browser
-specs — all COMPLETE locally; push blocked solely by missing credentials.)
+specs, NOW-12 `d6713ec0` recovery panel + fail-closed refusal browser spec — all COMPLETE locally;
+push blocked solely by missing credentials.)
 
-- NOW-11 status of the five G5/G6 panels in a real browser: **S09 (incl. reversal) ✓**
-  (`e2e/s09-correction-panel-journey.spec.ts`), **cutover ✓** (`e2e/g6-cutover-panel-journey.spec.ts`),
-  **offset + payout ✓ already** (`e2e/owner-expense-source.spec.ts` — offset via RPC, payout dialog
-  browser-driven), **recovery ✗ — the only panel with zero browser coverage**, and refused-operation
-  (fail-closed Arabic reason surfacing in UI) paths are not yet browser-proven anywhere.
-- Steps: (1) locate the recovery panel mount point — `OwnerReceivableRecoveryPanel.tsx`
-  (`section[aria-labelledby="owner-recovery-heading"]`); offset/recovery panels need a non-null
-  `ownerId`, so they do NOT render in the funds view (cutover does) — find which route/view renders
-  them (owner detail workspace?) and mirror the seeding of `owner-expense-source.spec.ts`
-  (`createOwnerOffsetFixture` seeds agreement/settlement/receivable; recovery needs lawful
-  `due_from_owners` movements + `owner_settlement_paid_cash` proven cash per standing rules —
-  never derive cash from `net_payable − offset_applied`). (2) Spec: panel renders the seeded
-  read model truthfully; the recovery action is gated per role; drive one lawful recovery through
-  the deployed RPC bridge and assert SQL truth. (3) Second spec (or same): refused-operation
-  fail-closed proof — trigger an RPC refusal in the browser (e.g. cutover create with a tampered
-  payload the client cannot produce legitimately is NOT allowed — instead refuse at the server
-  honestly, e.g. attempt recovery/offset that violates a lock) and assert the Arabic refusal
-  reason surfaces in the UI and NO state changed. (4) Gates: typecheck + playwright all projects +
-  commit + HANDOFF. No product-code change unless a genuine browser-only defect is reproduced.
-- Do NOT re-audit NOW-4…NOW-11 territory; their locks are the contract.
+- Browser coverage of the five G5/G6 panels is now COMPLETE locally: S09 incl. reversal ✓ (NOW-11),
+  cutover ✓ (NOW-11), offset + payout ✓ (owner-expense-source.spec.ts, pre-existing), recovery ✓
+  (NOW-12 — including the first browser-proven fail-closed refusal via real concurrency: stale UI
+  submits 200 after a concurrent lawful 150 recovery, server refuses with its Arabic reason,
+  SQL truth proves zero change, then the honest 50 succeeds with both batches POSTED).
+- Matrix evidence at `d6713ec0`: playwright **9/9** (three panel specs × desktop/tablet/mobile,
+  CI=1, zero retries in the matrix run); typecheck clean; zero src change since `035db0e2` — the
+  NOW-8 vitest gate matrix (559/4066) stands over identical src.
+- Remaining queue — ALL externally blocked, exact resume triggers:
+  1. **Push/G1:** the instant a GitHub credential (PAT) appears in the sandbox →
+     `git push origin reconstruction/checkpoint-20260909`, verify remote SHA == local HEAD via
+     `git ls-remote`, then proceed to G2/G3-hosted/G4/G7 checks per the DoD checklist.
+  2. **Governance decision:** non-enumerated S09 `source_type` tightening needs an approved
+     accounting/governance source — do not invent (locked at `9767ef03`).
+  3. **G4 hosted runtime + parity re-measure + hosted checks:** need the hosted environment.
+- Do NOT re-audit NOW-4…NOW-12 territory; their locks are the contract. If resumed without new
+  external inputs, the correct action is to verify this park record is still accurate — nothing else.
 
-**Acceptance:** browser-proven recovery coverage + one honest fail-closed refusal surfacing in the
-UI, committed; or a precise BLOCKED record. No fabrication of browser results; a killed browser
-worker is INFRA, not a verdict (NOW-11 hit exactly one SIGKILL retry, re-ran green).
+**Acceptance:** none executable — this is a precise BLOCKED/park record per the loop discipline.
 
-**NOW-11 gotchas (proven this loop, do not rediscover):** e2e specs must NOT import from
+**NOW-11/12 gotchas (proven, do not rediscover):** e2e specs must NOT import from
 `src/features/**/services` or anything pulling `@/lib/supabase` — `import.meta.env` is undefined
 under the Playwright node transform and kills collection ("No tests found" + env.ts TypeError);
-inline payload literals instead (mirroring `buildCreateS09DraftPayload` key-for-key). Run with
-`CI=1 PLAYWRIGHT_DISABLE_VIDEO=true`; a reused stale vite dev server can die mid-transform
-(`[plugin:vite:esbuild] The service is no longer running` → app error page → INFRA, rerun fresh).
-The S09 reverse form and the draft form coexist in one section — scope textareas by accessible
-name (`سبب العكس (يُسجَّل في الدليل ولا يمكن تركه فارغاً)`), never bare `locator('textarea')`.
+inline payload literals instead. Run with `CI=1 PLAYWRIGHT_DISABLE_VIDEO=true`; a reused stale vite
+dev server can die mid-transform (`[plugin:vite:esbuild] The service is no longer running` → INFRA,
+rerun fresh). Scope textareas/roles by accessible name, never bare locators (S09 section has two
+textareas; recovery panel has two `role="status"` elements — the empty-state wrapper collides).
 Fake-backend single-object reads: `Accept: application/vnd.pgrst.object` + 0 rows ⇒ 406 `PGRST116`
-⇒ `maybeSingle()` null (replicated in the cutover route). Acceptance token role ADMIN ⇒ full
-client-side permission catalog (`canAccess`), so no grants seeding is needed for any panel.
+⇒ `maybeSingle()` null. Acceptance token role ADMIN ⇒ full client-side permission catalog
+(`canAccess`), so no grants seeding is needed for any panel. Recovery/offset panels need
+`?ownerId=` in the URL (they don't render in the bare funds view); `/financials` has no
+validateSearch so unknown params pass through. The repo also carries `skills/**` scripts whose
+executable bits the sandbox may strip — mode-only drift, restore with chmod, never commit.
 
-### NEXT (ordered, after NOW-12)
+### NEXT (ordered, after NOW-13 — all externally blocked)
 
-1. **Governance decision needed (user/approved source, do not invent):** non-enumerated S09
+1. **Push + G1 credentials (resume trigger: a PAT appears in the sandbox):** push the local
+   commits, verify the remote SHA, then run the hosted checks specified in the DoD checklist
+   (G2, G3-hosted C1/C3/C5/C6/C8, G7 evidence attempt).
+
+2. **Governance decision needed (user/approved source, do not invent):** non-enumerated S09
    `source_type` labels are bound only to the APPROVED S08 review with no source-existence check
    (deployed step-8 enumerates exactly invoice/payment/expense/deposit). Behaviour is regression-
    locked at `9767ef03`; tightening requires an approved accounting/governance source.
 
-2. **G4 Runtime behaviour of newly applied migrations under real traffic** — safe, non-destructive, preserve invariants
+3. **G4 Runtime behaviour of newly applied migrations under real traffic** — safe, non-destructive,
+   preserve invariants (needs the hosted runtime).
 
-3. **Re-verify repo ↔ production parity with fresh measurement** (normalized function hashes both sides, money columns, rpt_owner_statement body)
+4. **Re-verify repo ↔ production parity with fresh measurement** (normalized function hashes both
+   sides, money columns, rpt_owner_statement body) — needs hosted access.
 
-4. **Final documentation sweep, Definition of Done checklist, release evidence**
-
-5. **Remaining browser coverage** (tracked as NOW-12): the recovery panel is the only G5/G6 panel
-   with zero browser coverage; refused-operation fail-closed Arabic reasons are not yet browser-proven.
-   S09 incl. reversal + cutover ✓ NOW-11 `ec4654bc`; offset + payout ✓ owner-expense-source.spec.ts
+(DONE and struck from this list: final documentation sweep/DoD checklist/release evidence =
+NOW-10 `84e258cd`+`76a461c8`; browser coverage of all five G5/G6 panels incl. fail-closed refusal
+= NOW-11 `ec4654bc` + NOW-12 `d6713ec0`.)
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-12 (local `d6713ec0`, 2026-09-11 09:10-09:50Z): recovery panel browser coverage + FIRST browser-proven fail-closed refusal — 9/9 matrix green, ZERO product-code change.** `e2e/g5-recovery-panel-journey.spec.ts` completes the five-panel browser matrix: the recovery panel (`?ownerId=` scope in the funds view — offset/recovery panels don't render without it) shows the seeded 200 OMR receivable truthfully; then REAL concurrency (no payload tampering): a lawful 150 recovery goes straight through the deployed `recover_owner_receivable_atomic` while the open UI is stale at 200 → the stale submit is refused by the server, the Arabic reason (المبلغ يتجاوز الرصيد المتبقي من المديونية الأصلية) surfaces in `role=alert`, and SQL truth proves zero change (outstanding 50, one movement, exactly one new journal batch); the honest 50 then succeeds (status message with posted batch id, summary re-reads 200/0, SQL: RECOVERED, two movements, both batches POSTED); every browser-sent payload verified free of server-owned fields (company_id/amount_override/target_account). Evidence: playwright **9/9** (3 panel specs × 3 projects, CI=1, zero retries in the matrix run), typecheck clean, vitest unaffected (zero src change). One spec-locator fix mid-loop (two `role="status"` elements in the panel — empty-state wrapper collides; scoped by text). Sandbox stripped executable bits on `skills/**` scripts (mode-only drift) — restored via chmod, nothing committed. **RESULT: all five G5/G6 panels now browser-proven locally; refused-operation fail-closed path browser-proven.**
 
 - **NOW-11 (local `ec4654bc`, 2026-09-11 08:10-09:05Z): browser coverage of the S09 correction panel and the G6 cutover panel — 6/6 green, ZERO product-code change.** Feasibility first: `playwright install chromium --with-deps` succeeded in this sandbox. Wrote two specs on the NOW-2 fixture build (PGlite full replay + fake Supabase data plane + deployed-function RPC bridges, pattern proven by owner-expense-source.spec.ts): `e2e/s09-correction-panel-journey.spec.ts` drives the full S09 lifecycle in a real browser (seeded DRAFT renders with truthful status/reason; review options arrive through deployed `s08_list_frozen_reviews` — NOW-7 contract; تحقق → مُتحقَّق منها; تطبيق → مُطبَّقة + قيد التصحيح; عكس button gate disabled without reason → reason → معكوسة + قيد العكس; SQL truth: stored REVERSED, 3-batch lineage, original batch byte-identical, compensating POSTED `journal_reversal` batch with `reversal_of_batch_id`) and `e2e/g6-cutover-panel-journey.spec.ts` proves the truthful absence-of-evidence state (explicitly not a zero balance), draft creation through deployed `create_owner_funds_cutover_atomic` with NO `company_id`/`opening_balance` in the payload (server-derived), adopted evidence rendering, and SQL truth (one review-anchored DRAFT row, sha256 fingerprint, `approved_by` null — approval hidden from maker). Evidence: playwright **6/6** (both specs × chromium-desktop/tablet/mobile, CI=1); one INFRA-class SIGKILL worker retry on desktop s09 (re-ran green per standing rule); typecheck clean; vitest unaffected (zero src change — NOW-8 gate matrix stands over identical src). Two dead ends fixed during the loop (recorded in NOW-12 gotchas): service-module imports break Playwright collection; bare textarea locator is ambiguous in the S09 section. Offset/recovery panels: offset+payout already browser-covered by owner-expense-source.spec.ts; recovery remains uncovered → NOW-12.
 
@@ -818,23 +822,23 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 09:05Z — NOW-4…NOW-11 committed locally, push BLOCKED)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 09:50Z — NOW-4…NOW-12 committed locally, push BLOCKED, NOW-13 PARKED)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `ec4654bc` — NOW-11: browser coverage of S09 correction + G6 cutover panels (e2e-only; last src change `035db0e2`) — **LOCAL ONLY** |
-| Local branch tip | `ec4654bc` (15 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`, `91f2ad71`, `035db0e2`, `4973dc4e`, `6a66f692`, `269ed0b3`, `84e258cd`, `76a461c8`, `ec4654bc`) |
+| Last work commit (code/schema/evidence) | `d6713ec0` — NOW-12: recovery panel browser spec + fail-closed refusal proof (e2e-only; last src change `035db0e2`) — **LOCAL ONLY** |
+| Local branch tip | `d6713ec0` (17 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`, `91f2ad71`, `035db0e2`, `4973dc4e`, `6a66f692`, `269ed0b3`, `84e258cd`, `76a461c8`, `ec4654bc`, `322b5f9f`, `d6713ec0`) |
 | Remote branch tip | `bcdf6944` — verified via `git ls-remote` 2026-09-11 04:28Z |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
-| All gates (fresh NOW-8, unchanged by docs-only NOW-9/10 and e2e-only NOW-11) | entity-form 9/9 · s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4066 PASS, 0 INFRA** · inventory 13/13 · gates 7/7 · guardian PASS · typecheck clean (re-run at NOW-11 over the two new e2e specs) · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) · **NEW NOW-11: playwright 6/6 (S09 panel + cutover panel × desktop/tablet/mobile; 1 INFRA-class SIGKILL retried green)** |
+| All gates (fresh NOW-8, unchanged by docs-only NOW-9/10 and e2e-only NOW-11/12) | entity-form 9/9 · s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4066 PASS, 0 INFRA** · inventory 13/13 · gates 7/7 · guardian PASS · typecheck clean (re-run at NOW-12 over all three new e2e specs) · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) · **NEW NOW-11/12: playwright 9/9 (S09 + cutover + recovery panels × desktop/tablet/mobile, zero retries in matrix run)** |
 | Push status | **BLOCKED — no credential in sandbox** (see §BLOCKED). Do not claim pushed. Do not fabricate a remote SHA. |
 
-**Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc` e2e-only over identical src) + playwright 6/6 at `ec4654bc`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, and the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads); NOW-11 added LOCAL browser proof of the S09 panel (full lifecycle incl. reversal gate) and the G6 cutover panel (absence-of-evidence state + draft creation through the deployed RPC), and offset+payout were already browser-driven in owner-expense-source.spec.ts — remaining without browser coverage: the recovery panel and fail-closed refused-operation paths (NOW-12/13); no HOSTED browser run covers any panel, fifteen commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc`+NOW-12 `d6713ec0` e2e-only over identical src) + playwright 9/9 at `d6713ec0`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked; NOW-12 added a browser-proven server-side stale-read refusal with zero state change); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), and ALL FIVE G5/G6 panels now browser-proven locally (S09 incl. reversal + cutover at `ec4654bc`; offset + payout in owner-expense-source.spec.ts; recovery + fail-closed refusal at `d6713ec0`) — but no HOSTED browser run covers any panel, seventeen commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
 
-**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`ec4654bc` or newer); (2) NOW-12 — browser coverage of the recovery panel (only G5/G6 panel with zero browser coverage; mount point needs `ownerId` — find the rendering route) + one honest fail-closed refused-operation surfacing its Arabic reason in the UI; gotchas from NOW-11 recorded above (no service-module imports in e2e; CI=1 PLAYWRIGHT_DISABLE_VIDEO=true; scope textareas by accessible name; 406/PGRST116 single-object semantics); (3) governance decision on non-enumerated source types (needs approved source — do not invent); (4) G4 hosted runtime, parity re-measure, hosted checks — externally blocked.
+**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`d6713ec0` or newer); (2) governance decision on non-enumerated source types (needs approved source — do not invent); (3) G4 hosted runtime, parity re-measure, hosted checks (G2, G3-hosted, G7) — externally blocked. ALL locally executable reconstruction work is COMPLETE (NOW-4…NOW-12; NOW-13 is the park record). If resumed without new external inputs: verify this park record is still accurate — do not re-audit NOW-4…NOW-12 territory.
 
 ---
 
