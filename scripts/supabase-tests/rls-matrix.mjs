@@ -347,7 +347,7 @@ async function runStructural(db, schema) {
     `select id, public, file_size_limit, allowed_mime_types
        from storage.buckets where id = 'attachments'`,
   )).rows[0];
-  const mime = (bucket?.allowed_mime_types ?? []).slice().sort().join(',');
+  const mime = (bucket?.allowed_mime_types ?? []).slice().sort((a, b) => a.localeCompare(b)).join(',');
   record({
     id: 'struct.storage_bucket',
     group: 'storage',
