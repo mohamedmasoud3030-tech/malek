@@ -41,6 +41,14 @@ type SurfacePattern = {
  * 0 is the first non-empty path segment (e.g. `properties` in
  * `/properties/:propertyId`).
  */
+const ENTITY_ROOT_BY_TYPE: Record<string, string> = {
+  unit: 'properties',
+  property: 'properties',
+  contract: 'contracts',
+  tenant: 'tenants',
+  owner: 'owners',
+};
+
 const ENTITY_PATTERNS: readonly SurfacePattern[] = [
   // /properties/:propertyId/units/:unitId (canonical unit detail route)
   { entityType: 'unit', idSegment: 3, literalSegments: { 2: 'units' } },
@@ -88,16 +96,7 @@ export function deriveAiAssistantSurfaceContext(
   const section = sectionForRoot(base);
 
   const candidate = ENTITY_PATTERNS.find((pattern) => {
-    const expectedRoot =
-      pattern.entityType === 'unit' || pattern.entityType === 'property'
-        ? 'properties'
-        : pattern.entityType === 'contract'
-          ? 'contracts'
-          : pattern.entityType === 'tenant'
-            ? 'tenants'
-            : pattern.entityType === 'owner'
-              ? 'owners'
-              : 'people';
+    const expectedRoot = ENTITY_ROOT_BY_TYPE[pattern.entityType] ?? 'people';
     if (segments[0] !== expectedRoot || segments.length <= pattern.idSegment) return false;
     if (pattern.literalSegments) {
       for (const [index, literal] of Object.entries(pattern.literalSegments)) {

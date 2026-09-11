@@ -124,26 +124,30 @@ export function ResetPasswordPage() {
 
   return (
     <AuthCard title="تعيين كلمة مرور جديدة" description="استخدم 8 أحرف على الأقل، ثم سجّل الدخول مجدداً بكلمة المرور الجديدة.">
-      {checking ? <p className="text-center text-sm text-muted-foreground" role="status">جارٍ التحقق من رابط الاستعادة...</p> : sessionCheckError ? (
+      {checking ? <p className="text-center text-sm text-muted-foreground" role="status">جارٍ التحقق من رابط الاستعادة...</p> : null}
+      {!checking && sessionCheckError ? (
         <div className="space-y-4 rounded-2xl border border-warning/30 bg-warning/5 p-5 text-center" role="alert">
           <AlertTriangle className="mx-auto size-8 text-warning" aria-hidden="true" />
           <p className="font-bold">تعذر التحقق من رابط الاستعادة</p>
           <p className="text-sm leading-6 text-muted-foreground">تحقق من الاتصال ثم أعد المحاولة. لم نعتبر الرابط منتهيًا بسبب فشل الشبكة.</p>
           <Button type="button" variant="secondary" className="min-h-11 w-full" onClick={() => { void checkRecoverySession(); }}>إعادة المحاولة</Button>
         </div>
-      ) : succeeded ? (
+      ) : null}
+      {!checking && !sessionCheckError && succeeded ? (
         <div className="space-y-4 rounded-2xl border border-success/30 bg-success/5 p-5 text-center" role="status" aria-live="polite">
           <CheckCircle2 className="mx-auto size-8 text-success" aria-hidden="true" />
           <p className="font-bold">تم تحديث كلمة المرور</p>
           <Button asChild className="min-h-11 w-full"><Link to="/login">تسجيل الدخول</Link></Button>
         </div>
-      ) : !hasRecoverySession ? (
+      ) : null}
+      {!checking && !sessionCheckError && !succeeded && !hasRecoverySession ? (
         <div className="space-y-4 rounded-2xl border border-warning/30 bg-warning/5 p-5 text-center" role="alert">
           <AlertTriangle className="mx-auto size-8 text-warning" aria-hidden="true" />
           <p className="font-bold">رابط الاستعادة غير صالح أو منتهي</p>
           <Button asChild className="min-h-11 w-full"><Link to="/forgot-password">طلب رابط جديد</Link></Button>
         </div>
-      ) : (
+      ) : null}
+      {!checking && !sessionCheckError && !succeeded && hasRecoverySession ? (
         <EntityForm.Root className="gap-4" onSubmit={submit} noValidate={false}>
           <label htmlFor="new-password" className="block text-sm font-semibold">كلمة المرور الجديدة</label>
           <Input id="new-password" type="password" autoComplete="new-password" minLength={8} required autoFocus className="h-12" value={password} onChange={(event) => { setPassword(event.target.value); setError(null); }} disabled={isSubmitting} />
@@ -152,7 +156,7 @@ export function ResetPasswordPage() {
           {error ? <div role="alert" className="flex items-start gap-2 rounded-xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger"><AlertTriangle className="mt-0.5 size-4 shrink-0" />{error}</div> : null}
           <Button type="submit" className="h-12 w-full" disabled={isSubmitting || !password || !confirmPassword} aria-busy={isSubmitting}>{isSubmitting ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}</Button>
         </EntityForm.Root>
-      )}
+      ) : null}
     </AuthCard>
   );
 }
