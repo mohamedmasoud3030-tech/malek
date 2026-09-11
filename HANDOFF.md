@@ -171,6 +171,12 @@ operator to supply those two secrets + approve the environment.)
 4. **Governance decision:** non-enumerated S09 `source_type` tightening (approved source required).
 5. G2 bootstrap-stall diagnosis + G3-hosted two-tab soaks: need the deployed runtime from (1)/(2).
 
+**Token anomaly to remember on resume (2026-09-11 ~13:00Z):** the PAT began returning 401
+"Bad credentials" on REST API calls (`/user`, runs listing) while git-over-HTTPS with the same
+token still works perfectly (`ls-remote` + push verified after the 401s). Workaround in effect:
+read the repo's public API surface unauthenticated (repo is public) and keep pushing via the
+PAT URL. If git-push also starts 401-ing, the token is revoked/expired → park, request a fresh PAT.
+
 **Acceptance:** none executable with GitHub-only access — precise park record above. Do NOT relax
 `assert-release-blocker-env.mjs` (policy lock) or fabricate Production secrets/backup references.
 
@@ -910,9 +916,9 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
 | Last work commit (code/schema/evidence) | `ce0fbb33` — NOW-15: G4 local-preflight workflow fix (CI-infra-only; last product-src change remains `035db0e2` NOW-8) — **ON REMOTE** |
-| Local branch tip | `ce0fbb33` (+ this HANDOFF-update commit pushed immediately after — remote and local kept equal at every step, `git ls-remote`-verified) |
-| Remote branch tip | `ce0fbb33b602057a67ab5e3a73605c04822e81de` — **verified via `git ls-remote` 2026-09-11 ~12:42Z** |
-| Hosted CI at tip | CI run 34587311312 **SUCCESS at `6af81c70` (docs tip, attempt 2)** — attempt 1 had one INFRA-class flake (permission-catalog pglite full-replay test hit its 5s timeout under runner load, 1/4069; identical job green at `337a3046` and on the clean rerun — a timed-out worker under load is INFRA, not a verdict). Code-identical green before it: CI run 34584434977 **SUCCESS** at `337a3046` (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) — not re-dispatched over docs/CI-infra-only deltas (evidence continuity over identical product code) · **NEW NOW-15: supabase-production-migrations local-preflight run 34600286733 SUCCESS at `ce0fbb33` (first green ever, 1/1173) — artifact `production-local-preflight-34600286733`** |
+| Local branch tip | `73e92261` (+ this HANDOFF-update commit pushed immediately after — remote and local kept equal at every step, `git ls-remote`-verified) |
+| Remote branch tip | `73e92261aa8f3eea3a9359d5c637ff3745d5f14e` — **verified via `git ls-remote` 2026-09-11 ~13:05Z** |
+| Hosted CI at tip | CI run 34587311312 **SUCCESS at `6af81c70` (docs tip, attempt 2)** — attempt 1 had one INFRA-class flake (permission-catalog pglite full-replay test hit its 5s timeout under runner load, 1/4069; identical job green at `337a3046` and on the clean rerun — a timed-out worker under load is INFRA, not a verdict). Code-identical green before it: CI run 34584434977 **SUCCESS** at `337a3046` (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) — not re-dispatched over docs/CI-infra-only deltas (evidence continuity over identical product code) · **NEW NOW-15: supabase-production-migrations local-preflight run 34600286733 SUCCESS at `ce0fbb33` (first green ever, 1/1173) — artifact `production-local-preflight-34600286733` · CI run 34601411676 SUCCESS at tip `73e92261` (build + heavy-validation; docs/CI-infra-only delta)** |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
