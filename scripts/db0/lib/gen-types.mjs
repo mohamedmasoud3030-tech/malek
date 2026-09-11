@@ -64,7 +64,9 @@ function pgSignatureToTs(sig, enums) {
   t = t.replace(/^(in|out|inout|variadic)\s+/, '');
   const isArray = /\[\]$/.test(t);
   t = t.replace(/\[\]$/, '').trim();
-  t = t.replace(/\(.*\)$/, '').trim();
+  const parenIndex = t.indexOf('(');
+  if (parenIndex !== -1) t = t.slice(0, parenIndex);
+  t = t.trim();
 
   const map = {
     'character varying': 'varchar',
@@ -200,9 +202,10 @@ function parseArgs(argString) {
 
   return parts.map((p) => {
     const cleaned = p.replace(/^(in|out|inout|variadic)\s+/i, '');
-    const m = /^([A-Za-z_][\w$]*)\s+(.+)$/.exec(cleaned);
-    if (m && !/^(character|timestamp|time|double|bit)$/i.test(m[1])) {
-      return { name: m[1], type: m[2] };
+    const nameMatch = /^([A-Za-z_][\w$]*)\s+/.exec(cleaned);
+    const typePart = nameMatch ? cleaned.slice(nameMatch[0].length) : '';
+    if (nameMatch && typePart && !/^(character|timestamp|time|double|bit)$/i.test(nameMatch[1])) {
+      return { name: nameMatch[1], type: typePart };
     }
     return { name: null, type: cleaned };
   });
@@ -288,9 +291,11 @@ export function checkEnumUnions(checkEnums = []) {
     // Only accept a constraint that is purely an allow-list, optionally
     // guarded by a NULL check. Anything else (ranges, cross-field rules) is
     // not an enum and must not narrow the type.
-    const normalised = c.definition
-      .replace(/^CHECK\s*\(+/i, '')
-      .replace(/\)+$/, '')
+    let normalised = c.definition.replace(/^CHECK\s*\(+/i, '');
+    let closingParens = normalised.length;
+    while (closingParens > 0 && normalised[closingParens - 1] === ')') closingParens -= 1;
+    normalised = normalised
+      .slice(0, closingParens)
       .replace(/\(\((\w+) IS NULL\) OR /i, '')
       .trim();
 

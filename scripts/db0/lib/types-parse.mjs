@@ -42,10 +42,12 @@ function topLevelEntries(body) {
   let depth = 0;
   let start = 0;
   let inString = null;
-  for (let i = 0; i < body.length; i += 1) {
+  let i = 0;
+  while (i < body.length) {
     const ch = body[i];
     if (inString) {
       if (ch === inString && body[i - 1] !== '\\') inString = null;
+      i += 1;
       continue;
     }
     // Skip line comments entirely.
@@ -56,6 +58,7 @@ function topLevelEntries(body) {
     }
     if (ch === "'" || ch === '"' || ch === '`') {
       inString = ch;
+      i += 1;
       continue;
     }
     if (ch === '{' || ch === '[' || ch === '(') depth += 1;
@@ -65,6 +68,7 @@ function topLevelEntries(body) {
       if (chunk) entries.push(chunk);
       start = i + 1;
     }
+    i += 1;
   }
   const tail = body.slice(start).trim();
   if (tail) entries.push(tail);
@@ -74,7 +78,7 @@ function topLevelEntries(body) {
 function parseRowFields(rowBody) {
   const fields = [];
   for (const entry of topLevelEntries(rowBody)) {
-    const m = /^([A-Za-z_$][\w$]*|'[^']+'|"[^"]+")(\?)?\s*:\s*([\s\S]+)$/.exec(entry);
+    const m = /^([A-Za-z_$][\w$]*|'[^']+'|"[^"]+")(\?)?\s*:([\s\S]+)$/.exec(entry);
     if (!m) continue;
     const name = m[1].replace(/^['"]|['"]$/g, '');
     fields.push({
@@ -167,7 +171,7 @@ export async function parseDatabaseTypes(path = TYPES_PATH) {
         .filter((line) => !/^\s*\/\//.test(line))
         .join('\n')
         .trim();
-      const m = /^([A-Za-z_$][\w$]*|'[^']+'|"[^"]+")\s*:\s*([\s\S]+)$/.exec(entry);
+      const m = /^([A-Za-z_$][\w$]*|'[^']+'|"[^"]+")\s*:([\s\S]+)$/.exec(entry);
       if (!m) continue;
       const name = m[1].replace(/^['"]|['"]$/g, '');
       const value = m[2].trim();
@@ -178,12 +182,13 @@ export async function parseDatabaseTypes(path = TYPES_PATH) {
       }
       if (key === 'functions') {
         const argVariants = parseFunctionArgVariants(value);
-        const returnsMatch = /Returns\s*:\s*([\s\S]+?)(?:;|$)/.exec(value);
+        const returnsMatch = /Returns\s*:([^;]*)/.exec(value);
+        const returnsText = returnsMatch ? returnsMatch[1].trim() : '';
         result.functions[name] = {
           args: (argVariants[0] ?? []).map((f) => f.name),
           argFields: argVariants[0] ?? [],
           argVariants,
-          returns: returnsMatch ? returnsMatch[1].trim().replace(/\s+/g, ' ') : null,
+          returns: returnsText ? returnsText.replace(/\s+/g, ' ') : null,
           raw: value,
         };
         continue;
@@ -206,7 +211,7 @@ export async function parseDatabaseTypes(path = TYPES_PATH) {
  * numeric vs date) without flagging cosmetic differences.
  */
 export function tsTypeToPgCandidates(tsType) {
-  const t = tsType.replace(/\s*\|\s*null$/, '').trim();
+  const t = tsType.replace(/\|\s*null$/, '').trim();
   const nullable = /\|\s*null/.test(tsType);
 
   // String-literal unions map to text/varchar or a pg enum.

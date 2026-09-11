@@ -72,21 +72,26 @@ const layers = [
   },
 ];
 
+function countOnLine(line, label) {
+  const m = new RegExp(`(\\d+)\\s+${label}`).exec(line);
+  return m ? Number(m[1]) : 0;
+}
+
 function parseVitestCounts(output) {
-  const match = output.match(/Tests\s+(\d+)\s+passed(?:\s+\|\s+(\d+)\s+failed)?(?:\s+\|\s+(\d+)\s+skipped)?/i)
-    || output.match(/(\d+)\s+passed(?:\s+\|\s+(\d+)\s+failed)?(?:\s+\|\s+(\d+)\s+skipped)?/);
-  if (!match) return { passed: output.includes('FAIL') ? 0 : null, failed: output.includes('FAIL') ? 1 : 0, skipped: 0 };
+  const lines = output.split('\n');
+  const line = lines.find((l) => /Tests\s+\d+\s+passed/i.test(l)) ?? lines.find((l) => /\d+\s+passed/.test(l));
+  if (!line) return { passed: output.includes('FAIL') ? 0 : null, failed: output.includes('FAIL') ? 1 : 0, skipped: 0 };
   return {
-    passed: Number(match[1] ?? 0),
-    failed: Number(match[2] ?? 0),
-    skipped: Number(match[3] ?? 0),
+    passed: countOnLine(line, 'passed'),
+    failed: countOnLine(line, 'failed'),
+    skipped: countOnLine(line, 'skipped'),
   };
 }
 
 function parseMatrixCounts(output) {
-  const match = output.match(/(\d+)\s+passed\s+(\d+)\s+failed\s+(\d+)\s+skipped/);
-  if (!match) return { passed: output.includes('PASS') && !output.includes('FAIL') ? 1 : 0, failed: output.includes('FAIL') ? 1 : 0, skipped: 0 };
-  return { passed: Number(match[1]), failed: Number(match[2]), skipped: Number(match[3]) };
+  const line = output.split('\n').find((l) => /\d+\s+passed\s+\d+\s+failed/.test(l));
+  if (!line) return { passed: output.includes('PASS') && !output.includes('FAIL') ? 1 : 0, failed: output.includes('FAIL') ? 1 : 0, skipped: 0 };
+  return { passed: countOnLine(line, 'passed'), failed: countOnLine(line, 'failed'), skipped: countOnLine(line, 'skipped') };
 }
 
 const summary = [];
