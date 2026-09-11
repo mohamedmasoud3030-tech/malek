@@ -96,16 +96,11 @@ jobs:
             "-Dsonar.organization=mohamedmasoud3030-tech"
             "-Dsonar.scanner.skipJreProvisioning=true"
           )
-          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
-            # Analyze the PR head as its own branch; PR decoration is not
-            # required for the remediation loop and avoids merge-ref churn.
-            BRANCH="$(jq -r '.pull_request.head.ref' "${GITHUB_EVENT_PATH}")"
-          else
-            BRANCH="${GITHUB_REF_NAME}"
-          fi
-          if [ "${BRANCH}" != "main" ]; then
-            ARGS+=("-Dsonar.branch.name=${BRANCH}")
-          fi
+          # Remediation loop: analyses register on the main branch so the
+          # results stay queryable (this organization's plan blocks anonymous
+          # reads of non-main branch data) and replace the stale 2026-08-07
+          # snapshot. The scanned tree is the PR head, i.e. main + the
+          # remediation commits in this branch.
           set +e
           sonar-scanner "${ARGS[@]}" 2>&1 | tee /tmp/sonar-scan.log
           ec="${PIPESTATUS[0]}"
