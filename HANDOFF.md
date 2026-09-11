@@ -800,13 +800,13 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 07:45Z — NOW-4…NOW-9 committed locally, push BLOCKED)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 08:05Z — NOW-4…NOW-10 committed locally, push BLOCKED)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `6a66f692` — G3/NOW-9: double-submit class audit closed (docs-only; last code change `035db0e2`) — **LOCAL ONLY** |
-| Local branch tip | `6a66f692` (11 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`, `91f2ad71`, `035db0e2`, `4973dc4e`, `6a66f692`) |
+| Last work commit (code/schema/evidence) | `84e258cd` — NOW-10: DoD checklist + evidence index + inventory sweep (docs-only; last code change `035db0e2`) — **LOCAL ONLY** |
+| Local branch tip | `84e258cd` (13 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`, `c2084123`, `342b18ca`, `faa4980a`, `bb45a0d0`, `91f2ad71`, `035db0e2`, `4973dc4e`, `6a66f692`, `269ed0b3`, `84e258cd`) |
 | Remote branch tip | `bcdf6944` — verified via `git ls-remote` 2026-09-11 04:28Z |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
@@ -814,9 +814,9 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 | All gates (fresh NOW-8, unchanged by docs-only NOW-9) | entity-form 9/9 · s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4066 PASS, 0 INFRA** · inventory 13/13 · gates 7/7 · guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) |
 | Push status | **BLOCKED — no credential in sandbox** (see §BLOCKED). Do not claim pushed. Do not fabricate a remote SHA. |
 
-**Reconstruction is NOT declared complete.** **Latest measurement: 4066 tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692` is docs-only over identical src).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, and the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), but no hosted browser run covers any panel, eleven commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4066 tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692` is docs-only over identical src).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, and the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), but no hosted browser run covers any panel, thirteen commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
 
-**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`6a66f692` or newer); (2) NOW-10 — final documentation sweep + DoD checklist + release evidence index (docs-only unless a contradiction proves a code fix); (3) governance decision on non-enumerated source types (needs approved source — do not invent); (4) G4 hosted runtime, parity re-measure, hosted browser coverage — all externally blocked.
+**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`6a66f692` or newer); (2) NOW-11 — local browser coverage of the five G5/G6 panels via the NOW-2 fixture-build mechanism (feasibility first: playwright browser install; seed s09_corrections/s08_frozen_reviews/owner_funds_event_cutovers/due_from_owners lawfully; park with precise BLOCKED record if install/seeding fails); (3) governance decision on non-enumerated source types (needs approved source — do not invent); (4) G4 hosted runtime, parity re-measure, hosted checks — externally blocked.
 
 ---
 
