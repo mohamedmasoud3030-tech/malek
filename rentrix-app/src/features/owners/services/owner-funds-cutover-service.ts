@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { parseS08ReviewListEnvelope } from '@/features/financials/services/s09-correction-service';
 
 /**
  * G6 — Governed historical adoption (owner-funds cutover) read/write authority.
@@ -207,25 +208,37 @@ export async function loadOwnerFundsCutover(): Promise<OwnerFundsCutoverReadStat
   return { adopted: true, evidence: parseOwnerFundsCutoverEvidence(data) };
 }
 
+/**
+ * Read model via the deployed `s08_list_frozen_reviews` RPC — never a
+ * hand-rolled table query. The RPC is the authoritative metadata read path
+ * (granted to `authenticated`, company-scoped server-side, metadata-only:
+ * no analysis results, evidence, exceptions, or expense snapshots). A direct
+ * table SELECT would instead depend on the migration-11 RLS gate
+ * (`financial.reports.view`), which is stricter than this panel's own
+ * governance gate (`financial.owner_settlements.approve`) and can be revoked
+ * per-employee — breaking cutover adoption for users the server accepts.
+ */
 export async function loadApprovedS08Reviews(): Promise<ApprovedS08ReviewOption[]> {
-  const { data, error } = await supabase
-    .from('s08_frozen_reviews')
-    .select('id, dataset_lineage, reviewed_at')
-    .eq('reviewer_decision', 'APPROVED')
-    .order('reviewed_at', { ascending: false });
-  if (error) throw error;
-  return (data ?? []).flatMap((row) => {
-    const record = row as Record<string, unknown>;
-    const id = optionalText(record.id);
-    if (!id) return [];
-    return [
-      {
-        id,
-        datasetLineage: optionalText(record.dataset_lineage) ?? '',
-        reviewedAt: optionalText(record.reviewed_at),
-      },
-    ];
+  const { data, error } = await supabase.rpc('s08_list_frozen_reviews', {
+    p_period_id: null,
   });
+  if (error) throw error;
+  return parseS08ReviewListEnvelope(data)
+    .filter((record) => record.reviewer_decision === 'APPROVED')
+    .flatMap((record) => {
+      const id = optionalText(record.id);
+      if (!id) return [];
+      return [
+        {
+          id,
+          datasetLineage: optionalText(record.dataset_lineage) ?? '',
+          reviewedAt: optionalText(record.reviewed_at),
+        },
+      ];
+    })
+    // Preserve the prior UI ordering (reviewed_at desc); the RPC orders by
+    // creation_timestamp desc, both fields immutable post-creation.
+    .sort((a, b) => (b.reviewedAt ?? '').localeCompare(a.reviewedAt ?? ''));
 }
 
 export function createOwnerFundsCutoverRequestId(prefix = 'cutover'): string {

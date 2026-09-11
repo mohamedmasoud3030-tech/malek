@@ -16,7 +16,15 @@ import { readFileSync } from 'node:fs';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { repoRoot, assumeIdentity } from '@/p1/replay-bootstrap';
-import { COMPANY, CONTRACT, MAKER, PROPERTY, createOfficeCreditorFixture } from '@/test/office-creditor-fixture';
+import {
+  COMPANY,
+  CONTRACT,
+  MAKER,
+  OTHER,
+  OTHER_COMPANY,
+  PROPERTY,
+  createOfficeCreditorFixture,
+} from '@/test/office-creditor-fixture';
 import { offsetFixtureCommand as command, offsetDate as at } from '@/test/owner-offset-fixture';
 import {
   S09EvidenceError,
@@ -25,6 +33,7 @@ import {
   parseApplyS09Result,
   parseCreateS09DraftResult,
   parseReverseS09Result,
+  parseS08ReviewListEnvelope,
   parseS09Correction,
   parseS09ListEnvelope,
   translateS09Error,
@@ -891,5 +900,188 @@ describe('S09 non-expense source types — real SQL against the deployed invaria
     ).rows[0].row;
     expect(stored.source_type).toBe('owner_settlement');
     expect(stored.source_id).toBe('settlement-label-not-evidence-checked');
+  });
+});
+
+describe('S08 review surface — list RPC, fingerprint integrity, permissions, retries (NOW-7)', () => {
+  it('s08_list_frozen_reviews is the authoritative metadata envelope: company-scoped, evidence-free, parser-locked', async () => {
+    const reviewId = await makeApprovedReview();
+    const envelope = (
+      await db.query<{ data: Record<string, unknown> }>(
+        'select public.s08_list_frozen_reviews(null::uuid) as data',
+      )
+    ).rows[0].data;
+    // Regression lock (F13 class): the deployed body returns an OBJECT
+    // envelope, never a bare array; the client parser must accept exactly
+    // this unmodified output.
+    expect(Array.isArray(envelope)).toBe(false);
+    expect(envelope.company_id).toBe(COMPANY);
+    const rows = parseS08ReviewListEnvelope(envelope);
+    const record = rows.find((row) => row.id === reviewId);
+    expect(record).toBeTruthy();
+    expect(record?.reviewer_decision).toBe('APPROVED');
+    expect(record?.reviewed_at).toBeTruthy();
+    // Every field the two client loaders map must be present in the envelope.
+    for (const key of [
+      'id',
+      'company_id',
+      'accounting_period_id',
+      'dataset_fingerprint',
+      'dataset_lineage',
+      'analysis_version',
+      'reviewer_decision',
+      'creation_timestamp',
+      'reviewed_at',
+      'evidence_reference',
+      'created_at',
+    ]) {
+      expect(record, `missing metadata key ${key}`).toHaveProperty(key);
+    }
+    // Frozen evidence (financial amounts, ownership identities) must NOT leak
+    // through the metadata read path — the migration-11 concern.
+    for (const key of [
+      'analysis_results',
+      'reconciliation_evidence',
+      'exceptions',
+      'review_scope',
+      'review_notes',
+      'reviewer_id',
+      'expense_source_snapshot_version',
+    ]) {
+      expect(record, `leaked evidence key ${key}`).not.toHaveProperty(key);
+    }
+    // Parser strictness: malformed shapes fail closed, never render as empty.
+    expect(() => parseS08ReviewListEnvelope(rows)).toThrow(/S08_LIST_RESPONSE_INVALID|غير صالحة/);
+    expect(() => parseS08ReviewListEnvelope(null)).toThrow(/S08_LIST_RESPONSE_INVALID|فارغة/);
+    expect(() => parseS08ReviewListEnvelope({ reviews: [42] })).toThrow(
+      /S08_LIST_RESPONSE_INVALID|غير صالح/,
+    );
+  });
+
+  it('a foreign company sees none of this company\'s reviews through the same RPC', async () => {
+    await makeApprovedReview();
+    await assumeIdentity(db, OTHER, OTHER_COMPANY);
+    const envelope = (
+      await db.query<{ data: Record<string, unknown> }>(
+        'select public.s08_list_frozen_reviews(null::uuid) as data',
+      )
+    ).rows[0].data;
+    expect(envelope.company_id).toBe(OTHER_COMPANY);
+    expect(parseS08ReviewListEnvelope(envelope)).toEqual([]);
+    await assumeIdentity(db, MAKER, COMPANY);
+    // And the home company still sees its own review after the identity round-trip.
+    const home = (
+      await db.query<{ data: Record<string, unknown> }>(
+        'select public.s08_list_frozen_reviews(null::uuid) as data',
+      )
+    ).rows[0].data;
+    expect(parseS08ReviewListEnvelope(home).length).toBeGreaterThan(0);
+  });
+
+  it('approval is blocked when the dataset changed under review; verify reports the drift without mutating', async () => {
+    const reviewA = await makeApprovedReview();
+    // Dataset change #1: a new COMPANY expense posting (new journal batch).
+    // COMPANY responsibility needs no owner allocation evidence (migration 12
+    // only gates OWNER-charged expenses) and changes the fingerprint the same way.
+    await command(db, 'create_expense_with_journal_atomic', {
+      property_id: PROPERTY,
+      category: 'صيانة',
+      charged_to: 'COMPANY',
+      amount: 12.5,
+      expense_date: at(9),
+      request_id: 's08-fp-change-expense',
+    });
+    // A review created NOW carries the post-change fingerprint and analyzes cleanly.
+    const reviewC = await command(db, 's08_create_frozen_review', {
+      accounting_period_id: period,
+      review_scope: { expense_ids: [expense] },
+      dataset_lineage: 's08-fp-drift',
+    });
+    await db.query("select public.s08_analyze_frozen_review($1::uuid,'{}','{}','[]')", [
+      reviewC.id,
+    ]);
+    // Dataset change #2: another COMPANY posting AFTER reviewC was frozen. It
+    // never touches reviewC's snapshotted expense source, so the narrower
+    // source-changed gate stays quiet and the dataset fingerprint gate itself
+    // must be what blocks the approval.
+    await command(db, 'create_expense_with_journal_atomic', {
+      property_id: PROPERTY,
+      category: 'كهرباء',
+      charged_to: 'COMPANY',
+      amount: 7.25,
+      expense_date: at(9),
+      request_id: 's08-fp-drift-second-expense',
+    });
+    // reviewC's stored fingerprint no longer matches the dataset: approval must
+    // fail closed — no silent approval over a changed dataset. Approve as the
+    // independent ACCOUNTANT (reviewC was created by MAKER; migration 11 runs
+    // the independent-reviewer gate before the fingerprint check).
+    await assumeIdentity(db, checker, COMPANY);
+    await db.exec('savepoint fp_approve');
+    await expect(
+      db.query('select public.s08_approve_frozen_review($1::uuid,$2)', [reviewC.id, 'too late']),
+    ).rejects.toThrow(/S08_FINGERPRINT_CHANGED_UNDER_REVIEW/);
+    await db.exec('rollback to savepoint fp_approve');
+    await assumeIdentity(db, MAKER, COMPANY);
+    // The verify RPC reports the drift truthfully and mutates nothing.
+    const verify = (
+      await db.query<{ data: Record<string, unknown> }>(
+        'select public.s08_verify_fingerprint($1::uuid) as data',
+        [reviewC.id],
+      )
+    ).rows[0].data;
+    expect(verify.matches).toBe(false);
+    expect(verify.stored_fingerprint).not.toBe(verify.current_fingerprint);
+    const decision = (
+      await db.query<{ d: string }>(
+        'select reviewer_decision::text as d from public.s08_frozen_reviews where id=$1::uuid',
+        [reviewC.id],
+      )
+    ).rows[0].d;
+    expect(decision).toBe('ANALYZED');
+  });
+
+  it('locks approval/rejection permissions and retry behaviour on the deployed bodies', async () => {
+    const reviewId = await makeApprovedReview();
+    // Retry: a second approval of an already-APPROVED review is refused —
+    // the lifecycle gate makes duplicate approval calls no-ops, never double writes.
+    await db.exec('savepoint retry_approve');
+    await expect(
+      db.query('select public.s08_approve_frozen_review($1::uuid,$2)', [reviewId, 'retry']),
+    ).rejects.toThrow(/S08_REVIEW_LIFECYCLE_ILLEGAL/);
+    await db.exec('rollback to savepoint retry_approve');
+
+    await assumeIdentity(db, manager, COMPANY);
+    // MANAGER cannot approve (ACCOUNTANT/ADMIN accounting control), role gate first.
+    await db.exec('savepoint manager_approve');
+    await expect(
+      db.query('select public.s08_approve_frozen_review($1::uuid,$2)', [reviewId, 'manager']),
+    ).rejects.toThrow(/S08_APPROVAL_REQUIRES_ACCOUNTANT/);
+    await db.exec('rollback to savepoint manager_approve');
+    // MANAGER may reject, but only with a non-empty reason (checked before lifecycle).
+    await db.exec('savepoint empty_reason');
+    await expect(
+      db.query('select public.s08_reject_frozen_review($1::uuid,$2)', [reviewId, '   ']),
+    ).rejects.toThrow(/S08_REJECTION_REASON_REQUIRED/);
+    await db.exec('rollback to savepoint empty_reason');
+    // An APPROVED review can no longer be rejected — posted decisions are final.
+    await db.exec('savepoint reject_approved');
+    await expect(
+      db.query('select public.s08_reject_frozen_review($1::uuid,$2)', [reviewId, 'too late']),
+    ).rejects.toThrow(/S08_REVIEW_LIFECYCLE_ILLEGAL/);
+    await db.exec('rollback to savepoint reject_approved');
+    await assumeIdentity(db, MAKER, COMPANY);
+    // The review row survived every refused attempt unchanged.
+    const row = (
+      await db.query<{ d: string; n: number }>(
+        `select r.reviewer_decision::text as d,
+                (select count(*)::int from public.s08_frozen_reviews r2 where r2.id = r.id) as n
+           from public.s08_frozen_reviews r
+          where r.id = $1::uuid`,
+        [reviewId],
+      )
+    ).rows[0];
+    expect(row.d).toBe('APPROVED');
+    expect(row.n).toBe(1);
   });
 });

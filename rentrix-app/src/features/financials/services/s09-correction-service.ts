@@ -221,21 +221,56 @@ export type S08ApprovedReview = {
   createdAt: string | null;
 };
 
+/**
+ * Strict parser for the deployed `s08_list_frozen_reviews` envelope
+ * `{company_id, reviews:[…]}` (same class as `parseS09ListEnvelope`, F13).
+ * A malformed response fails closed with an Arabic reason; it is never
+ * shown as an empty list.
+ */
+export function parseS08ReviewListEnvelope(payload: unknown): Array<Record<string, unknown>> {
+  if (payload === null || payload === undefined) {
+    fail('S08_LIST_RESPONSE_INVALID', 'استجابة قائمة المراجعات المجمدة فارغة؛ لا تُعرض كقائمة خالية.');
+  }
+  if (typeof payload !== 'object' || Array.isArray(payload)) {
+    fail('S08_LIST_RESPONSE_INVALID', 'استجابة قائمة المراجعات المجمدة غير صالحة.');
+  }
+  const rows = (payload as Record<string, unknown>).reviews;
+  if (!Array.isArray(rows)) {
+    fail('S08_LIST_RESPONSE_INVALID', 'استجابة قائمة المراجعات المجمدة لا تحمل سجلات المراجعات.');
+  }
+  return rows.map((row) => {
+    if (typeof row !== 'object' || row === null || Array.isArray(row)) {
+      fail('S08_LIST_RESPONSE_INVALID', 'سجل مراجعة مجمدة غير صالح داخل الاستجابة.');
+    }
+    return row as Record<string, unknown>;
+  });
+}
+
+/**
+ * Read model via the deployed list RPC — never a hand-rolled table query.
+ * The RPC is the authoritative metadata read path (granted to `authenticated`,
+ * company-scoped server-side, metadata-only by construction: it never exposes
+ * analysis_results / reconciliation_evidence / exceptions / expense snapshots).
+ * A direct table SELECT would instead depend on the migration-11 RLS gate
+ * (`financial.reports.view`), which is stricter than the server's own S09
+ * anchor contract and can be revoked per-employee — breaking the panel for
+ * users the server would still accept.
+ */
 export async function loadApprovedS08Reviews(): Promise<S08ApprovedReview[]> {
-  const { data, error } = await supabase
-    .from('s08_frozen_reviews')
-    .select('id, accounting_period_id, created_at, reviewer_decision')
-    .eq('reviewer_decision', 'APPROVED')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('s08_list_frozen_reviews', {
+    p_period_id: null,
+  });
   if (error) throw error;
-  return (data ?? []).map((row) => {
-    const record = row as Record<string, unknown>;
-    return {
+  return parseS08ReviewListEnvelope(data)
+    .filter((record) => record.reviewer_decision === 'APPROVED')
+    .map((record) => ({
       id: requireText(record.id, 'id'),
       accountingPeriodId: optionalText(record.accounting_period_id),
       createdAt: optionalText(record.created_at),
-    };
-  });
+    }))
+    // The RPC orders by creation_timestamp desc; created_at is immutable
+    // alongside it, so re-sorting client-side preserves the prior UI order.
+    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
 }
 
 export function createS09RequestId(prefix = 's09'): string {
