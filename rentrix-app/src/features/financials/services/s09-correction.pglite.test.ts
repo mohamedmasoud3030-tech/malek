@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { repoRoot, assumeIdentity } from '@/p1/replay-bootstrap';
-import { COMPANY, MAKER, PROPERTY, createOfficeCreditorFixture } from '@/test/office-creditor-fixture';
+import { COMPANY, CONTRACT, MAKER, PROPERTY, createOfficeCreditorFixture } from '@/test/office-creditor-fixture';
 import { offsetFixtureCommand as command, offsetDate as at } from '@/test/owner-offset-fixture';
 import {
   S09EvidenceError,
@@ -33,6 +33,7 @@ import {
 let db: PGlite;
 let expense: string;
 let period: string;
+let invoiceId: string;
 const checker = 'c2000000-0000-4000-8000-000000000097';
 const manager = 'c2000000-0000-4000-8000-000000000096';
 
@@ -114,7 +115,7 @@ async function originalExpenseBatchId() {
 }
 
 beforeAll(async () => {
-  ({ db } = await createOfficeCreditorFixture({ throughMigration: '20260909000011' }));
+  ({ db, invoiceId } = await createOfficeCreditorFixture({ throughMigration: '20260909000011' }));
   await db.query('insert into auth.users(id,email) values($1::uuid,$2)', [
     checker,
     's09-checker@test.local',
@@ -690,5 +691,205 @@ describe('S09 reversal — client parsers (pure)', () => {
     expect(
       translateS09Error(new Error('S09_REVERSE_NO_BATCH: correction has no journal batch')),
     ).toContain('لا يحمل قيداً مرحَّلاً');
+  });
+});
+
+/**
+ * NOW-5 — correction coverage beyond `source_type='expense'`.
+ *
+ * The deployed `s09_validate_correction_invariants` (step 8) enforces source
+ * evidence for exactly four source types — `invoice`, `payment`, `expense`,
+ * `deposit` — each against its own company-scoped table, raising
+ * `S09_SOURCE_EVIDENCE_MISSING` when the source does not exist. Every other
+ * source type is bound only to the APPROVED S08 review (no source-existence
+ * check). These tests prove BOTH halves of that deployed contract with real
+ * SQL: the four evidence-checked types accept a real source and refuse a
+ * fabricated one, and the non-enumerated behaviour is locked as documented,
+ * not silently assumed.
+ */
+describe('S09 non-expense source types — real SQL against the deployed invariants', () => {
+  async function draftFor(
+    sourceType: string,
+    sourceId: string,
+    requestId: string,
+    amount = 8.25,
+    reuseReviewId?: string,
+  ) {
+    // One approved review per TEST: S08 reviews dedupe on a (company, period,
+    // fingerprint) unique index, so a second equivalent review inside the same
+    // transaction would collide instead of exercising its own scenario.
+    const reviewId = reuseReviewId ?? (await makeApprovedReview());
+    return parseCreateS09DraftResult(
+      await command(
+        db,
+        's09_create_correction_draft',
+        buildCreateS09DraftPayload({
+          reviewId,
+          sourceType,
+          sourceId,
+          reason: `Correction anchored to ${sourceType} source`,
+          amount,
+          debitAccountNo: '1300',
+          creditAccountNo: '6100',
+          requestId,
+          accountingPeriodId: period,
+        }),
+      ),
+    );
+  }
+
+  it('runs create → validate → apply for an invoice source and never rewrites the invoice', async () => {
+    const invoiceBefore = (
+      await db.query<{ row: unknown }>('select to_jsonb(i) as row from public.invoices i where id=$1::uuid', [
+        invoiceId,
+      ])
+    ).rows[0].row;
+    expect(invoiceBefore).toBeTruthy();
+
+    const created = await draftFor('invoice', invoiceId, 's09-service-invoice-1');
+    await db.query('select public.s09_validate_correction($1::uuid)', [created.id]);
+    const applied = parseApplyS09Result(
+      (
+        await db.query<{ data: Record<string, unknown> }>(
+          'select public.s09_apply_correction($1::uuid) as data',
+          [created.id],
+        )
+      ).rows[0].data,
+    );
+
+    // The correction is its own balanced batch; the invoice row is untouched.
+    const lines = (
+      await db.query<{ debit: string; credit: string }>(
+        'select sum(debit)::text as debit, sum(credit)::text as credit from public.journal_lines where batch_id=$1::uuid',
+        [applied.batchId],
+      )
+    ).rows[0];
+    expect(Number(lines.debit)).toBe(8.25);
+    expect(Number(lines.debit)).toBe(Number(lines.credit));
+    const invoiceAfter = (
+      await db.query<{ row: unknown }>('select to_jsonb(i) as row from public.invoices i where id=$1::uuid', [
+        invoiceId,
+      ])
+    ).rows[0].row;
+    expect(invoiceAfter).toEqual(invoiceBefore);
+
+    const stored = (
+      await db.query<{ row: Record<string, unknown> }>(
+        'select to_jsonb(c) as row from public.s09_corrections c where id=$1::uuid',
+        [created.id],
+      )
+    ).rows[0].row;
+    expect(stored.source_type).toBe('invoice');
+    expect(stored.source_id).toBe(invoiceId);
+    expect(parseS09Correction(stored).status).toBe('APPLIED');
+  });
+
+  it('refuses an invoice source that does not exist in the company (fail closed at validate)', async () => {
+    const created = await draftFor(
+      'invoice',
+      'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      's09-service-invoice-missing',
+    );
+    await db.exec('savepoint invoice_missing');
+    await expect(
+      db.query('select public.s09_validate_correction($1::uuid)', [created.id]),
+    ).rejects.toThrow(/S09_SOURCE_EVIDENCE_MISSING/);
+    await db.exec('rollback to savepoint invoice_missing');
+  });
+
+  it('validates a payment source recorded through the governed collection RPC', async () => {
+    const recorded = await command(db, 'record_invoice_payment_atomic', {
+      invoice_id: invoiceId,
+      amount: 100,
+      method: 'cash',
+      date: at(10),
+      request_id: 's09-service-payment-funds',
+    });
+    const paymentId = String(recorded.payment_id);
+    expect(paymentId).toBeTruthy();
+
+    const reviewId = await makeApprovedReview();
+    const created = await draftFor('payment', paymentId, 's09-service-payment-1', 8.25, reviewId);
+    const validated = await db.query<{ data: Record<string, unknown> }>(
+      'select public.s09_validate_correction($1::uuid) as data',
+      [created.id],
+    );
+    expect((validated.rows[0].data as { status?: string }).status).toBe('VALIDATED');
+
+    // A fabricated payment id is refused by the same branch.
+    const fabricated = await draftFor(
+      'payment',
+      'aaaaaaaa-bbbb-4ccc-8ddd-ffffffffffff',
+      's09-service-payment-missing',
+      8.25,
+      reviewId,
+    );
+    await db.exec('savepoint payment_missing');
+    await expect(
+      db.query('select public.s09_validate_correction($1::uuid)', [fabricated.id]),
+    ).rejects.toThrow(/S09_SOURCE_EVIDENCE_MISSING/);
+    await db.exec('rollback to savepoint payment_missing');
+  });
+
+  it('validates a deposit source created through the governed deposit RPC', async () => {
+    const deposit = await command(db, 'create_deposit_atomic', {
+      request_id: 's09-service-deposit-funds',
+      contract_id: CONTRACT,
+      amount: 50,
+      received_date: at(5),
+      notes: 'S09 deposit-source fixture',
+    });
+    const depositId = String(deposit.deposit_id);
+    expect(depositId).toBeTruthy();
+
+    const reviewId = await makeApprovedReview();
+    const created = await draftFor('deposit', depositId, 's09-service-deposit-1', 8.25, reviewId);
+    const validated = await db.query<{ data: Record<string, unknown> }>(
+      'select public.s09_validate_correction($1::uuid) as data',
+      [created.id],
+    );
+    expect((validated.rows[0].data as { status?: string }).status).toBe('VALIDATED');
+
+    const fabricated = await draftFor(
+      'deposit',
+      'no-such-deposit',
+      's09-service-deposit-missing',
+      8.25,
+      reviewId,
+    );
+    await db.exec('savepoint deposit_missing');
+    await expect(
+      db.query('select public.s09_validate_correction($1::uuid)', [fabricated.id]),
+    ).rejects.toThrow(/S09_SOURCE_EVIDENCE_MISSING/);
+    await db.exec('rollback to savepoint deposit_missing');
+  });
+
+  it('binds a non-enumerated source type to the review only — deployed behaviour, locked as documented', async () => {
+    // Step 8 of the deployed invariants evidence-checks EXACTLY four source
+    // types (invoice, payment, expense, deposit). Any other label is accepted
+    // and bound only to the APPROVED S08 review — there is no source-existence
+    // check. This test LOCKS that deployed behaviour so any future tightening
+    // or loosening is a visible, deliberate change. It is recorded as a
+    // governance finding (weak lineage for non-enumerated labels); tightening
+    // the server would be inventing an accounting rule without an approved
+    // source, so it is surfaced, not unilaterally changed.
+    const created = await draftFor(
+      'owner_settlement',
+      'settlement-label-not-evidence-checked',
+      's09-service-unknown-type',
+    );
+    const validated = await db.query<{ data: Record<string, unknown> }>(
+      'select public.s09_validate_correction($1::uuid) as data',
+      [created.id],
+    );
+    expect((validated.rows[0].data as { status?: string }).status).toBe('VALIDATED');
+    const stored = (
+      await db.query<{ row: Record<string, unknown> }>(
+        'select to_jsonb(c) as row from public.s09_corrections c where id=$1::uuid',
+        [created.id],
+      )
+    ).rows[0].row;
+    expect(stored.source_type).toBe('owner_settlement');
+    expect(stored.source_id).toBe('settlement-label-not-evidence-checked');
   });
 });

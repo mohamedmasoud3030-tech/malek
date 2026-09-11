@@ -357,6 +357,10 @@ export function S09CorrectionPanel() {
                 onChange={(event) => setSourceType(event.target.value)}
                 required
               />
+              <span className="block text-xs text-muted-foreground">
+                الأنواع التي يتحقق الخادم من وجود مصدرها داخل شركتك: expense · invoice · payment ·
+                deposit. أي نوع آخر يبقى مرتبطاً بمراجعة S08 المعتمدة فقط دون تحقق من وجود المصدر.
+              </span>
             </label>
 
             <label className="block space-y-1">

@@ -913,3 +913,61 @@ Two related strictness additions in the same fix:
 - Reversal is proven for `source_type='expense'` corrections only — the only path with a full-chain
   fixture. Other source types remain supported by the server and service but unproven here.
 - Hosted concurrency (G3/G4) and hosted repo↔production parity were not re-measured in this pass.
+
+---
+
+## NOW-5 — S09 correction coverage beyond `source_type='expense'`: CLOSED (local/replay)
+
+**Status:** COMPLETED — every source type the deployed invariants enumerate now has real-SQL proof;
+the non-enumerated behaviour is locked as documented and surfaced as a governance finding. Not yet
+exercised in a hosted browser. Push remains BLOCKED (no credential in sandbox) — commits are local.
+
+### Evidence-checked source types (deployed `s09_validate_correction_invariants`, step 8)
+
+| source_type | Evidence table | Real-SQL proof |
+|---|---|---|
+| `expense` | `expenses` (+ migration-11 review-source snapshot) | pre-existing 9-test chain + the 53-PASS upgrade suites |
+| `invoice` | `invoices` | **NEW** full create→validate→apply chain: separate balanced batch; the invoice row stays byte-identical (`to_jsonb` before/after) |
+| `payment` | `payments` | **NEW** validate against a payment recorded via the governed `record_invoice_payment_atomic` |
+| `deposit` | `tenant_deposits` | **NEW** validate against a deposit created via the governed `create_deposit_atomic` |
+
+Each enumerated type also has a **fail-closed proof**: a fabricated `source_id` is refused at
+validate with `S09_SOURCE_EVIDENCE_MISSING` (company-scoped). Apply/reverse are source-type
+agnostic (they act on the correction batch); apply's effective-date branch for expense
+(migration 11) vs period-start for other types is exercised by the invoice full chain.
+
+### Governance finding — surfaced, NOT unilaterally changed
+
+**Non-enumerated source types are not evidence-checked.** Step 8 enumerates exactly four types;
+any other label (e.g. `owner_settlement`) is accepted and bound ONLY to the APPROVED S08 review —
+amounts must still balance, accounts must still belong to the company, role gates still apply, but
+`source_id` existence is never proven. This is weak lineage, not mis-posted money (GL lines are
+built from the debit/credit pair independent of `source_type`). A test now locks the current
+behaviour so any future tightening is a visible, deliberate change. Tightening the server
+(a whitelist, or a generic existence check) would be **inventing an accounting rule without an
+approved source** — it requires a governance/user decision; recorded in HANDOFF §G5 still-open.
+
+### UI honesty added (no rule change)
+
+The panel's source-type input now discloses which types the server evidence-checks
+(`expense · invoice · payment · deposit`) and that any other label binds to the review only —
+aligning the interface with the deployed behaviour instead of implying uniform verification.
+
+### Files
+
+| File | Role |
+|---|---|
+| `rentrix-app/src/features/financials/services/s09-correction.pglite.test.ts` | +5 real-SQL tests (suite now 23/23): invoice full chain + preservation, invoice/payment/deposit fail-closed refusals, non-enumerated behaviour lock |
+| `rentrix-app/src/features/financials/components/S09CorrectionPanel.tsx` | source-type disclosure hint (text only) |
+
+### Evidence (fresh, 2026-09-11 05:40Z)
+
+s09 suite **23/23** · typecheck clean · design-system inventory **13/13** · entity-form + axe
+suites **25/25**, axe **15/15** · sharded regression 20 shards **559 files / 4060 tests /
+0 failures / 0 INFRA — PASS** · gates **7/7** · guardian **PASS** · migration-hygiene **OK** ·
+business-rules `v2.0.0 382a0b8c…` **unchanged** · **0 migrations added**
+
+### Not proven here (state plainly)
+- Local/replay only; no hosted browser run; **not pushed** (credential blocker).
+- Payment and deposit are proven at the validate level (the evidence branch); the full
+  apply/reverse chain is proven for expense and invoice only.
