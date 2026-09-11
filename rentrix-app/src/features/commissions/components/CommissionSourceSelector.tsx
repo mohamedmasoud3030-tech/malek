@@ -58,6 +58,12 @@ export function CommissionSourceSelector({
     );
   }
 
+  const placeholderLabel = (() => {
+    if (isLoading) return 'جارٍ تحميل المصادر...';
+    if (hasError) return 'تعذر تحميل المصادر';
+    return `اختر ${typeLabels[type] ?? 'المصدر'}`;
+  })();
+
   return (
     <Select
       value={value}
@@ -66,11 +72,7 @@ export function CommissionSourceSelector({
       aria-label={`المصدر (${typeLabels[type] ?? type})`}
     >
       <option value="">
-        {isLoading
-          ? 'جارٍ تحميل المصادر...'
-          : hasError
-            ? 'تعذر تحميل المصادر'
-            : `اختر ${typeLabels[type] ?? 'المصدر'}`}
+        {placeholderLabel}
       </option>
       {sources.map((source) => (
         <option key={source.id} value={source.id}>

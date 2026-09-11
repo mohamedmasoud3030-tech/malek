@@ -118,11 +118,11 @@ export function ContractKpiGrid({
   const unpaidExposure = attentionSummary?.outstandingAmount ?? 0;
   const paymentExposure = overdueExposure > 0 ? overdueExposure : unpaidExposure;
   const paymentLabel = overdueExposure > 0 ? 'متأخرات مستحقة' : 'غير مسدد';
-  const paymentHint = attentionSummary
-    ? overdueExposure > 0
-      ? `${formatCount(attentionSummary.overdueInvoices)} فاتورة متأخرة`
-      : `${formatCount(attentionSummary.paymentAttention)} عقد بمستحقات`
-    : undefined;
+  const paymentHint = (() => {
+    if (!attentionSummary) return undefined;
+    if (overdueExposure > 0) return `${formatCount(attentionSummary.overdueInvoices)} فاتورة متأخرة`;
+    return `${formatCount(attentionSummary.paymentAttention)} عقد بمستحقات`;
+  })();
 
   return (
     <section data-contract-summary aria-label="ملخص دورة العقود" className="min-w-0 space-y-2">

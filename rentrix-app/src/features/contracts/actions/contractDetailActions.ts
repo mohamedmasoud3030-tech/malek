@@ -66,6 +66,11 @@ export function printContractView(contract: ContractDetail, companySettings: Doc
   });
 }
 
+const WHATSAPP_FAILURE_MESSAGES: Record<string, string> = {
+  PHONE_INVALID: 'رقم واتساب المسجل غير صالح. حدّث رقم المستأجر أو افتح المشاركة العامة.',
+  TEXT_TOO_LONG: 'رسالة واتساب أطول من الحد المسموح.',
+};
+
 export async function shareContractLink(_contract: ContractDetail) {
   try {
     const result = await shareOrCopy({
@@ -93,11 +98,7 @@ export function shareContractViaWhatsApp(contract: ContractDetail) {
   });
 
   if (!outcome.result.ok) {
-    const message = outcome.result.reason === 'PHONE_INVALID'
-      ? 'رقم واتساب المسجل غير صالح. حدّث رقم المستأجر أو افتح المشاركة العامة.'
-      : outcome.result.reason === 'TEXT_TOO_LONG'
-        ? 'رسالة واتساب أطول من الحد المسموح.'
-        : 'تعذر تجهيز رسالة واتساب.';
+    const message = WHATSAPP_FAILURE_MESSAGES[outcome.result.reason] ?? 'تعذر تجهيز رسالة واتساب.';
     toast.error(message);
     return;
   }

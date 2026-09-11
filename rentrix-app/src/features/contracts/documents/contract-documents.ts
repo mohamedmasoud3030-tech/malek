@@ -78,6 +78,11 @@ export function downloadLeaseSummaryPdf(contract: ContractDetail, settings: Docu
 /* #2 Move-In / Move-Out Snagging ('unit_inspection')                  */
 /* ------------------------------------------------------------------ */
 
+const INSPECTION_MODES: Record<string, 'move_in' | 'move_out'> = {
+  MOVE_IN: 'move_in',
+  MOVE_OUT: 'move_out',
+};
+
 export function toUnitInspectionPayload(params: {
   inspection: ContractInspection;
   contract: ContractDetail;
@@ -90,8 +95,7 @@ export function toUnitInspectionPayload(params: {
     throw new Error('لا يمكن إصدار محضر الفحص دون وجود بنود فحص مسجلة.');
   }
 
-  const mode: UnitInspectionPayload['inspectionMode'] =
-    inspection.kind === 'MOVE_IN' ? 'move_in' : inspection.kind === 'MOVE_OUT' ? 'move_out' : 'inspection';
+  const mode: UnitInspectionPayload['inspectionMode'] = INSPECTION_MODES[inspection.kind] ?? 'inspection';
 
   const conditionLabels: Record<string, string> = {
     GOOD: 'سليم / ممتاز',

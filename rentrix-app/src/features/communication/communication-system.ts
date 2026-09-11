@@ -332,11 +332,9 @@ export function isWithinQuietHours(
     .find((part) => part.type === "hour")?.value;
   const hour = Number(hourPart ?? now.getUTCHours());
   const { quietHoursStart: start, quietHoursEnd: end } = preference;
-  return start === end
-    ? false
-    : start > end
-      ? hour >= start || hour < end
-      : hour >= start && hour < end;
+  if (start === end) return false;
+  if (start > end) return hour >= start || hour < end;
+  return hour >= start && hour < end;
 }
 
 export function prepareCommunicationPreview(

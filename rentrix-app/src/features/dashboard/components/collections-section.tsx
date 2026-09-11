@@ -37,6 +37,12 @@ function collectionPeriodTitle(month: number, year: number): string {
  * aging from the snapshot. Bucket boundaries are the server's fixed cohorts —
  * they are never rebucketed in the browser.
  */
+function collectionBarClass(rate: number): string {
+  if (rate >= 80) return 'bg-success';
+  if (rate >= 50) return 'bg-warning';
+  return 'bg-danger';
+}
+
 export const CollectionsSection = memo(function CollectionsSection({ snapshot, isLoading, settings }: CollectionsSectionProps) {
   const money = (value: number) => formatCompanyMoney(settings, value);
 
@@ -73,7 +79,7 @@ export const CollectionsSection = memo(function CollectionsSection({ snapshot, i
           percent={collectionRate}
           label="نسبة التحصيل من استحقاقات الفترة"
           valueText={`${collectionRate}%`}
-          barClass={collectionRate >= 80 ? 'bg-success' : collectionRate >= 50 ? 'bg-warning' : 'bg-danger'}
+          barClass={collectionBarClass(collectionRate)}
         />
 
         <div className="grid min-w-0 grid-cols-3 divide-x divide-border/60 rounded-xl bg-muted/25 rtl:divide-x-reverse">
