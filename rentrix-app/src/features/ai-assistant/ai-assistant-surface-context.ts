@@ -77,10 +77,17 @@ function sectionForRoot(root: string): string | null {
   return SECTION_BY_ROOT[root] ?? null;
 }
 
+/** Drops trailing slashes in a single pass (regex-free, linear). */
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end -= 1;
+  return value.slice(0, end);
+}
+
 export function deriveAiAssistantSurfaceContext(
   pathname: string,
 ): AiAssistantSurfaceContext {
-  const route = typeof pathname === 'string' && pathname ? pathname.replace(/\/+$/, '') || '/' : '/';
+  const route = typeof pathname === 'string' && pathname ? trimTrailingSlashes(pathname) || '/' : '/';
   const segments = route.split('/').filter(Boolean);
 
   const base = segments[0] ?? '';

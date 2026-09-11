@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { containsDigitRun } from '@/lib/digit-run';
 
 export type AppNotification = Readonly<{
   id: string;
@@ -10,14 +11,18 @@ export type AppNotification = Readonly<{
   type: string | null;
 }>;
 
-const sensitivePreviewPattern = /password|token|secret|authorization\s*:|[^\s@]+@[^\s@]+\.[^\s@]+|(?:\d[\s-]*){8,}/i;
+// Email alternative anchors the first dot deterministically (`[^\s@.]*\.`
+// cannot disagree about which dot terminates the domain prefix) so the
+// pattern stays linear; long digit runs are checked by containsDigitRun
+// for the same reason. Both err on the masking side for odd inputs.
+const sensitivePreviewPattern = /password|token|secret|authorization\s*:|[^\s@]+@[^\s@.]*\.[^\s@]+/i;
 const identifierInUrlPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|@/i;
 const allowedLinkPrefixes = ['/dashboard', '/settings', '/contracts', '/financials', '/maintenance', '/reports', '/help'];
 
 export function sanitizeNotificationPreview(value: unknown, fallback: string, maxLength: number): string {
   if (typeof value !== 'string') return fallback;
   const trimmed = value.trim();
-  if (!trimmed || sensitivePreviewPattern.test(trimmed)) return fallback;
+  if (!trimmed || sensitivePreviewPattern.test(trimmed) || containsDigitRun(trimmed, 8)) return fallback;
   return trimmed.slice(0, maxLength);
 }
 

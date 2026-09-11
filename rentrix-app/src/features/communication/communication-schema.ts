@@ -59,7 +59,9 @@ export const communicationFormSchema = z.object({
     .string()
     .trim()
     .max(254)
-    .refine((value) => value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
+    // Domain prefix is anchored to the first dot (`[^\s@.]+\.`) so the check
+    // runs in linear time; dot-leading domains are invalid anyway.
+    .refine((value) => value === '' || /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(value), {
       message: 'البريد الإلكتروني غير صحيح',
     })
     .transform((value) => (value === '' ? null : value)),

@@ -310,7 +310,9 @@ function isValidRecipient(
   if (channel === "in_app") return /^[0-9a-f-]{36}$/i.test(recipient);
   if (channel === "email")
     return (
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient) && recipient.length <= 254
+      // Domain prefix anchored to the first dot keeps the check linear;
+      // dot-leading domains are invalid anyway.
+      /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(recipient) && recipient.length <= 254
     );
   if (channel === "whatsapp" || channel === "sms")
     return /^\+?[1-9]\d{7,14}$/.test(recipient.replace(/[\s-]/g, ""));

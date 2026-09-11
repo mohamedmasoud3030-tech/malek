@@ -29,8 +29,15 @@ const ARABIC_MONTHS = [
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
 ] as const;
 
-/** Number literal that may carry thousand separators and up to 3 decimals. */
-const NUM = String.raw`(-?\d{1,3}(?:,\d{3})+(?:\.\d{1,3})?|-?\d+(?:\.\d{1,3})?)`;
+/**
+ * Number literal that may carry thousand separators and up to 3 decimals.
+ *
+ * The comma-grouped and plain shapes are mutually exclusive via the
+ * `(?!\d{1,3},)` guard, so the engine never explores both branches (and never
+ * unwinds one of them) for the same digits — matching stays linear instead of
+ * super-linear under backtracking.
+ */
+const NUM = String.raw`(-?(?:\d{1,3}(?:,\d{3})+(?:\.\d{1,3})?|(?!\d{1,3},)\d+(?:\.\d{1,3})?))`;
 
 /** Numbers must not start mid-number (digit/dot already consumed). */
 const NOT_MID_NUMBER = String.raw`(?<![\d.])`;
@@ -40,7 +47,7 @@ const NOT_WORD_AFTER = String.raw`(?![\p{L}\p{N}])`;
 const OMNIA_MONEY_BEFORE: ReadonlyArray<Readonly<{ pattern: RegExp; currency: string }>> = [
   { pattern: new RegExp(`${NOT_MID_NUMBER}${NUM}\\s*ر\\.?\\s?ع\\.?\\.?${NOT_WORD_AFTER}`, 'gu'), currency: 'OMR' },
   { pattern: new RegExp(`OMR\\s*${NOT_MID_NUMBER}${NUM}`, 'giu'), currency: 'OMR' },
-  { pattern: new RegExp(`${NOT_MID_NUMBER}${NUM}\\s*ريال(?:ات|ة)?\\s*(?:عمانية|عماني)(?:ة)?`, 'gu'), currency: 'OMR' },
+  { pattern: new RegExp(`${NOT_MID_NUMBER}${NUM}\\s*ريال(?:ات|ة)?\\s*عماني(?:ة)?`, 'gu'), currency: 'OMR' },
   { pattern: new RegExp(`${NOT_MID_NUMBER}(?<![\\p{L}])ر\\.?\\s?ع\\.?\\.?\\s*${NUM}`, 'gu'), currency: 'OMR' },
 ];
 

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { containsDigitRun } from "@/lib/digit-run";
 import { sanitizeSupportRoute } from "./help-context";
 
 export const supportCategories = [
@@ -57,8 +58,9 @@ type Rpc = (
 
 const sensitiveContentPattern =
   /password|passcode|كلمة\s*المرور|api[_\s-]?key|secret|token|authorization\s*:|private\s+key|-----begin|reset[_\s-]?link|رابط\s+الاستعادة/i;
-const emailPattern = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/;
-const longNumberPattern = /(?:\d[\s-]*){8,}/;
+// Domain prefix anchors at the first dot (`[^\s@.]*\.`) so the pattern is
+// linear; long digit runs go through containsDigitRun for the same reason.
+const emailPattern = /\b[^\s@]+@[^\s@.]*\.[^\s@]+\b/;
 const safeErrorReferencePattern = /^[\p{L}\p{N}._:\-/]*$/u;
 
 const responseTargets: Readonly<Record<SupportUrgency, string>> = {
@@ -81,7 +83,7 @@ export function containsUnsafeSupportContent(value: string): boolean {
   return (
     sensitiveContentPattern.test(value) ||
     emailPattern.test(value) ||
-    longNumberPattern.test(value)
+    containsDigitRun(value, 8)
   );
 }
 
