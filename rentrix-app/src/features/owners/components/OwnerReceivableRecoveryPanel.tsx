@@ -27,9 +27,9 @@ import {
   translateOwnerRecoveryError,
 } from '../services/owner-receivable-recovery-service';
 
-type OwnerReceivableRecoveryPanelProps = {
+type OwnerReceivableRecoveryPanelProps = Readonly<{
   ownerId: string;
-};
+}>;
 
 /**
  * The single canonical surface for recording a CASH recovery against an owner

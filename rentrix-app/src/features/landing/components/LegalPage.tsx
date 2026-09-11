@@ -10,7 +10,7 @@ import { legalContent, type LegalSlug } from '../i18n/legal';
 import { NavBar } from './NavBar';
 import { Footer } from './Footer';
 
-export function LegalPage({ slug }: { slug: LegalSlug }) {
+export function LegalPage({ slug }: Readonly<{ slug: LegalSlug }>) {
   const { lang, isArabic } = useLanguage();
   const content = legalContent[slug][lang];
   const BackIcon = isArabic ? ArrowRight : ArrowLeft;

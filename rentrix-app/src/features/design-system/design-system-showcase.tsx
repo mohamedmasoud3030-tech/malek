@@ -30,7 +30,7 @@ import {
 } from '@/components/ui';
 import { useUiStore } from '@/store/ui-store';
 
-function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+function Section({ title, description, children }: Readonly<{ title: string; description?: string; children: ReactNode }>) {
   return (
     <section className="space-y-4">
       <div>
@@ -44,7 +44,7 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-function Swatch({ name, value }: { name: string; value: string }) {
+function Swatch({ name, value }: Readonly<{ name: string; value: string }>) {
   return (
     <div className="flex items-center gap-3">
       <div className="size-12 rounded-lg border border-border shadow-sm" style={{ background: value }} aria-hidden="true" />

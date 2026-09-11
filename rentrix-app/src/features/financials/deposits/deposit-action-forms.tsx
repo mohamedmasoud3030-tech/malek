@@ -14,7 +14,7 @@ function depositErrorMessage(error: unknown, fallback: string) {
   return error ? getActionableSupabaseErrorMessage(error, fallback) : undefined;
 }
 
-export function DepositCreateForm({ controller }: { controller: Controller }) {
+export function DepositCreateForm({ controller }: Readonly<{ controller: Controller }>) {
   const {
     actionType,
     setActionType,
@@ -106,7 +106,7 @@ export function DepositCreateForm({ controller }: { controller: Controller }) {
   );
 }
 
-export function DepositClaimForm({ controller }: { controller: Controller }) {
+export function DepositClaimForm({ controller }: Readonly<{ controller: Controller }>) {
   const {
     actionType,
     setActionType,
@@ -266,7 +266,7 @@ export function DepositClaimForm({ controller }: { controller: Controller }) {
   );
 }
 
-export function DepositRefundForm({ controller }: { controller: Controller }) {
+export function DepositRefundForm({ controller }: Readonly<{ controller: Controller }>) {
   const {
     actionType,
     setActionType,
@@ -354,7 +354,7 @@ export function DepositRefundForm({ controller }: { controller: Controller }) {
   );
 }
 
-export function DepositReasonForm({ controller }: { controller: Controller }) {
+export function DepositReasonForm({ controller }: Readonly<{ controller: Controller }>) {
   const {
     actionType,
     setActionType,

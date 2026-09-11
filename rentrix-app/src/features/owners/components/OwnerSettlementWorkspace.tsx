@@ -510,7 +510,7 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
   );
 }
 
-function Metric({ label, value, tone = 'default' }: { label: string; value: number; tone?: 'default' | 'primary' | 'danger' | 'success' }) {
+function Metric({ label, value, tone = 'default' }: Readonly<{ label: string; value: number; tone?: 'default' | 'primary' | 'danger' | 'success' }>) {
   const className = tone === 'primary'
     ? 'text-primary'
     : tone === 'danger'
@@ -526,7 +526,7 @@ function Metric({ label, value, tone = 'default' }: { label: string; value: numb
   );
 }
 
-type DraftOverlayProps = {
+type DraftOverlayProps = Readonly<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   form: DraftFormState;
@@ -541,7 +541,7 @@ type DraftOverlayProps = {
   previewLoading: boolean;
   previewError: string;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-};
+}>;
 
 function DraftOverlay({
   open,
@@ -652,13 +652,13 @@ function DraftField({
   onChange,
   type = 'number',
   min = '0',
-}: {
+}: Readonly<{
   label: string;
   value: string;
   onChange: (value: string) => void;
   type?: 'number' | 'date';
   min?: string;
-}) {
+}>) {
   return (
     <EntityForm.Field label={label}>
       <Input

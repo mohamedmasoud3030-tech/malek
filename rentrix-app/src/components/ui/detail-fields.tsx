@@ -20,7 +20,7 @@ export interface DetailField {
  * - three columns are allowed only when a caller explicitly asks for them;
  * - legacy `columns={4}` is retained for compatibility but renders as two.
  */
-export function DetailFields({ fields, columns = 2, className }: { fields: DetailField[]; columns?: 2 | 3 | 4; className?: string }) {
+export function DetailFields({ fields, columns = 2, className }: Readonly<{ fields: DetailField[]; columns?: 2 | 3 | 4; className?: string }>) {
   const useThreeColumns = columns === 3;
   return (
     <div

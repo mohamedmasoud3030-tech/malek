@@ -21,12 +21,12 @@ import { MONEY_STEP } from '@/lib/money';
 
 type UnitWithDailyReferenceRate = Unit & { daily_reference_rate?: number | null };
 
-type UnitFormModalProps = {
+type UnitFormModalProps = Readonly<{
   propertyId: string;
   unit: Unit | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-};
+}>;
 
 export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitFormModalProps) {
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });

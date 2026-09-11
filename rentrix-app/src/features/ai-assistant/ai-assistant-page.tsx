@@ -166,7 +166,7 @@ function attentionClass(tone: AiAssistantResponsePresentation['attention'][numbe
   return 'border-border bg-muted/50 text-muted-foreground';
 }
 
-export function AiAssistantPage({ embedded = false }: { embedded?: boolean }) {
+export function AiAssistantPage({ embedded = false }: Readonly<{ embedded?: boolean }>) {
   const [messages, setMessages] = useState<AssistantUiMessage[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [showMoreActions, setShowMoreActions] = useState(false);

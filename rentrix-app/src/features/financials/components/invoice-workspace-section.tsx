@@ -11,12 +11,12 @@ import { InvoicePreviewDialog } from './invoice-preview-dialog';
 import { BillingReadinessSection } from '../billing/billing-readiness-section';
 import type { InvoiceListItem } from '../invoices/invoiceService';
 
-type GenerateInvoicesDialogProps = {
+type GenerateInvoicesDialogProps = Readonly<{
   open: boolean;
   isGenerating: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-};
+}>;
 
 function GenerateInvoicesDialog({ open, isGenerating, onOpenChange, onConfirm }: GenerateInvoicesDialogProps) {
   return (

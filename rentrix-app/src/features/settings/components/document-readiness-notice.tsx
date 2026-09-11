@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
  * output action with an Arabic explanation and a direct route to the company
  * settings page so the user can complete the required fields.
  */
-export function DocumentReadinessNotice({ className }: { className?: string }) {
+export function DocumentReadinessNotice({ className }: Readonly<{ className?: string }>) {
   return (
     <div
       role="alert"

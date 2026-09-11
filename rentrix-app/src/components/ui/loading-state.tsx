@@ -3,12 +3,12 @@ import { Skeleton } from './skeleton';
 
 type LoadingStateVariant = 'route' | 'page' | 'section' | 'cards' | 'table' | 'inline';
 
-type LoadingStateProps = {
+type LoadingStateProps = Readonly<{
   variant?: LoadingStateVariant;
   label?: string;
   className?: string;
   rows?: number;
-};
+}>;
 
 /** Shared loading skeletons for pages, KPI grids, tables, and inline blocks. */
 export function LoadingState({

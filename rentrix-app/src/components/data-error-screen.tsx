@@ -3,12 +3,12 @@ import type { ReactNode } from 'react';
 import { StateSurface } from '@/components/ui/state-surfaces';
 import { getEnvDiagnostics, parseSupabaseDiagnostics } from '@/lib/runtime-diagnostics';
 
-type DataErrorScreenProps = {
+type DataErrorScreenProps = Readonly<{
   title: string;
   fallbackMessage?: string;
   error?: unknown;
   action?: ReactNode;
-};
+}>;
 
 const SAFE_DATA_ERROR_FALLBACK = 'تعذر تحميل البيانات. تحقق من الاتصال ثم أعد المحاولة.';
 

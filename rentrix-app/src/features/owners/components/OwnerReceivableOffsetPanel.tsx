@@ -25,9 +25,9 @@ import {
   translateOwnerOffsetError,
 } from '../services/owner-receivable-offset-service';
 
-type OwnerReceivableOffsetPanelProps = {
+type OwnerReceivableOffsetPanelProps = Readonly<{
   ownerId: string;
-};
+}>;
 
 /**
  * The single canonical surface for applying a lawful offset between an owner

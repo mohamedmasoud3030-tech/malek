@@ -39,7 +39,7 @@ const defaultInvoiceColumns = [
   'actions',
 ];
 
-type InvoiceListSectionProps = {
+type InvoiceListSectionProps = Readonly<{
   status: InvoiceStatusFilter;
   invoiceSearch: string;
   invoices: InvoiceListItem[];
@@ -72,7 +72,7 @@ type InvoiceListSectionProps = {
   onTenantChange: (value: string) => void;
   onPropertyChange: (value: string) => void;
   onPageChange: (page: number) => void;
-};
+}>;
 
 export function billingPeriodLabel(invoice: InvoiceListItem) {
   const start = invoice.billing_period_start;

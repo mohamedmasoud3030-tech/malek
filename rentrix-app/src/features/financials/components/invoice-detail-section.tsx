@@ -18,7 +18,7 @@ export type CollectionSuccess = {
   method: Payment['payment_method'];
 };
 
-type InvoiceDetailSectionProps = {
+type InvoiceDetailSectionProps = Readonly<{
   selectedInvoiceId: string;
   invoiceDetail: InvoiceDetail | undefined;
   remaining: number;
@@ -52,7 +52,7 @@ type InvoiceDetailSectionProps = {
   onReferenceChange: (reference: string) => void;
   onPostPayment: () => void;
   onExportPdf?: () => void;
-};
+}>;
 
 export function InvoiceDetailSection({
   selectedInvoiceId,
