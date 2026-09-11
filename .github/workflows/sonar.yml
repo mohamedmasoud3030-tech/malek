@@ -18,7 +18,7 @@ jobs:
   sonarcloud:
     name: sonarcloud
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
@@ -32,7 +32,42 @@ jobs:
             exit 1
           fi
           echo "SONAR_TOKEN is configured."
+      - name: Install sonar-scanner-cli
+        run: |
+          set -euo pipefail
+          SCANNER_VERSION="8.1.0.6389"
+          curl -sSLo /tmp/sonar-scanner.zip \
+            "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_VERSION}-linux-x64.zip"
+          unzip -q /tmp/sonar-scanner.zip -d /opt
+          mv "/opt/sonar-scanner-${SCANNER_VERSION}-linux-x64" /opt/sonar-scanner
+          echo "/opt/sonar-scanner/bin" >> "${GITHUB_PATH}"
       - name: SonarCloud scan
-        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -uo pipefail
+          ARGS=(
+            "-Dsonar.token=${SONAR_TOKEN}"
+            "-Dsonar.host.url=https://sonarcloud.io"
+            "-Dsonar.projectKey=mohamedmasoud3030-tech_rentrixxx"
+            "-Dsonar.organization=mohamedmasoud3030-tech"
+          )
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            # Analyze the PR head as its own branch; PR decoration is not
+            # required for the remediation loop and avoids merge-ref churn.
+            BRANCH="$(jq -r '.pull_request.head.ref' "${GITHUB_EVENT_PATH}")"
+          else
+            BRANCH="${GITHUB_REF_NAME}"
+          fi
+          if [ "${BRANCH}" != "main" ]; then
+            ARGS+=("-Dsonar.branch.name=${BRANCH}")
+          fi
+          sonar-scanner "${ARGS[@]}" 2>&1 | tee /tmp/sonar-scan.log
+          exit "${PIPESTATUS[0]}"
+      - name: Upload scan log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sonar-scan-log
+          path: /tmp/sonar-scan.log
+          if-no-files-found: ignore
