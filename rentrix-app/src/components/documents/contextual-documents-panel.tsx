@@ -48,6 +48,16 @@ function isImage(document: ContextualDocument) {
   return document.mimeType?.startsWith('image/') || /\.(jpg|jpeg|png|webp)$/i.test(document.fileName);
 }
 
+function renderPreviewContent(preview: { url: string | null; document: ContextualDocument }) {
+  if (preview.url && isImage(preview.document)) {
+    return <img src={preview.url} alt={preview.document.title} loading="lazy" decoding="async" className="max-h-[60dvh] w-full rounded-xl object-contain" />;
+  }
+  if (preview.url) {
+    return <iframe title={preview.document.title} src={preview.url} className="h-[60dvh] w-full rounded-xl border" />;
+  }
+  return <p className="border-y border-border/60 py-5 text-sm">تم تحميل بيانات المستند. رابط المعاينة غير متاح حاليًا.</p>;
+}
+
 export function ContextualDocumentsPanel({
   entityLabel,
   documents,
@@ -151,7 +161,7 @@ export function ContextualDocumentsPanel({
       ) : null}
 
       <EntityPreviewDialog open={Boolean(preview)} onOpenChange={(open) => { if (!open) setPreview(null); }} title={preview?.document.title ?? `معاينة مستند ${entityLabel}`} description={preview?.document.reference ? `المرجع: ${preview.document.reference}` : undefined}>
-        {preview ? <div className="space-y-4">{preview.url && isImage(preview.document) ? <img src={preview.url} alt={preview.document.title} loading="lazy" decoding="async" className="max-h-[60dvh] w-full rounded-xl object-contain" /> : preview.url ? <iframe title={preview.document.title} src={preview.url} className="h-[60dvh] w-full rounded-xl border" /> : <p className="border-y border-border/60 py-5 text-sm">تم تحميل بيانات المستند. رابط المعاينة غير متاح حاليًا.</p>}</div> : null}
+        {preview ? <div className="space-y-4">{renderPreviewContent(preview)}</div> : null}
       </EntityPreviewDialog>
 
       <input id="contextual-document-replace" type="file" className="hidden" tabIndex={-1} accept={accept} aria-hidden="true" onChange={(event) => { if (replaceTarget) pickFile(event.target.files?.[0], (file) => onReplace?.(replaceTarget, file)); event.target.value = ''; setReplaceTarget(null); }} />

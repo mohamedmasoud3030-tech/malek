@@ -18,7 +18,11 @@ const queryState = vi.hoisted(() => ({
 const persistedState = vi.hoisted(() => ({ data: [] as unknown[] | undefined, isLoading: false, isError: false, refetch: vi.fn() }));
 const requestsState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false, refetch: vi.fn() }));
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: ({ queryKey }: { queryKey: unknown[] }) => queryKey[0] === 'app-notifications' ? persistedState : queryKey[0] === 'permission-requests' ? requestsState : queryState,
+  useQuery: ({ queryKey }: { queryKey: unknown[] }) => {
+    if (queryKey[0] === 'app-notifications') return persistedState;
+    if (queryKey[0] === 'permission-requests') return requestsState;
+    return queryState;
+  },
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: ({ mutationFn }: { mutationFn: (id: string) => Promise<unknown> }) => ({ mutate: (id: string) => { void mutationFn(id); }, isPending: false }),
 }));

@@ -434,7 +434,10 @@ function MobileRegisterListItem<T>({
   // face layout unchanged.
   const foldSecondary = Boolean(primaryAction) && Boolean(secondaryToOverflow);
   const secondaryAction = foldSecondary ? undefined : actionList[0];
-  const overflowActions = foldSecondary ? actionList : actionList.length > 1 ? actionList.slice(1) : [];
+  const overflowActions = (() => {
+    if (foldSecondary) return actionList;
+    return actionList.length > 1 ? actionList.slice(1) : [];
+  })();
 
   return (
     <li role="listitem" data-entity-table-mobile-card className="min-w-0">

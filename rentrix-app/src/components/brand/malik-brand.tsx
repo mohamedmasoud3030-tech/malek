@@ -22,6 +22,11 @@ type MalikBrandProps = Readonly<{
  * MALEK identity lockup. The internal component name is retained as a safe
  * compatibility boundary, while all visible text and assets use MALEK.
  */
+const WORDMARK_VARIANT_CLASSES: Record<string, string> = {
+  default: 'text-foreground',
+  'brand-gradient': 'bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent',
+};
+
 export function MalikBrand({
   compact = false,
   className,
@@ -53,9 +58,7 @@ export function MalikBrand({
               'malik-wordmark malek-wordmark text-center text-[1.65rem] font-extrabold uppercase leading-none tracking-[0.12em] sm:text-[1.85rem]',
               inverse
                 ? 'text-white'
-                : wordmarkVariant === 'brand-gradient'
-                  ? 'bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent'
-                  : 'text-foreground',
+                : WORDMARK_VARIANT_CLASSES[wordmarkVariant],
               wordmarkClassName,
             )}
           >

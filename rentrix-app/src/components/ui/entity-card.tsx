@@ -131,8 +131,17 @@ function EntityCardShell({ id, className, children }: Readonly<{
   );
 }
 
+const META_VALUE_CLASSES: Record<'labeled' | 'unlabeled', string> = {
+  labeled: 'mt-0.5 text-[12px] font-medium leading-4.5 text-foreground/88',
+  unlabeled: 'text-[12px] font-medium leading-4.5 text-muted-foreground',
+};
+
 function MetaGrid({ items, primary = false }: Readonly<{ items: EntityCardMetaItem[]; primary?: boolean }>) {
-  const columnClass = items.length <= 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+  const columnClass = (() => {
+    if (items.length <= 1) return 'grid-cols-1';
+    if (items.length === 2) return 'grid-cols-2';
+    return 'grid-cols-3';
+  })();
   return (
     <dl
       data-entity-table-mobile-summary={primary ? '' : undefined}
@@ -158,9 +167,7 @@ function MetaGrid({ items, primary = false }: Readonly<{ items: EntityCardMetaIt
                 'min-w-0 [overflow-wrap:anywhere]',
                 primary
                   ? 'mt-0.5 line-clamp-2 text-[12.5px] font-semibold leading-4.5 text-foreground'
-                  : item.label
-                    ? 'mt-0.5 text-[12px] font-medium leading-4.5 text-foreground/88'
-                    : 'text-[12px] font-medium leading-4.5 text-muted-foreground',
+                  : META_VALUE_CLASSES[item.label ? 'labeled' : 'unlabeled'],
               )}
             >
               <span className="inline-flex min-w-0 items-start gap-1.5">

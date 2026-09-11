@@ -289,21 +289,19 @@ const personEditRoute = createRoute({
   ),
   staticData: { title: 'تعديل شخص' },
 });
+const LEGACY_SECTION_ROUTES: Record<string, string> = {
+  people: '/people',
+  tenants: '/tenants',
+  leads: '/leads',
+  communication: '/communication',
+};
+
 const contractsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/contracts',
   beforeLoad: ({ search }) => {
     const legacySection = (search as Record<string, unknown>).section;
-    const legacyTarget =
-      legacySection === 'people'
-        ? '/people'
-        : legacySection === 'tenants'
-          ? '/tenants'
-          : legacySection === 'leads'
-            ? '/leads'
-            : legacySection === 'communication'
-              ? '/communication'
-              : null;
+    const legacyTarget = LEGACY_SECTION_ROUTES[typeof legacySection === 'string' ? legacySection : ''] ?? null;
     if (legacyTarget) {
       throw redirect({
         to: legacyTarget,

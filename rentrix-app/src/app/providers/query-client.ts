@@ -23,11 +23,11 @@ export function shouldRetryQuery(failureCount: number, error: unknown): boolean 
   if (!candidate) return true;
 
   const code = typeof candidate.code === 'string' ? candidate.code.toUpperCase() : '';
-  const numericStatus = typeof candidate.status === 'number'
-    ? candidate.status
-    : typeof candidate.status === 'string'
-      ? Number(candidate.status)
-      : Number.NaN;
+  const numericStatus = (() => {
+    if (typeof candidate.status === 'number') return candidate.status;
+    if (typeof candidate.status === 'string') return Number(candidate.status);
+    return Number.NaN;
+  })();
 
   if (NON_RETRYABLE_CODES.has(code)) return false;
   // PostgreSQL data/constraint and syntax/access-rule classes are deterministic.

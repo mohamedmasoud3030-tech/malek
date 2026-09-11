@@ -104,6 +104,12 @@ export function PermissionRequestDialog({
 
   const statusText = describePermissionStatus(existingRequest);
 
+  const submitLabel = (() => {
+    if (pending) return 'جارٍ الإرسال...';
+    if (existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED') return 'إعادة إرسال الطلب';
+    return 'إرسال الطلب';
+  })();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent dir="rtl" className="max-w-lg gap-3 p-3 sm:gap-4 sm:p-5">
@@ -148,7 +154,7 @@ export function PermissionRequestDialog({
           ) : (
             <Button className="min-h-11" onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
               <Send className="me-1.5 size-3.5" aria-hidden="true" />
-              {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED' ? 'إعادة إرسال الطلب' : 'إرسال الطلب'}
+              {submitLabel}
             </Button>
           )}
           <Button className="min-h-11" variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>
