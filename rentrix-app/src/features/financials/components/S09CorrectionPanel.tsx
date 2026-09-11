@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileWarning, Fingerprint, ScrollText, ShieldCheck } from 'lucide-react';
+import { FileWarning, Fingerprint, ScrollText, ShieldCheck, Undo2 } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
   createS09RequestId,
   loadApprovedS08Reviews,
   loadS09Corrections,
+  reverseS09Correction,
   s09ApprovedReviewsQueryKey,
   s09CorrectionsQueryKey,
   s09StatusLabels,
@@ -30,12 +31,16 @@ import {
  * The single canonical surface for post-close accounting corrections (S09).
  * UI counterpart of the deployed, already-granted RPC chain
  * `s09_create_correction_draft` → `s09_validate_correction` →
- * `s09_apply_correction`, which previously had no surface at all.
+ * `s09_apply_correction` → `s09_reverse_correction`, which previously had no
+ * surface at all.
  *
  * The governing principle made visible here: a correction NEVER rewrites the
  * original posting. The original journal batch is recorded for lineage and
  * preserved; the correction posts its own separate balanced batch, and the
- * panel shows both. Nothing in this component edits or hides posted history.
+ * panel shows both. Reversal is a fourth step on the same principle: it posts
+ * an equal-and-opposite batch and marks the correction batch REVERSED, so all
+ * three batches stay visible. Nothing in this component edits or hides posted
+ * history.
  */
 export function S09CorrectionPanel() {
   const { authorization } = useAuth();
@@ -55,6 +60,8 @@ export function S09CorrectionPanel() {
   const [debitAccountNo, setDebitAccountNo] = useState('');
   const [creditAccountNo, setCreditAccountNo] = useState('');
   const [originalBatchId, setOriginalBatchId] = useState('');
+  const [reverseTargetId, setReverseTargetId] = useState<string | null>(null);
+  const [reverseReason, setReverseReason] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -132,6 +139,30 @@ export function S09CorrectionPanel() {
     },
   });
 
+  // Reversal is compensating, never destructive: the deployed RPC marks the
+  // correction batch REVERSED and posts an equal-and-opposite batch. The
+  // original source posting was never touched by the correction and is not
+  // touched by the reversal.
+  const reverseMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      reverseS09Correction(id, reason),
+    onSuccess: async (result) => {
+      setErrorMessage(null);
+      setStatusMessage(
+        result.idempotent
+          ? `العكس منفَّذ مسبقاً لنفس قيد التصحيح؛ لم يُرحَّل قيد عكس جديد (${formatShortId(result.reversalBatchId)}).`
+          : `عُكس التصحيح ورُحِّل قيد العكس ${formatShortId(result.reversalBatchId)}. قيد التصحيح بقي محفوظاً كمعكوس، والقيد الأصلي للمصدر لم يُمس.`,
+      );
+      setReverseTargetId(null);
+      setReverseReason('');
+      await refresh();
+    },
+    onError: (error) => {
+      setStatusMessage(null);
+      setErrorMessage(translateS09Error(error));
+    },
+  });
+
   const corrections = correctionsQuery.data ?? [];
 
   return (
@@ -143,7 +174,9 @@ export function S09CorrectionPanel() {
         </h2>
         <p className="text-sm text-muted-foreground">
           التصحيح لا يُعدّل القيد الأصلي أبداً؛ يُرحَّل قيد تصحيح منفصل ومتوازن، ويبقى القيدان
-          ظاهرين معاً. كل تصحيح مرتبط بمراجعة S08 معتمدة، ويمر بمسودة ثم تحقق ثم تطبيق.
+          ظاهرين معاً. كل تصحيح مرتبط بمراجعة S08 معتمدة، ويمر بمسودة ثم تحقق ثم تطبيق. التصحيح
+          المُطبَّق يمكن عكسه بقيد تعويضي منفصل ومساوٍ في المقدار ومعاكس في الاتجاه؛ لا يُحذف أي
+          سجل وتبقى القيود الثلاثة ظاهرة.
         </p>
       </header>
 
@@ -204,10 +237,79 @@ export function S09CorrectionPanel() {
                     تطبيق وترحيل القيد
                   </Button>
                 ) : null}
+                {correction.status === 'APPLIED' && reverseTargetId !== correction.id ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!canApply || reverseMutation.isPending || applyMutation.isPending}
+                    onClick={() => {
+                      setStatusMessage(null);
+                      setErrorMessage(null);
+                      setReverseReason('');
+                      setReverseTargetId(correction.id);
+                    }}
+                  >
+                    <Undo2 className="size-4" aria-hidden />
+                    عكس التصحيح
+                  </Button>
+                ) : null}
               </div>
+              {correction.status === 'APPLIED' && reverseTargetId === correction.id ? (
+                <EntityForm.Root
+                  className="space-y-2 rounded-lg border bg-background p-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    setStatusMessage(null);
+                    setErrorMessage(null);
+                    reverseMutation.mutate({ id: correction.id, reason: reverseReason });
+                  }}
+                >
+                  <label className="block space-y-1">
+                    <span className="text-sm font-medium">
+                      سبب العكس (يُسجَّل في الدليل ولا يمكن تركه فارغاً)
+                    </span>
+                    <Textarea
+                      value={reverseReason}
+                      onChange={(event) => setReverseReason(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="submit"
+                      variant="danger"
+                      disabled={reverseMutation.isPending || reverseReason.trim() === ''}
+                    >
+                      تأكيد العكس وترحيل قيد تعويضي
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={reverseMutation.isPending}
+                      onClick={() => {
+                        setReverseTargetId(null);
+                        setReverseReason('');
+                      }}
+                    >
+                      إلغاء
+                    </Button>
+                  </div>
+                  <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <Undo2 className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                    العكس لا يحذف قيد التصحيح ولا يمس القيد الأصلي للمصدر؛ يُرحَّل قيد معاكس منفصل
+                    ومساوٍ في المقدار، وتبقى القيود الثلاثة ظاهرة معاً.
+                  </p>
+                </EntityForm.Root>
+              ) : null}
               {correction.status === 'VALIDATED' && !canApply ? (
                 <p className="text-xs text-muted-foreground" role="alert">
                   التطبيق يتطلب صلاحية محاسب أو مدير نظام؛ صلاحية المدير التشغيلي لا تكفي، والخادم
+                  يرفض الطلب.
+                </p>
+              ) : null}
+              {correction.status === 'APPLIED' && !canApply ? (
+                <p className="text-xs text-muted-foreground" role="alert">
+                  العكس يتطلب صلاحية محاسب أو مدير نظام؛ صلاحية المدير التشغيلي لا تكفي، والخادم
                   يرفض الطلب.
                 </p>
               ) : null}

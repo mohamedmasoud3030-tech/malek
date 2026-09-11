@@ -8,12 +8,17 @@
  *   s09_create_correction_draft(p_payload jsonb)  -> DRAFT
  *   s09_validate_correction(p_correction_id uuid) -> VALIDATED
  *   s09_apply_correction(p_correction_id uuid)    -> APPLIED (posts the GL batch)
+ *   s09_reverse_correction(p_correction_id, p_reason) -> REVERSED (compensating batch)
  *   s09_list_corrections(p_period_id, p_status)   -> read model
  *
  * The governing principle enforced end to end: a correction NEVER rewrites the
  * original posting. The original journal batch is referenced
  * (`original_journal_batch_id`) and preserved; the correction posts its own
  * separate balanced batch (`correction_journal_batch_id`). Both remain visible.
+ * Reversal follows the same principle one level up: it NEVER deletes or edits
+ * the correction batch — `reverse_journal_batch` marks it REVERSED and posts an
+ * equal-and-opposite batch (`reversal_journal_batch_id`), so the full lineage
+ * original → correction → reversal stays visible.
  *
  * Contract facts taken from the deployed bodies, not from documentation:
  *  - create requires review_id, source_type, source_id, reason, amount > 0 at
@@ -25,6 +30,14 @@
  *    invariant at apply time (including the S08 approval gate and the
  *    HARD_CLOSED period gate).
  *  - create is idempotent by request_id and returns the existing row.
+ *  - reverse is ACCOUNTANT or ADMIN (same asymmetry as apply), refuses unless
+ *    status is exactly APPLIED, requires a non-empty reason, and returns
+ *    `{success, id, status:'REVERSED', reversal_batch_id, result}` where
+ *    `result` is the nested `reverse_journal_batch` envelope.
+ *  - the list RPC returns `{company_id, corrections:[...]}` — an OBJECT with
+ *    the rows nested, never a bare array (regression-locked in the pglite
+ *    suite; an earlier parser that expected a bare array failed closed on
+ *    every real response).
  */
 import { supabase } from '@/lib/supabase';
 import type { SemanticTone } from '@/components/ui/status-badge';
@@ -116,7 +129,8 @@ function requireOmr(value: unknown, field: string): number {
  * Strict parser for a correction row. An APPLIED correction MUST carry its
  * correction batch id — otherwise the UI would be claiming a posting that has
  * no GL proof, which is exactly the failure mode this reconstruction exists to
- * prevent.
+ * prevent. A REVERSED correction MUST carry its reversal batch id for the same
+ * reason: "reversed" without a posted compensating batch is an unproven claim.
  */
 export function parseS09Correction(row: unknown): S09Correction {
   if (!row || typeof row !== 'object') {
@@ -135,6 +149,14 @@ export function parseS09Correction(row: unknown): S09Correction {
       'تصحيح مُطبَّق بلا قيد محاسبي مرحَّل؛ لا يُعرض كمُطبَّق.',
     );
   }
+  const reversalBatchId =
+    optionalText(record.reversal_batch_id) ?? optionalText(record.reversal_journal_batch_id);
+  if (status === 'REVERSED' && !reversalBatchId) {
+    fail(
+      'S09_REVERSED_WITHOUT_BATCH',
+      'تصحيح معكوس بلا قيد عكس مرحَّل؛ لا يُعرض كمعكوس.',
+    );
+  }
   return {
     id: requireText(record.id, 'id'),
     accountingPeriodId: optionalText(record.accounting_period_id),
@@ -145,8 +167,7 @@ export function parseS09Correction(row: unknown): S09Correction {
     status: status as S09Status,
     amount: requireOmr(record.amount, 'amount'),
     correctionBatchId,
-    reversalBatchId:
-      optionalText(record.reversal_batch_id) ?? optionalText(record.reversal_journal_batch_id),
+    reversalBatchId,
     createdAt: optionalText(record.created_at),
     validatedAt: optionalText(record.validated_at),
     appliedAt: optionalText(record.applied_at),
@@ -156,6 +177,29 @@ export function parseS09Correction(row: unknown): S09Correction {
 
 export const s09CorrectionsQueryKey = ['financials', 's09-corrections'] as const;
 export const s09ApprovedReviewsQueryKey = ['financials', 's08-approved-reviews'] as const;
+
+/**
+ * Strict parser for the deployed list envelope. `s09_list_corrections` returns
+ * `jsonb_build_object('company_id', …, 'corrections', […])` — an OBJECT with
+ * the rows nested under `corrections`. A bare array is NOT the deployed shape
+ * and is rejected rather than silently accepted: this parser was previously
+ * array-only, which made every real response fail closed (defect found by
+ * feeding the unmodified deployed body's output through the client parser in
+ * the pglite suite).
+ */
+export function parseS09ListEnvelope(payload: unknown): S09Correction[] {
+  if (payload === null || payload === undefined) {
+    fail('S09_LIST_RESPONSE_INVALID', 'استجابة قائمة التصحيحات فارغة؛ لا تُعرض كقائمة خالية.');
+  }
+  if (typeof payload !== 'object' || Array.isArray(payload)) {
+    fail('S09_LIST_RESPONSE_INVALID', 'استجابة قائمة التصحيحات غير صالحة.');
+  }
+  const rows = (payload as Record<string, unknown>).corrections;
+  if (!Array.isArray(rows)) {
+    fail('S09_LIST_RESPONSE_INVALID', 'استجابة قائمة التصحيحات لا تحمل سجلات التصحيحات.');
+  }
+  return rows.map(parseS09Correction);
+}
 
 /** Read model via the deployed list RPC (never a hand-rolled table query). */
 export async function loadS09Corrections(options?: {
@@ -167,11 +211,7 @@ export async function loadS09Corrections(options?: {
     p_status: options?.status ?? null,
   });
   if (error) throw error;
-  if (data === null || data === undefined) return [];
-  if (!Array.isArray(data)) {
-    fail('S09_LIST_RESPONSE_INVALID', 'استجابة قائمة التصحيحات غير صالحة.');
-  }
-  return data.map(parseS09Correction);
+  return parseS09ListEnvelope(data);
 }
 
 /** APPROVED S08 reviews — the only lawful anchor for a correction. */
@@ -353,6 +393,24 @@ export function translateS09Error(error: unknown): string {
       'تطبيق التصحيح يتطلب صلاحية محاسب أو مدير نظام (لا تكفي صلاحية المدير التشغيلي).',
     ],
     ['S09_VALIDATE_FAILED', 'التحقق فشل: المسودة ليست في حالة «مسودة» أو غير موجودة.'],
+    [
+      'S09_REVERSE_REQUIRES_ACCOUNTANT',
+      'عكس التصحيح يتطلب صلاحية محاسب أو مدير نظام (لا تكفي صلاحية المدير التشغيلي).',
+    ],
+    [
+      'S09_REVERSAL_REASON_REQUIRED',
+      'سبب العكس مطلوب؛ لا يُعكس تصحيح مُطبَّق بدون سبب مسجَّل في الدليل.',
+    ],
+    [
+      'S09_REVERSE_STATUS_INVALID',
+      'لا يمكن العكس إلا لتصحيح في حالة «مُطبَّق»؛ العكس يتم بقيد تعويضي منفصل ولا يحذف أي سجل.',
+    ],
+    ['S09_REVERSE_NO_BATCH', 'التصحيح المُطبَّق لا يحمل قيداً مرحَّلاً يمكن عكسه.'],
+    ['S09_CORRECTION_ID_REQUIRED', 'معرّف التصحيح مطلوب.'],
+    [
+      'GL_REVERSAL_STATE_INVALID',
+      'قيد التصحيح ليس في حالة «مُرحَّل»؛ لا يمكن إنشاء قيد العكس التعويضي.',
+    ],
     ['S09_UNBALANCED', 'قيد التصحيح غير متوازن؛ مجموع المدين لا يساوي مجموع الدائن.'],
     ['S09_AMOUNT_PRECISION_INVALID', 'مبلغ التصحيح مخالف لدقة الريال العماني (3 خانات عشرية).'],
     ['S09_ACCOUNT_COMPANY_MISMATCH', 'الحساب المحدد لا يخص شركتك.'],
@@ -402,4 +460,101 @@ export async function applyS09Correction(correctionId: string): Promise<ApplyS09
   });
   if (error) throw error;
   return parseApplyS09Result(data);
+}
+
+export type ReverseS09Args = {
+  p_correction_id: string;
+  p_reason: string;
+};
+
+/**
+ * Pure, fail-closed argument builder for `s09_reverse_correction`. Mirrors the
+ * deployed guards (id required, non-empty reason) so the refusal happens before
+ * a request is sent; the server re-checks both regardless.
+ */
+export function buildReverseS09Args(correctionId: string, reason: string): ReverseS09Args {
+  if (typeof correctionId !== 'string' || correctionId.trim() === '') {
+    fail('S09_CORRECTION_ID_REQUIRED', 'معرّف التصحيح مطلوب لعكسه.');
+  }
+  if (typeof reason !== 'string' || reason.trim() === '') {
+    fail(
+      'S09_REVERSAL_REASON_REQUIRED',
+      'سبب العكس مطلوب؛ لا يُعكس تصحيح مُطبَّق بدون سبب مسجَّل في الدليل.',
+    );
+  }
+  return { p_correction_id: correctionId.trim(), p_reason: reason.trim() };
+}
+
+export type ReverseS09Result = {
+  id: string;
+  status: 'REVERSED';
+  /**
+   * GL proof of the compensating reversal. The correction batch itself is
+   * retained (marked REVERSED) and the original source batch is untouched.
+   */
+  reversalBatchId: string;
+  /** True only when the nested reverse_journal_batch envelope says so. */
+  idempotent: boolean;
+};
+
+/**
+ * Strict parser for the deployed reverse envelope:
+ * `{success, id, status:'REVERSED', reversal_batch_id, result}` where `result`
+ * is the nested `reverse_journal_batch` envelope carrying its own
+ * `reversal_batch_id`. When both are present they MUST agree — contradictory
+ * evidence is rejected, never smoothed over (same discipline as the owner
+ * position cash parser).
+ */
+export function parseReverseS09Result(payload: unknown): ReverseS09Result {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    fail('S09_RESPONSE_INVALID', 'استجابة عكس التصحيح غير صالحة.');
+  }
+  const record = payload as Record<string, unknown>;
+  if (record.success !== true) {
+    fail('S09_RESPONSE_INVALID', 'لم يؤكد الخادم عكس التصحيح.');
+  }
+  if (optionalText(record.status) !== 'REVERSED') {
+    fail('S09_STATUS_UNKNOWN', 'لم يُرجع الخادم حالة «معكوس» بعد العكس.');
+  }
+  const reversalBatchId = optionalText(record.reversal_batch_id);
+  if (!reversalBatchId) {
+    fail(
+      'S09_REVERSED_WITHOUT_BATCH',
+      'تعذّر إثبات ترحيل قيد العكس؛ لا تُعرض النتيجة كناجحة.',
+    );
+  }
+  let idempotent = false;
+  if (record.result !== null && record.result !== undefined) {
+    if (typeof record.result !== 'object' || Array.isArray(record.result)) {
+      fail('S09_RESPONSE_INVALID', 'استجابة عكس التصحيح تحمل نتيجة داخلية غير صالحة.');
+    }
+    const nested = record.result as Record<string, unknown>;
+    if (nested.success !== true) {
+      fail('S09_RESPONSE_INVALID', 'قيد العكس لم يؤكد نجاحه داخل نتيجة العكس.');
+    }
+    if (optionalText(nested.reversal_batch_id) !== reversalBatchId) {
+      fail(
+        'S09_RESPONSE_CONTRADICTION',
+        'معرّف قيد العكس متضارب بين الاستجابة والنتيجة الداخلية؛ لا تُعرض النتيجة كناجحة.',
+      );
+    }
+    idempotent = nested.idempotent === true;
+  }
+  return { id: requireText(record.id, 'id'), status: 'REVERSED', reversalBatchId, idempotent };
+}
+
+/**
+ * Reverses an APPLIED correction through the deployed RPC. This NEVER deletes
+ * or edits posted history: `reverse_journal_batch` marks the correction batch
+ * REVERSED and posts an equal-and-opposite batch; the original source posting
+ * was never touched by the correction and is not touched by the reversal.
+ */
+export async function reverseS09Correction(
+  correctionId: string,
+  reason: string,
+): Promise<ReverseS09Result> {
+  const args = buildReverseS09Args(correctionId, reason);
+  const { data, error } = await supabase.rpc('s09_reverse_correction', args);
+  if (error) throw error;
+  return parseReverseS09Result(data);
 }

@@ -21,9 +21,12 @@ import { offsetFixtureCommand as command, offsetDate as at } from '@/test/owner-
 import {
   S09EvidenceError,
   buildCreateS09DraftPayload,
+  buildReverseS09Args,
   parseApplyS09Result,
   parseCreateS09DraftResult,
+  parseReverseS09Result,
   parseS09Correction,
+  parseS09ListEnvelope,
   translateS09Error,
 } from './s09-correction-service';
 
@@ -31,6 +34,7 @@ let db: PGlite;
 let expense: string;
 let period: string;
 const checker = 'c2000000-0000-4000-8000-000000000097';
+const manager = 'c2000000-0000-4000-8000-000000000096';
 
 async function makeApprovedReview() {
   const row = await command(db, 's08_create_frozen_review', {
@@ -48,6 +52,67 @@ async function makeApprovedReview() {
   return String(row.id);
 }
 
+/** create → validate → apply as MAKER (ADMIN); used by the reversal suite. */
+async function createAppliedCorrection(requestId: string) {
+  const reviewId = await makeApprovedReview();
+  const originalId = await originalExpenseBatchId();
+  const created = parseCreateS09DraftResult(
+    await command(
+      db,
+      's09_create_correction_draft',
+      buildCreateS09DraftPayload({
+        reviewId,
+        sourceType: 'expense',
+        sourceId: expense,
+        reason: 'Reclassify approved expense',
+        amount: 30.125,
+        debitAccountNo: '1300',
+        creditAccountNo: '6100',
+        requestId,
+        accountingPeriodId: period,
+        originalJournalBatchId: originalId,
+      }),
+    ),
+  );
+  await db.query('select public.s09_validate_correction($1::uuid)', [created.id]);
+  const applied = parseApplyS09Result(
+    (
+      await db.query<{ data: Record<string, unknown> }>(
+        'select public.s09_apply_correction($1::uuid) as data',
+        [created.id],
+      )
+    ).rows[0].data,
+  );
+  return { created, applied, originalId };
+}
+
+/** Full byte-level snapshot of a batch and its lines, for preservation proofs. */
+async function batchSnapshot(batchId: string) {
+  return (
+    await db.query<{ batch: Record<string, unknown>; lines: unknown }>(
+      `select to_jsonb(b) as batch,
+              coalesce((select jsonb_agg(to_jsonb(l) order by l.no)
+                          from public.journal_lines l
+                         where l.batch_id = b.id), '[]'::jsonb) as lines
+         from public.journal_batches b
+        where b.id = $1::uuid`,
+      [batchId],
+    )
+  ).rows[0];
+}
+
+async function originalExpenseBatchId() {
+  return (
+    await db.query<{ id: string }>(
+      `select b.id::text as id
+         from public.journal_batches b
+        where b.source_type = 'expense' and b.source_id = $1
+        limit 1`,
+      [expense],
+    )
+  ).rows[0].id;
+}
+
 beforeAll(async () => {
   ({ db } = await createOfficeCreditorFixture({ throughMigration: '20260909000011' }));
   await db.query('insert into auth.users(id,email) values($1::uuid,$2)', [
@@ -61,6 +126,18 @@ beforeAll(async () => {
   await db.query(
     "insert into public.company_members(company_id,user_id,role) values($1::uuid,$2::uuid,'ACCOUNTANT')",
     [COMPANY, checker],
+  );
+  await db.query('insert into auth.users(id,email) values($1::uuid,$2)', [
+    manager,
+    's09-manager@test.local',
+  ]);
+  await db.query(
+    "insert into public.users(id,email,name,role,status,is_active) values($1::uuid,$2,'S09 manager','MANAGER','ACTIVE',true)",
+    [manager, 's09-manager@test.local'],
+  );
+  await db.query(
+    "insert into public.company_members(company_id,user_id,role) values($1::uuid,$2::uuid,'MANAGER')",
+    [COMPANY, manager],
   );
   await db.exec('set role authenticated');
   expense = String(
@@ -351,5 +428,267 @@ describe('S09 correction chain — real SQL', () => {
     const message = translateS09Error(new Error('S09_PERIOD_HARD_CLOSED: period X'));
     expect(message).toContain('مقفلة نهائياً');
     expect(message).toContain('لا يجوز إعادة فتحها');
+  });
+});
+
+describe('S09 reversal — real SQL against the deployed s09_reverse_correction body', () => {
+  it('reverses an APPLIED correction with a compensating batch, preserving BOTH the original source and the correction batch', async () => {
+    const { created, applied, originalId } = await createAppliedCorrection('s09-service-reverse-1');
+    expect(originalId).toBeTruthy();
+
+    // Byte-level snapshots BEFORE the reversal.
+    const originalBefore = await batchSnapshot(originalId);
+    const correctionBefore = await batchSnapshot(applied.batchId);
+
+    const reversed = parseReverseS09Result(
+      (
+        await db.query<{ data: Record<string, unknown> }>(
+          'select public.s09_reverse_correction($1::uuid,$2::text) as data',
+          [created.id, 'Posted to the wrong account pair; reversing for reclassification'],
+        )
+      ).rows[0].data,
+    );
+    expect(reversed.status).toBe('REVERSED');
+    expect(reversed.id).toBe(created.id);
+    expect(reversed.reversalBatchId).toBeTruthy();
+    expect(reversed.idempotent).toBe(false);
+
+    // THE ORIGINAL SOURCE POSTING IS BYTE-IDENTICAL: reversal of a correction
+    // never touches the posting the correction was about.
+    expect(await batchSnapshot(originalId)).toEqual(originalBefore);
+
+    // The correction batch is PRESERVED — same lines, same amounts — only its
+    // status flips to REVERSED and it gains the link to its compensating batch.
+    const correctionAfter = await batchSnapshot(applied.batchId);
+    expect(correctionAfter.lines).toEqual(correctionBefore.lines);
+    expect(correctionAfter.batch.status).toBe('REVERSED');
+    expect(correctionAfter.batch.reversal_of_batch_id).toBe(reversed.reversalBatchId);
+    expect(correctionBefore.batch.status).toBe('POSTED');
+
+    // The compensating batch is separate, POSTED, balanced, equal-and-opposite.
+    const reversalRow = (
+      await db.query<{ batch: Record<string, unknown>; debit: string; credit: string }>(
+        `select to_jsonb(b) as batch,
+                (select sum(l.debit)::text from public.journal_lines l where l.batch_id=b.id) as debit,
+                (select sum(l.credit)::text from public.journal_lines l where l.batch_id=b.id) as credit
+           from public.journal_batches b
+          where b.id = $1::uuid`,
+        [reversed.reversalBatchId],
+      )
+    ).rows[0];
+    expect(reversalRow.batch.status).toBe('POSTED');
+    expect(reversalRow.batch.source_type).toBe('journal_reversal');
+    expect(reversalRow.batch.reversal_of_batch_id).toBe(applied.batchId);
+    expect(Number(reversalRow.debit)).toBe(30.125);
+    expect(Number(reversalRow.debit)).toBe(Number(reversalRow.credit));
+
+    // The stored row keeps the FULL lineage: original + correction + reversal,
+    // with the reason recorded as evidence.
+    const stored = (
+      await db.query<{ row: Record<string, unknown> }>(
+        'select to_jsonb(c) as row from public.s09_corrections c where id=$1::uuid',
+        [created.id],
+      )
+    ).rows[0].row;
+    expect(stored.status).toBe('REVERSED');
+    expect(stored.original_journal_batch_id).toBe(originalId);
+    expect(stored.correction_journal_batch_id).toBe(applied.batchId);
+    expect(stored.reversal_journal_batch_id).toBe(reversed.reversalBatchId);
+    expect(stored.reversed_at).toBeTruthy();
+    expect(String(stored.reversal_reason)).toContain('wrong account pair');
+    const evidence = stored.after_evidence as Record<string, unknown>;
+    expect(evidence.reversal_reason).toBe(stored.reversal_reason);
+    expect(evidence.reversal_batch).toBeTruthy();
+
+    // The client parser reads the deployed stored row, including the REVERSED
+    // state — and only because the reversal batch proof is present.
+    const parsed = parseS09Correction(stored);
+    expect(parsed.status).toBe('REVERSED');
+    expect(parsed.reversalBatchId).toBe(reversed.reversalBatchId);
+    expect(parsed.correctionBatchId).toBe(applied.batchId);
+  });
+
+  it('refuses to reverse a correction that is not APPLIED', async () => {
+    const reviewId = await makeApprovedReview();
+    const created = parseCreateS09DraftResult(
+      await command(
+        db,
+        's09_create_correction_draft',
+        buildCreateS09DraftPayload({
+          reviewId,
+          sourceType: 'expense',
+          sourceId: expense,
+          reason: 'Reversal attempted too early',
+          amount: 4,
+          debitAccountNo: '1300',
+          creditAccountNo: '6100',
+          requestId: 's09-service-reverse-draft',
+          accountingPeriodId: period,
+        }),
+      ),
+    );
+    await expect(
+      db.query('select public.s09_reverse_correction($1::uuid,$2)', [created.id, 'too early']),
+    ).rejects.toThrow(/S09_REVERSE_STATUS_INVALID/);
+  });
+
+  it('refuses an empty reversal reason on the server and before the request on the client', async () => {
+    const { created } = await createAppliedCorrection('s09-service-reverse-noreason');
+    await expect(
+      db.query('select public.s09_reverse_correction($1::uuid,$2)', [created.id, '   ']),
+    ).rejects.toThrow(/S09_REVERSAL_REASON_REQUIRED/);
+    // The client builder refuses locally first; the server refusal above is the
+    // authority, this is defence in depth.
+    expect(() => buildReverseS09Args(created.id, '  ')).toThrow(S09EvidenceError);
+    expect(() => buildReverseS09Args('', 'with reason')).toThrow(
+      /S09_CORRECTION_ID_REQUIRED|معرّف التصحيح مطلوب/,
+    );
+  });
+
+  it('lets an ACCOUNTANT reverse, then refuses a second reversal — exactly one compensating batch exists', async () => {
+    const { created, applied } = await createAppliedCorrection('s09-service-reverse-twice');
+    await assumeIdentity(db, checker, COMPANY);
+    const first = parseReverseS09Result(
+      (
+        await db.query<{ data: Record<string, unknown> }>(
+          'select public.s09_reverse_correction($1::uuid,$2::text) as data',
+          [created.id, 'First reversal by the accountant'],
+        )
+      ).rows[0].data,
+    );
+    expect(first.reversalBatchId).toBeTruthy();
+    await assumeIdentity(db, MAKER, COMPANY);
+    // The refusal aborts the surrounding transaction in PG; a savepoint keeps
+    // the follow-up count query runnable (repo pattern).
+    await db.exec('savepoint second_reversal');
+    await expect(
+      db.query('select public.s09_reverse_correction($1::uuid,$2)', [created.id, 'second attempt']),
+    ).rejects.toThrow(/S09_REVERSE_STATUS_INVALID/);
+    await db.exec('rollback to savepoint second_reversal');
+    const reversalCount = (
+      await db.query<{ c: number }>(
+        `select count(*)::int as c
+           from public.journal_batches
+          where source_type='journal_reversal' and reversal_of_batch_id=$1::uuid`,
+        [applied.batchId],
+      )
+    ).rows[0].c;
+    expect(reversalCount).toBe(1);
+  });
+
+  it('refuses reversal by a MANAGER — the deployed role guard is ACCOUNTANT or ADMIN', async () => {
+    const { created } = await createAppliedCorrection('s09-service-reverse-role');
+    await assumeIdentity(db, manager, COMPANY);
+    await db.exec('savepoint manager_reversal');
+    await expect(
+      db.query('select public.s09_reverse_correction($1::uuid,$2)', [created.id, 'manager attempt']),
+    ).rejects.toThrow(/S09_REVERSE_REQUIRES_ACCOUNTANT/);
+    await db.exec('rollback to savepoint manager_reversal');
+    await assumeIdentity(db, MAKER, COMPANY);
+    // Still APPLIED after the refused attempt — nothing was reversed.
+    const status = (
+      await db.query<{ status: string }>(
+        'select status from public.s09_corrections where id=$1::uuid',
+        [created.id],
+      )
+    ).rows[0].status;
+    expect(status).toBe('APPLIED');
+  });
+
+  it('parses the deployed list envelope: rows nested under `corrections`, never a bare array', async () => {
+    const { created, applied } = await createAppliedCorrection('s09-service-reverse-list');
+    await db.query('select public.s09_reverse_correction($1::uuid,$2)', [
+      created.id,
+      'List envelope proof',
+    ]);
+    const envelope = (
+      await db.query<{ data: Record<string, unknown> }>(
+        'select public.s09_list_corrections(null::uuid,null::text) as data',
+      )
+    ).rows[0].data;
+    // Regression lock for the array-only parser defect: the deployed body
+    // returns an OBJECT; a parser expecting a bare array fails on every real
+    // response.
+    expect(Array.isArray(envelope)).toBe(false);
+    expect(envelope.company_id).toBe(COMPANY);
+    const rows = parseS09ListEnvelope(envelope);
+    const reversedRow = rows.find((row) => row.id === created.id);
+    expect(reversedRow?.status).toBe('REVERSED');
+    expect(reversedRow?.correctionBatchId).toBe(applied.batchId);
+    expect(reversedRow?.reversalBatchId).toBeTruthy();
+    expect(() => parseS09ListEnvelope(rows)).toThrow(/S09_LIST_RESPONSE_INVALID|غير صالحة/);
+    expect(() => parseS09ListEnvelope(null)).toThrow(/S09_LIST_RESPONSE_INVALID|فارغة/);
+  });
+});
+
+describe('S09 reversal — client parsers (pure)', () => {
+  it('rejects a reverse response that cannot prove the compensating batch', () => {
+    expect(() =>
+      parseReverseS09Result({ success: true, id: 'c1', status: 'REVERSED' }),
+    ).toThrow(/S09_REVERSED_WITHOUT_BATCH|قيد العكس/);
+    expect(() =>
+      parseReverseS09Result({ success: true, id: 'c1', status: 'APPLIED', reversal_batch_id: 'b1' }),
+    ).toThrow(/S09_STATUS_UNKNOWN|معكوس/);
+    expect(() =>
+      parseReverseS09Result({ success: false, id: 'c1', status: 'REVERSED', reversal_batch_id: 'b1' }),
+    ).toThrow(/S09_RESPONSE_INVALID|يؤكد/);
+    // Contradictory evidence between the top level and the nested
+    // reverse_journal_batch envelope is rejected, never smoothed over.
+    expect(() =>
+      parseReverseS09Result({
+        success: true,
+        id: 'c1',
+        status: 'REVERSED',
+        reversal_batch_id: 'b1',
+        result: { success: true, idempotent: false, reversal_batch_id: 'DIFFERENT' },
+      }),
+    ).toThrow(/S09_RESPONSE_CONTRADICTION|متضارب/);
+    const accepted = parseReverseS09Result({
+      success: true,
+      id: 'c1',
+      status: 'REVERSED',
+      reversal_batch_id: 'b1',
+      result: {
+        success: true,
+        idempotent: true,
+        original_batch_id: 'cb1',
+        reversal_batch_id: 'b1',
+        status: 'REVERSED',
+      },
+    });
+    expect(accepted).toEqual({ id: 'c1', status: 'REVERSED', reversalBatchId: 'b1', idempotent: true });
+  });
+
+  it('never presents a REVERSED correction that has no posted reversal batch', () => {
+    expect(() =>
+      parseS09Correction({
+        id: 'c1',
+        review_id: 'r1',
+        source_type: 'expense',
+        source_id: 'e1',
+        reason: 'x',
+        status: 'REVERSED',
+        amount: '5.000',
+        correction_batch_id: 'b1',
+        reversal_batch_id: null,
+      }),
+    ).toThrow(/S09_REVERSED_WITHOUT_BATCH|بلا قيد عكس/);
+  });
+
+  it('translates the reversal refusals without softening them', () => {
+    expect(
+      translateS09Error(
+        new Error('S09_REVERSE_STATUS_INVALID: only APPLIED can be REVERSED, current DRAFT'),
+      ),
+    ).toContain('مُطبَّق');
+    expect(translateS09Error(new Error('S09_REVERSE_REQUIRES_ACCOUNTANT'))).toContain(
+      'محاسب أو مدير نظام',
+    );
+    expect(
+      translateS09Error(new Error('S09_REVERSAL_REASON_REQUIRED: non-empty reason required')),
+    ).toContain('سبب العكس مطلوب');
+    expect(
+      translateS09Error(new Error('S09_REVERSE_NO_BATCH: correction has no journal batch')),
+    ).toContain('لا يحمل قيداً مرحَّلاً');
   });
 });

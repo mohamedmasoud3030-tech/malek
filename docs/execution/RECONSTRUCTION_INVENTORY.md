@@ -845,3 +845,71 @@ first, parsers fail closed, no client-side money arithmetic, one canonical mount
   service, but only the expense path has real-SQL coverage here.
 - `s09_reverse_correction` exists and is granted, but has **no surface** — the next UI-absent item.
 - Hosted concurrency (G3/G4) and hosted repo↔production parity were not re-measured.
+
+---
+
+## G5 — `s09_reverse_correction` surface: CLOSED (local/replay) + list-envelope defect fixed
+
+**Status:** COMPLETED — the last UI-absent RPC from the coverage audit now has a canonical surface
+inside the existing `S09CorrectionPanel`. Proven against the deployed body with real SQL. Not yet
+exercised in a hosted browser.
+
+### What was built in this pass
+
+The correction lifecycle is now surfaced as four explicit operator steps:
+DRAFT → VALIDATED → APPLIED → **REVERSED**. An APPLIED correction gains a reversal action gated by
+the same role gate the server enforces (ACCOUNTANT or ADMIN — a MANAGER cannot reverse), with a
+**mandatory non-empty reason** captured before confirmation, mirroring the deployed
+`S09_REVERSAL_REASON_REQUIRED` guard. No new mount, no new route, **no new permission key**,
+**no migration** — the canonical business-rules hash is unchanged at `382a0b8c…`.
+
+| File | Role |
+|---|---|
+| `rentrix-app/src/features/financials/services/s09-correction-service.ts` | `buildReverseS09Args` (pure, fail-closed), `parseReverseS09Result` (strict; cross-checks the nested `reverse_journal_batch` envelope), `reverseS09Correction`, `parseS09ListEnvelope`, REVERSED evidence rule, reversal error vocabulary |
+| `rentrix-app/src/features/financials/components/S09CorrectionPanel.tsx` | reversal UI on APPLIED rows (reason capture + compensating-entry disclosure), same single mount in `expenses-page.tsx` |
+| `rentrix-app/src/features/financials/services/s09-correction.pglite.test.ts` | +9 tests (6 real-SQL against the deployed body, 3 pure-parser); suite now 18/18 |
+
+### Effect on the original source — proven in real SQL
+
+Reversal never deletes or edits posted history at any level:
+- **Original expense batch:** byte-identical before vs after the reversal (full `to_jsonb` snapshots
+  of the batch AND every line).
+- **Correction batch:** PRESERVED — same lines, same amounts — only its status flips to `REVERSED`
+  and it gains the `reversal_of_batch_id` link.
+- **Compensating batch:** separate, `POSTED`, `source_type='journal_reversal'`, balanced and
+  equal-and-opposite (30.125 debit = 30.125 credit, OMR 3dp).
+- **Stored correction row:** keeps the FULL lineage (`original_journal_batch_id` +
+  `correction_journal_batch_id` + `reversal_journal_batch_id`) with the reason recorded on the row
+  and inside `after_evidence`.
+
+Deployed guards proven against the real body: a non-APPLIED correction is refused
+(`S09_REVERSE_STATUS_INVALID`), an empty/whitespace reason is refused
+(`S09_REVERSAL_REASON_REQUIRED`), a MANAGER is refused (`S09_REVERSE_REQUIRES_ACCOUNTANT`), an
+ACCOUNTANT is accepted, and a second reversal is refused with **exactly one** compensating batch in
+existence.
+
+### Defect found while building and fixed at source (regression-locked)
+
+**`loadS09Corrections` failed closed on every real deployed response.** The deployed
+`s09_list_corrections` returns `{company_id, corrections:[…]}` — an OBJECT with the rows nested —
+but the parser demanded a bare top-level array, so the panel's read model raised
+`S09_LIST_RESPONSE_INVALID` for every genuine response: fail-closed, but the corrections list could
+never render. The building pass missed it because nothing fed the deployed body's output through
+`loadS09Corrections`. Fixed by parsing the deployed envelope (`parseS09ListEnvelope`), locked by a
+regression that feeds the unmodified RPC output from real SQL through the client parser (and asserts
+the envelope is NOT a bare array). Same class as the G6 idempotent-envelope defect (HANDOFF §F12).
+
+Two related strictness additions in the same fix:
+- `parseS09Correction` now rejects a `REVERSED` row with no reversal batch id
+  (`S09_REVERSED_WITHOUT_BATCH`) — "reversed" without a posted compensating batch is an unproven
+  claim, the same rule that already applied to APPLIED rows.
+- `parseReverseS09Result` rejects any response whose top-level `reversal_batch_id` contradicts the
+  nested `reverse_journal_batch` envelope (`S09_RESPONSE_CONTRADICTION`) — contradictory evidence is
+  refused, never smoothed over.
+
+### Not proven here (state plainly)
+- Proven **locally / in replay only**. No hosted browser run for this panel (as for the other G5
+  surfaces).
+- Reversal is proven for `source_type='expense'` corrections only — the only path with a full-chain
+  fixture. Other source types remain supported by the server and service but unproven here.
+- Hosted concurrency (G3/G4) and hosted repo↔production parity were not re-measured in this pass.
