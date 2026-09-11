@@ -2,12 +2,12 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-11T05:15Z (Asia/Muscat) — NOW-4 complete (s09_reverse_correction surface + list-envelope defect fix); **push BLOCKED — no GitHub credential exists in this sandbox**
+**Last updated:** 2026-09-11T05:50Z (Asia/Muscat) — NOW-4 + NOW-5 complete locally; **push BLOCKED — no GitHub credential exists in this sandbox**
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `9ca483b4` — G5: surface s09_reverse_correction and fix the S09 list-envelope parser — **LOCAL ONLY, not pushed**
+**Last work commit (code/schema/evidence):** `9767ef03` — G5/NOW-5: prove S09 correction coverage beyond source_type='expense' — **LOCAL ONLY, not pushed**
 **Remote HEAD (actual, verified via ls-remote 2026-09-11 04:28Z):** `bcdf6944672c46c2417b48562654036cca26c82d`
-**Local HEAD:** `9ca483b4` — **1 ahead of remote**; push blocked solely by missing credentials (see §BLOCKED)
+**Local HEAD:** `9767ef03` — **3 ahead of remote** (`9ca483b4` NOW-4 work, `61eb62ad` docs, `9767ef03` NOW-5); push blocked solely by missing credentials (see §BLOCKED)
 **Working tree:** **clean** — verified `git status`, no mode changes
 **Branch tracking:** `origin/reconstruction/checkpoint-20260909`
 
@@ -29,9 +29,9 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | Repository | `https://github.com/mohamedmasoud3030-tech/malek` |
 | Branch | `reconstruction/checkpoint-20260909` |
 | Remote HEAD | `bcdf6944` — docs: G5 UI-absent RPCs closed (verified via ls-remote 04:28Z) |
-| Local HEAD | `9ca483b4` — G5: surface s09_reverse_correction + list-envelope fix — **1 ahead, NOT PUSHED (no credential in sandbox)** |
+| Local HEAD | `9767ef03` — **3 ahead, NOT PUSHED (no credential in sandbox)**: `9ca483b4` (NOW-4 reverse surface + F13 fix), `61eb62ad` (docs), `9767ef03` (NOW-5 non-expense coverage) |
 | Previous handoff SHA | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
-| Commits since previous handoff | **10**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `0d187c48` (final checkpoint docs), `9fac02ac` (G5 offset), `95a0a2af` (docs), `411167f6` (G5 recovery+S09), `bcdf6944` (docs), `9ca483b4` (NOW-4 reverse — **local only**) |
+| Commits since previous handoff | **12**: `354bc427` (G6), `4da6a26d` (loop transform), `50be359a` (NOW-1 fix+re-baseline), `aac5aa14` (NOW-2 browser), `0d187c48` (final checkpoint docs), `9fac02ac` (G5 offset), `95a0a2af` (docs), `411167f6` (G5 recovery+S09), `bcdf6944` (docs), then **local-only**: `9ca483b4` (NOW-4), `61eb62ad` (docs), `9767ef03` (NOW-5) |
 | Working tree | **clean** — 0 modified |
 | Tracked files | ~1,746 |
 | Migrations in repo | 100 (**0 added by NOW-4**) |
@@ -40,7 +40,7 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | Playwright specs | 29 |
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
-| Fresh baseline (NOW-4, 2026-09-11 04:40-05:00Z) | typecheck clean, gates 7/7, replay 100/100, business-rules v2.0.0 382a0b8c unchanged, migration-hygiene OK (needs `origin/main` ref — see §B), guardian PASS all layers, focused financials+owners **142 files / 1045 tests PASS**, full sharded 20-shard **559 files / 4055 tests / 0 failures / 0 INFRA — PASS**, axe **15/15 PASS** |
+| Fresh baseline (NOW-5, 2026-09-11 05:20-05:45Z) | typecheck clean, gates 7/7, guardian PASS all layers, migration-hygiene OK (needs `origin/main` ref — see §B), business-rules v2.0.0 382a0b8c unchanged, s09 suite **23/23**, design-system inventory 13/13, axe 15/15, full sharded 20-shard **559 files / 4060 tests / 0 failures / 0 INFRA — PASS** |
 | Push verification | **BLOCKED** — `git push` → `could not read Username for 'https://github.com'`. No PAT, no SSH key, no credential helper, no token env var in this sandbox. Remote tip verified `bcdf6944` at 04:28Z. |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
@@ -146,45 +146,56 @@ From §A Standing constraints + §J:
 
 ### NOW (single task)
 
-**NOW-5: extend S09 correction coverage beyond `source_type='expense'`**
+**NOW-6: document surface truth — `documentPayloadAdapters.ts` + `professional-owner-report.ts` read proven cash, not entitlement**
 
-(NOW-4 — the `s09_reverse_correction` surface — is COMPLETE locally at `9ca483b4`, proven in replay;
-its push is the only thing blocked, by missing credentials, not by work.)
+(NOW-4 — `s09_reverse_correction` surface + F13 list-envelope fix — COMPLETE at local `9ca483b4`.
+NOW-5 — non-expense S09 coverage — COMPLETE at local `9767ef03`. Both proven in replay; their push
+is the only thing blocked, by missing credentials, not by work.)
 
-- Read the deployed `s09_create_correction_draft` / `s09_validate_correction` / `s09_apply_correction`
-  bodies for every source-type-specific branch (expense is the only one with real-SQL coverage today;
-  migration 12 added the `OWNER_EXPENSE_USE_RECEIVABLE_ADJUSTMENT` refusal for adopted expenses).
-- For each other source type the server supports: prove with real SQL that the chain either works
-  end to end (original preserved, separate balanced batch, lineage stored) or fails closed with a
-  named guard — never silently mis-posts.
-- The panel's `sourceType` is already a free-text input; if a source type needs a different anchor
-  than an expense review, surface that honestly rather than forcing the expense shape.
+- G5 requires cash/fees/tax/offset/collection/recovery truth in owner statements **AND documents**.
+  The statement path is verified (`rpt_owner_statement`, 4,519 chars, identical repo↔production,
+  keys on `paid_at` + proven cash + PAID-only). The **document surface is not exhaustively
+  re-verified after the latest migrations.**
+- Verify `rentrix-app/src/services/documents/documentPayloadAdapters.ts` and the professional owner
+  report generator read proven cash (`app_private.owner_settlement_paid_cash` / `paid_cash` /
+  `paid_at` / PAID-only) and NEVER derive historical cash from `net_payable` or
+  `net_payable − offset_applied`, and never present an all-period disbursement as a single-period
+  deduction.
+- Method: inspect the adapters → trace each money field to its source → confirm against the
+  deployed reader, not documentation. Any figure that cannot be traced to proven cash is a defect:
+  reproduce → fix at the authoritative source → add regression coverage.
 - For every finding: reproduce → identify authoritative source → determine if defect → fix only if
   proven → add regression coverage → run relevant gates → commit → (push when unblocked) → update HANDOFF.
 
-**Acceptance:** every source type the deployed bodies accept has either a real-SQL PASS chain or a
-proven fail-closed refusal; no client-side money arithmetic; no new permission keys; no migration
-unless a genuine defect is found (then forward-only + replay + gates).
+**Acceptance:** every money figure on the owner document surface traces to a proven-cash source (or
+is explicitly labelled as an entitlement / incomplete-evidence partial, never as complete cash); no
+`net_payable`-minus-offset derivation; regressions lock it; no migration unless a genuine defect is
+found (then forward-only + replay + gates).
 
-### NEXT (ordered, after NOW-5)
+### NEXT (ordered, after NOW-6)
 
-1. **NOW-6:** document surface + remaining S08/S09 review paths — verify `documentPayloadAdapters.ts`
-   and `professional-owner-report.ts` still read proven cash (paid_cash, paid_at, PAID-only), not
-   entitlement; then sources, cache/rebuild, permissions, read limits, retries, reconciliations
+1. Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations
 
-2. **NEXT-3:** G3 Hosted concurrency / Web Locks — safe verification strategy design (no code change without reproduction) — determine whether concurrent sessions/tabs can race auth/session restoration, duplicate initialization, corrupt shared state, bypass company isolation, produce inconsistent financial state
+2. **Governance decision needed (user/approved source, do not invent):** non-enumerated S09
+   `source_type` labels are bound only to the APPROVED S08 review with no source-existence check
+   (deployed step-8 enumerates exactly invoice/payment/expense/deposit). Behaviour is regression-
+   locked at `9767ef03`; tightening requires an approved accounting/governance source.
 
-3. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive, preserve invariants
+3. **NEXT-3:** G3 Hosted concurrency / Web Locks — safe verification strategy design (no code change without reproduction) — determine whether concurrent sessions/tabs can race auth/session restoration, duplicate initialization, corrupt shared state, bypass company isolation, produce inconsistent financial state
 
-4. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes both sides, money columns, rpt_owner_statement body)
+4. **NEXT-4:** G4 Runtime behaviour of newly applied migrations under real traffic — safe, non-destructive, preserve invariants
 
-5. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
+5. **NEXT-5:** Re-verify repo ↔ production parity with fresh measurement (normalized function hashes both sides, money columns, rpt_owner_statement body)
 
-6. **Browser coverage for the four G5/G6 panels** (offset, recovery, S09 incl. reversal, cutover) —
+6. **NEXT-6:** Final documentation sweep, Definition of Done checklist, release evidence
+
+7. **Browser coverage for the five G5/G6 panels** (offset, recovery, S09 incl. reversal, cutover) —
    needs fixture-backend seeding for `s09_corrections`, `s08_frozen_reviews`,
    `owner_funds_event_cutovers`, `due_from_owners` movements; until then they remain local/replay-proven only
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-5 (local `9767ef03`, 2026-09-11 05:20-05:45Z): S09 coverage beyond `source_type='expense'`.** Real-SQL proof against the deployed `s09_validate_correction_invariants` step 8 for every enumerated type: `invoice` full create→validate→apply chain (separate balanced batch; invoice row byte-identical), `payment` (governed `record_invoice_payment_atomic` fixture), `deposit` (governed `create_deposit_atomic` fixture) — each with a fabricated-id refusal (`S09_SOURCE_EVIDENCE_MISSING`). Non-enumerated labels: deployed behaviour (review-anchored only, no existence check) **locked by test + surfaced as governance finding** — tightening would be inventing a rule without an approved source, so it awaits decision (§NEXT item 2). Panel source-type input now discloses which types are evidence-checked (text only). Evidence: s09 23/23, sharded 20-shard **559/4060 / 0 failures / 0 INFRA**, gates 7/7, guardian PASS, inventory 13/13, axe 15/15, typecheck clean, business-rules unchanged, 0 migrations — **PROVEN BY UNIT/INTEGRATION TEST + REPLAY (local only; not pushed)**
 
 - **NOW-4 (local `9ca483b4`, 2026-09-11 04:28-05:15Z): `s09_reverse_correction` surface + list-envelope defect fix.** Last UI-absent RPC from the coverage audit closed inside the existing `S09CorrectionPanel` (fourth lifecycle step DRAFT→VALIDATED→APPLIED→**REVERSED**, ACCOUNTANT/ADMIN gate surfaced, mandatory non-empty reason, one canonical mount, no new permission key, no migration). Real-SQL proof against the deployed body: original expense batch **byte-identical** after reversal, correction batch **preserved** (same lines) and only flipped to REVERSED, compensating batch separate/POSTED/balanced/equal-and-opposite, stored row keeps full 3-batch lineage + reason in `after_evidence`; guards proven (non-APPLIED refused, empty reason refused, MANAGER refused, ACCOUNTANT accepted, second reversal refused with exactly one compensating batch). **Defect found and fixed at source:** `loadS09Corrections` demanded a bare array but the deployed `s09_list_corrections` returns `{company_id, corrections:[…]}` — the read model failed closed on every real response; fixed via `parseS09ListEnvelope`, regression-locked by feeding unmodified RPC output through the client parser (same class as F12). Strictness added: REVERSED-without-reversal-batch rejected; contradictory nested envelope rejected. Evidence: s09 suite 18/18, focused 142/1045, sharded 20-shard **559/4055 / 0 failures / 0 INFRA**, axe 15/15, gates 7/7, replay 100/100, guardian PASS, hygiene OK, typecheck clean, business-rules unchanged — **PROVEN BY UNIT/INTEGRATION TEST + REPLAY (local only; not pushed, not browser-proven)**
 - **HANDOFF transform (4da6a26d):** transformed HANDOFF.md into autonomous loop memory, verified G6 correct, set NOW-1, BLOCKED G1/G2/G7 with reason, no fabrication
@@ -461,7 +472,7 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - Scope: 8 files, **0 migrations**, 0 accounting-rule files
 - **Not measured:** hosted browser/E2E for either new panel, hosted concurrency, hosted parity re-measure
 
-**Fresh NOW-4 measurement (2026-09-11 04:40-05:00Z, commit `9ca483b4` — local only) — THIS IS THE LATEST MEASURED EVIDENCE:**
+**Fresh NOW-4 measurement (2026-09-11 04:40-05:00Z, commit `9ca483b4` — local only):**
 - s09 suite: **18/18 PASS** (9 pre-existing + 9 new: 6 real-SQL against the deployed `s09_reverse_correction` body, 3 pure-parser)
 - focused `src/features/financials src/features/owners`: **142 files / 1045 tests PASS**
 - sharded regression **20 shards**: **559 files / 4055 tests / 0 failures / 0 INFRA kills — PASS** (was 4046; +9 from the new reversal tests)
@@ -470,6 +481,15 @@ All measured on **2026-09-10** at or near `e6e2e444`. Do not reuse these numbers
 - business-rules `v2.0.0 382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79` — **unchanged** (no migration added, 0 accounting-rule files)
 - Scope: 4 files (+676/−12), **0 migrations**, 0 new permission keys, 0 new mounts
 - **Not measured:** hosted browser/E2E for the panel, hosted concurrency, hosted parity re-measure, **push (blocked — no credential)**
+
+**Fresh NOW-5 measurement (2026-09-11 05:20-05:45Z, commit `9767ef03` — local only) — THIS IS THE LATEST MEASURED EVIDENCE:**
+- s09 suite: **23/23 PASS** (+5 real-SQL: invoice full chain + preservation, invoice/payment/deposit fabricated-source refusals, non-enumerated behaviour lock)
+- sharded regression **20 shards**: **559 files / 4060 tests / 0 failures / 0 INFRA kills — PASS** (was 4055; +5)
+- design-system inventory **13/13** · entity-form + axe suites **25/25** · axe (explicit) **15/15**
+- typecheck clean · db0:gate **7/7** · guardian **PASS all layers** · migration-hygiene **OK**
+- business-rules `v2.0.0 382a0b8c…` — **unchanged** (0 migrations, 0 accounting-rule files)
+- Scope: 3 files (+265/−2), 0 migrations, 0 new permission keys
+- **Not measured:** hosted browser/E2E, hosted concurrency, hosted parity re-measure, **push (blocked — no credential)**
 
 ### How to reproduce the browser runs
 
@@ -633,9 +653,9 @@ output from real SQL through the client parser.
 
 **Still open:**
 - Governed historical **adoption/allocation** of expenses — allocation UI exists, governed adoption UI exists (G6), but unblocking legacy settlements only after correct legal/accounting review remains.
-- Only the `source_type='expense'` correction path has real-SQL coverage; other source types are supported by the server and the service but are unproven here (**NOW-5**).
+- **Governance decision (needs user/approved source):** non-enumerated S09 `source_type` labels bind only to the APPROVED S08 review — no source-existence check (deployed step 8 enumerates exactly invoice/payment/expense/deposit, each now regression-proven at `9767ef03`). Tightening = inventing an accounting rule; do not do it unilaterally.
 - Remaining S08/S09 review paths: sources, cache/rebuild, permissions, read limits, retries, reconciliations.
-- Cash/fees/tax/offset/collection/recovery truth in owner statements **and documents** — statement path verified; the full document surface is not exhaustively re-verified after the latest migrations.
+- Cash/fees/tax/offset/collection/recovery truth in owner statements **and documents** — statement path verified; the document surface (`documentPayloadAdapters.ts`, `professional-owner-report.ts`) is not exhaustively re-verified after the latest migrations (**NOW-6**).
 - No hosted browser run covers any of the five G5/G6 panels (offset, recovery, S09 create/validate/apply, S09 reverse, cutover) — the fixture backend seeds none of their tables.
 
 ### G6. UI surfaces for backend-complete capabilities — **RESOLVED (inspection + one canonical build, commit 354bc427)**
@@ -742,23 +762,23 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 05:15Z — NOW-4 committed locally, push BLOCKED)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 05:50Z — NOW-4 + NOW-5 committed locally, push BLOCKED)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `9ca483b4` — G5: surface s09_reverse_correction + list-envelope fix — **LOCAL ONLY** |
-| Local branch tip | `9ca483b4` (1 ahead of remote) |
+| Last work commit (code/schema/evidence) | `9767ef03` — G5/NOW-5: non-expense S09 coverage — **LOCAL ONLY** |
+| Local branch tip | `9767ef03` (3 ahead of remote: `9ca483b4`, `61eb62ad`, `9767ef03`) |
 | Remote branch tip | `bcdf6944` — verified via `git ls-remote` 2026-09-11 04:28Z |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
-| All gates (fresh NOW-4) | s09 18/18 · focused 142/1045 PASS · sharded 20-shard **559/4055 PASS, 0 INFRA** · axe 15/15 · replay 100/100 · gates 7/7 · guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK |
+| All gates (fresh NOW-5) | s09 23/23 · sharded 20-shard **559/4060 PASS, 0 INFRA** · inventory 13/13 · axe 15/15 · gates 7/7 · guardian PASS · typecheck clean · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) |
 | Push status | **BLOCKED — no credential in sandbox** (see §BLOCKED). Do not claim pushed. Do not fabricate a remote SHA. |
 
-**Reconstruction is NOT declared complete.** **Latest measurement: 4055 tests / 0 failures / 0 INFRA at `9ca483b4` (local).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs (offset, recovery, s09 draft/apply, s09 reverse) now have surfaces proven in replay, but only `source_type='expense'` has real-SQL coverage, no hosted browser run covers any panel, and the reverse work is not yet on the remote**, document surface + remaining S08/S09 review pending, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4060 tests / 0 failures / 0 INFRA at `9767ef03` (local).** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, G3/G4 concurrency/runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced and every enumerated S09 source type regression-proven, but no hosted browser run covers any panel, three commits are not yet on the remote, and non-enumerated source-type lineage awaits a governance decision**, document surface (NOW-6) + remaining S08/S09 review paths pending, G7 unknowable.
 
-**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD; (2) NOW-5 — extend S09 correction coverage beyond `source_type='expense'`; (3) NOW-6 — document surface (`documentPayloadAdapters.ts`, `professional-owner-report.ts`) + remaining S08/S09 review paths; (4) G3 concurrency design, G4 runtime, parity re-measure, final DoD.
+**Next when resumed:** (1) the instant a GitHub credential is supplied, `git push origin reconstruction/checkpoint-20260909` and verify the literal remote SHA equals local HEAD (`9767ef03` or newer); (2) NOW-6 — document surface (`documentPayloadAdapters.ts`, `professional-owner-report.ts`) proven-cash verification; (3) remaining S08/S09 review paths; (4) G3 concurrency design, G4 runtime, parity re-measure, final DoD.
 
 ---
 
