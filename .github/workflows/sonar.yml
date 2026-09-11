@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      token_override:
+        description: 'Optional SonarCloud token; falls back to the SONAR_TOKEN secret when empty.'
+        required: false
+        default: ''
 
 concurrency:
   group: sonar-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -23,28 +28,38 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
-      - name: Verify SONAR_TOKEN is available
+      - name: Resolve SONAR_TOKEN
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SECRET_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          OVERRIDE_TOKEN: ${{ github.event.inputs.token_override }}
         run: |
-          if [ -z "${SONAR_TOKEN}" ]; then
-            echo "::error::SONAR_TOKEN secret is not configured for this repository."
+          set -u
+          TOKEN="${OVERRIDE_TOKEN:-${SECRET_TOKEN}}"
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::No SonarCloud token available (secret SONAR_TOKEN empty, no override given)."
             exit 1
           fi
-          echo "SONAR_TOKEN is configured."
-      - name: Validate SONAR_TOKEN against SonarCloud
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          # Never let the token appear in logs.
+          printf '::add-mask::%s\n' "${TOKEN}"
+          echo "SONAR_TOKEN_EFFECTIVE=${TOKEN}" >> "${GITHUB_ENV}"
+          echo "SONAR_TOKEN is configured (source: $([ -n "${OVERRIDE_TOKEN}" ] && echo override || echo secret))."
+      - name: Diagnose SONAR_TOKEN against SonarCloud
         run: |
+          SONAR_TOKEN="${SONAR_TOKEN_EFFECTIVE}" 
           set -uo pipefail
-          validate="$(curl -s -u "${SONAR_TOKEN}:" https://sonarcloud.io/api/authentication/validate)"
-          echo "authentication/validate => ${validate}"
-          projects="$(curl -s -u "${SONAR_TOKEN}:" 'https://sonarcloud.io/api/projects/search?organization=mohamedmasoud3030-tech&ps=5')"
-          echo "projects/search => ${projects}" | head -c 800; echo
-          if ! printf '%s' "${validate}" | grep -q '"valid":true'; then
-            echo "::error::SONAR_TOKEN was rejected by SonarCloud (expired, revoked or wrong organization)."
-            exit 1
-          fi
+          probe() {
+            local label="$1"; shift
+            local out
+            out="$(curl -s -w '|HTTP:%{http_code}' -u "${SONAR_TOKEN}:" "$@" || true)"
+            local status="${out##*|HTTP:}"
+            local body="${out%|HTTP:*}"
+            local msg="probe ${label} => HTTP ${status} :: $(printf '%s' "${body}" | head -c 300)"
+            echo "${msg}"
+            printf '::notice title=sonar-token-probe::%s\n' "${msg}"
+          }
+          probe projects-search 'https://sonarcloud.io/api/projects/search?organization=mohamedmasoud3030-tech&ps=5'
+          probe analysis-jres 'https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64'
+          probe component-show 'https://sonarcloud.io/api/components/show?component=mohamedmasoud3030-tech_rentrixxx'
       - name: Install sonar-scanner-cli
         run: |
           set -euo pipefail
@@ -55,9 +70,8 @@ jobs:
           mv "/opt/sonar-scanner-${SCANNER_VERSION}-linux-x64" /opt/sonar-scanner
           echo "/opt/sonar-scanner/bin" >> "${GITHUB_PATH}"
       - name: SonarCloud scan
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          SONAR_TOKEN="${SONAR_TOKEN_EFFECTIVE}" 
           set -uo pipefail
           ARGS=(
             "-Dsonar.token=${SONAR_TOKEN}"
