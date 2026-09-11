@@ -1,6 +1,6 @@
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -107,7 +107,7 @@ export function ServiceProviderCategoriesDialog({ open, onOpenChange }: Readonly
 
           <EntityForm.Section title="الأنواع الحالية" description="أرشفة النوع تمنع استخدامه في تعيينات جديدة وتبقي العلاقات التاريخية محفوظة.">
             <AsyncContentState
-              status={categoriesQuery.isLoading ? 'loading' : categoriesQuery.isError ? 'error' : (categoriesQuery.data ?? []).length === 0 ? 'empty' : 'ready'}
+              status={resolveAsyncContentStatus({ isLoading: categoriesQuery.isLoading, isError: categoriesQuery.isError, isEmpty: (categoriesQuery.data ?? []).length === 0 })}
               error={categoriesQuery.error}
               errorTitle="تعذر تحميل أنواع الخدمات"
               errorAction={<Button type="button" onClick={() => void categoriesQuery.refetch()}>إعادة المحاولة</Button>}

@@ -115,22 +115,20 @@ export function TenantStatementPanel({
     },
   ];
 
-  return (
-    <ReportPanel
-      title="كشف حساب المستأجر"
-      description="دفتر حركة فعلي للعقد المحدد: افتتاحي، استحقاقات، تحصيلات/عكوس، رصيد جارٍ وختامي."
-      icon={UserRound}
-    >
-      {isLoading ? (
-        <ReportPanelSkeleton />
-      ) : error ? (
+  const renderBody = () => {
+    if (isLoading) return <ReportPanelSkeleton />;
+    if (error) {
+      return (
         <div className="p-4">
           <ReportState
             kind="error"
             message={getErrorMessage(error, 'تعذر تحميل كشف المستأجر.')}
           />
         </div>
-      ) : selectedContractId && statement?.error ? (
+      );
+    }
+    if (selectedContractId && statement?.error) {
+      return (
         <div className="p-4">
           <ReportState
             kind="error"
@@ -140,7 +138,10 @@ export function TenantStatementPanel({
             )}
           />
         </div>
-      ) : selectedContractId && statement && ledgerRows.length > 0 ? (
+      );
+    }
+    if (selectedContractId && statement && ledgerRows.length > 0) {
+      return (
         <div className="space-y-4 p-3 sm:p-4">
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
             <p className="font-black">
@@ -196,15 +197,29 @@ export function TenantStatementPanel({
             emptyDescription="غيّر العقد ثم أعد المحاولة."
           />
         </div>
-      ) : selectedContractId ? (
+      );
+    }
+    if (selectedContractId) {
+      return (
         <div className="p-4">
           <ReportState message="لا توجد حركات في كشف المستأجر لهذا العقد." />
         </div>
-      ) : (
-        <div className="p-4">
-          <ReportState message="اختر عقدًا لعرض كشف حساب المستأجر المعتمد." />
-        </div>
-      )}
+      );
+    }
+    return (
+      <div className="p-4">
+        <ReportState message="اختر عقدًا لعرض كشف حساب المستأجر المعتمد." />
+      </div>
+    );
+  };
+
+  return (
+    <ReportPanel
+      title="كشف حساب المستأجر"
+      description="دفتر حركة فعلي للعقد المحدد: افتتاحي، استحقاقات، تحصيلات/عكوس، رصيد جارٍ وختامي."
+      icon={UserRound}
+    >
+      {renderBody()}
     </ReportPanel>
   );
 }
@@ -313,29 +328,47 @@ export function OwnerStatementPanel({
       ),
   );
 
-  return (
-    <ReportPanel
-      title="كشف حساب المالك"
-      description="كشف تشغيلي ومالي موحّد يطابق بنية نسخة الطباعة: الملخص، الحركة اليومية، الصيانة والمصروفات والمرافق، التسويات والحساب الختامي."
-      icon={UsersRound}
-    >
-      {isLoading ? (
-        <ReportPanelSkeleton />
-      ) : error ? (
+  const renderSummaryGroup = () => {
+    if (isLoadingFullStatement) return <ReportPanelSkeleton />;
+    if (fullStatementError) {
+      return (
+        <ReportState
+          kind="error"
+          message={getErrorMessage(
+            fullStatementError,
+            'تعذر تحميل الملخص والتفاصيل الإضافية لكشف المالك. تظل الحركة المالية الأساسية متاحة أدناه.',
+          )}
+        />
+      );
+    }
+    if (summaryGroup) return <ReportPayloadGroup group={summaryGroup} />;
+    return null;
+  };
+
+  const renderBody = () => {
+    if (isLoading) return <ReportPanelSkeleton />;
+    if (error) {
+      return (
         <div className="p-4">
           <ReportState
             kind="error"
             message={getErrorMessage(error, 'تعذر تحميل كشف المالك.')}
           />
         </div>
-      ) : selectedOwnerId && statement?.error ? (
+      );
+    }
+    if (selectedOwnerId && statement?.error) {
+      return (
         <div className="p-4">
           <ReportState
             kind="error"
             message={getErrorMessage(statement.error, 'تعذر تحميل كشف المالك.')}
           />
         </div>
-      ) : hasOwnerStatement && statement ? (
+      );
+    }
+    if (hasOwnerStatement && statement) {
+      return (
         <div className="space-y-4 p-3 sm:p-4">
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
             <p className="font-black">
@@ -358,19 +391,7 @@ export function OwnerStatementPanel({
             </p>
           </div>
 
-          {isLoadingFullStatement ? (
-            <ReportPanelSkeleton />
-          ) : fullStatementError ? (
-            <ReportState
-              kind="error"
-              message={getErrorMessage(
-                fullStatementError,
-                'تعذر تحميل الملخص والتفاصيل الإضافية لكشف المالك. تظل الحركة المالية الأساسية متاحة أدناه.',
-              )}
-            />
-          ) : summaryGroup ? (
-            <ReportPayloadGroup group={summaryGroup} />
-          ) : null}
+          {renderSummaryGroup()}
 
           <div>
             <p className="mb-2 text-xs font-black text-muted-foreground">
@@ -400,15 +421,29 @@ export function OwnerStatementPanel({
             </div>
           ) : null}
         </div>
-      ) : selectedOwnerId ? (
+      );
+    }
+    if (selectedOwnerId) {
+      return (
         <div className="p-4">
           <ReportState message="لا توجد بيانات كشف مالك معتمدة للفترة المحددة." />
         </div>
-      ) : (
-        <div className="p-4">
-          <ReportState message="اختر مالكًا لعرض كشف حساب المالك المعتمد." />
-        </div>
-      )}
+      );
+    }
+    return (
+      <div className="p-4">
+        <ReportState message="اختر مالكًا لعرض كشف حساب المالك المعتمد." />
+      </div>
+    );
+  };
+
+  return (
+    <ReportPanel
+      title="كشف حساب المالك"
+      description="كشف تشغيلي ومالي موحّد يطابق بنية نسخة الطباعة: الملخص، الحركة اليومية، الصيانة والمصروفات والمرافق، التسويات والحساب الختامي."
+      icon={UsersRound}
+    >
+      {renderBody()}
     </ReportPanel>
   );
 }

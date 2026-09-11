@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Activity, AlertCircle, CheckCircle2, Download, Droplets, Eye, Flame, Plus, Printer, ShieldCheck, Trash2, Wifi, Zap } from 'lucide-react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
@@ -617,7 +617,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
 
       <AsyncContentState
-        status={isLoading ? 'loading' : isError && meters.length === 0 && bills.length === 0 ? 'error' : meters.length === 0 && filteredBills.length === 0 ? 'empty' : 'ready'}
+        status={resolveAsyncContentStatus({ isLoading, isError: isError && meters.length === 0 && bills.length === 0, isEmpty: meters.length === 0 && filteredBills.length === 0 })}
         error={error}
         errorTitle="تعذر تحميل بيانات المرافق"
         errorAction={<Button onClick={() => { void metersQuery.refetch(); void billsQuery.refetch(); void propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}

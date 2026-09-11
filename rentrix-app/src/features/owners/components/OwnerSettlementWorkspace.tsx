@@ -20,7 +20,7 @@ import {
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
@@ -313,13 +313,11 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
     });
   };
 
-  const listStatus = settlementsQuery.isPending
-    ? 'loading'
-    : settlementsQuery.isError && settlements.length === 0
-      ? 'error'
-      : settlements.length === 0
-        ? 'empty'
-        : 'ready';
+  const listStatus = resolveAsyncContentStatus({
+    isLoading: settlementsQuery.isPending,
+    isError: settlementsQuery.isError && settlements.length === 0,
+    isEmpty: settlements.length === 0,
+  });
 
   const settlementActions = (settlement: OwnerSettlementRecord) => {
     const isApproving = approveMutation.isPending && approveMutation.variables?.settlement_id === settlement.id;
@@ -510,14 +508,15 @@ export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: strin
   );
 }
 
+const METRIC_TONE_CLASSES: Record<string, string> = {
+  primary: 'text-primary',
+  danger: 'text-destructive',
+  success: 'text-success',
+  default: 'text-foreground',
+};
+
 function Metric({ label, value, tone = 'default' }: Readonly<{ label: string; value: number; tone?: 'default' | 'primary' | 'danger' | 'success' }>) {
-  const className = tone === 'primary'
-    ? 'text-primary'
-    : tone === 'danger'
-      ? 'text-destructive'
-      : tone === 'success'
-        ? 'text-success'
-        : 'text-foreground';
+  const className = METRIC_TONE_CLASSES[tone];
   return (
     <div className="rounded-xl bg-muted/20 p-2">
       <span className="block text-muted-foreground">{label}</span>
@@ -559,6 +558,48 @@ function DraftOverlay({
   previewError,
   onSubmit,
 }: DraftOverlayProps) {
+  const renderPreview = () => {
+    if (previewLoading) {
+      return (
+        <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">جارٍ حساب المعاينة من الخادم…</p>
+      );
+    }
+    if (previewError) {
+      return (
+        <p className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">{previewError}</p>
+      );
+    }
+    if (!preview) {
+      return (
+        <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
+          اختر اتفاقية المالك/العقار وحدد الفترة لعرض المعاينة الخادمية.
+        </p>
+      );
+    }
+    return (
+      <>
+        <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-3 lg:grid-cols-5">
+                <Metric label="تحصيلات الفترة" value={preview.gross_collected} />
+                <Metric label="أتعاب المكتب" value={preview.office_fee} tone="primary" />
+                <Metric label="مصروفات على المالك" value={preview.owner_expenses} tone="danger" />
+                <Metric label="ضريبة القيمة المضافة" value={preview.tax_amount} tone="danger" />
+                <Metric label="الصافي للمالك" value={preview.net_payable} tone="success" />
+              </div>
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
+                {`الفترة ${form.periodStart} إلى ${form.periodEnd}`}
+                {typeof preview.breakdown?.payments_count === 'number' ? ` · ${preview.breakdown.payments_count} دفعة مرحّلة` : ''}
+                {preview.breakdown?.source ? ` · المصدر: ${preview.breakdown.source}` : ''}
+                {preview.breakdown?.vat?.enabled
+                  ? ` · ضريبة ${preview.breakdown.vat.rate ?? 0}% على أتعاب المكتب`
+                  : ' · الضريبة غير مفعّلة لهذه الشركة'}
+              </p>
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                عند إنشاء المسودة تُحجز التحصيلات والمصروفات المدرجة ذرّيًا، ولا يمكن سحبها إلى تسوية أخرى لنفس الفترة.
+        </p>
+      </>
+    );
+  };
+
   return (
     <EntityForm.Overlay
       open={open}
@@ -600,36 +641,7 @@ function DraftOverlay({
           title="معاينة المبالغ (من الخادم)"
           description="قراءة فقط؛ تُعاد هذه الأرقام نفسها عند الإنشاء والاعتماد والدفع، ولا يمكن تعديلها من هنا."
         >
-          {previewLoading ? (
-            <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">جارٍ حساب المعاينة من الخادم…</p>
-          ) : previewError ? (
-            <p className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">{previewError}</p>
-          ) : preview ? (
-            <>
-              <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-3 lg:grid-cols-5">
-                <Metric label="تحصيلات الفترة" value={preview.gross_collected} />
-                <Metric label="أتعاب المكتب" value={preview.office_fee} tone="primary" />
-                <Metric label="مصروفات على المالك" value={preview.owner_expenses} tone="danger" />
-                <Metric label="ضريبة القيمة المضافة" value={preview.tax_amount} tone="danger" />
-                <Metric label="الصافي للمالك" value={preview.net_payable} tone="success" />
-              </div>
-              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
-                {`الفترة ${form.periodStart} إلى ${form.periodEnd}`}
-                {typeof preview.breakdown?.payments_count === 'number' ? ` · ${preview.breakdown.payments_count} دفعة مرحّلة` : ''}
-                {preview.breakdown?.source ? ` · المصدر: ${preview.breakdown.source}` : ''}
-                {preview.breakdown?.vat?.enabled
-                  ? ` · ضريبة ${preview.breakdown.vat.rate ?? 0}% على أتعاب المكتب`
-                  : ' · الضريبة غير مفعّلة لهذه الشركة'}
-              </p>
-              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
-                عند إنشاء المسودة تُحجز التحصيلات والمصروفات المدرجة ذرّيًا، ولا يمكن سحبها إلى تسوية أخرى لنفس الفترة.
-              </p>
-            </>
-          ) : (
-            <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
-              اختر اتفاقية المالك/العقار وحدد الفترة لعرض المعاينة الخادمية.
-            </p>
-          )}
+{renderPreview()}
           <EntityForm.Field label="ملاحظات" description="اختياري؛ تحفظ داخل التسوية.">
             <Input value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
           </EntityForm.Field>

@@ -26,6 +26,26 @@ interface Props {
   canManage: boolean;
 }
 
+const IMPORT_STATUS_TONES: Record<string, 'success' | 'warning' | 'neutral'> = {
+  completed: 'success',
+  duplicate: 'warning',
+};
+
+function importResultHeading(result: { is_duplicate_file: boolean; accepted_rows: number }): string {
+  if (result.is_duplicate_file) return 'الملف مكرر — تم إرجاع الدفعة السابقة دون كتابة جديدة';
+  if (result.accepted_rows === 0) return 'اكتملت العملية دون حركات جديدة';
+  return 'تم الاستيراد بنجاح';
+}
+
+function stepSubmitLabel(step: string, isImporting: boolean): string {
+  if (step === 'select') return 'تحليل الملف';
+  if (step === 'preview') return 'مراجعة التفاصيل';
+  if (step === 'review') return isImporting ? 'جارٍ الاستيراد...' : 'تأكيد الاستيراد';
+  if (step === 'mapping') return 'إعادة تحليل';
+  if (step === 'completed') return 'الانتقال للمطابقة';
+  return 'متابعة';
+}
+
 export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId, onCompleted, canManage }: Props) {
   const companySettings = useCompanySettingsContract();
   const [step, setStep] = useState<Step>('select');
@@ -404,11 +424,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
         <div className="grid gap-3 rounded-xl border bg-success/5 p-4 text-sm">
           <div className={`flex items-center gap-2 font-black ${importResult.accepted_rows === 0 ? 'text-warning' : 'text-success'}`}>
             <CheckCircle2 className="size-5" />{' '}
-            {importResult.is_duplicate_file
-              ? 'الملف مكرر — تم إرجاع الدفعة السابقة دون كتابة جديدة'
-              : importResult.accepted_rows === 0
-                ? 'اكتملت العملية دون حركات جديدة'
-                : 'تم الاستيراد بنجاح'}
+            {importResultHeading(importResult)}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
@@ -421,7 +437,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
             </div>
             <div>
               <span className="text-xs text-muted-foreground">الحالة</span>
-              <p><StatusBadge tone={importResult.status === 'completed' ? 'success' : importResult.status === 'duplicate' ? 'warning' : 'neutral'}>{importResult.status}</StatusBadge></p>
+              <p><StatusBadge tone={IMPORT_STATUS_TONES[importResult.status] ?? 'neutral'}>{importResult.status}</StatusBadge></p>
             </div>
             <div>
               <span className="text-xs text-muted-foreground">إجمالي</span>
@@ -481,21 +497,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
         {step === 'completed' ? renderCompletedStep() : null}
 
         <EntityForm.Actions
-          submitLabel={
-            step === 'select'
-              ? 'تحليل الملف'
-              : step === 'preview'
-                ? 'مراجعة التفاصيل'
-                : step === 'review'
-                  ? isImporting
-                    ? 'جارٍ الاستيراد...'
-                    : 'تأكيد الاستيراد'
-                  : step === 'mapping'
-                    ? 'إعادة تحليل'
-                    : step === 'completed'
-                      ? 'الانتقال للمطابقة'
-                      : 'متابعة'
-          }
+          submitLabel={stepSubmitLabel(step, isImporting)}
           onCancel={() => handleOpenChange(false)}
           isSubmitting={isParsing || isImporting}
           submitDisabled={
