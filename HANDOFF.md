@@ -41,7 +41,7 @@ This section is the **continuous memory** between Arena sessions. It is the auth
 | pnpm | 10.11.1 |
 | Node | v20.20.2 |
 | Fresh baseline (NOW-8, 2026-09-11 07:00-07:25Z) | typecheck clean, gates 7/7, guardian PASS all layers, migration-hygiene OK (needs `origin/main` ref — see §B), business-rules v2.0.0 382a0b8c unchanged, s09+S08 suite 27/27, canonical documents suite 38/38, entity-form **9/9** (incl. G3 double-submit race lock), design-system inventory 13/13, full sharded 20-shard **559 files / 4066 tests / 0 failures / 0 INFRA — PASS** |
-| Push verification | **DONE 2026-09-11 ~10:05Z** — user supplied a PAT; `git push` of `HEAD:refs/heads/reconstruction/checkpoint-20260909` succeeded (`bcdf6944..a99e4295`); remote SHA verified via `git ls-remote`: `a99e4295ba2f91af1dcdc59a15683ed56d9487c2` == local HEAD. Hosted runs dispatched on the pushed SHA: `ci.yml` run 34579002427 + `browser-readiness.yml` run 34579004391 (full self-contained e2e matrix, run_staging=false — no secrets needed). This HANDOFF update itself is committed and pushed immediately after. |
+| Push verification | **DONE — remote == local `337a3046`** (six push/verify cycles 2026-09-11 10:05-10:45Z, each verified via `git ls-remote`). Hosted CI at tip: CI 34584434977 SUCCESS + Browser Readiness 34585751072 SUCCESS (full record in the NOW-14 block and §K). |
 
 ### FRESH BASELINE AFTER G6 (NOW-1, executed 2026-09-10 17:30-17:36Z)
 
@@ -139,34 +139,60 @@ From §A Standing constraints + §J:
 - G2 Intermittent bootstrap stall root cause: OPEN, BLOCKED by G1, mitigation proven (withCompanyResolutionTimeout 10 PASS), root cause unproven — **NOT YET PROVEN**
 - G3 Hosted concurrency / Web Locks: local verification strategy + per-scenario verdicts committed (`docs/execution/G3_CONCURRENCY_VERIFICATION_STRATEGY.md`, NOW-8 `035db0e2`); one proven client defect fixed (EntityForm double-submit trap); NOW-9 (`6a66f692`) closed residual R1 with a full per-surface audit — 0 ungated mutation surfaces remain, zero further code changes needed; hosted checks C1/C3/C5/C6/C8 remain BLOCKED by G1 — **PROVEN LOCALLY; HOSTED NOT YET PROVEN**
 - G4 Runtime behaviour of newly applied migrations under genuine concurrent/hosted traffic: structurally verified but not exercised by live usage — **NOT YET PROVEN**
-- G5 Remaining financial-chain reviews: non-expense `source_type` correction coverage **PROVEN (NOW-5, `9767ef03`)**, cash/fees/tax/offset/collection/recovery truth in owner statements AND documents **PROVEN (NOW-6, `342b18ca` — one defect found, fixed, locked)**, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations) **PROVEN (NOW-7, `bb45a0d0` — one F13-class defect found, fixed, locked; no-LIMIT read behaviour recorded as governance note)**; hosted browser coverage for all five G5/G6 panels — **NOT YET PROVEN** (LOCAL sandbox browser coverage COMPLETE: S09 incl. reversal ✓ + cutover ✓ NOW-11 `ec4654bc`; recovery ✓ + fail-closed refusal ✓ NOW-12 `d6713ec0`; offset+payout ✓ owner-expense-source.spec.ts — playwright 9/9 matrix)
+- G5 Remaining financial-chain reviews: non-expense `source_type` correction coverage **PROVEN (NOW-5, `9767ef03`)**, cash/fees/tax/offset/collection/recovery truth in owner statements AND documents **PROVEN (NOW-6, `342b18ca` — one defect found, fixed, locked)**, remaining S08/S09 paths (sources, cache/rebuild, permissions, read limits, retries, reconciliations) **PROVEN (NOW-7, `bb45a0d0` — one F13-class defect found, fixed, locked; no-LIMIT read behaviour recorded as governance note)**; hosted browser coverage for all five G5/G6 panels — **PROVEN on hosted CI runners (hermetic fixture data)**: Browser Readiness run 34585751072 SUCCESS at `337a3046`, desktop shard 172/172 incl. S09-lifecycle, cutover, and recovery-refusal panel journeys (NOW-14); local matrix 9/9 (NOW-11/12); offset+payout in owner-expense-source.spec.ts. NOT yet proven: against the LIVE deployed staging app (needs staging deployment at the exact SHA → `hosted-staging-proof.yml`)
 - G5 closure durability: `9ca483b4` exists **only in this sandbox** until the push blocker clears — remote does not yet carry the reverse surface or the list-envelope fix — **NOT YET PUSHED**
 - G6 hosted parity re-measurement after 354bc427+4da6a26d+50be359a — parity re-measure pending in NEXT-5 — **NOT YET PROVEN**
 - G7 Historical SEC-003/SEC-004 exploitation: UNKNOWABLE, no historical access logs — **NOT YET PROVEN / UNKNOWABLE**
 
 ### NOW (single task)
 
-**NOW-14: record the hosted GitHub Actions outcomes for the pushed SHA (runs dispatched 2026-09-11 ~10:07Z)**
+**NOW-15: PARKED — remaining items need operator-side actions (staging deploy / DB secret / governance decision)**
 
-(NOW-4…NOW-12 COMPLETE and **PUSHED** — remote tip verified `a99e4295ba2f91af1dcdc59a15683ed56d9487c2`
-== local HEAD via `git ls-remote`; NOW-13 park record partially fired: the PAT resume trigger
-occurred. The PAT is conversation-scoped — used inline, never written to any file or `.git/config`.)
+(NOW-4…NOW-12 COMPLETE and PUSHED; NOW-13 park superseded; **NOW-14 COMPLETE**: push verified +
+first-ever hosted CI on the branch driven to FULL GREEN at tip `337a3046` — four latent gate
+defects found by the hosted gates and fixed at source: `53d913e7` test-typecheck ×3,
+`9a4c8add` hermetic env identity + architecture seam, `bc3b0c4c` guard-v2 lock mirror,
+`337a3046` reviewed dynamic contract registry. Remote == local at every step, verified via
+`git ls-remote`. The PAT is conversation-scoped: used inline per command, never written to any
+file, never stored in `.git/config`.)
 
-- In progress at dispatch time: **ci.yml run 34579002427** (Typecheck, Lint & Build — first hosted
-  build of the reconstruction branch) and **browser-readiness.yml run 34579004391** (full
-  self-contained Playwright device matrix — includes the three NOW-11/12 panel specs; this is the
-  first HOSTED browser execution of the panels).
-- Steps: (1) poll `GET /repos/mohamedmasoud3030-tech/malek/actions/runs?branch=reconstruction/checkpoint-20260909`
-  (PAT in Authorization header; needs a fresh PAT if expired). (2) Record conclusions verbatim in
-  §K + DoD checklist G1 row + this block; on failure, download job logs before diagnosing — a
-  hosted runner environment difference is INFRA-class until proven otherwise; a genuine failure
-  reproduces locally first (never fix blind). (3) Then re-park: everything else (G2, G3-hosted
-  soaks, G4, parity, G7) needs a deployed app + Supabase access, which the GitHub PAT does NOT
-  provide; the governance decision still needs an approved source.
-- Do NOT re-audit NOW-4…NOW-12 territory.
+**NOW-14 hosted evidence (all on branch `reconstruction/checkpoint-20260909`):**
+- CI / Typecheck, Lint & Build run **34584434977** at `337a3046`: **SUCCESS** — build job
+  (governance guard, pilot-demo + production-demo safety, typecheck, test-typecheck, a11y
+  primitives, full vitest gate, lint, architecture check, migration↔types parity, frontend↔db
+  contract gate, frontend↔backend runtime contract, six-role RLS matrix, production bundle) AND
+  heavy-validation job (db0:gate, RLS matrix, docs links, full vitest **4069 tests**, a11y,
+  financials safety) all green.
+- Browser Readiness run **34585751072** at `337a3046`: **SUCCESS** — all three device shards
+  (desktop **172 passed / 0 failed** incl. the three NOW-11/12 panel-journey specs; tablet,
+  mobile green). Also green one commit earlier at `9a4c8add` (run 34582412612).
+- **First HOSTED browser execution of the five-panel coverage: GREEN.**
+- Staging attempt (run 34586348258, `run_staging=true`): hermetic shards green again;
+  `seeded-staging-smoke` BLOCKED at preflight BY DESIGN — `scripts/assert-release-blocker-env.mjs`
+  (main-era policy lock `395c26d0`) rejects `E2E_ENVIRONMENT_KIND=staging`: the full-suite staging
+  path is policy-dead on main itself; the sanctioned hosted proof is `hosted-staging-proof.yml`
+  (production-readonly auth lifecycle + storage isolation), which fail-closes unless the staging
+  deployment serves the EXACT dispatched SHA (`hosted-staging-preflight.mjs`). The guard was NOT
+  relaxed (never weaken a security lock to make a run pass).
+- `supabase-live-readiness` daily failures on main diagnosed from logs: benign fail-closed skip —
+  `SUPABASE_DB_URL` secret is not set ("Provide an approved read-only database URL"); NOT a parity
+  drift signal. Migration-ledger parity check skips for the same reason.
+- `supabase-production-migrations.yml` exists (G4 path): manual, approval-gated, requires exact
+  reviewed main SHA + a prior production-inspect run + owner-created backup reference + rollback
+  plan + Production environment approval — NOT dispatchable without those owner-side inputs
+  (fabricating them is forbidden).
 
-**Acceptance:** hosted run outcomes recorded verbatim (pass or fail, with run ids), or a precise
-BLOCKED record if the PAT expired before completion. No fabrication of hosted results.
+**Remaining queue — ALL need operator/owner actions, exact resume triggers:**
+1. **Staging deployment at the branch tip** → dispatch `hosted-staging-proof.yml` (production-
+   readonly auth lifecycle + storage tenant-isolation proof) = the sanctioned G1 hosted E2E.
+2. **`SUPABASE_DB_URL` read-only secret** → `supabase-live-readiness` + migration-ledger parity
+   (= fresh G6 parity measurement, read-only).
+3. **Governance decision:** non-enumerated S09 `source_type` tightening (approved source required).
+4. **G4 production migration run:** owner supplies reviewed SHA + production-inspect run + backup
+   reference + rollback plan; Production environment approval.
+5. G2 bootstrap-stall diagnosis + G3-hosted two-tab soaks: need the deployed hosted runtime (1).
+
+**Acceptance:** none executable in-sandbox — precise park record with resume triggers above.
 
 ### Historical park record (NOW-13, superseded 2026-09-11 ~10:05Z by the PAT arrival)
 
@@ -233,6 +259,8 @@ NOW-10 `84e258cd`+`76a461c8`; browser coverage of all five G5/G6 panels incl. fa
 = NOW-11 `ec4654bc` + NOW-12 `d6713ec0`.)
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-14 (2026-09-11 10:05-10:45Z; commits `2a40f6e5`, `53d913e7`, `9a4c8add`, `bc3b0c4c`, `337a3046` — ALL PUSHED, remote==local): push unblocked + first-ever hosted CI on the branch driven to FULL GREEN.** User supplied a PAT (conversation-scoped; used inline, never stored). Pushed `bcdf6944..a99e4295` (18 commits), verified via `git ls-remote`, dispatched ci.yml + browser-readiness on the pushed SHA. The hosted gates — running on this branch for the first time ever — caught FOUR latent defects, each reproduced locally red-first (where reproducible) and fixed at source: (1) `53d913e7` three `typecheck:test` errors (unused `reviewA` binding, unused import, unnarrowed registry entry — the test-project tsc cannot run in the 2GB sandbox, so this gate had never run locally); (2) `9a4c8add` hermetic e2e identity vs the shared config policy: the branch's stricter `resolvePublicSupabaseConfig` (suffix-matched placeholder hosts) correctly failed closed the login form under the CI/local placeholder env (`e2e.invalid.supabase.local`, `example.supabase.co`+`test-anon-key`) — 4 hosted login/readiness failures reproduced locally (2×120s fill timeouts, disabled input), fixed by one policy-passing never-resolvable identity `https://e2e.supabase.invalid` + `e2e-browser-public-key` across playwright.config.ts / browser-readiness.yml / the realtime-DNS allowlist, PLUS the reviewed `financials→owners` hook-seam entry in check-architecture.mjs for the migration-12 allocation imports (`9fbbc596`, pre-loop); (3) `bc3b0c4c` mirrored that seam in the architecture-guard-v2 contract lock (exact-set literal preserved: reports/finance-hub edges stay removed); (4) `337a3046` registered `s09_reverse_correction` in the reviewed dynamic-contract registry (variable payload BY DESIGN — the pure fail-closed `buildReverseS09Args` builder; occurrence-count pinned). Final hosted state at tip: **CI 34584434977 SUCCESS** (build + heavy-validation: vitest **4069/4069**, RLS 84/84, runtime-contract 51/51, contract gates, production build, db0:gate, docs) and **Browser Readiness 34585751072 SUCCESS** (3/3 shards; desktop **172/172** incl. all three NOW-11/12 panel-journey specs — first HOSTED browser execution, green). Staging attempt (run 34586348258): hermetic shards green; `seeded-staging-smoke` BLOCKED at preflight by the deliberate `assert-release-blocker-env.mjs` policy lock (rejects `E2E_ENVIRONMENT_KIND=staging`; dead on main too — NOT relaxed); sanctioned path = `hosted-staging-proof.yml` once staging serves the exact SHA. Main's daily `supabase-live-readiness` failures diagnosed benign: fail-closed skip, `SUPABASE_DB_URL` secret absent — not parity drift. Local pre-runs during the loop: login/readiness/document-platform 27/27, panel specs green under new env (2 INFRA SIGKILL retries green), runtime-contract/RLS/docs/build all PASS, arch + contract gates PASS.
 
 - **NOW-12 (local `d6713ec0`, 2026-09-11 09:10-09:50Z): recovery panel browser coverage + FIRST browser-proven fail-closed refusal — 9/9 matrix green, ZERO product-code change.** `e2e/g5-recovery-panel-journey.spec.ts` completes the five-panel browser matrix: the recovery panel (`?ownerId=` scope in the funds view — offset/recovery panels don't render without it) shows the seeded 200 OMR receivable truthfully; then REAL concurrency (no payload tampering): a lawful 150 recovery goes straight through the deployed `recover_owner_receivable_atomic` while the open UI is stale at 200 → the stale submit is refused by the server, the Arabic reason (المبلغ يتجاوز الرصيد المتبقي من المديونية الأصلية) surfaces in `role=alert`, and SQL truth proves zero change (outstanding 50, one movement, exactly one new journal batch); the honest 50 then succeeds (status message with posted batch id, summary re-reads 200/0, SQL: RECOVERED, two movements, both batches POSTED); every browser-sent payload verified free of server-owned fields (company_id/amount_override/target_account). Evidence: playwright **9/9** (3 panel specs × 3 projects, CI=1, zero retries in the matrix run), typecheck clean, vitest unaffected (zero src change). One spec-locator fix mid-loop (two `role="status"` elements in the panel — empty-state wrapper collides; scoped by text). Sandbox stripped executable bits on `skills/**` scripts (mode-only drift) — restored via chmod, nothing committed. **RESULT: all five G5/G6 panels now browser-proven locally; refused-operation fail-closed path browser-proven.**
 
@@ -846,23 +874,24 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 10:05Z — NOW-4…NOW-12 PUSHED to remote and verified; hosted runs dispatched; NOW-14 monitors them)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 10:45Z — NOW-14 COMPLETE: branch PUSHED, remote==local, hosted CI + browser matrix FULL GREEN at tip)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `d6713ec0` — NOW-12: recovery panel browser spec + fail-closed refusal proof (e2e-only; last src change `035db0e2`) — **ON REMOTE** |
-| Local branch tip | `a99e4295` (this HANDOFF-update commit is made on top and pushed immediately after — check `git log` for the docs SHA; all 17 prior commits `9ca483b4`…`a99e4295` are on the remote) |
-| Remote branch tip | `a99e4295ba2f91af1dcdc59a15683ed56d9487c2` — **verified via `git ls-remote` 2026-09-11 ~10:05Z** (was `bcdf6944`) |
+| Last work commit (code/schema/evidence) | `337a3046` — NOW-14 gate fixes: reviewed dynamic contract registry entry (gate-infra-only; last product-src change remains `035db0e2` NOW-8; `bc3b0c4c` touched one vitest lock file) — **ON REMOTE** |
+| Local branch tip | `337a3046` (+ this HANDOFF-update commit pushed immediately after — remote and local have been kept equal at every NOW-14 step) |
+| Remote branch tip | `337a30463a9ddb96113d07f933d50f3789108e7a` — **verified via `git ls-remote` 2026-09-11 ~09:35Z** |
+| Hosted CI at tip | CI run 34584434977 **SUCCESS** (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
-| All gates (fresh NOW-8, unchanged by docs-only NOW-9/10 and e2e-only NOW-11/12) | entity-form 9/9 · s09+S08 suite 27/27 · canonical documents 38/38 · workspace 6/6 · sharded 20-shard **559/4066 PASS, 0 INFRA** · inventory 13/13 · gates 7/7 · guardian PASS · typecheck clean (re-run at NOW-12 over all three new e2e specs) · business-rules v2.0.0 382a0b8c unchanged · migration-hygiene OK · replay 100/100 (NOW-4; 0 schema changes since) · **NEW NOW-11/12: playwright 9/9 (S09 + cutover + recovery panels × desktop/tablet/mobile, zero retries in matrix run)** |
-| Push status | **PUSHED & VERIFIED 2026-09-11 ~10:05Z** — remote tip == local HEAD `a99e4295` via `git ls-remote`. PAT was conversation-scoped (never stored in any file or in `.git/config`). Hosted runs dispatched on the pushed SHA: ci.yml 34579002427, browser-readiness.yml 34579004391 (in progress at time of writing — NOW-14 records the outcomes). |
+| All gates (fresh NOW-8 locally; NOW-14 re-proved everything HOSTED at tip `337a3046`) | **HOSTED: CI run 34584434977 SUCCESS — typecheck + test-typecheck + a11y + vitest 4069/4069 + lint + architecture + migration↔types parity + frontend↔db contract + runtime-contract 51/51 + RLS 84/84 + production build + heavy-validation (db0:gate, docs 119 files, financials)** · **HOSTED: Browser Readiness run 34585751072 SUCCESS — 3/3 shards, desktop 172/172 incl. all three panel-journey specs** · local baseline stands: entity-form 9/9, s09+S08 27/27, documents 38/38, 20-shard 559/4066 (now superseded by hosted 4069 green), replay 100/100, business-rules v2.0.0 382a0b8c unchanged |
+| Push status | **PUSHED & VERIFIED — remote == local at every step** (`a99e4295` → `2a40f6e5` → `53d913e7` → `9a4c8add` → `bc3b0c4c` → `337a3046`, each verified via `git ls-remote`). PAT conversation-scoped: used inline per command, never written to any file or `.git/config`. Hosted runs at tip: CI 34584434977 SUCCESS, Browser Readiness 34585751072 SUCCESS. |
 
-**Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc`+NOW-12 `d6713ec0` e2e-only over identical src) + playwright 9/9 at `d6713ec0`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked; NOW-12 added a browser-proven server-side stale-read refusal with zero state change); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), and ALL FIVE G5/G6 panels now browser-proven locally (S09 incl. reversal + cutover at `ec4654bc`; offset + payout in owner-expense-source.spec.ts; recovery + fail-closed refusal at `d6713ec0`) — but all seventeen work commits are ON the remote (verified `a99e4295`, 2026-09-11 ~10:05Z) with the first hosted CI + browser-readiness runs dispatched on that SHA (outcomes pending — NOW-14), and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
+**Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc`+NOW-12 `d6713ec0` e2e-only over identical src) + playwright 9/9 at `d6713ec0`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked; NOW-12 added a browser-proven server-side stale-read refusal with zero state change); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), and ALL FIVE G5/G6 panels now browser-proven locally (S09 incl. reversal + cutover at `ec4654bc`; offset + payout in owner-expense-source.spec.ts; recovery + fail-closed refusal at `d6713ec0`) — but all work is ON the remote (verified `337a3046`, remote==local) with hosted CI **SUCCESS** (run 34584434977) and the hosted browser matrix **SUCCESS** (run 34585751072, desktop 172/172 incl. all three panel-journey specs — the five-panel browser coverage is now hosted-proven on hermetic fixture data); the sanctioned staging proof needs a staging deployment at the exact SHA, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
 
-**Next when resumed:** (1) ~~push~~ DONE — remote tip verified `a99e4295` (2026-09-11 ~10:05Z); NOW-14 = record the hosted ci.yml (run 34579002427) + browser-readiness (run 34579004391) outcomes in this file and the DoD checklist (query: `GET /repos/mohamedmasoud3030-tech/malek/actions/runs?branch=reconstruction/checkpoint-20260909`); (2) governance decision on non-enumerated source types (needs approved source — do not invent); (3) G4 hosted runtime, parity re-measure, hosted runtime checks (G2, G3-hosted soaks, G7) — still need a deployed app + Supabase access, which the GitHub PAT does NOT provide. ALL locally executable reconstruction work is COMPLETE (NOW-4…NOW-12). If the PAT expired: park again, do not fabricate.
+**Next when resumed:** (1) ~~push + hosted CI~~ DONE — remote==local `337a3046`; CI + browser matrix FULL GREEN at tip (runs 34584434977 / 34585751072); (2) operator-side triggers, in order: **staging deployment at the branch tip** → dispatch `hosted-staging-proof.yml` (sanctioned G1 hosted E2E: production-readonly auth lifecycle + storage isolation); **`SUPABASE_DB_URL` read-only secret** → `supabase-live-readiness` + migration-ledger parity (= fresh G6 measurement); (3) governance decision on non-enumerated source types (approved source required — do not invent); (4) G4 production-migration run needs owner inputs (reviewed SHA + production-inspect run + backup reference + rollback plan + Production environment approval) — never fabricate them; (5) G2/G3-hosted soaks need the deployed runtime from (2). Do NOT relax `scripts/assert-release-blocker-env.mjs` (policy lock) to force the staging suite path — it is deliberately dead for `E2E_ENVIRONMENT_KIND=staging`. If the PAT expired: park, do not fabricate.
 
 ---
 
