@@ -39,13 +39,22 @@ export function AssistantSpeechControl({ messageId, content }: AssistantSpeechCo
   const isOwnPaused = speechState.status === 'paused' && speechState.messageId === messageId;
   const isOwnPlaying = speechState.status === 'playing' && speechState.messageId === messageId;
 
-  const label = isOwnPlaying
-    ? 'إيقاف الرد'
-    : isOwnPaused
-      ? 'متابعة الرد'
-      : speechState.completedMessageId === messageId
-        ? 'إعادة تشغيل الرد'
-        : 'تشغيل الرد';
+  const label = (() => {
+    if (isOwnPlaying) return 'إيقاف الرد';
+    if (isOwnPaused) return 'متابعة الرد';
+    if (speechState.completedMessageId === messageId) return 'إعادة تشغيل الرد';
+    return 'تشغيل الرد';
+  })();
+  const speechAction = (() => {
+    if (isOwnPlaying) return 'stop';
+    if (isOwnPaused) return 'resume';
+    return 'play';
+  })();
+  const liveAnnouncement = (() => {
+    if (isOwnPlaying) return 'جارٍ تشغيل الرد صوتياً';
+    if (isOwnPaused) return 'رد متوقف مؤقتاً';
+    return '';
+  })();
 
   const handleClick = () => {
     if (isOwnPlaying) {
@@ -69,7 +78,7 @@ export function AssistantSpeechControl({ messageId, content }: AssistantSpeechCo
         className="size-11 min-h-11 min-w-11 rounded-full p-0"
         aria-label={label}
         title={label}
-        data-ai-speech-action={isOwnPlaying ? 'stop' : isOwnPaused ? 'resume' : 'play'}
+        data-ai-speech-action={speechAction}
         onClick={handleClick}
       >
         {isOwnPlaying ? (
@@ -79,7 +88,7 @@ export function AssistantSpeechControl({ messageId, content }: AssistantSpeechCo
         )}
       </Button>
       <span className="sr-only" aria-live="polite">
-        {isOwnPlaying ? 'جارٍ تشغيل الرد صوتياً' : isOwnPaused ? 'رد متوقف مؤقتاً' : ''}
+        {liveAnnouncement}
       </span>
     </div>
   );

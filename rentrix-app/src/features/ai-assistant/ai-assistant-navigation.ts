@@ -80,6 +80,14 @@ const OWNER_SETTLEMENTS: AiNavigationTarget = {
   search: { section: 'funds', view: 'owner_settlements' },
 };
 
+const ENTITY_ROUTE_TEMPLATES: Record<string, string> = {
+  properties: '/properties/$propertyId',
+  contracts: '/contracts/$contractId',
+  tenants: '/tenants/$tenantId',
+  owners: '/owners/$ownerId',
+  people: '/people/$personId',
+};
+
 const NAVIGATION_BY_ACTION: Readonly<
   Record<AiAssistantAction, readonly AiNavigationTarget[]>
 > = {
@@ -146,18 +154,7 @@ function isCanonicalDynamicDetailRoute(to: string): boolean {
       isReportProductId(id) && CANONICAL_ROUTES.has('/reports/$reportId'),
     );
   }
-  const template =
-    root === 'properties'
-      ? '/properties/$propertyId'
-      : root === 'contracts'
-        ? '/contracts/$contractId'
-        : root === 'tenants'
-          ? '/tenants/$tenantId'
-          : root === 'owners'
-            ? '/owners/$ownerId'
-            : root === 'people'
-              ? '/people/$personId'
-              : null;
+  const template = ENTITY_ROUTE_TEMPLATES[root] ?? null;
   return Boolean(
     template &&
     DYNAMIC_DETAIL_TEMPLATES.has(template) &&
@@ -239,12 +236,11 @@ export function buildAiNavigationTargets(
   action: AiAssistantAction | undefined,
   context?: AiNavigationContext,
 ): readonly AiNavigationTarget[] {
-  const baseTargets =
-    action && action in NAVIGATION_BY_ACTION
-      ? NAVIGATION_BY_ACTION[action]
-      : context?.freeform
-        ? FREEFORM_NAVIGATION_TARGETS
-        : [];
+  const baseTargets = (() => {
+    if (action && action in NAVIGATION_BY_ACTION) return NAVIGATION_BY_ACTION[action];
+    if (context?.freeform) return FREEFORM_NAVIGATION_TARGETS;
+    return [];
+  })();
   const targets =
     action === 'explain_current_surface'
       ? [...contextualTargets(context?.surface), ...baseTargets]

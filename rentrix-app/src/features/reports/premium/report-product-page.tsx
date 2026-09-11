@@ -252,12 +252,15 @@ function OpenReportProduct({
   const ownerStatement = model.sections.statements.ownerStatement;
   const ownerReportPayload = model.sections.statements.ownerReportPayload;
   const tenantStatement = model.sections.statements.tenantStatement;
-  const statementTitle =
-    product.statementFocus === 'owner'
-      ? 'كشف حساب المالك'
-      : product.statementFocus === 'tenant'
-        ? 'كشف حساب المستأجر'
-        : product.title;
+  const incompleteAriaLabel = (() => {
+    if (!model.isIncomplete) return undefined;
+    return isStatement ? 'كشف حساب غير مكتمل للقراءة فقط' : 'نتائج تقرير غير مكتملة للقراءة فقط';
+  })();
+  const statementTitle = (() => {
+    if (product.statementFocus === 'owner') return 'كشف حساب المالك';
+    if (product.statementFocus === 'tenant') return 'كشف حساب المستأجر';
+    return product.title;
+  })();
   const statementDescription =
     product.statementFocus === 'owner'
       ? 'سجل مالي مفصل للمالك ضمن الفترة المحددة، مع الأرصدة والحركات المعتمدة.'
@@ -327,18 +330,15 @@ function OpenReportProduct({
     }
     onBack();
   };
-  const statementBackLabel =
-    product.statementFocus === 'owner' && scopedFilters.ownerId
-      ? 'العودة إلى ملف المالك'
-      : product.statementFocus === 'tenant' && scopedFilters.contractId
-        ? 'العودة إلى العقد'
-        : 'العودة إلى التقارير';
-  const documentActionsLabel =
-    product.targets.length > 1
-      ? `${isStatement ? statementTitle : product.title} — ${target.label}`
-      : isStatement
-        ? statementTitle
-        : product.title;
+  const statementBackLabel = (() => {
+    if (product.statementFocus === 'owner' && scopedFilters.ownerId) return 'العودة إلى ملف المالك';
+    if (product.statementFocus === 'tenant' && scopedFilters.contractId) return 'العودة إلى العقد';
+    return 'العودة إلى التقارير';
+  })();
+  const documentActionsLabel = (() => {
+    if (product.targets.length > 1) return `${isStatement ? statementTitle : product.title} — ${target.label}`;
+    return isStatement ? statementTitle : product.title;
+  })();
   // The statement header gives actions their own dedicated row above the
   // title, so the full labelled button set (طباعة / PDF / Excel / مشاركة)
   // has room. The analytical header instead places actions beside the title
@@ -513,13 +513,7 @@ function OpenReportProduct({
             data-stale-statement-content={
               isStatement && model.isIncomplete ? 'true' : undefined
             }
-            aria-label={
-              model.isIncomplete
-                ? isStatement
-                  ? 'كشف حساب غير مكتمل للقراءة فقط'
-                  : 'نتائج تقرير غير مكتملة للقراءة فقط'
-                : undefined
-            }
+            aria-label={incompleteAriaLabel}
           >
             <SectionTabPanel
               id={target.id}

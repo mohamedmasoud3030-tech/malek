@@ -264,10 +264,12 @@ export function formatFileSize(
   const locale = options.locale ?? DEFAULT_LOCALE;
 
   // How many decimals a tier shows; the promotion rule below has to agree with it.
-  const digitsFor = (exponent: number) =>
-    options.fractionDigits !== undefined
-      ? Math.max(0, Math.min(3, options.fractionDigits))
-      : exponent === 1 ? 1 : exponent === 0 ? 0 : 2;
+  const digitsFor = (exponent: number) => {
+    if (options.fractionDigits !== undefined) return Math.max(0, Math.min(3, options.fractionDigits));
+    if (exponent === 1) return 1;
+    if (exponent === 0) return 0;
+    return 2;
+  };
 
   let exponent = 0;
   while (exponent < units.length - 1 && value >= FILE_SIZE_BASE ** (exponent + 1)) exponent += 1;
@@ -283,9 +285,14 @@ export function formatFileSize(
   }
 
   const digits = digitsFor(exponent);
+  const minimumFractionDigits = (() => {
+    if (exponent === 0) return 0;
+    if (options.fractionDigits !== undefined) return digits;
+    return 1;
+  })();
   const number = formatLatinNumber(exponent === 0 ? Math.round(scaled) : scaled, locale, {
     // MB and above may use the second decimal (2.25 MB), but never pad to it.
-    minimumFractionDigits: exponent === 0 ? 0 : options.fractionDigits !== undefined ? digits : 1,
+    minimumFractionDigits: minimumFractionDigits,
     maximumFractionDigits: digits,
     // A measurement reads as a magnitude, not as a ledger figure: 1023 B and
     // 2000 TB carry no thousands separator.

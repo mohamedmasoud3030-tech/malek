@@ -30,17 +30,12 @@ export function focusMenuItem(container: HTMLElement | null, target: MenuFocusTa
   const currentIndex = active instanceof HTMLElement ? items.indexOf(active) : -1;
   const hasCurrent = currentIndex >= 0;
 
-  const index = target === 'first'
-    ? 0
-    : target === 'last'
-      ? items.length - 1
-      : target === 'next'
-        ? hasCurrent
-          ? (currentIndex + 1) % items.length
-          : 0
-        : hasCurrent
-          ? (currentIndex - 1 + items.length) % items.length
-          : items.length - 1;
+  const index = (() => {
+    if (target === 'first') return 0;
+    if (target === 'last') return items.length - 1;
+    if (target === 'next') return hasCurrent ? (currentIndex + 1) % items.length : 0;
+    return hasCurrent ? (currentIndex - 1 + items.length) % items.length : items.length - 1;
+  })();
 
   items[index]?.focus();
 }

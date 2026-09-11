@@ -61,6 +61,69 @@ export function RegulatorySummaryPanels({
   vatReturnError?: unknown;
   isLoading: boolean;
 }>) {
+  const renderCashFlowBody = () => {
+    if (isCashFlowLoading) return <ReportPanelSkeleton />;
+    if (cashFlowError) {
+      return (
+        <div className="flex items-start gap-2 p-4 text-sm font-semibold text-destructive" role="alert">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          تعذر تحميل التدفق النقدي من الأستاذ العام. لا يتم عرض تقدير بديل من التحصيلات والمصروفات.
+        </div>
+      );
+    }
+    if (!cashFlow) {
+      return (
+        <div className="p-4 text-sm text-muted-foreground">
+          لا توجد نتيجة تدفق نقدي محاسبية للفترة المحددة. راجع الفترة والقيود المرحّلة ثم أعد المحاولة.
+        </div>
+      );
+    }
+    return (
+      <ResponsiveCardGrid className="p-4" gap="sm">
+        <KpiCard label="الرصيد الافتتاحي" value={formatMoney(cashFlow.openingCash)} icon={WalletCards} compact />
+        <KpiCard label="التشغيل" value={formatMoney(cashFlow.operating)} icon={WalletCards} compact />
+        <KpiCard label="الاستثمار" value={formatMoney(cashFlow.investing)} icon={Scale} compact />
+        <KpiCard label="التمويل" value={formatMoney(cashFlow.financing)} icon={Scale} compact />
+        <KpiCard label="غير مصنف" value={formatMoney(cashFlow.unclassified)} icon={AlertTriangle} compact />
+        <KpiCard label="صافي التغير" value={formatMoney(cashFlow.totalChange)} icon={CalendarRange} compact />
+        <KpiCard label="الرصيد الختامي" value={formatMoney(cashFlow.closingCash)} icon={WalletCards} compact />
+        <KpiCard
+          label="فرق الاتزان"
+          value={formatMoney(cashFlow.variance)}
+          icon={Scale}
+          sub={cashFlow.isBalanced ? 'الافتتاحي + الحركة = الختامي' : 'يحتاج مراجعة قبل الاعتماد'}
+          compact
+        />
+      </ResponsiveCardGrid>
+    );
+  };
+
+  const renderVatBody = () => {
+    if (isLoading) return <ReportPanelSkeleton />;
+    if (vatReturnError) {
+      return (
+        <div role="alert" className="p-4 text-sm font-semibold text-destructive">
+          تعذر تحميل ملخص الضريبة. لا تعتمد الأرقام حتى تكتمل مراجعة المصدر.
+        </div>
+      );
+    }
+    if (!vatReturn) {
+      return (
+        <div role="status" className="p-4 text-sm text-muted-foreground">
+          لا توجد نتيجة ضريبية محملة لهذه الفترة.
+        </div>
+      );
+    }
+    return (
+      <ResponsiveCardGrid className="p-4" gap="sm">
+        <KpiCard label="الوعاء الخاضع للضريبة" value={formatMoney(vatReturn.totalSalesAmount)} icon={ReceiptText} compact />
+        <KpiCard label="إجمالي الضريبة" value={formatMoney(vatReturn.totalTaxAmount)} icon={Scale} compact />
+        <KpiCard label="عدد الفواتير" value={formatLatinNumber(vatReturn.invoiceCount, 'ar')} icon={ReceiptText} compact />
+        <KpiCard label="الفترة" value={vatReturn?.period.from ? 'محددة' : '—'} icon={CalendarRange} sub={vatReturn?.period.from && vatReturn.period.to ? `${vatReturn.period.from} — ${vatReturn.period.to}` : 'لا توجد فترة'} compact />
+      </ResponsiveCardGrid>
+    );
+  };
+
   return (
     <ReportColumns>
       <ReportPanel
@@ -73,56 +136,11 @@ export function RegulatorySummaryPanels({
           </StatusBadge>
         ) : undefined}
       >
-        {isCashFlowLoading ? (
-          <ReportPanelSkeleton />
-        ) : cashFlowError ? (
-          <div className="flex items-start gap-2 p-4 text-sm font-semibold text-destructive" role="alert">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            تعذر تحميل التدفق النقدي من الأستاذ العام. لا يتم عرض تقدير بديل من التحصيلات والمصروفات.
-          </div>
-        ) : !cashFlow ? (
-          <div className="p-4 text-sm text-muted-foreground">
-            لا توجد نتيجة تدفق نقدي محاسبية للفترة المحددة. راجع الفترة والقيود المرحّلة ثم أعد المحاولة.
-          </div>
-        ) : (
-          <ResponsiveCardGrid className="p-4" gap="sm">
-            <KpiCard label="الرصيد الافتتاحي" value={formatMoney(cashFlow.openingCash)} icon={WalletCards} compact />
-            <KpiCard label="التشغيل" value={formatMoney(cashFlow.operating)} icon={WalletCards} compact />
-            <KpiCard label="الاستثمار" value={formatMoney(cashFlow.investing)} icon={Scale} compact />
-            <KpiCard label="التمويل" value={formatMoney(cashFlow.financing)} icon={Scale} compact />
-            <KpiCard label="غير مصنف" value={formatMoney(cashFlow.unclassified)} icon={AlertTriangle} compact />
-            <KpiCard label="صافي التغير" value={formatMoney(cashFlow.totalChange)} icon={CalendarRange} compact />
-            <KpiCard label="الرصيد الختامي" value={formatMoney(cashFlow.closingCash)} icon={WalletCards} compact />
-            <KpiCard
-              label="فرق الاتزان"
-              value={formatMoney(cashFlow.variance)}
-              icon={Scale}
-              sub={cashFlow.isBalanced ? 'الافتتاحي + الحركة = الختامي' : 'يحتاج مراجعة قبل الاعتماد'}
-              compact
-            />
-          </ResponsiveCardGrid>
-        )}
+        {renderCashFlowBody()}
       </ReportPanel>
 
       <ReportPanel title="ملخص ضريبة القيمة المضافة" description="الوعاء والضريبة من الحركات المقيدة ولقطات الضريبة المحفوظة، مع الإشعارات الدائنة والعكس؛ لا تُصنف تحصيلات المالك كإيراد مكتب." icon={Scale}>
-        {isLoading ? (
-          <ReportPanelSkeleton />
-        ) : vatReturnError ? (
-          <div role="alert" className="p-4 text-sm font-semibold text-destructive">
-            تعذر تحميل ملخص الضريبة. لا تعتمد الأرقام حتى تكتمل مراجعة المصدر.
-          </div>
-        ) : !vatReturn ? (
-          <div role="status" className="p-4 text-sm text-muted-foreground">
-            لا توجد نتيجة ضريبية محملة لهذه الفترة.
-          </div>
-        ) : (
-          <ResponsiveCardGrid className="p-4" gap="sm">
-            <KpiCard label="الوعاء الخاضع للضريبة" value={formatMoney(vatReturn.totalSalesAmount)} icon={ReceiptText} compact />
-            <KpiCard label="إجمالي الضريبة" value={formatMoney(vatReturn.totalTaxAmount)} icon={Scale} compact />
-            <KpiCard label="عدد الفواتير" value={formatLatinNumber(vatReturn.invoiceCount, 'ar')} icon={ReceiptText} compact />
-            <KpiCard label="الفترة" value={vatReturn?.period.from ? 'محددة' : '—'} icon={CalendarRange} sub={vatReturn?.period.from && vatReturn.period.to ? `${vatReturn.period.from} — ${vatReturn.period.to}` : 'لا توجد فترة'} compact />
-          </ResponsiveCardGrid>
-        )}
+        {renderVatBody()}
       </ReportPanel>
     </ReportColumns>
   );
