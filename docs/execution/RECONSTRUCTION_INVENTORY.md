@@ -971,3 +971,119 @@ business-rules `v2.0.0 382a0b8c…` **unchanged** · **0 migrations added**
 - Local/replay only; no hosted browser run; **not pushed** (credential blocker).
 - Payment and deposit are proven at the validate level (the evidence branch); the full
   apply/reverse chain is proven for expense and invoice only.
+
+## NOW-6 — owner document surface truth: CLOSED (local) + settlement-statement status defect fixed
+
+Commit `342b18ca` (local only; push blocked on credentials).
+
+### Verification verdicts (authoritative sources read, not documentation)
+
+| Surface | Verdict |
+|---|---|
+| `documentPayloadAdapters.ts` | CLEAN — pure shape mapper; zero money arithmetic anywhere in the file |
+| `professional-owner-report.ts` | CLEAN — every figure traces to `rpt_owner_statement` / `rpt_owner_financial_position` / settlement lifecycle; `net_payable` labelled entitlement; `paid_cash` separate with null→'غير مكتمل الإثبات' disclosure + missing-evidence risk note; cash/entitlement separation locked by 2 pre-existing tests |
+| `owner-financial-authority-service.ts` position parser | CLEAN — nullable `paid_cash`, `proven_total`, `missing_count` all handled |
+| `owner-settlements-service.ts` `outstandingNet` | LAWFUL — `net_payable − offset_applied` for DRAFT+APPROVED only = current liability, mirrors the server `effective_payable` zod contract; NOT a historical-cash derivation |
+| `owner_statement` per-settlement document | **DEFECT — fixed** |
+
+### The proven defect (F5 truthfulness class, document surface)
+
+The per-settlement `owner_statement` document carried amounts only: a CANCELLED settlement printed
+byte-identical to a live one, presenting a dead settlement as a current entitlement; print/PDF row
+actions are offered for every row including cancelled. Fix (minimal, existing vocabulary): optional
+truthful `statusLabel` through `OwnerStatementData` → adapter → registry `optionalData` → engine KPI
+'حالة التسوية' (rendered only when supplied — never inferred from amounts, never invented), resolved
+in `buildOwnerStatementData` via `truthfulStatusLabel(getDocumentTemplateEntry('owner_settlement'), status)`
+— the same registry authority the professional owner report uses — with raw-status fallback.
+
+### Files
+
+| File | Role |
+|---|---|
+| `rentrix-app/src/services/documents/documentPayloads.ts`, `documentCompatibilityTypes.ts`, `documentPayloadAdapters.ts`, `documentRegistry.ts`, `DocumentEngine.ts` | optional truthful `statusLabel` chain |
+| `rentrix-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | `buildOwnerStatementData` resolves the registry label |
+| `rentrix-app/src/services/documents/documentEngine.canonical.test.ts` | +1 lock: cancelled label reaches printed chunks; absent label → no status KPI; all four registry labels stay Arabic-truthful |
+
+### Evidence (fresh, 2026-09-11 06:15Z)
+
+canonical+DocumentService+owner-report+ds-exports **38/38** · workspace **6/6** · axe+entity-form
+**23/23** · inventory **13/13** · sharded 20-shard **559 / 4061 / 0 failures / 0 INFRA — PASS** ·
+gates **7/7** · guardian **PASS** · hygiene **OK** · typecheck clean · business-rules `v2.0.0
+382a0b8c…` unchanged · **0 migrations** · local/replay only; **not pushed**.
+
+## NOW-7 — remaining S08/S09 review paths: CLOSED (local/replay) + hand-rolled review-read defect fixed
+
+Commit `bb45a0d0` (local only).
+
+### The proven defect (F12/F13 class — client read model diverged from the deployed contract)
+
+Both `loadApprovedS08Reviews` implementations (S09 correction service, owner-funds cutover service)
+hand-rolled direct `s08_frozen_reviews` SELECTs. Since migration `20260909000011` that table's RLS
+read gate requires `financial.reports.view` (tightened to stop frozen-evidence exposure) — stricter
+than the server's own S09-anchor / cutover-governance contracts and revocable per-employee via
+granular overrides, breaking the panels for users the server would still accept. Meanwhile the
+deployed metadata read path `s08_list_frozen_reviews` (granted to `authenticated`, company-scoped
+server-side, metadata-only by construction) had ZERO client callers — against the s09 service's own
+stated principle "read model via the deployed list RPC, never a hand-rolled table query". Fix: both
+loaders call the RPC through a new strict `parseS08ReviewListEnvelope` (`{company_id, reviews:[…]}`,
+fail-closed `S08_LIST_RESPONSE_INVALID` with Arabic reasons; APPROVED filter + prior UI ordering
+preserved).
+
+### New real-SQL locks (suite 23 → 27)
+
+1. Envelope contract: object not array; company_id; all client-needed metadata keys present;
+   frozen-evidence keys (analysis_results, reconciliation_evidence, exceptions, review_scope,
+   review_notes, reviewer_id, snapshot version) NEVER leak through the RPC; unmodified RPC output
+   fed through the client parser (F13 pattern); strictness cases fail closed.
+2. Company isolation: a foreign company's admin sees zero of this company's reviews (same RPC).
+3. Fingerprint integrity: dataset changed under an ANALYZED review → approval refused
+   `S08_FINGERPRINT_CHANGED_UNDER_REVIEW`; `s08_verify_fingerprint` reports `matches=false`
+   truthfully and mutates nothing (review stays ANALYZED).
+4. Permissions/retries: duplicate approval refused (lifecycle gate = no double writes); MANAGER
+   refused approval (ACCOUNTANT/ADMIN control); rejection requires non-empty reason (checked before
+   lifecycle); APPROVED review can no longer be rejected; row unchanged after every refusal.
+
+### Verified non-defects (recorded, not changed)
+
+- Deployed list RPCs (`s08_list_frozen_reviews`, `s09_list_corrections`) have **no LIMIT** — current
+  scale-lawful deployed behaviour; inventing pagination needs an approved source (governance note).
+- Cutover evidence read (`owner_funds_event_cutovers`) has its own lawful RLS
+  (admin/manager/accountant) and no deployed list RPC exists for it — hand-rolled read is the only path.
+- S08 analyze/reconcile functions (`s08_analyze_*`, `s08_subledger_gl_reconciliation`,
+  `s08_liability_balances_by_period`, `s08_retroactive_version_differences`) have no client surface
+  by design (server/staging tooling); their absence from the UI is not a coverage gap.
+
+### Evidence (fresh, 2026-09-11 06:55Z)
+
+s09+S08 suite **27/27** · sharded 20-shard **559 / 4065 / 0 failures / 0 INFRA — PASS** (first run
+had 1 SIGKILLed shard caused by a concurrent vitest — INFRA per §L, clean rerun is the verdict) ·
+gates **7/7** · guardian **PASS** · hygiene **OK** · typecheck clean · business-rules unchanged ·
+**0 migrations** · local/replay only; **not pushed**.
+
+## NOW-8/NOW-9 — G3 concurrency: strategy committed, double-submit trap fixed, guard class closed
+
+Commits `035db0e2` (fix + strategy) and `6a66f692` (audit evidence); docs-only after the fix.
+
+Full per-scenario verdicts (C1–C8), the Web Locks verdict (lawfully absent: supabase-js owns
+cross-tab auth coordination; the database owns financial write ordering), and residual risks live in
+`docs/execution/G3_CONCURRENCY_VERIFICATION_STRATEGY.md`.
+
+**Proven defect (C4), reproduced red-first, fixed at the shared source:** `EntityForm.Actions`
+computed `disabled={submitDisabled ?? isSubmitting}` — any caller-supplied `submitDisabled` (35 call
+sites; ~20 validation-only) silently overrode the pending guard, leaving the submit button clickable
+mid-mutation → double-submit race on every such form. Fixed to `submitDisabled || isSubmitting`
+(pending ALWAYS disables); locked in `entity-form.test.ts` by asserting the rendered `disabled=""`
+attribute (Button classes contain `disabled:` Tailwind variants — bare-substring matching is wrong).
+
+**NOW-9 audit (zero code changes):** all 47 `EntityForm.Actions` usages, all 14 raw
+`type="submit"` buttons, and the mobile-form-stepper footer audited per surface (§5 table in the
+strategy doc). Result: **0 ungated mutation surfaces remain**; the only two non-gated surfaces are
+evidence-class (c): onboarding waiver (overlay unmounts in the same discrete click; onError toast;
+server RPC enforces ADMIN/reason/waivability) and admin-support search (read-only). NOW-8's
+provisional R1 estimate was corrected at source and R1 closed.
+
+### Evidence (fresh, 2026-09-11 07:25Z; NOW-9 docs-only over identical src)
+
+entity-form **9/9** · sharded 20-shard **559 / 4066 / 0 failures / 0 INFRA — PASS** · gates **7/7** ·
+guardian **PASS** · hygiene **OK** · typecheck clean · business-rules unchanged · **0 migrations** ·
+hosted concurrency checks remain BLOCKED by G1 (executable plan committed in the strategy doc).

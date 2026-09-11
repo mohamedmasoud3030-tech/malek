@@ -2,10 +2,10 @@
 
 **Document type:** operational engineering handoff + continuous execution memory. Self-contained. A new agent must be able to continue from this file alone, without any prior conversation.
 
-**Last updated:** 2026-09-11T07:45Z (Asia/Muscat) — NOW-4…NOW-9 complete locally; **push BLOCKED — no GitHub credential exists in this sandbox**
+**Last updated:** 2026-09-11T08:05Z (Asia/Muscat) — NOW-4…NOW-10 complete locally; **push BLOCKED — no GitHub credential exists in this sandbox**
 **Branch (only permitted):** `reconstruction/checkpoint-20260909`
 **Previous handoff checkpoint:** `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77`
-**Last work commit (code/schema/evidence):** `6a66f692` — G3/NOW-9: double-submit class audit closed (evidence doc; zero code changes) — **LOCAL ONLY, not pushed** (last code change: `035db0e2`)
+**Last work commit (code/schema/evidence):** NOW-10 evidence docs (inventory NOW-6…NOW-9 sections + `docs/execution/RECONSTRUCTION_DOD_CHECKLIST.md`) — **LOCAL ONLY, not pushed** (last code change: `035db0e2`)
 **Remote HEAD (actual, verified via ls-remote 2026-09-11 04:28Z):** `bcdf6944672c46c2417b48562654036cca26c82d`
 **Local HEAD:** `6a66f692` — **11 ahead of remote** (`9ca483b4` NOW-4, `61eb62ad` docs, `9767ef03` NOW-5, `c2084123` docs, `342b18ca` NOW-6, `faa4980a` docs, `bb45a0d0` NOW-7, `91f2ad71` docs, `035db0e2` NOW-8, `4973dc4e` docs, `6a66f692` NOW-9); push blocked solely by missing credentials (see §BLOCKED)
 **Working tree:** **clean** — verified `git status`, no mode changes
@@ -146,29 +146,34 @@ From §A Standing constraints + §J:
 
 ### NOW (single task)
 
-**NOW-10: final documentation sweep + Definition of Done checklist + release evidence (locally scoped)**
+**NOW-11: local browser coverage of the five G5/G6 panels via the fixture build (NOW-2 mechanism)**
 
 (NOW-4 `9ca483b4`, NOW-5 `9767ef03`, NOW-6 `342b18ca`, NOW-7 `bb45a0d0`, NOW-8 `035db0e2`,
-NOW-9 `6a66f692` — all COMPLETE locally; push is the only thing blocked, by missing credentials.)
+NOW-9 `6a66f692`, NOW-10 docs sweep + DoD checklist — all COMPLETE locally; push blocked solely by
+missing credentials.)
 
-- Sweep the execution docs (`docs/execution/`) and HANDOFF for statements contradicted by the
-  NOW-4…NOW-9 evidence; correct at source (never delete history — append/annotate).
-- Build the DoD checklist: every §G item with its exact verdict + evidence pointer (commit, test
-  count, log), every BLOCKED item with the precise unblock condition, every governance finding with
-  its pending decision. No stage credit without evidence; blocked ≠ done.
-- Assemble release evidence index: the 20-shard summary numbers per NOW, gate/guardian outputs,
-  business-rules hash continuity, replay 100/100, migration count, and the list of the 11 local
-  commits awaiting push with their one-line summaries.
-- This NOW changes docs only unless the sweep uncovers a contradiction whose authoritative fix is
-  code (then: reproduce → fix → gates → separate commit).
+- NOW-2 proved the local browser mechanism works in this sandbox: fixture build (VITE_E2E) +
+  Playwright specs (owner-position-cash 3/3, financial-persisted-journey 6/6, PWA contract 3/3, …).
+  The five G5/G6 panels (offset, recovery, S09 incl. reversal, cutover) remain without browser
+  coverage because they need fixture-backend seeding for `s09_corrections`, `s08_frozen_reviews`,
+  `owner_funds_event_cutovers`, and `due_from_owners` movements.
+- Steps: (1) feasibility first — Playwright browser binaries may be absent in this fresh sandbox
+  (`~/.cache/ms-playwright` empty): `pnpm exec playwright install chromium` (network works — the
+  clone succeeded); if install fails, record BLOCKED and park. (2) Inspect the fixture backend
+  (playwright.config.ts webServer / VITE_E2E mechanism) and how NOW-2 specs seeded data.
+  (3) Seed the four surfaces minimally (lawful fixtures only — approved review, draft/validated/
+  applied correction, cutover evidence, due_from_owners movement). (4) Write/extend specs: panel
+  renders rows from the seeded read models; guarded actions visible per role; fail-closed states
+  (error toast/Arabic reason) for refused operations. (5) Gates + commit + HANDOFF.
+- Do NOT re-audit NOW-4…NOW-10 territory; their locks are the contract these specs exercise in a
+  real browser.
 
-**Acceptance:** DoD checklist committed with per-item evidence pointers; contradicted statements
-fixed; zero code changes unless a contradiction proves one; HANDOFF §K updated; next NOW set
-(remaining queue is externally blocked: governance decision, G4 hosted runtime, parity re-measure,
-hosted browser coverage — if nothing locally executable remains, the loop parks in §BLOCKED with
-the exact resume triggers).
+**Acceptance:** either browser-proven panel coverage committed (specs green in this sandbox, seeding
+lawful, no product-code change unless a genuine browser-only defect is reproduced — then fix at
+source with locks), or a precise BLOCKED record (what failed, exact resume trigger). No fabrication
+of browser results; a killed browser worker is INFRA, not a verdict.
 
-### NEXT (ordered, after NOW-10)
+### NEXT (ordered, after NOW-11)
 
 1. **Governance decision needed (user/approved source, do not invent):** non-enumerated S09
    `source_type` labels are bound only to the APPROVED S08 review with no source-existence check
@@ -186,6 +191,8 @@ the exact resume triggers).
    `owner_funds_event_cutovers`, `due_from_owners` movements; until then they remain local/replay-proven only
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-10 (docs commit, 2026-09-11 07:50-08:05Z): final documentation sweep + DoD checklist + release evidence index.** Appended NOW-6/NOW-7/NOW-8-9 sections to `docs/execution/RECONSTRUCTION_INVENTORY.md` (matching the NOW-5 pattern: verdicts, defect descriptions, files, evidence, not-proven-here). Created `docs/execution/RECONSTRUCTION_DOD_CHECKLIST.md`: per-§G-item verdicts with evidence pointers and exact unblock conditions, the 12-commit release evidence index, gate-matrix continuity table (4055→4060→4061→4065→4066), business-rules hash continuity, and the DoD verdict: **reconstruction NOT declared complete — everything locally executable is done and evidenced; remainder externally blocked** (push/G1/G2/G4/G7/hosted-G3/parity/fixture-seeded browser coverage/governance decision). Sweep found NO contradicted statements in living docs (RECONSTRUCTION_COVERAGE.md's only unverified note — real-device install — remains accurate; historical stop-snapshots left untouched per append-only). Zero code changes.
 
 - **NOW-9 (local `6a66f692`, 2026-09-11 07:30-07:45Z): double-submit guard class closed — full audit, ZERO code changes.** Exhaustive per-surface audit of all 47 `EntityForm.Actions` usages (34 product files), all 14 raw `type="submit"` buttons, and the mobile-form-stepper footer (already `||` semantics). Every mutation-submitting surface is pending-gated (isSubmitting / pending term in submitDisabled / handler isPending early-return) except two evidence-class-(c) surfaces: onboarding waiver dialog (overlay unmounts in the same discrete click — React flushes before any second click; onError toast; server RPC enforces ADMIN/reason/waivability) and admin-support search (read-only query). NOW-8's provisional R1 estimate (~15 unprotected sites) was WRONG — corrected at source in the strategy doc (§5 audit table, R1 CLOSED). Docs-only diff; the NOW-8 gate matrix stands over identical src. **RESULT: 0 ungated mutation surfaces remain in the app.**
 
