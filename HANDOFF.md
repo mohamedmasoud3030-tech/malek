@@ -146,41 +146,92 @@ From §A Standing constraints + §J:
 
 ### NOW (single task)
 
-**NOW-16: PARKED — remaining items need operator-side secrets/deploy/decision (GitHub-only access exhausted)**
+**NOW-17: PARKED — first LIVE production database measurement done; remaining items need owner-side decisions (DB password, project slot, ledger reconciliation, root-domain staging)**
 
-(NOW-15 COMPLETE `ce0fbb33`: fixed the G4 `local-preflight` workflow that had **never** succeeded
-— 0/1172 runs across repo history, verified via the Actions API — by starting the ephemeral local
-Supabase stack that `supabase migration list --local` queries (it was dying `connection refused` on
-127.0.0.1:54322 in the evidence step). Re-dispatched at main `fe2a5911`: **run 34600286733 SUCCESS**
-— first-ever green production-migrations run; artifact `production-local-preflight-34600286733`
-(local manifest + sha256 + `migration list` status, 30-day retention) proves main's migration set
-builds evidence cleanly. `production-inspect`/`deploy` jobs untouched — they remain gated behind
-`SUPABASE_PROJECT_REF` + `SUPABASE_DB_PASSWORD` secrets (NOT in the repo secret set) and the
-`production` environment approval. A GitHub PAT alone cannot reach Production; that needs the
-operator to supply those two secrets + approve the environment.)
+**NOW-16 COMPLETE `84871680` (pushed, remote==local verified):** operator supplied a fresh GitHub
+PAT (admin+push, replaces the expired one), a Supabase **management token**, and a QA test user.
+That access was used read-only against Production plus one non-destructive role creation:
 
-**NOW-16 remaining queue — ALL need operator-side inputs the PAT does not grant, exact triggers:**
-1. **G4 production-inspect (read-only, safe):** operator adds `SUPABASE_PROJECT_REF` +
-   `SUPABASE_DB_PASSWORD` secrets and approves the `production` environment → dispatch
-   `supabase-production-migrations.yml` with `action=production-inspect` + the reviewed main SHA →
-   read-only `migration list --linked` + `db push --dry-run` artifact = the live parity measurement
-   (also discharges NEXT-3). `deploy` additionally needs owner backup + rollback references.
-2. **Authenticated hosted E2E (G1):** a staging deployment serving the exact branch SHA → dispatch
-   `hosted-staging-proof.yml` (production-readonly auth lifecycle + storage isolation).
-3. **`SUPABASE_DB_URL` read-only secret** → `supabase-live-readiness` + migration-ledger parity.
-4. **Governance decision:** non-enumerated S09 `source_type` tightening (approved source required).
-5. G2 bootstrap-stall diagnosis + G3-hosted two-tab soaks: need the deployed runtime from (1)/(2).
+- **First-ever live G6 parity measurement (read-only).** Supabase project `nnggcnpcuomwfuupupwg`
+  ("Malek-Plus (live)", ap-southeast-1) queried through the Management API `database/query`
+  endpoint (SELECT only; never `db push`, never `migration repair`, no ledger mutation). Live
+  ledger = **109 rows** vs **100** canonical repo files: **82 exact version matches**; the 18
+  repo-only versions are the reconstruction's **re-stamped** copies of migrations production
+  applied earlier under original timestamps (name-matched 1:1; **13 content-identical**,
+  **5 diverged** — the repo carries hardened variants production never received); **9 ledger-only
+  direct-production hotfixes were never committed to any repo branch** (full SQL preserved in
+  `docs/execution/evidence/live-parity-20260911/ledger-only-statements/`). Live probes: rc1
+  revenue-scope trigger present; cross-company guard text present in 4 functions; the
+  `v_existing_match_id` dedupe hardening (repo 20260901000026) **absent live**. Evidence +
+  crosswalk committed at `84871680`. **Consequence: `supabase db push` against Production is
+  UNSAFE until governance reconciles the ledger** (documented repair path:
+  `docs/operations/BACKUP_RESTORE_RUNBOOK.md` via `supabase migration repair` — owner-gated).
+- **`supabase-live-readiness` permanently unblocked.** Created role `live_readiness_ro`
+  (LOGIN, non-superuser, no createdb/createrole/replication, granted ONLY `pg_read_all_data`;
+  write probe refused with 42501 — verified) and set repo secret `SUPABASE_READONLY_DB_URL`.
+  Direct DB host is **IPv6-only** and GitHub runners have no IPv6 route, and the Supavisor
+  pooler only knows built-in roles — the working URL is the **aws-1** session pooler with the
+  tenant-suffixed username: `postgresql://live_readiness_ro.nnggcnpcuomwfuupupwg@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres`
+  (aws-0 returns ENOTFOUND for this project). Run **34605721349**: readiness step **SUCCESS**
+  (`missing_required_tables=none`, `missing_required_functions=none`,
+  `rls_enabled_public_tables_without_policy=0`, `migration_count=109`, RPC overloads enumerated);
+  parity step **FAILURE = the true drift above**, reported by design (detect-only script).
+- **Stale gate expectation fixed at source:** `verify-supabase-live-readiness.sh` demanded a
+  `public.sessions` table that no migration ever creates (0 hits in all 100 files), that the
+  generated types don't expose, and that no app code references (session state = Supabase Auth
+  `auth.sessions`). First live run reported the permanent false gap; expectation removed with
+  the reasoning inlined. Every other guard in the script untouched.
+- Secrets set this turn: `SUPABASE_READONLY_DB_URL`, `SUPABASE_PROJECT_REF`, `QA_ADMIN_EMAIL`,
+  `QA_ADMIN_PASSWORD`, `PRODUCTION_SUPABASE_PROJECT_REF`.
+- **Blocked and why (verified, not assumed):** (a) a dedicated QA project cannot be created —
+  the org is at its free-plan limit ("2 project limit" for the owner; 4 projects exist) and
+  `hosted-qa-verification` hard-refuses `QA_SUPABASE_PROJECT_REF == PRODUCTION_SUPABASE_PROJECT_REF`
+  (`scripts/agent-qa-preflight.mjs`), so Production cannot double as QA; freeing a slot means
+  pausing/deleting/upgrading a project — an owner decision. (b) `production-inspect` still needs
+  `SUPABASE_DB_PASSWORD`; the management token cannot read it and rotating the Production
+  password would be a destructive change to live credentials — owner decision. (c) The `Production`
+  GitHub environment has `required_reviewers` (the owner; self-review allowed), so approval is
+  possible once (b) is supplied. (d) G1 hosted E2E needs a staging host serving the exact SHA at a
+  **root** path — `hosted-staging-preflight.mjs` fetches `/build-proof.json` from the origin root,
+  which GitHub Pages (project subpath `/malek/`) cannot satisfy, and the preflight script is a
+  locked policy source that must not be edited.
 
-**Token anomaly to remember on resume (2026-09-11 ~13:00Z):** the PAT began returning 401
-"Bad credentials" on REST API calls (`/user`, runs listing) while git-over-HTTPS with the same
-token still works perfectly (`ls-remote` + push verified after the 401s). Workaround in effect:
-read the repo's public API surface unauthenticated (repo is public) and keep pushing via the
-PAT URL. If git-push also starts 401-ing, the token is revoked/expired → park, request a fresh PAT.
+**NOW-17 remaining queue — each needs one owner-side decision, exact resume triggers:**
+1. **Ledger reconciliation (governance):** decide how to reconcile 27 ledger-only vs 18 re-stamped
+   repo versions (see the crosswalk evidence) before ANY `db push`; then G4 `deploy` inputs
+   (reviewed SHA + inspect run + owner backup reference + rollback plan).
+2. **`SUPABASE_DB_PASSWORD`** → dispatch `supabase-production-migrations.yml` with
+   `action=production-inspect` (read-only `migration list --linked` + `db push --dry-run`) and
+   approve the Production environment deployment.
+3. **Free a Supabase project slot (or upgrade)** → create `Malek-QA`, apply the 100 canonical
+   migrations, seed the QA admin + a single-office user, set `QA_SUPABASE_PROJECT_REF`,
+   `QA_SUPABASE_URL`, `QA_SUPABASE_ANON_KEY`, `QA_SUPABASE_SERVICE_ROLE_KEY`, `QA_SUPABASE_DB_URL`,
+   `QA_SINGLE_OFFICE_EMAIL/PASSWORD` → dispatch `hosted-qa-verification.yml`.
+4. **Root-domain staging host** serving the branch SHA (with `public/build-proof.json`) → dispatch
+   `hosted-staging-proof.yml` (G1 sanctioned hosted E2E).
+5. **Governance decision:** non-enumerated S09 `source_type` tightening (approved source required).
+6. G2 bootstrap-stall diagnosis + G3-hosted two-tab soaks: need the deployed runtime from (4).
 
-**Acceptance:** none executable with GitHub-only access — precise park record above. Do NOT relax
-`assert-release-blocker-env.mjs` (policy lock) or fabricate Production secrets/backup references.
+**Credential handling:** the previous PAT died mid-turn (401 "Bad credentials" on REST while
+git-over-HTTPS still worked, then git writes also began failing) — replaced by the operator's new
+PAT. All tokens remain conversation-scoped: used inline per command, never written into any repo
+file, never stored in `.git/config`. The `live_readiness_ro` password lives only in the encrypted
+GitHub secret `SUPABASE_READONLY_DB_URL`.
 
-### Historical park record (NOW-15 staging/deploy triggers, now folded into NOW-16 above)
+**Acceptance for the parked items:** none executable without the owner decisions above.
+Do NOT relax `assert-release-blocker-env.mjs`, `agent-qa-preflight.mjs`,
+`hosted-staging-preflight.mjs` (policy locks), do NOT rotate the Production DB password, do NOT
+pause/delete/upgrade any Supabase project, and do NOT run `supabase migration repair` or
+`db push` against Production — all are owner decisions recorded above.
+
+(NOW-15 COMPLETE `ce0fbb33` + record `73e92261`/`0e4ca375`: G4 `local-preflight` workflow fixed
+— it had 0/1172 successes in repo history because no step started the local stack that
+`supabase migration list --local` queries; run **34600286733 SUCCESS** = first green ever,
+artifact `production-local-preflight-34600286733`. CI run **34601411676 SUCCESS** at `73e92261`.
+Full detail in the COMPLETED NOW-15 entry below.)
+
+### Historical park record (NOW-14 and earlier)
+
 
 (NOW-4…NOW-12 COMPLETE and PUSHED; NOW-13 park superseded; **NOW-14 COMPLETE**: push verified +
 first-ever hosted CI on the branch driven to FULL GREEN at tip `337a3046` — four latent gate
@@ -293,6 +344,8 @@ NOW-10 `84e258cd`+`76a461c8`; browser coverage of all five G5/G6 panels incl. fa
 = NOW-11 `ec4654bc` + NOW-12 `d6713ec0`.)
 
 ### COMPLETED IN THIS LOOP (so far)
+
+- **NOW-16 (2026-09-11 13:05-13:55Z; commits `0e4ca375` + `84871680` — PUSHED, remote==local verified): operator access arrived (new GitHub PAT + Supabase management token + QA user) → first LIVE production measurements taken, live-readiness gate permanently unblocked, one stale gate expectation fixed, one 12-year-class drift finding documented with full evidence.** (a) Verified all credentials; pushed the pending NOW-15 record commit. (b) Identified the Production project: `nnggcnpcuomwfuupupwg` "Malek-Plus (live)" ap-southeast-1 (the 4th project "starting" is a DIFFERENT application — events/warehouse domain, 103-row unrelated ledger; excluded). (c) **G6 live parity measured read-only** via the Management API query endpoint: 109 ledger rows vs 100 repo files; 82 exact matches; 18 repo-only = re-stamped versions of applied migrations (13 content-identical modulo comments/whitespace — verified by normalized full-text compare against the ledger's stored `statements`; 5 diverged with local hardened variants never applied); 9 ledger-only direct-production hotfixes never committed to any branch (full SQL archived). Live catalog probes: rc1 trigger present, cross-company guards in 4 functions, `v_existing_match_id` hardening absent. → `db push` UNSAFE until governance reconciles; evidence package `docs/execution/evidence/live-parity-20260911/`. (d) **Created `live_readiness_ro`** (login, non-super, ONLY `pg_read_all_data`; write refused 42501 — probed) and set `SUPABASE_READONLY_DB_URL` after discovering: direct host IPv6-only (runners have no IPv6), pooler cluster is **aws-1** (aws-0 ENOTFOUND), pooler requires tenant-suffixed usernames, and custom roles are NOT accepted by Supavisor on the postgres username — verified working from sandbox via pg8000 through `aws-1-ap-southeast-1.pooler.supabase.com:5432`. (e) Dispatched `supabase-live-readiness` (first real executions ever): run 34605268416 exposed the stale `sessions` expectation → fixed at source in `verify-supabase-live-readiness.sh` with reasoning inlined (no migration ever created `public.sessions`; types and app code never referenced it; all 12 other required tables present live) → run **34605721349** at `84871680`: readiness step **SUCCESS** (missing tables=none, missing functions=none, RLS-gaps=0, migration_count=109), parity step FAILURE = the true drift, exactly as the detect-only script is designed to report. (f) Set `SUPABASE_PROJECT_REF`, `QA_ADMIN_EMAIL`, `QA_ADMIN_PASSWORD`, `PRODUCTION_SUPABASE_PROJECT_REF` secrets. (g) Verified blockers instead of assuming: QA project creation refused by Supabase free-plan limit (owner at 2-project cap; 4 projects exist); QA==production hard-refused by `agent-qa-preflight.mjs`; `Production` GitHub environment has required_reviewers=owner (self-review allowed → approvable with this PAT once `SUPABASE_DB_PASSWORD` exists); G1 staging via GitHub Pages impossible (locked preflight fetches `/build-proof.json` from origin ROOT; Pages serves under `/malek/`). Parked as NOW-17 with six exact owner-decision triggers.
 
 - **NOW-15 (2026-09-11 12:30-12:50Z; commit `ce0fbb33` — PUSHED, remote==local verified): G4 evidence pipeline made operational — first-ever green run of `supabase-production-migrations.yml` (1/1173).** Investigated the remaining GitHub-only actionable surface: the G4 workflow's `local-preflight` (no secrets, no environment gate, checks out main, never touches Production) had **0 successes in 1172 historical runs** (Actions API `status=success` total_count=0): `supabase migration list --local` connects to 127.0.0.1:54322 but no step ever started the local stack → every run died `connection refused` in the evidence step. Reproduced live (run 34599848330 at main `fe2a5911`: SHA verification + manifest + sha256 steps green, then the documented failure). Fixed at source: added a `Start ephemeral local Supabase stack` step (`pnpm exec supabase start`, runner-local only) and raised the job timeout 15→30 min for the image pull; `production-inspect`/`deploy` jobs untouched. Re-dispatched: **run 34600286733 SUCCESS** — artifact `production-local-preflight-34600286733` (local manifest, sha256 sums, `migration list` status, summary; 30-day retention). Also surveyed the remaining workflows: database-governance / canonical-db-baseline / business-rules-guard / execution-plan-guard are PR-triggered only (not dispatchable without opening a PR — forbidden by standing rules); hosted-qa-verification needs `QA_*` secrets that don't exist (fail-closed by design); release-blocker-gate duplicates the already-green CI evidence at tip (skipped as redundant). **Production-inspect/deploy remain operator-blocked: `SUPABASE_PROJECT_REF` + `SUPABASE_DB_PASSWORD` secrets absent + `production` environment approval required — a GitHub PAT alone cannot reach Production.**
 
@@ -910,15 +963,15 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 ---
 
-## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 12:50Z — NOW-15 COMPLETE: G4 preflight pipeline fixed & first-ever green; branch PUSHED, remote==local, hosted CI + browser matrix FULL GREEN)
+## K. LATEST SAFE CHECKPOINT (updated 2026-09-11 13:55Z — NOW-16 COMPLETE: first live production measurements + live-readiness unblocked & green; branch PUSHED, remote==local)
 
 | | |
 |---|---|
 | Branch | `reconstruction/checkpoint-20260909` |
-| Last work commit (code/schema/evidence) | `ce0fbb33` — NOW-15: G4 local-preflight workflow fix (CI-infra-only; last product-src change remains `035db0e2` NOW-8) — **ON REMOTE** |
-| Local branch tip | `73e92261` (+ this HANDOFF-update commit pushed immediately after — remote and local kept equal at every step, `git ls-remote`-verified) |
-| Remote branch tip | `73e92261aa8f3eea3a9359d5c637ff3745d5f14e` — **verified via `git ls-remote` 2026-09-11 ~13:05Z** |
-| Hosted CI at tip | CI run 34587311312 **SUCCESS at `6af81c70` (docs tip, attempt 2)** — attempt 1 had one INFRA-class flake (permission-catalog pglite full-replay test hit its 5s timeout under runner load, 1/4069; identical job green at `337a3046` and on the clean rerun — a timed-out worker under load is INFRA, not a verdict). Code-identical green before it: CI run 34584434977 **SUCCESS** at `337a3046` (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) — not re-dispatched over docs/CI-infra-only deltas (evidence continuity over identical product code) · **NEW NOW-15: supabase-production-migrations local-preflight run 34600286733 SUCCESS at `ce0fbb33` (first green ever, 1/1173) — artifact `production-local-preflight-34600286733` · CI run 34601411676 SUCCESS at tip `73e92261` (build + heavy-validation; docs/CI-infra-only delta)** |
+| Last work commit (code/schema/evidence) | `84871680` — NOW-16: stale `sessions` expectation removed from verify-supabase-live-readiness.sh (gate-infra-only) + live-parity evidence package; last product-src change remains `035db0e2` NOW-8 — **ON REMOTE** |
+| Local branch tip | `84871680` (+ this HANDOFF-update commit pushed immediately after — remote and local kept equal at every step, `git ls-remote`-verified) |
+| Remote branch tip | `848716802da1a2597da582403ce307e1d0fa6513` — **verified via `git ls-remote` 2026-09-11 ~13:45Z** |
+| Hosted CI at tip | CI run 34587311312 **SUCCESS at `6af81c70` (docs tip, attempt 2)** — attempt 1 had one INFRA-class flake (permission-catalog pglite full-replay test hit its 5s timeout under runner load, 1/4069; identical job green at `337a3046` and on the clean rerun — a timed-out worker under load is INFRA, not a verdict). Code-identical green before it: CI run 34584434977 **SUCCESS** at `337a3046` (build + heavy-validation: vitest 4069, RLS 84/84, contract gates, production build) · Browser Readiness run 34585751072 **SUCCESS** (3/3 shards; desktop 172/172 incl. the three panel-journey specs) — not re-dispatched over docs/CI-infra-only deltas (evidence continuity over identical product code) · **NEW NOW-15: supabase-production-migrations local-preflight run 34600286733 SUCCESS at `ce0fbb33` (first green ever, 1/1173) — artifact `production-local-preflight-34600286733` · CI run 34601411676 SUCCESS at tip `73e92261` (build + heavy-validation; docs/CI-infra-only delta) · **NEW NOW-16: supabase-live-readiness run 34605721349 at `84871680` — readiness step SUCCESS (first live-DB gate pass in repo history); parity step FAILURE = true ledger drift (109 live vs 100 repo; see evidence package), detect-only by design** |
 | Previous handoff checkpoint | `75799c3fdb7de5b6a40112ee88cbb5f0f7058a77` |
 | Prior verified checkpoints | `bcdf6944`, `411167f6`, `95a0a2af`, `9fac02ac`, `0d187c48`, `a0760e98`, `aac5aa14`, `50be359a`, `4da6a26d`, `354bc427` (G6), `75799c3f`, `e6e2e444`, `b11b5da3`, `e7ac2774`, `298739ad`, `274aa729`, `48037a69` |
 | Tree state | **clean** — 0 modified, no mode changes |
@@ -927,7 +980,7 @@ Never leave a large batch of completed work uncommitted. Update `docs/execution/
 
 **Reconstruction is NOT declared complete.** **Latest measurement: 4066 vitest tests / 0 failures / 0 INFRA at `035db0e2` (local; NOW-9 `6a66f692`, NOW-10 `84e258cd`+`76a461c8` docs-only and NOW-11 `ec4654bc`+NOW-12 `d6713ec0` e2e-only over identical src) + playwright 9/9 at `d6713ec0`.** §G items remain: G1 BLOCKED credentials, G2 BLOCKED by G1, **G3 — PROVEN LOCALLY (strategy + C1–C8 verdicts at `035db0e2`; double-submit class closed with 0 ungated surfaces at `6a66f692`; one client defect found, fixed, locked; NOW-12 added a browser-proven server-side stale-read refusal with zero state change); hosted checks BLOCKED by G1**, G4 runtime NOT YET PROVEN, **G5 — all five UI-absent RPCs surfaced, every enumerated S09 source type regression-proven, the owner document surface proven truthful, the S08 review surface proven (two defects fixed: `342b18ca` document status, `bb45a0d0` hand-rolled review reads), and ALL FIVE G5/G6 panels now browser-proven locally (S09 incl. reversal + cutover at `ec4654bc`; offset + payout in owner-expense-source.spec.ts; recovery + fail-closed refusal at `d6713ec0`) — but all work is ON the remote (verified `337a3046`, remote==local) with hosted CI **SUCCESS** (run 34584434977) and the hosted browser matrix **SUCCESS** (run 34585751072, desktop 172/172 incl. all three panel-journey specs — the five-panel browser coverage is now hosted-proven on hermetic fixture data); the sanctioned staging proof needs a staging deployment at the exact SHA, and non-enumerated source-type lineage awaits a governance decision**, G7 unknowable.
 
-**Next when resumed:** (1) ~~push + hosted CI~~ DONE — remote==local `ce0fbb33`; CI + browser matrix FULL GREEN (runs 34587311312 / 34585751072); G4 local-preflight pipeline FIXED & green (run 34600286733); G4 production-inspect resume trigger: operator adds `SUPABASE_PROJECT_REF` + `SUPABASE_DB_PASSWORD` secrets and approves the `production` environment, then dispatch action=production-inspect with the reviewed main SHA; (2) operator-side triggers, in order: **staging deployment at the branch tip** → dispatch `hosted-staging-proof.yml` (sanctioned G1 hosted E2E: production-readonly auth lifecycle + storage isolation); **`SUPABASE_DB_URL` read-only secret** → `supabase-live-readiness` + migration-ledger parity (= fresh G6 measurement); (3) governance decision on non-enumerated source types (approved source required — do not invent); (4) G4 production-migration run needs owner inputs (reviewed SHA + production-inspect run + backup reference + rollback plan + Production environment approval) — never fabricate them; (5) G2/G3-hosted soaks need the deployed runtime from (2). Do NOT relax `scripts/assert-release-blocker-env.mjs` (policy lock) to force the staging suite path — it is deliberately dead for `E2E_ENVIRONMENT_KIND=staging`. If the PAT expired: park, do not fabricate.
+**Next when resumed:** see **NOW-17 park** (top of this section) for the six owner-decision triggers: ledger reconciliation before any `db push`; `SUPABASE_DB_PASSWORD` for production-inspect; Supabase project slot for QA; root-domain staging host for G1; S09 `source_type` governance; deployed runtime for G2/G3-hosted. Everything executable with the supplied access is DONE: remote==local `84871680`, CI green (34601411676), G4 preflight green (34600286733), live-readiness green (34605721349), live parity measured + evidenced. (2) operator-side triggers, in order: **staging deployment at the branch tip** → dispatch `hosted-staging-proof.yml` (sanctioned G1 hosted E2E: production-readonly auth lifecycle + storage isolation); **`SUPABASE_DB_URL` read-only secret** → `supabase-live-readiness` + migration-ledger parity (= fresh G6 measurement); (3) governance decision on non-enumerated source types (approved source required — do not invent); (4) G4 production-migration run needs owner inputs (reviewed SHA + production-inspect run + backup reference + rollback plan + Production environment approval) — never fabricate them; (5) G2/G3-hosted soaks need the deployed runtime from (2). Do NOT relax `scripts/assert-release-blocker-env.mjs` (policy lock) to force the staging suite path — it is deliberately dead for `E2E_ENVIRONMENT_KIND=staging`. If the PAT expired: park, do not fabricate.
 
 ---
 
