@@ -238,7 +238,7 @@ async function expectCount(db, identity, sql, expected, spec) {
     });
     return;
   }
-  const actual = Number(result.value?.[0]?.n ?? result.value?.[0]?.count ?? NaN);
+  const actual = Number(result.value?.[0]?.n ?? result.value?.[0]?.count ?? Number.NaN);
   if (expected === 'deny') {
     record({
       ...spec,
@@ -946,8 +946,8 @@ async function runRpcs(db) {
       ids.adminB,
       `select public.rpt_dashboard_snapshot(date '2026-07-01', date '2026-07-31', date '2026-07-31') as out`,
     );
-    const countA = Number(snapA.value?.[0]?.out?.portfolio?.properties ?? snapA.value?.[0]?.out?.operational?.properties ?? NaN);
-    const countB = Number(snapB.value?.[0]?.out?.portfolio?.properties ?? snapB.value?.[0]?.out?.operational?.properties ?? NaN);
+    const countA = Number(snapA.value?.[0]?.out?.portfolio?.properties ?? snapA.value?.[0]?.out?.operational?.properties ?? Number.NaN);
+    const countB = Number(snapB.value?.[0]?.out?.portfolio?.properties ?? snapB.value?.[0]?.out?.operational?.properties ?? Number.NaN);
     record({
       id: 'rpc.dashboard.company_isolation',
       group: 'rpc',

@@ -184,10 +184,14 @@ export function formatLatinNumber(
   return new Intl.NumberFormat(targetLocale as string, options).format(value);
 }
 
+/** Shared defaults — never inline object literals in parameter defaults. */
+const DEFAULT_DATE_TIME_FORMAT_OPTIONS: Readonly<Intl.DateTimeFormatOptions> = Object.freeze({ dateStyle: 'medium', timeStyle: 'short' });
+const DEFAULT_TIME_FORMAT_OPTIONS: Readonly<Intl.DateTimeFormatOptions> = Object.freeze({ timeStyle: 'medium' });
+
 export function formatLatinDateTime(
   value: Date | string | number | null | undefined,
   locale?: string | string[],
-  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' },
+  options: Intl.DateTimeFormatOptions = DEFAULT_DATE_TIME_FORMAT_OPTIONS,
 ): string {
   if (value === null || value === undefined) return '';
   const date = value instanceof Date ? value : new Date(value as string | number);
@@ -211,7 +215,7 @@ export function formatLatinDate(
 export function formatLatinTime(
   value: Date | string | null | undefined,
   locale?: string | string[],
-  options: Intl.DateTimeFormatOptions = { timeStyle: 'medium' },
+  options: Intl.DateTimeFormatOptions = DEFAULT_TIME_FORMAT_OPTIONS,
 ): string {
   if (value === null || value === undefined) return '';
   const date = value instanceof Date ? value : new Date(value as string);

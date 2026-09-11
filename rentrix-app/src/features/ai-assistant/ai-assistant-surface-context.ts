@@ -13,6 +13,7 @@
  */
 
 import type { AiAssistantSurfaceContext, AiAssistantSurfaceEntityType } from './types';
+import { trimTrailingSlashes } from '@/lib/trailing-slashes';
 
 const MAX_ID_LENGTH = 128;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -75,13 +76,6 @@ const SECTION_BY_ROOT: Readonly<Record<string, string>> = {
 
 function sectionForRoot(root: string): string | null {
   return SECTION_BY_ROOT[root] ?? null;
-}
-
-/** Drops trailing slashes in a single pass (regex-free, linear). */
-function trimTrailingSlashes(value: string): string {
-  let end = value.length;
-  while (end > 0 && value[end - 1] === '/') end -= 1;
-  return value.slice(0, end);
 }
 
 export function deriveAiAssistantSurfaceContext(

@@ -1,3 +1,4 @@
+import { trimTrailingSlashes } from '@/lib/trailing-slashes';
 import type { ReportProductId } from './report-products';
 import type { ReportsFilterState } from './reports-workspace-filters';
 
@@ -59,7 +60,7 @@ export function buildReportProductShareUrl(
     if (value) params.set(key, value);
   }
   const query = params.toString();
-  return `${origin.replace(/\/+$/, '')}/reports/${encodeURIComponent(target.reportId)}${query ? `?${query}` : ''}`;
+  return `${trimTrailingSlashes(origin)}/reports/${encodeURIComponent(target.reportId)}${query ? `?${query}` : ''}`;
 }
 
 export type ReportSharePayload = Readonly<{

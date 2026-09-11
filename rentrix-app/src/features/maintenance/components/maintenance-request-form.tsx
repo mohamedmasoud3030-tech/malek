@@ -130,8 +130,8 @@ export function MaintenanceRequestForm({
             <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-24" {...form.register('description')} />
           </EntityForm.Field>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-muted-foreground">درجة الأولوية *</label>
+          <fieldset className="space-y-2">
+            <legend className="block text-xs font-bold text-muted-foreground">درجة الأولوية *</legend>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {priorityOptions.map((opt) => (
                 <SelectionCard
@@ -143,7 +143,7 @@ export function MaintenanceRequestForm({
                 />
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <div className="grid gap-4 sm:grid-cols-2 mt-3">
             <EntityForm.Field label="المسؤول/الفني">
