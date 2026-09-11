@@ -127,6 +127,62 @@ function isoDateToSpeechWords(yearRaw: string, monthRaw: string, dayRaw: string)
   return `${day} ${monthName} ${yearRaw}`;
 }
 
+function isSpaceOrTab(char: string): boolean {
+  return char === ' ' || char === '\t';
+}
+
+/**
+ * True for Markdown table separator rows (| --- | :---: |): the line consists
+ * solely of spaces, tabs, colons, dashes and pipes, and contains a pipe.
+ */
+function isTableSeparatorRow(line: string): boolean {
+  let hasPipe = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line.charAt(index);
+    if (char === '|') hasPipe = true;
+    else if (!isSpaceOrTab(char) && char !== ':' && char !== '-') return false;
+  }
+  return hasPipe;
+}
+
+/** Removes a leading bullet marker (•, ‣, ◦, -, *, +) plus its whitespace. */
+function stripListBulletMarker(line: string): string {
+  let index = 0;
+  while (index < line.length && isSpaceOrTab(line.charAt(index))) index += 1;
+  if (index >= line.length) return line;
+  const marker = line.charAt(index);
+  if (marker !== '•' && marker !== '‣' && marker !== '◦' && marker !== '-' && marker !== '*' && marker !== '+') return line;
+  let after = index + 1;
+  let whitespace = 0;
+  while (after < line.length && isSpaceOrTab(line.charAt(after))) {
+    after += 1;
+    whitespace += 1;
+  }
+  // A marker alone at end-of-line also loses its newline in the original
+  // pattern (`\s+`), so drop it too.
+  if (whitespace === 0 && after < line.length) return line;
+  return line.slice(after);
+}
+
+/** Turns "12. text" / "12) text" list prefixes into "12 text". */
+function stripOrderedBulletMarker(line: string): string {
+  let index = 0;
+  while (index < line.length && isSpaceOrTab(line.charAt(index))) index += 1;
+  let digitsEnd = index;
+  while (digitsEnd < line.length && line.charAt(digitsEnd) >= '0' && line.charAt(digitsEnd) <= '9') digitsEnd += 1;
+  if (digitsEnd === index || digitsEnd >= line.length) return line;
+  const punct = line.charAt(digitsEnd);
+  if (punct !== '.' && punct !== ')') return line;
+  let after = digitsEnd + 1;
+  let whitespace = 0;
+  while (after < line.length && isSpaceOrTab(line.charAt(after))) {
+    after += 1;
+    whitespace += 1;
+  }
+  if (whitespace === 0 && after < line.length) return line;
+  return `${line.slice(index, digitsEnd)} ${line.slice(after)}`;
+}
+
 /** True for lines that are a Markdown horizontal rule (---, ***, ___). */
 function isMarkdownHorizontalRule(line: string): boolean {
   const trimmed = line.trim();
@@ -156,7 +212,7 @@ function stripMarkdownSyntax(text: string): string {
   output = output.replace(/https?:\/\/[^\s)\]»،؛]+/gi, ' ');
   // Table separator rows (| --- | :---: |). Horizontal whitespace only in the
   // anchors — \s would swallow trailing newlines and glue the remaining rows.
-  output = output.replace(/^[ \t]*\|?(?:[ \t:-]*\|)+[ \t:|-]*$/gm, '');
+  output = output.split('\n').map((line) => (isTableSeparatorRow(line) ? '' : line)).join('\n');
   // Remaining table rows: join cells.
   output = output.replace(/^[ \t]*\|(.+)\|[ \t]*$/gm, (_match, cells: string) =>
     cells
@@ -177,8 +233,8 @@ function stripMarkdownSyntax(text: string): string {
   output = output.replace(/~~([^~]+)~~/g, '$1');
   output = output.replace(/(?<![\d*])\*([^*\n]+)\*(?![\d*])/g, '$1');
   // List bullets and markers (keep ordered numbers, drop the punctuation).
-  output = output.replace(/^[^\S\n]*(?:•|‣|◦|[-*+])\s+/gm, '');
-  output = output.replace(/^[^\S\n]*(\d+)[.)]\s+/gm, '$1 ');
+  output = output.split('\n').map(stripListBulletMarker).join('\n');
+  output = output.split('\n').map(stripOrderedBulletMarker).join('\n');
   // Stray table pipes and backslashes.
   output = output.replace(/\|/g, ' ');
   output = output.replace(/\\/g, '');
