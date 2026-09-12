@@ -88,4 +88,4 @@ jobs:
           path: .canonical-db-output
           include-hidden-files: true
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 7

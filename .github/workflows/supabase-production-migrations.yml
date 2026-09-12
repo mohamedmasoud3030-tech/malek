@@ -86,7 +86,7 @@ jobs:
         with:
           name: production-local-preflight-${{ github.run_id }}
           path: migration-evidence
-          retention-days: 30
+          retention-days: 7
 
   production-inspect:
     name: production inspect / read-only
@@ -135,7 +135,7 @@ jobs:
         with:
           name: production-inspect-${{ github.run_id }}
           path: migration-evidence
-          retention-days: 90
+          retention-days: 30
 
   deploy:
     name: approved production migration deploy
@@ -219,4 +219,4 @@ jobs:
         with:
           name: production-migration-deployment-${{ github.run_id }}
           path: migration-evidence
-          retention-days: 90
+          retention-days: 30

@@ -85,6 +85,7 @@ jobs:
             rentrix-app/playwright-report
             rentrix-app/test-results
           if-no-files-found: ignore
+          retention-days: 7
 
   seeded-staging-smoke:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_staging }}

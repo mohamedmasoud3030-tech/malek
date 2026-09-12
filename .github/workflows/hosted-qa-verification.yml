@@ -100,3 +100,4 @@ jobs:
             rentrix-app/playwright-report
             rentrix-app/test-results
           if-no-files-found: ignore
+          retention-days: 7
