@@ -95,18 +95,16 @@ export function getRegisteredRoutePaths(): { full: Set<string>; topLevel: Set<st
   const fullPathOf = (route: ParsedRoute, cache: Map<string, string>): string => {
     const cached = cache.get(route.name);
     if (cached !== undefined) return cached;
-    const parentPath = route.parent === 'rootRoute'
-      ? '/'
-      : byName.has(route.parent)
-        ? fullPathOf(byName.get(route.parent)!, cache)
-        : '/';
-    const resolved = route.path === null
-      ? parentPath
-      : route.path === '/'
-        ? parentPath
-        : parentPath === '/'
-          ? route.path
-          : `${parentPath}${route.path}`;
+    const parentPath = (() => {
+      if (route.parent === 'rootRoute') return '/';
+      if (byName.has(route.parent)) return fullPathOf(byName.get(route.parent)!, cache);
+      return '/';
+    })();
+    const resolved = (() => {
+      if (route.path === null || route.path === '/') return parentPath;
+      if (parentPath === '/') return route.path;
+      return `${parentPath}${route.path}`;
+    })();
     cache.set(route.name, resolved);
     return resolved;
   };

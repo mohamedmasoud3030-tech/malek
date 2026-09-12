@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { containsDigitRun, containsEmailLikeToken } from "@/lib/linear-text-guards";
 import { sanitizeSupportRoute } from "./help-context";
 
 export const supportCategories = [
@@ -57,8 +58,6 @@ type Rpc = (
 
 const sensitiveContentPattern =
   /password|passcode|كلمة\s*المرور|api[_\s-]?key|secret|token|authorization\s*:|private\s+key|-----begin|reset[_\s-]?link|رابط\s+الاستعادة/i;
-const emailPattern = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/;
-const longNumberPattern = /(?:\d[\s-]*){8,}/;
 const safeErrorReferencePattern = /^[\p{L}\p{N}._:\-/]*$/u;
 
 const responseTargets: Readonly<Record<SupportUrgency, string>> = {
@@ -80,8 +79,8 @@ function readString(value: unknown, maxLength: number): string {
 export function containsUnsafeSupportContent(value: string): boolean {
   return (
     sensitiveContentPattern.test(value) ||
-    emailPattern.test(value) ||
-    longNumberPattern.test(value)
+    containsEmailLikeToken(value) ||
+    containsDigitRun(value, 8)
   );
 }
 

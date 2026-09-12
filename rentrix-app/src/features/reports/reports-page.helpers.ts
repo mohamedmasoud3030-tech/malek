@@ -157,6 +157,22 @@ function wasMaintenanceRequestOpenAsOf(request: Maintenance, asOf: string) {
  * reference rent, occupancy/vacancy, collections, arrears, expenses, and
  * maintenance impact are all visible in one sortable row per property.
  */
+function overduePressureScore(overdue: number, referenceRevenue: number): number {
+  if (referenceRevenue > 0) return Math.min(40, (overdue / referenceRevenue) * 30);
+  return overdue > 0 ? 25 : 0;
+}
+
+function expensePressureScore(expenses: number, collected: number): number {
+  if (collected > 0) return Math.min(10, (expenses / collected) * 8);
+  return expenses > 0 ? 8 : 0;
+}
+
+function riskPriorityLabel(riskScore: number): 'متابعة فورية' | 'مراجعة' | 'مستقر' {
+  if (riskScore >= 45) return 'متابعة فورية';
+  if (riskScore >= 25) return 'مراجعة';
+  return 'مستقر';
+}
+
 export function buildPropertyPerformanceRows({
   occupancyRows,
   contracts,
@@ -224,16 +240,16 @@ export function buildPropertyPerformanceRows({
     .map((row) => {
       const totalUnits = row.occupiedUnits + row.vacantUnits + row.nonRentableUnits;
       const occupancyRate = totalUnits > 0 ? (row.occupiedUnits / totalUnits) * 100 : 0;
-      const overduePressure = row.referenceRevenue > 0 ? Math.min(40, (row.overdue / row.referenceRevenue) * 30) : row.overdue > 0 ? 25 : 0;
+      const overduePressure = overduePressureScore(row.overdue, row.referenceRevenue);
       const vacancyPressure = Math.min(30, row.vacantUnits * 6 + Math.max(0, row.longestVacancyDays - 30) / 3);
       const maintenancePressure = Math.min(20, row.openMaintenanceCount * 4);
-      const expensePressure = row.collected > 0 ? Math.min(10, (row.expenses / row.collected) * 8) : row.expenses > 0 ? 8 : 0;
+      const expensePressure = expensePressureScore(row.expenses, row.collected);
       const riskScore = Math.round(overduePressure + vacancyPressure + maintenancePressure + expensePressure);
       return {
         ...row,
         occupancyRate,
         riskScore,
-        priority: riskScore >= 45 ? 'متابعة فورية' : riskScore >= 25 ? 'مراجعة' : 'مستقر',
+        priority: riskPriorityLabel(riskScore),
       } satisfies PropertyPerformanceRow;
     })
     .sort((a, b) => b.riskScore - a.riskScore || b.overdue - a.overdue || a.propertyTitle.localeCompare(b.propertyTitle, 'ar'));

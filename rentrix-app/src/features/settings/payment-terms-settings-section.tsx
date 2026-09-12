@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { useState, type KeyboardEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -37,10 +37,6 @@ function toFormValues(record: PaymentTermsRecord): PaymentTermsFormValues {
   };
 }
 
-function shouldSaveOnEnter(event: KeyboardEvent<HTMLElement>) {
-  return event.key === 'Enter' && !event.shiftKey && !(event.target instanceof HTMLTextAreaElement);
-}
-
 export function PaymentTermsSettingsSection() {
   const paymentTermsQuery = usePaymentTerms();
   const savePaymentTerms = useSavePaymentTerms();
@@ -76,8 +72,7 @@ export function PaymentTermsSettingsSection() {
     savePaymentTerms.mutate({ id: editingId, values: draft }, { onSuccess: closeEditor });
   };
 
-  const handleEditorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!shouldSaveOnEnter(event)) return;
+  const handleEditorSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     saveDraft();
   };
@@ -96,7 +91,7 @@ export function PaymentTermsSettingsSection() {
       </div>
 
       {isEditorOpen ? (
-        <div className="grid gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.025] p-2.5 sm:grid-cols-2 sm:gap-3 sm:p-3" onKeyDown={handleEditorKeyDown}>
+        <EntityForm.Root className="grid gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.025] p-2.5 sm:grid-cols-2 sm:gap-3 sm:p-3" onSubmit={handleEditorSubmit} noValidate={false}>
           <div className="flex items-center justify-between gap-2 sm:col-span-2">
             <p className="text-xs font-black">{editingId ? 'تعديل شرط السداد' : 'شرط سداد جديد'}</p>
             <Button type="button" variant="ghost" size="icon" onClick={closeEditor} aria-label="إغلاق المحرر">
@@ -136,12 +131,12 @@ export function PaymentTermsSettingsSection() {
             <Textarea className="min-h-20 rounded-lg text-sm" value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="ملاحظات داخلية اختيارية" />
           </EntityForm.Field>
           <div className="flex gap-2 sm:col-span-2">
-            <Button type="button" size="sm" onClick={saveDraft} disabled={savePaymentTerms.isPending}>
+            <Button type="submit" size="sm" disabled={savePaymentTerms.isPending}>
               {editingId ? 'حفظ التعديل' : 'إضافة القالب'}
             </Button>
             <Button type="button" size="sm" variant="secondary" onClick={closeEditor}>إلغاء</Button>
           </div>
-        </div>
+        </EntityForm.Root>
       ) : null}
 
       <div className="space-y-2">

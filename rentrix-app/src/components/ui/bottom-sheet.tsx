@@ -56,14 +56,14 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
 
       if (event.key !== 'Tab' || !sheet) return;
       const focusable = Array.from(sheet.querySelectorAll<HTMLElement>(focusableSelector));
-      if (focusable.length === 0) {
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) {
         event.preventDefault();
         sheet.focus();
         return;
       }
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();

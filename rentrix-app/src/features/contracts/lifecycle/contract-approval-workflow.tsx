@@ -34,6 +34,40 @@ const approvalStatusLabels: Record<'PENDING' | 'APPROVED' | 'REJECTED', string> 
   REJECTED: 'مرفوض',
 };
 
+const APPROVAL_BADGE_VARIANTS = {
+  APPROVED: 'success',
+  REJECTED: 'danger',
+  PENDING: 'warning',
+} as const;
+
+const MODE_DIALOG_TITLES: Readonly<Record<ContractApprovalMode, string>> = {
+  submit: 'إرسال العقد للاعتماد',
+  approve: 'اعتماد العقد',
+  reject: 'رفض العقد',
+  activate: 'تفعيل العقد',
+};
+
+const MODE_DIALOG_DESCRIPTIONS: Readonly<Record<ContractApprovalMode, string>> = {
+  submit: 'سجّل توقيعك كمنشئ الطلب. لا يمكنك اعتماد الطلب الذي أرسلته بنفسك.',
+  approve: 'سجّل توقيعك كمُعتمِد. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.',
+  reject: 'سجّل توقيعك واذكر سبب الرفض. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.',
+  activate: 'سيتم تفعيل العقد وتجميد لقطة اتفاقية المالك المعتمدة (دور التحصيل ونموذج التشغيل والنسخة).',
+};
+
+const MODE_SUBMIT_LABELS: Readonly<Record<ContractApprovalMode, string>> = {
+  submit: 'إرسال للاعتماد',
+  approve: 'تأكيد الاعتماد',
+  reject: 'تأكيد الرفض',
+  activate: 'تفعيل العقد',
+};
+
+const MODE_SUBMIT_VARIANTS = {
+  submit: 'default',
+  approve: 'default',
+  reject: 'destructive',
+  activate: 'primary',
+} as const;
+
 function formatTimestamp(value: string | null | undefined): string {
   if (!value) return '—';
   const date = new Date(value);
@@ -87,7 +121,7 @@ export function ContractApprovalSection({ contract }: Readonly<{ contract: Contr
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-muted-foreground">حالة الاعتماد</p>
                 {approvalStatus ? (
-                  <Badge variant={approvalStatus === 'APPROVED' ? 'success' : approvalStatus === 'REJECTED' ? 'danger' : 'warning'}>
+                  <Badge variant={APPROVAL_BADGE_VARIANTS[approvalStatus]}>
                     {approvalStatusLabels[approvalStatus]}
                   </Badge>
                 ) : (
@@ -179,16 +213,8 @@ function ContractApprovalDialog({
   };
 
   const open = mode !== null;
-  const title = mode === 'submit' ? 'إرسال العقد للاعتماد' : mode === 'approve' ? 'اعتماد العقد' : mode === 'reject' ? 'رفض العقد' : mode === 'activate' ? 'تفعيل العقد' : '';
-  const description = mode === 'submit'
-    ? 'سجّل توقيعك كمنشئ الطلب. لا يمكنك اعتماد الطلب الذي أرسلته بنفسك.'
-    : mode === 'approve'
-      ? 'سجّل توقيعك كمُعتمِد. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.'
-      : mode === 'reject'
-        ? 'سجّل توقيعك واذكر سبب الرفض. يجب أن تكون شخصاً مختلفاً عن من أرسل الطلب.'
-        : mode === 'activate'
-          ? 'سيتم تفعيل العقد وتجميد لقطة اتفاقية المالك المعتمدة (دور التحصيل ونموذج التشغيل والنسخة).'
-          : '';
+  const title = mode ? MODE_DIALOG_TITLES[mode] : '';
+  const description = mode ? MODE_DIALOG_DESCRIPTIONS[mode] : '';
 
   const submitDisabled =
     isPending ||
@@ -221,8 +247,8 @@ function ContractApprovalDialog({
           onCancel={() => { onClose(); reset(); }}
           isSubmitting={isPending}
           submitDisabled={submitDisabled}
-          submitVariant={mode === 'reject' ? 'destructive' : mode === 'activate' ? 'primary' : 'default'}
-          submitLabel={mode === 'submit' ? 'إرسال للاعتماد' : mode === 'approve' ? 'تأكيد الاعتماد' : mode === 'reject' ? 'تأكيد الرفض' : 'تفعيل العقد'}
+          submitVariant={mode ? MODE_SUBMIT_VARIANTS[mode] : 'default'}
+          submitLabel={mode ? MODE_SUBMIT_LABELS[mode] : ''}
         />
       </EntityForm.Root>
     </EntityForm.Overlay>

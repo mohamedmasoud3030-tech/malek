@@ -104,7 +104,7 @@ export function ReceiptLinksPanel({ rows, isLoading }: Readonly<{ rows: Collecti
       header: 'إجراءات',
       priority: 'actions',
       render: (receipt) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات الإيصال ${receipt.receipt_number}`}
             items={[

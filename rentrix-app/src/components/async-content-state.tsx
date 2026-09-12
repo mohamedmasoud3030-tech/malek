@@ -3,8 +3,25 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/ui/state-surfaces';
 
+export type AsyncContentStatus = 'loading' | 'error' | 'empty' | 'ready';
+
+/**
+ * Single source of truth for the loading → error → empty → ready order.
+ * Callers pass their query flags instead of re-deriving a nested ternary.
+ */
+export function resolveAsyncContentStatus(flags: Readonly<{
+  isLoading: boolean;
+  isError: boolean;
+  isEmpty: boolean;
+}>): AsyncContentStatus {
+  if (flags.isLoading) return 'loading';
+  if (flags.isError) return 'error';
+  if (flags.isEmpty) return 'empty';
+  return 'ready';
+}
+
 interface AsyncContentStateProps {
-  status: 'loading' | 'error' | 'empty' | 'ready';
+  status: AsyncContentStatus;
   error?: unknown;
   errorTitle?: string;
   errorFallbackMessage?: string;
@@ -28,7 +45,7 @@ interface AsyncContentStateProps {
  *
  * @example
  * <AsyncContentState
- *   status={contractQuery.isLoading ? 'loading' : contractQuery.isError ? 'error' : !contractQuery.data ? 'empty' : 'ready'}
+ *   status={resolveAsyncContentStatus({ isLoading: contractQuery.isLoading, isError: contractQuery.isError, isEmpty: !contractQuery.data })}
  *   error={contractQuery.error}
  *   errorTitle="تعذر تحميل العقد"
  *   emptyTitle="العقد غير موجود"

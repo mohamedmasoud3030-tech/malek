@@ -7,6 +7,23 @@ import { listMyPermissionRequests, requestPermission, type PermissionRequest } f
 import type { AppPermission } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 
+function describePermissionStatus(existingRequest: PermissionRequest | undefined): string | null {
+  if (existingRequest?.status === 'PENDING') {
+    return 'قيد المراجعة — لن يُرسل طلب مكرر لهذا المورد.';
+  }
+  if (existingRequest?.status === 'APPROVED' && existingRequest.grant_active) {
+    return 'تمت الموافقة. حدّث صلاحيات الجلسة للمتابعة دون تسجيل خروج.';
+  }
+  if (existingRequest?.status === 'APPROVED') {
+    return 'المنحة السابقة أُلغيت ولم تعد فعّالة. يمكنك طلب الصلاحية مرة أخرى مع الاحتفاظ بسجل القرار السابق.';
+  }
+  if (existingRequest?.status === 'REJECTED') {
+    const reasonSuffix = existingRequest.decision_reason ? ` — ${existingRequest.decision_reason}` : '';
+    return `مرفوض${reasonSuffix}. يمكنك إعادة الطلب مع توضيح جديد.`;
+  }
+  return null;
+}
+
 export function PermissionRequestDialog({
   open,
   onOpenChange,
@@ -85,15 +102,13 @@ export function PermissionRequestDialog({
     }
   };
 
-  const statusText = existingRequest?.status === 'PENDING'
-    ? 'قيد المراجعة — لن يُرسل طلب مكرر لهذا المورد.'
-    : existingRequest?.status === 'APPROVED' && existingRequest.grant_active
-      ? 'تمت الموافقة. حدّث صلاحيات الجلسة للمتابعة دون تسجيل خروج.'
-      : existingRequest?.status === 'APPROVED'
-        ? 'المنحة السابقة أُلغيت ولم تعد فعّالة. يمكنك طلب الصلاحية مرة أخرى مع الاحتفاظ بسجل القرار السابق.'
-      : existingRequest?.status === 'REJECTED'
-        ? `مرفوض${existingRequest.decision_reason ? ` — ${existingRequest.decision_reason}` : ''}. يمكنك إعادة الطلب مع توضيح جديد.`
-        : null;
+  const statusText = describePermissionStatus(existingRequest);
+
+  const submitLabel = (() => {
+    if (pending) return 'جارٍ الإرسال...';
+    if (existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED') return 'إعادة إرسال الطلب';
+    return 'إرسال الطلب';
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -139,7 +154,7 @@ export function PermissionRequestDialog({
           ) : (
             <Button className="min-h-11" onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
               <Send className="me-1.5 size-3.5" aria-hidden="true" />
-              {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED' ? 'إعادة إرسال الطلب' : 'إرسال الطلب'}
+              {submitLabel}
             </Button>
           )}
           <Button className="min-h-11" variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>

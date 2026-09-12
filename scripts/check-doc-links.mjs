@@ -19,7 +19,7 @@ function collectMarkdownFiles(directory, files = []) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const absolutePath = resolve(directory, entry.name);
     if (entry.isDirectory()) {
-      if (!shouldSkipDirectory(entry.name, absolutePath)) collectMarkdownFiles(absolutePath, files);
+      if (!shouldSkipDirectory(entry.name)) collectMarkdownFiles(absolutePath, files);
       continue;
     }
     if (entry.isFile() && entry.name.endsWith('.md')) files.push(absolutePath);

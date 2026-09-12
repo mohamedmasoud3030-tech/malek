@@ -46,6 +46,7 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
+  higherIsBetterTone,
 } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportDocumentActions } from './report-document-actions';
@@ -75,6 +76,43 @@ export type MaintenanceReportProps = Readonly<{
   canExportReports: boolean;
   isLoading: boolean;
 }>;
+
+/**
+ * Operational reading for the maintenance section. Kept as a dedicated helper
+ * so the JSX stays readable and the precedence of the signals is explicit.
+ */
+function maintenanceOperationsNote(input: Readonly<{
+  isLoading: boolean;
+  urgentActiveCount: number;
+  urgentActiveRatio: number | null;
+  stalledCount: number;
+  scheduleMissedCount: number;
+  awaitingClosureCount: number;
+  assignmentCoverage: number;
+  schedulingCoverage: number;
+}>): string {
+  if (input.isLoading) return 'جارٍ تحميل ملخص الصيانة المعتمد.';
+  if (input.urgentActiveCount > 0) {
+    const ratioNote = input.urgentActiveRatio !== null
+      ? ` (${Math.round(input.urgentActiveRatio)}% من الحمل الفعال)`
+      : '';
+    return `يوجد ${formatLatinNumber(input.urgentActiveCount, 'ar')} طلبات عاجلة فعالة${ratioNote}؛ راجع الإسناد والجدولة قبل الطلبات العادية.`;
+  }
+  const stalledOrMissed = input.stalledCount + input.scheduleMissedCount;
+  if (stalledOrMissed > 0) {
+    return `عدة طلبات توقفت عن التقدم أو تجاوزت مواعيد زياراتها (${formatLatinNumber(stalledOrMissed, 'ar')} حالة)؛ أعِد جدولتها أو أغلقها صراحة قبل فتح أعمال جديدة.`;
+  }
+  if (input.awaitingClosureCount > 0) {
+    return `${formatLatinNumber(input.awaitingClosureCount, 'ar')} طلبات منجزة تقنيًا ولم تُغلق؛ الإغلاق التشغيلي هو ما يحسم التكلفة والمساءلة.`;
+  }
+  if (input.assignmentCoverage < 90) {
+    return 'بعض الطلبات الفعالة غير مسندة لمسؤول؛ إكمال الإسناد سيجعل المتابعة والمساءلة أوضح.';
+  }
+  if (input.schedulingCoverage < 85) {
+    return 'الإسناد جيد لكن الجدولة غير مكتملة؛ حدّد مواعيد التنفيذ للطلبات الفعالة.';
+  }
+  return 'تغطية الإسناد والجدولة جيدة ولا توجد طلبات عاجلة أو متوقفة غير محسومة.';
+}
 
 /**
  * تحليلات الصيانة — answers one question first: "ما الذي يحتاج انتباهًا
@@ -440,19 +478,16 @@ export function MaintenanceReportSection({
       />
 
       <ReportInsightNote title="قراءة التشغيل">
-        {isLoading
-          ? 'جارٍ تحميل ملخص الصيانة المعتمد.'
-          : urgentActiveCount > 0
-            ? `يوجد ${formatLatinNumber(urgentActiveCount, 'ar')} طلبات عاجلة فعالة${urgentActiveRatio !== null ? ` (${Math.round(urgentActiveRatio)}% من الحمل الفعال)` : ''}؛ راجع الإسناد والجدولة قبل الطلبات العادية.`
-          : attentionSummary.stalled + attentionSummary.scheduleMissed > 0
-            ? `عدة طلبات توقفت عن التقدم أو تجاوزت مواعيد زياراتها (${formatLatinNumber(attentionSummary.stalled + attentionSummary.scheduleMissed, 'ar')} حالة)؛ أعِد جدولتها أو أغلقها صراحة قبل فتح أعمال جديدة.`
-            : attentionSummary.awaitingClosure > 0
-              ? `${formatLatinNumber(attentionSummary.awaitingClosure, 'ar')} طلبات منجزة تقنيًا ولم تُغلق؛ الإغلاق التشغيلي هو ما يحسم التكلفة والمساءلة.`
-              : assignmentCoverage < 90
-                ? 'بعض الطلبات الفعالة غير مسندة لمسؤول؛ إكمال الإسناد سيجعل المتابعة والمساءلة أوضح.'
-                : schedulingCoverage < 85
-                  ? 'الإسناد جيد لكن الجدولة غير مكتملة؛ حدّد مواعيد التنفيذ للطلبات الفعالة.'
-                  : 'تغطية الإسناد والجدولة جيدة ولا توجد طلبات عاجلة أو متوقفة غير محسومة.'}
+        {maintenanceOperationsNote({
+          isLoading,
+          urgentActiveCount,
+          urgentActiveRatio,
+          stalledCount: attentionSummary.stalled,
+          scheduleMissedCount: attentionSummary.scheduleMissed,
+          awaitingClosureCount: attentionSummary.awaitingClosure,
+          assignmentCoverage,
+          schedulingCoverage,
+        })}
       </ReportInsightNote>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -462,13 +497,7 @@ export function MaintenanceReportSection({
             label="معدل الإنجاز"
             value={completionRate}
             helper={`${formatLatinNumber(completedCount, 'ar')} منجز من ${formatLatinNumber(actionableCount, 'ar')} غير ملغى`}
-            tone={
-              completionRate >= 75
-                ? 'good'
-                : completionRate >= 40
-                  ? 'warning'
-                  : 'critical'
-            }
+            tone={higherIsBetterTone(completionRate, 75, 40)}
           />
         ) : isLoading ? (
           <ReportState
@@ -487,26 +516,14 @@ export function MaintenanceReportSection({
           label="تغطية الإسناد"
           value={assignmentCoverage}
           helper={`${formatLatinNumber(assignedCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
-          tone={
-            assignmentCoverage >= 90
-              ? 'good'
-              : assignmentCoverage >= 70
-                ? 'warning'
-                : 'critical'
-          }
+          tone={higherIsBetterTone(assignmentCoverage, 90, 70)}
         />
         <ReportProgress
           isLoading={isLoading}
           label="تغطية الجدولة"
           value={schedulingCoverage}
           helper={`${formatLatinNumber(scheduledCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
-          tone={
-            schedulingCoverage >= 85
-              ? 'good'
-              : schedulingCoverage >= 60
-                ? 'warning'
-                : 'critical'
-          }
+          tone={higherIsBetterTone(schedulingCoverage, 85, 60)}
         />
       </div>
 
@@ -533,16 +550,22 @@ export function MaintenanceReportSection({
                 const priority = normalizeMaintenancePriority(row.priority);
                 const status = normalizeMaintenanceStatus(row.status);
                 const reportedDay = row.request_date ?? row.created_at;
-                const scheduleLabel = row.scheduled_date
-                  ? attention?.hasMissedSchedule
+                const reportedLabel = reportedDay ? `بلاغ ${formatDate(reportedDay)}` : 'تاريخ بلاغ غير مسجل';
+                let scheduleLabel = 'غير مجدول';
+                if (row.scheduled_date) {
+                  scheduleLabel = attention?.hasMissedSchedule
                     ? `فات موعد ${formatDate(row.scheduled_date)}`
-                    : `موعد ${formatDate(row.scheduled_date)}`
-                  : 'غير مجدول';
+                    : `موعد ${formatDate(row.scheduled_date)}`;
+                }
+                const assigneeLabel = row.technician_name || row.assigned_to || 'غير مسند';
+                const ageLabel = attention?.ageDays
+                  ? ` · منذ ${formatLatinNumber(attention.ageDays, 'ar')} يوم`
+                  : '';
                 return (
                   <ReportListRow
                     key={row.id}
                     title={row.title ?? 'طلب صيانة'}
-                    subtitle={`${reportedDay ? `بلاغ ${formatDate(reportedDay)}` : 'تاريخ بلاغ غير مسجل'} · ${row.technician_name || row.assigned_to || 'غير مسند'} · ${scheduleLabel}${attention?.ageDays ? ` · منذ ${formatLatinNumber(attention.ageDays, 'ar')} يوم` : ''}`}
+                    subtitle={`${reportedLabel} · ${assigneeLabel} · ${scheduleLabel}${ageLabel}`}
                     meta={
                       <span className="flex flex-wrap items-center gap-1.5">
                         <StatusBadge

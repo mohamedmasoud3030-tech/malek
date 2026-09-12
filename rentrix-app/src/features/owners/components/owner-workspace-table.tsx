@@ -71,7 +71,7 @@ export function OwnerWorkspaceTable({ rows, visibleColumnKeys, onCreateOwner, on
       header: 'إجراءات',
       priority: 'actions',
       render: (row) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
             items={[

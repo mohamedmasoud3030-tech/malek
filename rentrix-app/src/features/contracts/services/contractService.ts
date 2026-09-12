@@ -91,7 +91,7 @@ export async function listContractsForProperty(propertyId: string): Promise<Cont
  * Multi-property report consumers must not fan out one complete read per property.
  */
 export async function listContractsForProperties(propertyIds: readonly string[]): Promise<ContractListItem[]> {
-  const uniquePropertyIds = [...new Set(propertyIds.filter(Boolean))].sort();
+  const uniquePropertyIds = [...new Set(propertyIds.filter(Boolean))].sort((a, b) => a.localeCompare(b));
   if (uniquePropertyIds.length === 0) return [];
 
   const { rows } = await fetchAllRowsInBatches<ContractListItem, string>(

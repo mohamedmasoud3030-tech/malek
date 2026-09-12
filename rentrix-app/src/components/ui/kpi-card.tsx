@@ -37,6 +37,12 @@ interface KpiCardProps {
  * The accent affects the icon tile and top rule only; value text stays neutral
  * for readability and financial consistency in both light and dark themes.
  */
+const TREND_ARROWS: Record<'up' | 'down' | 'neutral', string> = {
+  up: '↑',
+  down: '↓',
+  neutral: '–',
+};
+
 export function KpiCard({
   label,
   value,
@@ -75,7 +81,7 @@ export function KpiCard({
               trend === 'neutral' && 'text-muted-foreground bg-muted',
             )}
           >
-            {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '–'} {trendValue}
+            {TREND_ARROWS[trend]} {trendValue}
           </span>
         ) : null}
       </div>

@@ -49,6 +49,36 @@ interface OccupancySectionProps {
  * `available` remains the only vacancy authority — maintenance/reserved
  * units are never counted as vacant.
  */
+const VACANCY_BAR_CLASSES: Record<string, string> = {
+  days_0_15: 'bg-info',
+  days_16_30: 'bg-warning/70',
+  days_31_60: 'bg-warning',
+};
+
+function occupancyRateClass(rate: number): string {
+  if (rate >= 90) return 'text-success';
+  if (rate >= 75) return 'text-warning';
+  return 'text-danger';
+}
+
+function changeDirection(points: number): 'up' | 'down' | 'neutral' {
+  if (points > 0) return 'up';
+  if (points < 0) return 'down';
+  return 'neutral';
+}
+
+function changeTone(points: number): 'success' | 'danger' | 'neutral' {
+  if (points > 0) return 'success';
+  if (points < 0) return 'danger';
+  return 'neutral';
+}
+
+function vacancyTone(daysVacant: number): 'danger' | 'warning' | 'info' {
+  if (daysVacant >= 60) return 'danger';
+  if (daysVacant >= 30) return 'warning';
+  return 'info';
+}
+
 export const OccupancySection = memo(function OccupancySection({
   snapshot,
   analytics,
@@ -116,7 +146,7 @@ export const OccupancySection = memo(function OccupancySection({
                 <p
                   className={cn(
                     'mt-0.5 text-3xl font-black tabular-nums leading-8',
-                    occupancyRate >= 90 ? 'text-success' : occupancyRate >= 75 ? 'text-warning' : 'text-danger',
+                    occupancyRateClass(occupancyRate),
                   )}
                   dir="ltr"
                 >
@@ -133,8 +163,8 @@ export const OccupancySection = memo(function OccupancySection({
             {canTrustHistory && analytics.totalUnits > 0 ? (
               <TrendDelta
                 className="mt-2.5"
-                direction={changePoints > 0 ? 'up' : changePoints < 0 ? 'down' : 'neutral'}
-                tone={changePoints > 0 ? 'success' : changePoints < 0 ? 'danger' : 'neutral'}
+                direction={changeDirection(changePoints)}
+                tone={changeTone(changePoints)}
                 text={`${Math.abs(changePoints)} نقطة عن نهاية الشهر السابق`}
               />
             ) : (
@@ -177,14 +207,7 @@ export const OccupancySection = memo(function OccupancySection({
                     key,
                     label: vacancyAgingBucketLabels[key],
                     count: agingBuckets[key],
-                    barClass:
-                      key === 'days_0_15'
-                        ? 'bg-info'
-                        : key === 'days_16_30'
-                          ? 'bg-warning/70'
-                          : key === 'days_31_60'
-                            ? 'bg-warning'
-                            : 'bg-danger',
+                    barClass: VACANCY_BAR_CLASSES[key] ?? 'bg-danger',
                   }))
                   .filter((segment) => segment.count > 0)}
               />
@@ -222,12 +245,7 @@ export const OccupancySection = memo(function OccupancySection({
         <>
           <ReportList as="ul" label="أطول الوحدات الشاغرة">
             {longestRows.map((row) => {
-              const tone =
-                row.daysVacant >= 60
-                  ? 'danger'
-                  : row.daysVacant >= 30
-                    ? 'warning'
-                    : 'info';
+              const tone = vacancyTone(row.daysVacant);
               return (
                 <li key={row.unitId} className="min-w-0">
                   <Link

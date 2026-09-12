@@ -26,7 +26,7 @@ function detectInitialLang(): Lang {
   return 'ar';
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
+export function LanguageProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [lang, setLangState] = useState<Lang>(detectInitialLang);
 
   useEffect(() => {

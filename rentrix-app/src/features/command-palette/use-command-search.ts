@@ -53,6 +53,9 @@ export function scoreResult(title: string, subtitle: string, searchNormalized: s
   return 0;
 }
 
+const PERSON_TYPE_LABELS: Record<string, string> = { tenant: 'مستأجر', owner: 'مالك' };
+const CONTRACT_STATUS_LABELS: Record<string, string> = { active: 'نشط', draft: 'مسودة' };
+
 export function useCommandSearch(query: string) {
   const { canAccess, isAuthenticated, authorization } = useAuth();
   const activeCompanyId = useActiveCompanyId();
@@ -206,7 +209,7 @@ export function useCommandSearch(query: string) {
 
       // ── Process People (separating general People from Tenants)
       for (const p of peopleData) {
-        const typeLabel = p.type === 'tenant' ? 'مستأجر' : p.type === 'owner' ? 'مالك' : 'جهة اتصال';
+        const typeLabel = PERSON_TYPE_LABELS[p.type] ?? 'جهة اتصال';
         const subtitle = `${typeLabel} • ${p.phone ?? p.email ?? ''}`;
         results.push({
           id: p.id,
@@ -249,7 +252,7 @@ export function useCommandSearch(query: string) {
       for (const c of contractsData) {
         const propTitle = c.properties?.title ?? '';
         const tenantName = c.people?.full_name ?? '';
-        const statusLabel = c.status === 'active' ? 'نشط' : c.status === 'draft' ? 'مسودة' : 'منتهي';
+        const statusLabel = CONTRACT_STATUS_LABELS[c.status] ?? 'منتهي';
         results.push({
           id: c.id,
           title: c.reference || `عقد المستأجر ${tenantName}`,

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Banknote, Fingerprint, ShieldCheck } from 'lucide-react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -27,9 +27,9 @@ import {
   translateOwnerRecoveryError,
 } from '../services/owner-receivable-recovery-service';
 
-type OwnerReceivableRecoveryPanelProps = {
+type OwnerReceivableRecoveryPanelProps = Readonly<{
   ownerId: string;
-};
+}>;
 
 /**
  * The single canonical surface for recording a CASH recovery against an owner
@@ -116,15 +116,7 @@ export function OwnerReceivableRecoveryPanel({ ownerId }: OwnerReceivableRecover
       </header>
 
       <AsyncContentState
-        status={
-          receivablesQuery.isLoading
-            ? 'loading'
-            : receivablesQuery.isError
-              ? 'error'
-              : receivables.length === 0
-                ? 'empty'
-                : 'ready'
-        }
+        status={resolveAsyncContentStatus({ isLoading: receivablesQuery.isLoading, isError: receivablesQuery.isError, isEmpty: receivables.length === 0 })}
         error={receivablesQuery.error}
         emptyTitle="لا توجد مديونيات"
         emptyDescription="سجّل مديونية على المالك أولاً لتتمكن من تسجيل تحصيل نقدي عليها."
@@ -179,15 +171,7 @@ export function OwnerReceivableRecoveryPanel({ ownerId }: OwnerReceivableRecover
               </div>
 
               <AsyncContentState
-                status={
-                  recoveriesQuery.isLoading
-                    ? 'loading'
-                    : recoveriesQuery.isError
-                      ? 'error'
-                      : (recoveriesQuery.data ?? []).length === 0
-                        ? 'empty'
-                        : 'ready'
-                }
+                status={resolveAsyncContentStatus({ isLoading: recoveriesQuery.isLoading, isError: recoveriesQuery.isError, isEmpty: (recoveriesQuery.data ?? []).length === 0 })}
                 error={recoveriesQuery.error}
                 emptyTitle="لا توجد حركات تحصيل"
                 emptyDescription="سيظهر هنا سجل حركات التحصيل مع القيود المحاسبية المرحَّلة بعد تسجيل أول تحصيل."

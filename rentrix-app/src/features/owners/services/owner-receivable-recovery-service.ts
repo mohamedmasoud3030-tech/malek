@@ -146,11 +146,7 @@ export async function loadOwnerReceivableRecoveries(
 }
 
 export function createOwnerRecoveryRequestId(prefix = 'recovery'): string {
-  const unique =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return `${prefix}-${unique}`;
+  return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
 export type RecoverOwnerReceivableInput = {

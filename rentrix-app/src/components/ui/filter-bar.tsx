@@ -7,7 +7,7 @@ import { Button } from './button';
 import { EntityTableViewModeToggle } from './entity-table';
 import { SearchInput } from './search-input';
 
-type FilterBarProps = {
+type FilterBarProps = Readonly<{
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
@@ -25,7 +25,7 @@ type FilterBarProps = {
   /** The canonical Cards/Table control, kept beside search and filters. */
   viewModeToggle?: ReactNode;
   className?: string;
-};
+}>;
 
 /**
  * Canonical MALEK search + filter system. One composition owner.

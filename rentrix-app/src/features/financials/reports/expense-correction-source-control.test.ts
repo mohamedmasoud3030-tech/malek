@@ -209,6 +209,14 @@ it('allows harmless description updates without changing approved financial sour
   await db.query('select public.s09_validate_correction($1::uuid)', [
     correction,
   ]);
+  expect(
+    (
+      await db.query(
+        'select status from public.s09_corrections where id=$1::uuid',
+        [correction],
+      )
+    ).rows,
+  ).toEqual([{ status: 'VALIDATED' }]);
 });
 
 it('requires an independent reviewer for frozen expense evidence', async () => {

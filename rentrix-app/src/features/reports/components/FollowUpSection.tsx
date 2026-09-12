@@ -162,6 +162,9 @@ export function FollowUpSection({
           <ReportList>
             {queue.map((row, index) => {
               const tier = getFollowUpTier(row.daysOverdue);
+              const locationLabel = [row.propertyTitle, row.unitNumber ? `وحدة ${row.unitNumber}` : null]
+                .filter(Boolean)
+                .join(' · ') || 'غير محدد';
               return (
                 <ReportListRow
                   key={row.invoiceId}
@@ -173,7 +176,7 @@ export function FollowUpSection({
                       <span>{row.tenantName ?? 'مستأجر غير محدد'}</span>
                     </span>
                   )}
-                  subtitle={`${[row.propertyTitle, row.unitNumber ? `وحدة ${row.unitNumber}` : null].filter(Boolean).join(' · ') || 'غير محدد'} · ${row.contractReference ?? 'عقد بلا مرجع'}`}
+                  subtitle={`${locationLabel} · ${row.contractReference ?? 'عقد بلا مرجع'}`}
                   meta={`${formatDate(row.dueDate)} · ${formatLatinNumber(row.daysOverdue, 'ar')} يوم`}
                   value={(
                     <span className="flex items-center gap-2">

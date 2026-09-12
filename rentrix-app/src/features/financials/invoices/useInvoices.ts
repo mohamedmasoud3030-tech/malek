@@ -21,7 +21,7 @@ export const invoiceKeys = {
  * key deterministic, so one page of contracts always resolves to one read.
  */
 export function normalizeContractInvoiceQueryIds(contractIds: readonly string[]): string[] {
-  return [...new Set(contractIds.filter((id): id is string => typeof id === 'string' && id.length > 0))].sort();
+  return [...new Set(contractIds.filter((id): id is string => typeof id === 'string' && id.length > 0))].sort((a, b) => a.localeCompare(b));
 }
 
 /**

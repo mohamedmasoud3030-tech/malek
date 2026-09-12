@@ -69,14 +69,16 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
         <div className="p-3 sm:p-4">
           {chartIsLoading ? (
             <LoadingState variant="section" label="جارٍ تحميل الأداء المالي" />
-          ) : chartIsError ? (
+          ) : null}
+          {!chartIsLoading && chartIsError ? (
             <ErrorState
               compact
               title="تعذر تحميل الأداء المالي"
               description="تحقق من الاتصال ثم أعد المحاولة."
               onRetry={onChartRetry}
             />
-          ) : chartRows.length === 0 ? (
+          ) : null}
+          {!chartIsLoading && !chartIsError && chartRows.length === 0 ? (
             <div data-dashboard-performance-empty>
               <ReportState
                 kind="empty"

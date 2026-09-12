@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import { Building2, DoorOpen, FileText, FolderKanban, ListChecks, UserRoundCog, WalletCards, Wrench } from 'lucide-react';
 import { Edit } from 'lucide-react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -18,6 +18,12 @@ import {
   PropertyFinancialsTab,
   PropertyMaintenanceTab,
 } from './components/property-workspace-tabs';
+const PROPERTY_DETAIL_TABS: readonly PropertyDetailSectionId[] = ['contracts', 'financials', 'maintenance', 'ownership', 'documents', 'activity'];
+
+function isPropertyDetailTab(value: string | undefined): value is PropertyDetailSectionId {
+  return PROPERTY_DETAIL_TABS.includes(value as PropertyDetailSectionId);
+}
+
 export { PropertyOverview } from './overview/property-overview-page';
 export { PropertyUnitsPage } from './units/property-units-page';
 export { PropertyUnitDetailPage } from './units/property-unit-detail-page';
@@ -84,11 +90,11 @@ export function PropertyDetailPage() {
   const tab = (location.search as PropertyDetailSearch)?.tab;
 
   // Resolve active section for nav highlight + mobile select value
-  const activeSection: PropertyDetailSectionId = isUnitsTab
-    ? 'units'
-    : tab === 'contracts' || tab === 'financials' || tab === 'maintenance' || tab === 'ownership' || tab === 'documents' || tab === 'activity'
-      ? tab
-      : 'overview';
+  const activeSection: PropertyDetailSectionId = (() => {
+    if (isUnitsTab) return 'units';
+    if (isPropertyDetailTab(tab)) return tab;
+    return 'overview';
+  })();
 
   const handleSelectChange = (nextId: PropertyDetailSectionId) => {
     if (nextId === 'units') {
@@ -102,9 +108,28 @@ export function PropertyDetailPage() {
     void navigate({ to: '/properties/$propertyId', params: { propertyId }, search: { tab: nextId } as never });
   };
 
+  const renderTabContent = () => {
+    switch (tab) {
+      case 'ownership':
+        return <PropertyOwnerAgreementsSection propertyId={propertyId} />;
+      case 'financials':
+        return <PropertyFinancialsTab propertyId={propertyId} />;
+      case 'contracts':
+        return <PropertyContractsTab propertyId={propertyId} />;
+      case 'maintenance':
+        return <PropertyMaintenanceTab propertyId={propertyId} />;
+      case 'documents':
+        return <PropertyDocumentsTab propertyId={propertyId} />;
+      case 'activity':
+        return <PropertyActivityTab propertyId={propertyId} />;
+      default:
+        return <Outlet />;
+    }
+  };
+
   return (
     <AsyncContentState
-      status={property ? 'ready' : propertyQuery.isLoading ? 'loading' : propertyQuery.isError ? 'error' : 'empty'}
+      status={property ? 'ready' : resolveAsyncContentStatus({ isLoading: propertyQuery.isLoading, isError: propertyQuery.isError, isEmpty: true })}
       error={propertyQuery.error}
       errorTitle="تعذر تحميل العقار"
       errorAction={<Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>}
@@ -233,21 +258,7 @@ export function PropertyDetailPage() {
             </nav>
 
             <div className="min-w-0 space-y-4 lg:space-y-5" data-property-detail-body>
-              {tab === 'ownership' ? (
-                <PropertyOwnerAgreementsSection propertyId={propertyId} />
-              ) : tab === 'financials' ? (
-                <PropertyFinancialsTab propertyId={propertyId} />
-              ) : tab === 'contracts' ? (
-                <PropertyContractsTab propertyId={propertyId} />
-              ) : tab === 'maintenance' ? (
-                <PropertyMaintenanceTab propertyId={propertyId} />
-              ) : tab === 'documents' ? (
-                <PropertyDocumentsTab propertyId={propertyId} />
-              ) : tab === 'activity' ? (
-                <PropertyActivityTab propertyId={propertyId} />
-              ) : (
-                <Outlet />
-              )}
+              {renderTabContent()}
             </div>
           </div>
         </PageLayout>

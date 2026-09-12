@@ -61,6 +61,11 @@ function SupportPageHeader() {
   );
 }
 
+const URGENCY_BADGE_VARIANTS: Record<string, 'danger' | 'warning' | 'neutral'> = {
+  CRITICAL: 'danger',
+  HIGH: 'warning',
+};
+
 export function AdminSupportOperationsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -230,15 +235,7 @@ export function AdminSupportOperationsPage() {
                       <CardDescription>{request.category} · {request.route}</CardDescription>
                     </div>
                     <div className="flex gap-2">
-                      <Badge
-                        variant={
-                          request.urgency === 'CRITICAL'
-                            ? 'danger'
-                            : request.urgency === 'HIGH'
-                              ? 'warning'
-                              : 'neutral'
-                        }
-                      >
+                      <Badge variant={URGENCY_BADGE_VARIANTS[request.urgency] ?? 'neutral'}>
                         {request.urgency}
                       </Badge>
                       <Badge variant="info">{statusLabels[request.status]}</Badge>
@@ -296,12 +293,14 @@ export function AdminSupportOperationsPage() {
                 أدخل 3 أحرف على الأقل لبحث المستخدمين.
               </CardContent>
             </Card>
-          ) : snapshot.users.length === 0 ? (
+          ) : null}
+          {submittedSearch.length >= 3 && snapshot.users.length === 0 ? (
             <EmptyState
               title="لا توجد نتائج مستخدمين مطابقة"
               description="جرّب عبارة بحث أخرى من ثلاثة أحرف على الأقل."
             />
-          ) : (
+          ) : null}
+          {submittedSearch.length >= 3 && snapshot.users.length > 0 ? (
             <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="نتائج بحث المستخدمين المقنّعة">
               {snapshot.users.map((user) => (
                 <Card key={user.id}>
@@ -333,7 +332,7 @@ export function AdminSupportOperationsPage() {
                 </Card>
               ))}
             </ResponsiveCardGrid>
-          )}
+          ) : null}
         </section>
       ) : null}
 

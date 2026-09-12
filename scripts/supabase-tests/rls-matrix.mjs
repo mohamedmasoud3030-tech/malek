@@ -238,7 +238,7 @@ async function expectCount(db, identity, sql, expected, spec) {
     });
     return;
   }
-  const actual = Number(result.value?.[0]?.n ?? result.value?.[0]?.count ?? NaN);
+  const actual = Number(result.value?.[0]?.n ?? result.value?.[0]?.count ?? Number.NaN);
   if (expected === 'deny') {
     record({
       ...spec,
@@ -294,7 +294,7 @@ async function expectRpcDenied(db, identity, sql, spec) {
   const result = await queryAs(db, identity, sql);
   record({
     ...spec,
-    status: !result.ok && isDenied(result.error) ? 'pass' : result.ok ? 'fail' : 'fail',
+    status: !result.ok && isDenied(result.error) ? 'pass' : 'fail',
     detail: result.ok
       ? `RPC unexpectedly succeeded: ${JSON.stringify(result.value).slice(0, 160)}`
       : isDenied(result.error)
@@ -347,7 +347,7 @@ async function runStructural(db, schema) {
     `select id, public, file_size_limit, allowed_mime_types
        from storage.buckets where id = 'attachments'`,
   )).rows[0];
-  const mime = (bucket?.allowed_mime_types ?? []).slice().sort().join(',');
+  const mime = (bucket?.allowed_mime_types ?? []).slice().sort((a, b) => a.localeCompare(b)).join(',');
   record({
     id: 'struct.storage_bucket',
     group: 'storage',
@@ -946,8 +946,8 @@ async function runRpcs(db) {
       ids.adminB,
       `select public.rpt_dashboard_snapshot(date '2026-07-01', date '2026-07-31', date '2026-07-31') as out`,
     );
-    const countA = Number(snapA.value?.[0]?.out?.portfolio?.properties ?? snapA.value?.[0]?.out?.operational?.properties ?? NaN);
-    const countB = Number(snapB.value?.[0]?.out?.portfolio?.properties ?? snapB.value?.[0]?.out?.operational?.properties ?? NaN);
+    const countA = Number(snapA.value?.[0]?.out?.portfolio?.properties ?? snapA.value?.[0]?.out?.operational?.properties ?? Number.NaN);
+    const countB = Number(snapB.value?.[0]?.out?.portfolio?.properties ?? snapB.value?.[0]?.out?.operational?.properties ?? Number.NaN);
     record({
       id: 'rpc.dashboard.company_isolation',
       group: 'rpc',

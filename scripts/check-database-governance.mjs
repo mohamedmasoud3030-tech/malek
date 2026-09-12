@@ -34,7 +34,7 @@ function gitBlobSha(content) {
 const files = (await readdir(migrationsDir, { withFileTypes: true }))
   .filter((entry) => entry.isFile() && /^\d{14}_.+\.sql$/.test(entry.name))
   .map((entry) => entry.name)
-  .sort();
+  .sort((a, b) => a.localeCompare(b));
 
 const baselineExists = files.includes(baseline);
 

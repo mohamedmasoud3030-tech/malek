@@ -21,13 +21,14 @@ function verifyChecksum(filePath, checksumPath, expectedRelativePath) {
   const bytes = readFileSync(filePath);
   const actual = createHash('sha256').update(bytes).digest('hex');
   const line = readFileSync(checksumPath, 'utf8').trim();
-  const match = line.match(/^([a-f0-9]{64})\s+(.+)$/);
-  if (!match) {
+  const match = line.match(/^([a-f0-9]{64})\s+/);
+  const target = match ? line.slice(match[0].length).trim() : '';
+  if (!match || !target) {
     fail(`${checksumPath} must contain one SHA-256 line`);
     return actual;
   }
-  if (match[2] !== expectedRelativePath) {
-    fail(`${checksumPath} targets ${match[2]} instead of ${expectedRelativePath}`);
+  if (target !== expectedRelativePath) {
+    fail(`${checksumPath} targets ${target} instead of ${expectedRelativePath}`);
   }
   if (match[1] !== actual) {
     fail(`${expectedRelativePath} checksum mismatch: expected ${match[1]}, actual ${actual}`);

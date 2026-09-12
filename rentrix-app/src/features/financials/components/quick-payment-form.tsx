@@ -23,7 +23,7 @@ const methodDescriptions: Record<Payment['payment_method'], string> = {
   other: 'سداد بطريقة إضافية',
 };
 
-type QuickPaymentFormProps = {
+type QuickPaymentFormProps = Readonly<{
   /** Remaining collectible amount (gross). Enables the pay-in-full shortcut. */
   remainingAmount?: number;
   amount: string;
@@ -45,7 +45,7 @@ type QuickPaymentFormProps = {
   onPaymentDateChange: (paymentDate: string) => void;
   onReferenceChange: (reference: string) => void;
   onPostPayment: () => void;
-};
+}>;
 
 export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate, reference, amountValidationMessage, isPending, isPaymentDisabled, focusKey = 0, onAmountChange, onMethodChange, onPaymentDateChange, onReferenceChange, onPostPayment }: QuickPaymentFormProps) {
   const amountInputRef = useRef<HTMLInputElement | null>(null);

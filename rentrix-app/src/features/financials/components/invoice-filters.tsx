@@ -18,7 +18,7 @@ export const invoiceStatusFilters: { value: InvoiceStatusFilter; label: string }
 
 export type InvoiceFilterOption = { id: string; label: string };
 
-type InvoiceFiltersProps = {
+type InvoiceFiltersProps = Readonly<{
   status: InvoiceStatusFilter;
   invoiceSearch: string;
   isGenerating: boolean;
@@ -37,7 +37,7 @@ type InvoiceFiltersProps = {
   onDateToChange: (value: string) => void;
   onTenantChange: (value: string) => void;
   onPropertyChange: (value: string) => void;
-};
+}>;
 
 export function InvoiceFilters({
   status,

@@ -37,7 +37,7 @@ type EntitySpec = Readonly<{
   sample: OfficeImportRow;
 }>;
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailPattern = /^[^\s@]+@[^\s@.]+\.[^\s@]+$/;
 
 export const OFFICE_IMPORT_MAX_FILE_BYTES = 5 * 1024 * 1024;
 export const OFFICE_IMPORT_MAX_ROWS = 5_000;

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { Ban, Copy, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -7,6 +8,16 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '../components/financials-formatters';
 import { formatPaymentMethodLabel, formatReceiptContext, formatReceiptStatusLabel, getReceiptStatusTone } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
+
+function describeLinkedInvoice(receipt: ReceiptRecord): string | ReactElement {
+  if (receipt.invoice_reference) {
+    return <span dir="ltr">{receipt.invoice_reference}</span>;
+  }
+  if (receipt.invoice_id) {
+    return `فاتورة ${receipt.invoice_id.slice(0, 8)}`;
+  }
+  return 'بدون فاتورة';
+}
 
 /**
  * Receipt Quick Preview — the canonical in-app receipt inspection surface.
@@ -38,6 +49,10 @@ export function ReceiptPreviewDialog({
       toast.success(`تم نسخ رقم الإيصال: ${receipt.receipt_number}`);
     });
   };
+  const receiptUnitSuffix = receipt?.unit_number ? ` · وحدة ${receipt.unit_number}` : '';
+  const receiptLocationValue = receipt?.property_title
+    ? `${receipt.property_title}${receiptUnitSuffix}`
+    : 'غير محدد';
 
   return (
     <EntityPreviewDialog
@@ -92,18 +107,12 @@ export function ReceiptPreviewDialog({
               { label: 'المرجع', value: receipt.reference_number ? <span dir="ltr">{receipt.reference_number}</span> : '—' },
               {
                 label: 'الفاتورة المرتبطة',
-                value: receipt.invoice_reference
-                  ? <span dir="ltr">{receipt.invoice_reference}</span>
-                  : receipt.invoice_id
-                    ? `فاتورة ${receipt.invoice_id.slice(0, 8)}`
-                    : 'بدون فاتورة',
+                value: describeLinkedInvoice(receipt),
               },
               { label: 'المستأجر', value: receipt.tenant_name ?? 'غير محدد' },
               {
                 label: 'العقار / الوحدة',
-                value: receipt.property_title
-                  ? `${receipt.property_title}${receipt.unit_number ? ` · وحدة ${receipt.unit_number}` : ''}`
-                  : 'غير محدد',
+                value: receiptLocationValue,
               },
               { label: 'السياق', value: formatReceiptContext(receipt), wide: true },
             ]}

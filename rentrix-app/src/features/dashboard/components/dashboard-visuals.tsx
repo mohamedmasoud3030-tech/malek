@@ -13,6 +13,14 @@ import type { SemanticTone } from '@/components/ui/status-badge';
  * the chart is never the sole representation).
  */
 
+const TREND_TONE_CLASSES: Record<string, string> = {
+  success: 'text-success bg-success/10',
+  warning: 'text-warning bg-warning/10',
+  danger: 'text-danger bg-danger/10',
+};
+
+const DIRECTION_ARROWS: Record<string, string> = { up: '↑', down: '↓', neutral: '–' };
+
 export const TrendDelta = memo(function TrendDelta({
   direction,
   text,
@@ -24,21 +32,14 @@ export const TrendDelta = memo(function TrendDelta({
   tone?: SemanticTone;
   className?: string;
 }>) {
-  const toneClass =
-    tone === 'success'
-      ? 'text-success bg-success/10'
-      : tone === 'warning'
-        ? 'text-warning bg-warning/10'
-        : tone === 'danger'
-          ? 'text-danger bg-danger/10'
-          : 'text-muted-foreground bg-muted';
+  const toneClass = TREND_TONE_CLASSES[tone ?? 'neutral'] ?? 'text-muted-foreground bg-muted';
 
   return (
     <span
       className={cn('inline-flex min-h-6 items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums', toneClass, className)}
       data-dashboard-trend-delta
     >
-      <span aria-hidden="true">{direction === 'up' ? '↑' : direction === 'down' ? '↓' : '–'}</span>
+      <span aria-hidden="true">{DIRECTION_ARROWS[direction]}</span>
       {text}
     </span>
   );

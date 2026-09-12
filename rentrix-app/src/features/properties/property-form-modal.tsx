@@ -108,7 +108,7 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
 
 // ─── Create modal ─────────────────────────────────────────────────────────────
 
-function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function PropertyCreateModal({ open, onClose }: Readonly<{ open: boolean; onClose: () => void }>) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const ownersQuery = useOperationalOwners();
   const createMutation = useCreatePropertyWithAgreement();
@@ -519,11 +519,11 @@ function PropertyEditModal({
   open,
   onClose,
   propertyId,
-}: {
+}: Readonly<{
   open: boolean;
   onClose: () => void;
   propertyId: string;
-}) {
+}>) {
   const propertyQuery = useProperty(propertyId);
   const updateMutation = useUpdateProperty(propertyId);
   const [submitError, setSubmitError] = useState<string | null>(null);

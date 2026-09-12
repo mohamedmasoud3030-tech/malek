@@ -45,7 +45,7 @@ export const ownerFormSchema = z.object({
     .string()
     .trim()
     .max(254)
-    .refine((value) => value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
+    .refine((value) => value === '' || /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(value), {
       message: 'البريد الإلكتروني غير صحيح',
     })
     .transform((value) => (value === '' ? null : value)),
@@ -97,7 +97,7 @@ export const ownerUpdateSchema = z.object({
     .string()
     .trim()
     .max(254)
-    .refine((value) => value === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
+    .refine((value) => value === '' || /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(value), {
       message: 'البريد الإلكتروني غير صحيح',
     })
     .optional(),

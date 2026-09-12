@@ -168,6 +168,11 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
   };
 
   const isSavingExpense = isCreateExpensePending || isUpdateExpensePending;
+  const expenseSubmitLabel = (() => {
+    if (isSavingExpense) return 'جارٍ الحفظ...';
+    if (editingExpense) return 'حفظ التعديل';
+    return 'حفظ المصروف';
+  })();
 
   const firstFormError = Object.values(expenseForm.formState.errors)
     .map((fieldError) => fieldError?.message)
@@ -226,7 +231,8 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
     <div className="min-w-0 space-y-2.5 sm:space-y-3">
         {isLoading ? (
           <LoadingState variant="section" label="جارٍ تحميل ملخص المصروفات" />
-        ) : error ? null : (
+        ) : null}
+        {!isLoading && !error ? (
          <RegisterMetricStrip
            aria-label="ملخص المصروفات"
            items={[
@@ -236,7 +242,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
              { id: 'categories', label: 'التصنيفات', value: summary.byCategoryCount, icon: Tags, hideWhenEmpty: true },
            ]}
          />
-        )}
+        ) : null}
 
         <FilterBar
           filters={(
@@ -379,7 +385,7 @@ export const ExpensesSection = forwardRef<ExpensesSectionHandle, ExpensesSection
           </EntityForm.Section>
 
           <EntityForm.Actions
-            submitLabel={isSavingExpense ? 'جارٍ الحفظ...' : editingExpense ? 'حفظ التعديل' : 'حفظ المصروف'}
+            submitLabel={expenseSubmitLabel}
             onCancel={() => setFormOpen(false)}
             isSubmitting={isSavingExpense}
             submitDisabled={propertyRows.length === 0}

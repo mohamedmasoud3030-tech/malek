@@ -139,7 +139,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       header: "إجراء",
       priority: "actions",
       render: (unit) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات وحدة ${unit.unit_number}`}
             items={[

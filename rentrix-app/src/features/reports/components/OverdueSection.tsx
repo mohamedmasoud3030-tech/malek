@@ -286,6 +286,68 @@ export function OverdueSection({
     </div>
   ) : undefined;
 
+  const concentrationTone = (share: number, warningAt: number) => {
+    if (share <= 20) return 'good';
+    if (share <= warningAt) return 'warning';
+    return 'critical';
+  };
+
+  const arrearsInsight = (() => {
+    if (isLoading) return 'جارٍ تحميل الملخص المعتمد للذمم المتأخرة.';
+    if (!hasArrearsSummary) {
+      return 'تعذر تحميل ملخص المتأخرات المعتمد؛ استخدم الجدول التفصيلي مع الترتيب حسب العمر أو الرصيد إلى حين توفر الملخص.';
+    }
+    if (over90Share >= 40) {
+      return 'الذمم القديمة تمثل حصة مرتفعة من المتأخرات؛ ابدأ بالعقود التي تجاوزت 90 يومًا ثم رتّب الباقي حسب الرصيد.';
+    }
+    if (topExposureShare >= 35) {
+      return 'جزء كبير من المتأخرات متركز في عقد واحد؛ راجع العقد والمستأجر وخطة التحصيل قبل التوسع في المتابعة.';
+    }
+    return 'التعرض موزع نسبيًا؛ استخدم ترتيب الفواتير حسب العمر والقيمة لتنفيذ متابعة منهجية.';
+  })();
+
+  const renderArrearsSummary = () => {
+    if (hasArrearsSummary) {
+      return (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ReportProgress
+            isLoading={isLoading}
+            label="تركيز الذمم القديمة"
+            value={over90Share}
+            helper="حصة الذمم التي تجاوزت 90 يومًا من إجمالي المتأخر"
+            tone={concentrationTone(over90Share, 40)}
+          />
+          <ReportProgress
+            isLoading={isLoading}
+            label="أكبر انكشاف عقد"
+            value={topExposureShare}
+            helper={
+              topExposure
+                ? `${topExposure[1].tenantName} · ${formatMoney(topExposure[1].total)}`
+                : 'لا توجد ذمم'
+            }
+            tone={concentrationTone(topExposureShare, 35)}
+          />
+        </div>
+      );
+    }
+    if (isLoading) {
+      return (
+        <ReportState
+          isLoading
+          title="جارٍ تحميل ملخص المتأخرات المعتمد"
+          message=""
+        />
+      );
+    }
+    return (
+      <ReportState
+        title="ملخص المتأخرات المعتمد غير متاح"
+        message="لم يصل ملخص المتأخرات من الخادم، لذلك لن يعرض مالك إجماليات أو مؤشرات محسوبة محليًا بدلًا منه. الجدول التفصيلي يبقى متاحًا كما ورد من المصدر."
+      />
+    );
+  };
+
   return (
     <div className="space-y-3">
       <ReportSummaryStrip
@@ -345,62 +407,8 @@ export function OverdueSection({
           isLoading={isLoading}
         />
         <div className="space-y-3">
-          {hasArrearsSummary ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ReportProgress
-                isLoading={isLoading}
-                label="تركيز الذمم القديمة"
-                value={over90Share}
-                helper="حصة الذمم التي تجاوزت 90 يومًا من إجمالي المتأخر"
-                tone={
-                  over90Share <= 20
-                    ? 'good'
-                    : over90Share <= 40
-                      ? 'warning'
-                      : 'critical'
-                }
-              />
-              <ReportProgress
-                isLoading={isLoading}
-                label="أكبر انكشاف عقد"
-                value={topExposureShare}
-                helper={
-                  topExposure
-                    ? `${topExposure[1].tenantName} · ${formatMoney(topExposure[1].total)}`
-                    : 'لا توجد ذمم'
-                }
-                tone={
-                  topExposureShare <= 20
-                    ? 'good'
-                    : topExposureShare <= 35
-                      ? 'warning'
-                      : 'critical'
-                }
-              />
-            </div>
-          ) : isLoading ? (
-            <ReportState
-              isLoading
-              title="جارٍ تحميل ملخص المتأخرات المعتمد"
-              message=""
-            />
-          ) : (
-            <ReportState
-              title="ملخص المتأخرات المعتمد غير متاح"
-              message="لم يصل ملخص المتأخرات من الخادم، لذلك لن يعرض مالك إجماليات أو مؤشرات محسوبة محليًا بدلًا منه. الجدول التفصيلي يبقى متاحًا كما ورد من المصدر."
-            />
-          )}
-          <ReportInsightNote title="أولوية المتابعة">
-            {isLoading
-              ? 'جارٍ تحميل الملخص المعتمد للذمم المتأخرة.'
-              : !hasArrearsSummary
-                ? 'تعذر تحميل ملخص المتأخرات المعتمد؛ استخدم الجدول التفصيلي مع الترتيب حسب العمر أو الرصيد إلى حين توفر الملخص.'
-              : over90Share >= 40
-                ? 'الذمم القديمة تمثل حصة مرتفعة من المتأخرات؛ ابدأ بالعقود التي تجاوزت 90 يومًا ثم رتّب الباقي حسب الرصيد.'
-                : topExposureShare >= 35
-                  ? 'جزء كبير من المتأخرات متركز في عقد واحد؛ راجع العقد والمستأجر وخطة التحصيل قبل التوسع في المتابعة.'
-                  : 'التعرض موزع نسبيًا؛ استخدم ترتيب الفواتير حسب العمر والقيمة لتنفيذ متابعة منهجية.'}
-          </ReportInsightNote>
+          {renderArrearsSummary()}
+          <ReportInsightNote title="أولوية المتابعة">{arrearsInsight}</ReportInsightNote>
         </div>
       </ReportColumns>
     </div>

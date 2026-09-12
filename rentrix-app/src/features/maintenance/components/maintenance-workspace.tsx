@@ -101,10 +101,13 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
           sections: [
             {
               title: 'جدول طلبات الصيانة والتكلفة والأولوية',
-              rows: controller.visibleMaintenanceRows.map((row) => ({
-                label: `${row.title} - (${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority})`,
-                value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | المسؤول: ${row.assigned_to || row.technician_name || 'غير محدد'} | التكلفة: ${row.cost ? `${row.cost} ${currencyLabel}` : '—'}`,
-              })),
+              rows: controller.visibleMaintenanceRows.map((row) => {
+                const costValue = row.cost ? `${row.cost} ${currencyLabel}` : '—';
+                return {
+                  label: `${row.title} - (${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority})`,
+                  value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | المسؤول: ${row.assigned_to || row.technician_name || 'غير محدد'} | التكلفة: ${costValue}`,
+                };
+              }),
             },
           ],
           totalSummary: `عدد الطلبات المدرجة: ${controller.visibleMaintenanceRows.length} طلب صيانة`,

@@ -195,7 +195,7 @@ export function ContractTable({
       priority: "actions",
       className: "w-52",
       render: (contract) => (
-        <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div className="flex">
           <ActionMenu
             label={`إجراءات العقد ${getContractNumber(contract)}`}
             items={[

@@ -1,6 +1,6 @@
 import { AlertTriangle, BellRing, CalendarClock, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, type SemanticTone } from '@/components/ui/status-badge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -70,6 +70,12 @@ function formatAutomationDate(value: string | number | null | undefined) {
     : new Date(String(value));
   return Number.isNaN(date.getTime()) ? '—' : formatLatinDateTime(date, 'ar');
 }
+
+const JOB_STATUS_TONES: Record<string, SemanticTone> = {
+  SUCCEEDED: 'success',
+  DEAD: 'danger',
+  CANCELLED: 'neutral',
+};
 
 export function AutomationCenterView() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -142,7 +148,7 @@ export function AutomationCenterView() {
   const ruleActions = (rule: AutomationRule) => {
     const queueSupported = ['contract_expiry', 'overdue_invoice', 'maintenance_overdue'].includes(rule.rule_type);
     return (
-      <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <div className="flex">
         <ActionMenu
           label={`إجراءات ${rule.name}`}
           items={[
@@ -231,7 +237,7 @@ export function AutomationCenterView() {
             {latestJobQuery.data ? (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge tone={latestJobQuery.data.status === 'SUCCEEDED' ? 'success' : latestJobQuery.data.status === 'DEAD' ? 'danger' : latestJobQuery.data.status === 'CANCELLED' ? 'neutral' : 'warning'}>
+                  <StatusBadge tone={JOB_STATUS_TONES[latestJobQuery.data.status] ?? 'warning'}>
                     {latestJobQuery.data.status}
                   </StatusBadge>
                   <span className="text-xs text-muted-foreground">المحاولة {latestJobQuery.data.attempt_count} من {latestJobQuery.data.max_attempts}</span>
@@ -260,7 +266,7 @@ export function AutomationCenterView() {
       />
 
       <AsyncContentState
-        status={rulesQuery.isLoading ? 'loading' : rulesQuery.isError ? 'error' : filteredRules.length === 0 ? 'empty' : 'ready'}
+        status={resolveAsyncContentStatus({ isLoading: rulesQuery.isLoading, isError: rulesQuery.isError, isEmpty: filteredRules.length === 0 })}
         error={rulesQuery.error}
         errorTitle="تعذر تحميل قواعد الأتمتة"
         errorAction={<Button onClick={() => rulesQuery.refetch()}>إعادة المحاولة</Button>}
@@ -278,7 +284,7 @@ export function AutomationCenterView() {
       <section className="space-y-3">
         <SectionHeader title="سجل التشغيلات" description="آخر عمليات التشغيل وعدد العناصر المعالجة والأخطاء." />
         <AsyncContentState
-          status={runsQuery.isLoading ? 'loading' : runsQuery.isError ? 'error' : runs.length === 0 ? 'empty' : 'ready'}
+          status={resolveAsyncContentStatus({ isLoading: runsQuery.isLoading, isError: runsQuery.isError, isEmpty: runs.length === 0 })}
           error={runsQuery.error}
           errorTitle="تعذر تحميل سجل التشغيل"
           errorAction={<Button onClick={() => runsQuery.refetch()}>إعادة المحاولة</Button>}
@@ -292,7 +298,7 @@ export function AutomationCenterView() {
       <section className="space-y-3">
         <SectionHeader title="إشعارات النظام" description="الإشعارات التي أنشأتها قواعد الأتمتة داخل النظام دون إظهار معرفات تقنية." />
         <AsyncContentState
-          status={notificationsQuery.isLoading ? 'loading' : notificationsQuery.isError ? 'error' : notifications.length === 0 ? 'empty' : 'ready'}
+          status={resolveAsyncContentStatus({ isLoading: notificationsQuery.isLoading, isError: notificationsQuery.isError, isEmpty: notifications.length === 0 })}
           error={notificationsQuery.error}
           errorTitle="تعذر تحميل إشعارات الأتمتة"
           errorAction={<Button onClick={() => notificationsQuery.refetch()}>إعادة المحاولة</Button>}

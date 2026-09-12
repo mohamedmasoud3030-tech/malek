@@ -39,7 +39,7 @@ const defaultInvoiceColumns = [
   'actions',
 ];
 
-type InvoiceListSectionProps = {
+type InvoiceListSectionProps = Readonly<{
   status: InvoiceStatusFilter;
   invoiceSearch: string;
   invoices: InvoiceListItem[];
@@ -72,7 +72,7 @@ type InvoiceListSectionProps = {
   onTenantChange: (value: string) => void;
   onPropertyChange: (value: string) => void;
   onPageChange: (page: number) => void;
-};
+}>;
 
 export function billingPeriodLabel(invoice: InvoiceListItem) {
   const start = invoice.billing_period_start;
@@ -263,7 +263,7 @@ export function InvoiceListSection({
           ...(onExportInvoice ? [{ id: 'pdf', label: 'PDF', icon: Download, onClick: () => onExportInvoice(invoice.id) }] : []),
         ];
         return (
-          <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-end">
             <ActionMenu
               variant="labeled"
               label={`إجراءات ${invoice.reference ?? 'الفاتورة'}`}

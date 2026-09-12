@@ -22,6 +22,7 @@ import {
   ReportProgress,
   ReportState,
   ReportSummaryStrip,
+  lowerIsBetterTone,
 } from '@/components/ui/report-section-primitives';
 import { formatLatinNumber } from '@/lib/formatters';
 import { ReportDocumentActions } from './report-document-actions';
@@ -211,13 +212,7 @@ export function ExpensesSection({
               ? `${topCategory.category} · ${formatMoney(topCategory.total)}`
               : 'لا توجد مصروفات'
           }
-          tone={
-            topCategoryShare <= 40
-              ? 'good'
-              : topCategoryShare <= 60
-                ? 'warning'
-                : 'critical'
-          }
+          tone={lowerIsBetterTone(topCategoryShare, 40, 60)}
         />
         <ReportProgress
           isLoading={isLoading}
@@ -228,13 +223,7 @@ export function ExpensesSection({
               ? `${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)} · ${formatMoney(topProperty.total)}`
               : 'لا توجد مصروفات'
           }
-          tone={
-            topPropertyShare <= 45
-              ? 'good'
-              : topPropertyShare <= 65
-                ? 'warning'
-                : 'critical'
-          }
+          tone={lowerIsBetterTone(topPropertyShare, 45, 65)}
         />
       </div>
 

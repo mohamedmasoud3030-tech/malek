@@ -47,6 +47,13 @@ const gapClasses = {
  * - Odd final cards fill the remaining mobile row; two-column desktop grids
  *   keep that full-row treatment so pages do not end with a large empty gap.
  */
+const DESKTOP_GRIDS: Record<number, string> = { 2: '2', 3: '3', 4: '4' };
+
+const DESKTOP_GRID_CLASSES: Record<string, string> = {
+  '4': '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-4 lg:[&>*:last-child:nth-child(odd)]:col-span-1',
+  '3': '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>*:last-child:nth-child(odd)]:col-span-1',
+};
+
 export function ResponsiveCardGrid({
   children,
   className,
@@ -58,7 +65,7 @@ export function ResponsiveCardGrid({
   'data-finance-kpi-grid': financeKpiGridMarker,
   'data-report-summary': reportSummaryMarker,
 }: ResponsiveCardGridProps) {
-  const desktopGrid = desktopColumns === 4 ? '4' : desktopColumns === 3 ? '3' : '2';
+  const desktopGrid = DESKTOP_GRIDS[desktopColumns] ?? '2';
 
   return (
     <Component
@@ -70,11 +77,7 @@ export function ResponsiveCardGrid({
       aria-labelledby={ariaLabelledBy}
       className={cn(
         'grid min-w-0 grid-cols-2',
-        desktopGrid === '4'
-          ? '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-4 lg:[&>*:last-child:nth-child(odd)]:col-span-1'
-          : desktopGrid === '3'
-            ? '[&>*:last-child:nth-child(odd)]:col-span-2 lg:grid-cols-3 lg:[&>*:last-child:nth-child(odd)]:col-span-1'
-            : '[&>*:last-child:nth-child(odd)]:col-span-2',
+        DESKTOP_GRID_CLASSES[desktopGrid] ?? '[&>*:last-child:nth-child(odd)]:col-span-2',
         gapClasses[gap],
         '[&>*]:min-w-0',
         className,

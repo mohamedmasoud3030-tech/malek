@@ -53,22 +53,27 @@ const propertyColumnOptions = [
 
 const defaultPropertyColumns = propertyColumnOptions.map((column) => column.key);
 
-function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListItem }>) {
-  const label = property.workflow_health === "ready"
-    ? "جاهز للتشغيل"
-    : property.workflow_health === "missing_owner"
-      ? "يحتاج مالكاً"
-      : property.workflow_health === "owner_unavailable"
-        ? "المالك غير نشط"
-        : "يحتاج اتفاقية";
+const WORKFLOW_HEALTH_LABELS: Record<string, string> = {
+  ready: "جاهز للتشغيل",
+  missing_owner: "يحتاج مالكاً",
+  owner_unavailable: "المالك غير نشط",
+};
 
-  const ownerSummary = property.workflow_health === "owner_unavailable"
-    ? property.current_owner_name
+function summarizePropertyOwner(property: PropertyListItem): string {
+  if (property.workflow_health === "owner_unavailable") {
+    return property.current_owner_name
       ? `المالك المرتبط غير نشط: ${property.current_owner_name}`
-      : "سجل المالك المرتبط غير متاح"
-    : property.current_owner_name
-      ? `المالك: ${property.current_owner_name}`
-      : "لا يوجد ربط ملكية ساري";
+      : "سجل المالك المرتبط غير متاح";
+  }
+  return property.current_owner_name
+    ? `المالك: ${property.current_owner_name}`
+    : "لا يوجد ربط ملكية ساري";
+}
+
+function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListItem }>) {
+  const label = WORKFLOW_HEALTH_LABELS[property.workflow_health] ?? "يحتاج اتفاقية";
+
+  const ownerSummary = summarizePropertyOwner(property);
 
   return (
     <div className="space-y-1">
@@ -97,6 +102,11 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
   const controller = usePropertyListController();
   const { canAccess } = useAuth();
   const canCreate = canAccess('properties.create');
+  const emptyListDescription = (() => {
+    if (controller.hasFilterValues) return "جرّب تغيير عوامل البحث أو إزالة الفلتر.";
+    if (canCreate) return "ابدأ بإضافة أول عقار لك.";
+    return "لا توجد عقارات مسجلة الآن.";
+  })();
   const canEdit = canAccess('properties.edit');
   const canArchive = canAccess('properties.archive');
   const canExport = canAccess('properties.view');
@@ -224,8 +234,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 render: (property) => (
                   <div
                     className="flex items-center justify-end"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
                   >
                     <ActionMenu
                       label={`إجراءات ${property.title ?? "العقار"}`}
@@ -345,7 +353,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             errorTitle="تعذر تحميل قائمة العقارات"
             onRetry={() => controller.propertiesQuery.refetch()}
             emptyTitle={controller.hasFilterValues ? "لا توجد نتائج مطابقة للبحث" : "لم تُضف عقارات بعد"}
-            emptyDescription={controller.hasFilterValues ? "جرّب تغيير عوامل البحث أو إزالة الفلتر." : canCreate ? "ابدأ بإضافة أول عقار لك." : "لا توجد عقارات مسجلة الآن."}
+            emptyDescription={emptyListDescription}
             emptyAction={!controller.hasFilterValues && canCreate ? (
               <Button onClick={controller.openCreateModal}>
                 <Building2 className="me-2 size-4" />

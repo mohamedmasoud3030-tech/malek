@@ -108,7 +108,10 @@ export function TableLoading({
   return (
     <tbody role="status" aria-live="polite" aria-label={label}>
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <tr key={rowIndex} aria-hidden="true" className="border-b border-border/60">
+        // No aria-hidden here: the tbody's role="status" + aria-label carry
+        // the loading announcement, and hiding the rows collides with the
+        // live region (and trips the focusable-content rule).
+        <tr key={rowIndex} className="border-b border-border/60">
           {Array.from({ length: columns }).map((__, colIndex) => (
             <td key={colIndex} className="h-9 border-s border-border/60 px-2 py-1.5 first:border-s-0">
               <Skeleton className="h-3.5 w-full" />

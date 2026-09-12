@@ -101,15 +101,10 @@ export function AssistantLiveCall({
       </Button>
 
       <div className="min-w-0 flex-1 text-[11px] leading-4 text-muted-foreground">
-        {listening ? (
-          <span className="font-medium text-foreground">🎙️ أسمعك… تحدث، وسيُرسَل الرد وتُقرَأ الإجابة صوتياً.</span>
-        ) : pending ? (
-          <span className="font-medium text-foreground">الرد يُجهَّز…</span>
-        ) : speaking ? (
-          <span className="font-medium text-foreground">🔊 لينا بترد عليك… الميكروفون هيفتح بعد انتهاء الصوت.</span>
-        ) : (
-          <span>اضغط الميكروفون لتتحدث مباشرة (حوار صوتي لايف).</span>
-        )}
+        {listening ? <span className="font-medium text-foreground">🎙️ أسمعك… تحدث، وسيُرسَل الرد وتُقرَأ الإجابة صوتياً.</span> : null}
+        {!listening && pending ? <span className="font-medium text-foreground">الرد يُجهَّز…</span> : null}
+        {!listening && !pending && speaking ? <span className="font-medium text-foreground">🔊 لينا بترد عليك… الميكروفون هيفتح بعد انتهاء الصوت.</span> : null}
+        {!listening && !pending && !speaking ? <span>اضغط الميكروفون لتتحدث مباشرة (حوار صوتي لايف).</span> : null}
       </div>
 
       <Button

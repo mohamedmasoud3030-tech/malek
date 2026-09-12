@@ -14,7 +14,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { WriteErrorCard } from '@/components/ui/error-state';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from '../types';
 
@@ -74,7 +74,7 @@ export function CommunicationHubView({
   const clearFilters = () => onFiltersChange({ query: '', channel: 'all', status: 'all' });
 
   const rowActions = (row: CommunicationRecord) => (
-    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+    <div className="flex">
       <ActionMenu
         label={`إجراءات ${row.contact_name}`}
         items={[
@@ -155,7 +155,7 @@ export function CommunicationHubView({
       ) : null}
 
       <AsyncContentState
-        status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
+        status={resolveAsyncContentStatus({ isLoading, isError: Boolean(error), isEmpty: rows.length === 0 })}
         error={error}
         errorTitle="تعذر تحميل سجل التواصل"
         errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."

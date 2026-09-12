@@ -25,6 +25,24 @@ interface OfficePulseProps {
  * is never presented as office revenue: the cash tile stays explicitly
  * labelled «collections minus recorded expenses».
  */
+function collectionAccent(rate: number): 'emerald' | 'amber' | 'rose' {
+  if (rate >= 80) return 'emerald';
+  if (rate >= 50) return 'amber';
+  return 'rose';
+}
+
+function occupancyAccent(rate: number): 'emerald' | 'amber' | 'rose' {
+  if (rate >= 90) return 'emerald';
+  if (rate >= 75) return 'amber';
+  return 'rose';
+}
+
+function arrearsAccent(totalOverdue: number, over90Count: number): 'emerald' | 'amber' | 'rose' {
+  if (totalOverdue === 0) return 'emerald';
+  if (over90Count > 0) return 'rose';
+  return 'amber';
+}
+
 export const OfficePulse = memo(function OfficePulse({
   snapshot,
   isLoading,
@@ -52,6 +70,10 @@ export const OfficePulse = memo(function OfficePulse({
   const overdueCount = snapshot?.arrears.overdueCount ?? 0;
   const over90Count = snapshot?.arrears.over90Count ?? 0;
   const averageDaysOverdue = snapshot?.arrears.averageDaysOverdue ?? 0;
+  const over90Suffix = over90Count > 0 ? ` · منها ${over90Count} تجاوزت 90 يوماً` : '';
+  const arrearsSub = overdueCount > 0
+    ? `${overdueCount} فاتورة متأخرة · متوسط ${averageDaysOverdue} يوم${over90Suffix}`
+    : 'لا توجد متأخرات مسجلة';
 
   const pulseLinkClass =
     'group block min-w-0 rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary';
@@ -73,13 +95,7 @@ export const OfficePulse = memo(function OfficePulse({
             value={money(collected)}
             sub={`من ${money(invoiced)} مستحقات · نسبة التحصيل ${collectionRate}%`}
             icon={HandCoins}
-            accent={
-              collectionRate >= 80
-                ? 'emerald'
-                : collectionRate >= 50
-                  ? 'amber'
-                  : 'rose'
-            }
+            accent={collectionAccent(collectionRate)}
             compact
             className="dashboard-pulse-card"
           />
@@ -97,13 +113,7 @@ export const OfficePulse = memo(function OfficePulse({
             value={`${occupancyRate}%`}
             sub={`${occupiedUnits} مشغولة · ${vacantUnits} شاغرة`}
             icon={Building2}
-            accent={
-              occupancyRate >= 90
-                ? 'emerald'
-                : occupancyRate >= 75
-                  ? 'amber'
-                  : 'rose'
-            }
+            accent={occupancyAccent(occupancyRate)}
             compact
             className="dashboard-pulse-card"
           />
@@ -119,19 +129,9 @@ export const OfficePulse = memo(function OfficePulse({
           <KpiCard
             label="المتأخرات"
             value={money(totalOverdue)}
-            sub={
-              overdueCount > 0
-                ? `${overdueCount} فاتورة متأخرة · متوسط ${averageDaysOverdue} يوم${over90Count > 0 ? ` · منها ${over90Count} تجاوزت 90 يوماً` : ''}`
-                : 'لا توجد متأخرات مسجلة'
-            }
+            sub={arrearsSub}
             icon={AlertOctagon}
-            accent={
-              totalOverdue === 0
-                ? 'emerald'
-                : over90Count > 0
-                  ? 'rose'
-                  : 'amber'
-            }
+            accent={arrearsAccent(totalOverdue, over90Count)}
             compact
             className="dashboard-pulse-card"
           />

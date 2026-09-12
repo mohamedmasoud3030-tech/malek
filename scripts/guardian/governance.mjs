@@ -30,10 +30,21 @@ function compact(value) {
 // type-only signatures. Use oidvectortypes() and normalize spacing so a harmless
 // parameter rename can never create a false missing-function finding.
 function normalizeSignature(value) {
-  return String(value ?? '')
-    .replace(/\s*,\s*/g, ',')
-    .replace(/\(\s*/g, '(')
-    .replace(/\s*\)/g, ')')
+  // Linear, allocation-light equivalent of collapsing whitespace around
+  // `,`, `(` and `)` (regex variants with leading `\s*` quantifiers are
+  // super-linear on failed matches).
+  const byCommas = String(value ?? '')
+    .split(',')
+    .map((segment) => segment.trim())
+    .join(',');
+  const byOpenParens = byCommas
+    .split('(')
+    .map((segment, index) => (index === 0 ? segment : segment.trimStart()))
+    .join('(');
+  return byOpenParens
+    .split(')')
+    .map((segment, index, all) => (index === all.length - 1 ? segment : segment.trimEnd()))
+    .join(')')
     .trim();
 }
 
@@ -58,12 +69,41 @@ function hasCanonicalAuthorityResolver(definition) {
   return contract.dgGov008.acceptedResolverCalls.some((token) => src.includes(token));
 }
 
+// Every alias given to `public.users` in the definition, via FROM/JOIN.
+const USERS_ALIAS_PATTERN = /(?:from|join)\s+public\.users\s+(?:as\s+)?([a-z_][a-z0-9_]*)/gi;
+
+function hasOperatorAfterRole(rest) {
+  const trimmed = rest.trimStart();
+  if (trimmed.startsWith('=') || trimmed.startsWith('<>')) return true;
+  if (trimmed.toLowerCase().startsWith('in')) {
+    return trimmed.slice(2).trimStart().startsWith('(');
+  }
+  return false;
+}
+
+/**
+ * Linear equivalent of the old backreference pattern
+ * `public.users [AS] alias ... alias.role (=|<>|in (|= any)` (which was
+ * super-linear due to the backreference + lazy `[\s\S]*?`): find each alias
+ * first, then scan the remainder for an `<alias>.role` comparison.
+ */
 function hasRawUsersRoleAuthorization(definition) {
-  const src = compact(definition);
-  return (
-    /from\s+public\.users\s+(?:as\s+)?([a-z_][a-z0-9_]*)[\s\S]*?\1\.role(?:::text)?\s*(?:=|<>|in\s*\(|=\s*any)/i.test(src) ||
-    /join\s+public\.users\s+(?:as\s+)?([a-z_][a-z0-9_]*)[\s\S]*?\1\.role(?:::text)?\s*(?:=|<>|in\s*\(|=\s*any)/i.test(src)
-  );
+  const src = compact(definition).toLowerCase();
+  USERS_ALIAS_PATTERN.lastIndex = 0;
+  let aliasMatch = USERS_ALIAS_PATTERN.exec(src);
+  while (aliasMatch !== null) {
+    const marker = `${aliasMatch[1]}.role`;
+    const tail = src.slice(aliasMatch.index + aliasMatch[0].length);
+    let cursor = tail.indexOf(marker);
+    while (cursor !== -1) {
+      let rest = tail.slice(cursor + marker.length);
+      if (rest.startsWith('::text')) rest = rest.slice('::text'.length);
+      if (hasOperatorAfterRole(rest)) return true;
+      cursor = tail.indexOf(marker, cursor + marker.length);
+    }
+    aliasMatch = USERS_ALIAS_PATTERN.exec(src);
+  }
+  return false;
 }
 
 function looksSensitiveControlRpc(row) {

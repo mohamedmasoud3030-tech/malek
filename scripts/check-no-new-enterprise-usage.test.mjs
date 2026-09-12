@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, relative, sep } from 'node:path';
+import test from 'node:test';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const SRC = resolve(ROOT, 'rentrix-app/src');
@@ -29,18 +30,18 @@ function collectFiles(dir) {
 
 const pattern = /from\s+['"](@\/components\/enterprise[^'"]*|@\/components\/enterprise|.*\/enterprise\/[^'"]*|.*enterprise\/[^'"]*)['"]/g;
 
-let violations = [];
-for (const file of collectFiles(SRC)) {
-  if (isAllowedFile(file)) continue;
-  const content = readFileSync(file, 'utf8');
-  const matches = [...content.matchAll(pattern)];
-  if (matches.length > 0) violations.push(relative(ROOT, file));
-}
+test('enterprise freeze guard: no new enterprise/* imports in production sources', () => {
+  const violations = [];
+  for (const file of collectFiles(SRC)) {
+    if (isAllowedFile(file)) continue;
+    const content = readFileSync(file, 'utf8');
+    const matches = [...content.matchAll(pattern)];
+    if (matches.length > 0) violations.push(relative(ROOT, file));
+  }
 
-assert.equal(
-  violations.length,
-  0,
-  `Enterprise freeze guard test: new enterprise/* imports found in prod files: ${violations.join(', ')}`
-);
-
-console.log('check-no-new-enterprise-usage.test.mjs: PASS');
+  assert.equal(
+    violations.length,
+    0,
+    `Enterprise freeze guard test: new enterprise/* imports found in prod files: ${violations.join(', ')}`
+  );
+});

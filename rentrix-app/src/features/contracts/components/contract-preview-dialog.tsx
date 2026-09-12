@@ -28,6 +28,21 @@ function leaseModeLabel(leaseMode: string): string {
   return leaseModeLabels[leaseMode as keyof typeof leaseModeLabels] ?? leaseMode;
 }
 
+function describeContractPaymentContext(
+  paymentLoaded: boolean,
+  attention: ContractAttention | undefined,
+  companySettings: CompanySettingsContract,
+): string | null {
+  if (!paymentLoaded) return null;
+  if (attention && attention.overdueInvoiceCount > 0) {
+    return `${attention.overdueInvoiceCount} فاتورة متأخرة بإجمالي ${formatContractMoney(companySettings, attention.overdueAmount)}`;
+  }
+  if (attention && attention.receivableInvoiceCount > 0) {
+    return `${attention.receivableInvoiceCount} فاتورة غير مسددة بإجمالي ${formatContractMoney(companySettings, attention.outstandingAmount)}`;
+  }
+  return 'لا توجد فواتير غير مسددة';
+}
+
 /**
  * Contract Quick Preview — glance-first with the operational signal that
  * decides whether the row needs a human (attention + next action), replacing
@@ -67,20 +82,15 @@ export function ContractPreviewDialog({
     ? unitStatusLabels[contract.units.status]
     : '—';
 
-  const paymentContext = paymentLoaded
-    ? attention && attention.overdueInvoiceCount > 0
-      ? `${attention.overdueInvoiceCount} فاتورة متأخرة بإجمالي ${formatContractMoney(companySettings, attention.overdueAmount)}`
-      : attention && attention.receivableInvoiceCount > 0
-        ? `${attention.receivableInvoiceCount} فاتورة غير مسددة بإجمالي ${formatContractMoney(companySettings, attention.outstandingAmount)}`
-        : 'لا توجد فواتير غير مسددة'
-    : null;
+  const paymentContext = describeContractPaymentContext(paymentLoaded, attention, companySettings);
+  const unitSuffix = contract.units?.unit_number ? ` · وحدة ${contract.units.unit_number}` : '';
 
   const facts: PreviewFactRow[] = [
     { label: 'المستأجر', value: contract.people?.full_name ?? '—' },
     { label: 'الهاتف', value: contract.people?.phone ? <span dir="ltr">{contract.people.phone}</span> : 'غير موثق' },
     {
       label: 'العقار / الوحدة',
-      value: `${contract.properties?.title ?? 'عقار غير محدد'}${contract.units?.unit_number ? ` · وحدة ${contract.units.unit_number}` : ''}`,
+      value: `${contract.properties?.title ?? 'عقار غير محدد'}${unitSuffix}`,
     },
     { label: 'حالة الوحدة', value: unitStatusLabel },
     {

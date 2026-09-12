@@ -66,6 +66,12 @@ export function PageHeader({
   const { language } = getAppLanguageState();
   const isArabic = language === 'ar';
   const todayContext = showTodayContext ? getTodayContext(isArabic) : null;
+  const headerAriaLabel = (() => {
+    if (!todayContext) return title;
+    if (isArabic) return `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`;
+    return `${title} — ${todayContext.todayLabel}, ${todayContext.weekday} ${todayContext.date}`;
+  })();
+
 
   return (
     <div
@@ -76,11 +82,7 @@ export function PageHeader({
         data-global-page-context
         data-unified-surface="page-header"
         className="min-w-0 border-b border-border/60 pb-2 sm:pb-3.5"
-        aria-label={todayContext
-          ? isArabic
-            ? `${title} — ${todayContext.todayLabel} ${todayContext.weekday} ${todayContext.date}`
-            : `${title} — ${todayContext.todayLabel}, ${todayContext.weekday} ${todayContext.date}`
-          : title}
+        aria-label={headerAriaLabel}
       >
         <div
           data-page-header-primary-row

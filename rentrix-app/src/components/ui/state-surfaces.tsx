@@ -6,7 +6,7 @@ import { Card, CardContent } from './card';
 type StateKind = 'empty' | 'offline' | 'permission' | 'error';
 type StateTone = 'neutral' | 'warning' | 'danger';
 
-type StateSurfaceProps = {
+type StateSurfaceProps = Readonly<{
   kind: StateKind;
   tone: StateTone;
   icon: ReactNode;
@@ -18,14 +18,14 @@ type StateSurfaceProps = {
   compact?: boolean;
   role?: 'status' | 'alert';
   ariaLive?: AriaAttributes['aria-live'];
-};
+}>;
 
-type PublicStateProps = {
+type PublicStateProps = Readonly<{
   title: string;
   description: string;
   action?: ReactNode;
   className?: string;
-};
+}>;
 
 type EmptyStateProps = PublicStateProps & {
   role?: 'status' | 'alert';

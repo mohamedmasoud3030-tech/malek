@@ -136,8 +136,11 @@ export function ServicesReportSection({
       [...rows].sort((a, b) => {
         const obligationA = obligationByBillId.get(a.id);
         const obligationB = obligationByBillId.get(b.id);
-        if (!obligationA || !obligationB)
-          return obligationA ? -1 : obligationB ? 1 : a.id.localeCompare(b.id);
+        if (!obligationA || !obligationB) {
+          if (obligationA) return -1;
+          if (obligationB) return 1;
+          return a.id.localeCompare(b.id);
+        }
         return (
           compareUtilityObligationUrgency(obligationA, obligationB) ||
           a.id.localeCompare(b.id)
@@ -436,6 +439,30 @@ export function ServicesReportSection({
     },
   ];
 
+  const paymentTone = (value: number) => {
+    if (value >= 90) return 'good';
+    if (value >= 60) return 'warning';
+    return 'critical';
+  };
+  const overdueShareTone = (value: number) => {
+    if (value <= 0) return 'good';
+    if (value <= 25) return 'warning';
+    return 'critical';
+  };
+  const servicesInsight = (() => {
+    if (isLoading) return 'جارٍ تحميل ملخص الخدمات والمرافق المعتمد.';
+    if (obligationsSummary.overdueCount > 0) {
+      return `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير متأخرة بمبلغ ${money(obligationsSummary.overdueAmount, currency)} — رتّب سدادها مع الجهة المسؤولة عنها أولًا، فالتأخر يتراكم على العقار لا على التقرير.`;
+    }
+    if (obligationsSummary.dueSoonCount > 0) {
+      return `${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} فواتير تستحق قريبًا بمبلغ ${money(obligationsSummary.dueSoonAmount, currency)}؛ جهّز السداد أو اتفاق التحميل قبل استحقاقها.`;
+    }
+    if (unpaidWithoutProof > 0) {
+      return `${formatLatinNumber(unpaidWithoutProof, 'ar')} فواتير غير مسددة بدون إثبات دفع مرتبط؛ أكمل الإثباتات لتوثيق التحميل على الجهة الصحيحة.`;
+    }
+    return 'لا توجد متأخرات في النطاق — الالتزامات المسجلة مسددة أو مجدولة ضمن النافذة القريبة.';
+  })();
+
   return (
     <div className="space-y-3" data-services-report>
       <ReportSummaryStrip
@@ -473,17 +500,7 @@ export function ServicesReportSection({
         ]}
       />
 
-      <ReportInsightNote title="قراءة الخدمات">
-        {isLoading
-          ? 'جارٍ تحميل ملخص الخدمات والمرافق المعتمد.'
-          : obligationsSummary.overdueCount > 0
-            ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير متأخرة بمبلغ ${money(obligationsSummary.overdueAmount, currency)} — رتّب سدادها مع الجهة المسؤولة عنها أولًا، فالتأخر يتراكم على العقار لا على التقرير.`
-            : obligationsSummary.dueSoonCount > 0
-              ? `${formatLatinNumber(obligationsSummary.dueSoonCount, 'ar')} فواتير تستحق قريبًا بمبلغ ${money(obligationsSummary.dueSoonAmount, currency)}؛ جهّز السداد أو اتفاق التحميل قبل استحقاقها.`
-            : unpaidWithoutProof > 0
-              ? `${formatLatinNumber(unpaidWithoutProof, 'ar')} فواتير غير مسددة بدون إثبات دفع مرتبط؛ أكمل الإثباتات لتوثيق التحميل على الجهة الصحيحة.`
-              : 'لا توجد متأخرات في النطاق — الالتزامات المسجلة مسددة أو مجدولة ضمن النافذة القريبة.'}
-      </ReportInsightNote>
+      <ReportInsightNote title="قراءة الخدمات">{servicesInsight}</ReportInsightNote>
 
       {(isLoading || (paymentProgress !== null && overdueShare !== null)) && (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -492,13 +509,7 @@ export function ServicesReportSection({
             label="نسبة السداد من المستحق"
             value={paymentProgress ?? 0}
             helper={`${money(totalPaid, currency)} من ${money(totalBilled, currency)}`}
-            tone={
-              (paymentProgress ?? 0) >= 90
-                ? 'good'
-                : (paymentProgress ?? 0) >= 60
-                  ? 'warning'
-                  : 'critical'
-            }
+            tone={paymentTone(paymentProgress ?? 0)}
           />
           <ReportProgress
             isLoading={isLoading}
@@ -509,13 +520,7 @@ export function ServicesReportSection({
                 ? `${formatLatinNumber(obligationsSummary.overdueCount, 'ar')} فواتير بعد موعدها`
                 : 'لا فواتير متأخرة'
             }
-            tone={
-              (overdueShare ?? 0) <= 0
-                ? 'good'
-                : (overdueShare ?? 0) <= 25
-                  ? 'warning'
-                  : 'critical'
-            }
+            tone={overdueShareTone(overdueShare ?? 0)}
           />
         </div>
       )}

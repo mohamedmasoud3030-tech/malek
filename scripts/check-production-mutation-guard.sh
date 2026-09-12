@@ -14,9 +14,9 @@ fail() {
   exit 1
 }
 
-[ -f "$GOV_FILE" ] || fail "docs/GOVERNANCE.md is missing. This file carries the production-mutation sign-off rule. Do not delete it in a docs cleanup — see its own header for why."
+[[ -f "$GOV_FILE" ]] || fail "docs/GOVERNANCE.md is missing. This file carries the production-mutation sign-off rule. Do not delete it in a docs cleanup — see its own header for why."
 
-[ -f "$LOG_FILE" ] || fail "docs/GOVERNANCE_LOG.md is missing. It's the sign-off trail docs/GOVERNANCE.md requires."
+[[ -f "$LOG_FILE" ]] || fail "docs/GOVERNANCE_LOG.md is missing. It's the sign-off trail docs/GOVERNANCE.md requires."
 
 grep -q "No AI agent (Claude, Codex, or any other) applies a mutation to the live" "$GOV_FILE" \
   || fail "docs/GOVERNANCE.md exists but its core rule sentence is gone or reworded. If the rule genuinely no longer applies, that's a product-owner decision, not a cleanup edit — restore the sentence or get explicit sign-off before changing it."

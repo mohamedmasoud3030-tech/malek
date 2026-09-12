@@ -98,7 +98,7 @@ type TaxAuthorityReadinessRow = Readonly<{
 export async function resolveTaxAuthorityReadiness(
   effectiveDates: readonly string[],
 ): Promise<TaxAuthorityReadiness[]> {
-  const requested = [...new Set(effectiveDates.filter((date): date is string => Boolean(date)))].sort();
+  const requested = [...new Set(effectiveDates.filter((date): date is string => Boolean(date)))].sort((a, b) => a.localeCompare(b));
   if (requested.length === 0) return [];
 
   const { data, error } = await supabase.rpc('resolve_tax_authority_readiness', {

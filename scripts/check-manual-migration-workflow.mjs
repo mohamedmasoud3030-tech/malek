@@ -7,11 +7,26 @@ const section = (source, name, next) => source.slice(source.indexOf(`  ${name}:`
 
 function validate(t) {
   assert(/^on:\n  workflow_dispatch:/m.test(t), 'workflow must be dispatch-only');
-  assert(!/^\s+(push|pull_request|schedule):/m.test(t), 'automatic trigger detected');
+  const hasAutomaticTrigger = t.split('\n').some((rawLine) => {
+    if (rawLine === rawLine.trimStart()) return false;
+    const key = rawLine.trimStart();
+    return key.startsWith('push:') || key.startsWith('pull_request:') || key.startsWith('schedule:');
+  });
+  assert(!hasAutomaticTrigger, 'automatic trigger detected');
   assert(/permissions:\n\s+contents: read\n\s+actions: read/.test(t), 'required read permissions missing');
   assert(/concurrency:\n\s+group: production-migrations\n\s+cancel-in-progress: false/.test(t), 'serialized production concurrency missing');
   assert(/options: \[local-preflight, production-inspect, deploy\]/.test(t), 'three explicit actions missing');
-  assert(!/^\s+(?:env|with|environment):\s*\{[^\n]*\$\{\{/m.test(t), 'GitHub expressions must not be embedded in YAML flow mappings');
+  const hasFlowMappingExpression = t.split('\n').some((rawLine) => {
+    if (rawLine === rawLine.trimStart()) return false;
+    const line = rawLine.trimStart();
+    const colon = line.indexOf(':');
+    if (colon === -1) return false;
+    const key = line.slice(0, colon);
+    if (key !== 'env' && key !== 'with' && key !== 'environment') return false;
+    const afterKey = line.slice(colon + 1).trimStart();
+    return afterKey.startsWith('{') && afterKey.includes('${{');
+  });
+  assert(!hasFlowMappingExpression, 'GitHub expressions must not be embedded in YAML flow mappings');
   const inputs = t.slice(t.indexOf('    inputs:'), t.indexOf('permissions:'));
   for (const input of ['inspection_run_id', 'backup_reference', 'rollback_plan_reference']) {
     assert(new RegExp(`^\\s{6}${input}:`, 'm').test(inputs), `${input} deploy input missing`);

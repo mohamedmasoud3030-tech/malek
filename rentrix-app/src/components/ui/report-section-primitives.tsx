@@ -373,6 +373,20 @@ export function ReportColumns({ children, className }: Readonly<{ children: Reac
   return <div className={cn('grid gap-4 lg:grid-cols-2', className)}>{children}</div>;
 }
 
+/** Threshold tone for metrics where HIGHER is better (occupancy, payment rate). */
+export function higherIsBetterTone(value: number, goodAt: number, warningAt: number): 'good' | 'warning' | 'critical' {
+  if (value >= goodAt) return 'good';
+  if (value >= warningAt) return 'warning';
+  return 'critical';
+}
+
+/** Threshold tone for metrics where LOWER is better (arrears/concentration shares). */
+export function lowerIsBetterTone(value: number, goodAt: number, warningAt: number): 'good' | 'warning' | 'critical' {
+  if (value <= goodAt) return 'good';
+  if (value <= warningAt) return 'warning';
+  return 'critical';
+}
+
 export function ReportProgress({ label, value, helper, tone = 'neutral', isLoading = false }: Readonly<{ label: string; value: number; helper?: string; tone?: 'good' | 'warning' | 'critical' | 'neutral'; isLoading?: boolean }>) {
   if (isLoading) {
     return (

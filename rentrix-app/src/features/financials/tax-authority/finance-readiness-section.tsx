@@ -109,7 +109,7 @@ function TaxReadinessCard({
   );
 }
 
-function TaxReadiness({ readiness }: { readiness: FinanceReadiness }) {
+function TaxReadiness({ readiness }: Readonly<{ readiness: FinanceReadiness }>) {
   return (
     <ResponsiveCardGrid desktopColumns={3} gap="md" aria-label="جاهزية الضريبة">
       <TaxReadinessCard
@@ -144,7 +144,7 @@ function TaxReadiness({ readiness }: { readiness: FinanceReadiness }) {
   );
 }
 
-function GeneralReadiness({ readiness }: { readiness: FinanceReadiness }) {
+function GeneralReadiness({ readiness }: Readonly<{ readiness: FinanceReadiness }>) {
   return (
     <ResponsiveCardGrid
       desktopColumns={3}

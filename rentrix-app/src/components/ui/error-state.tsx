@@ -6,7 +6,7 @@ import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { Button } from './button';
 import { StateSurface } from './state-surfaces';
 
-type ErrorStateProps = {
+type ErrorStateProps = Readonly<{
   title?: string;
   description?: string;
   error?: unknown;
@@ -16,7 +16,7 @@ type ErrorStateProps = {
   variant?: 'default' | 'write';
   className?: string;
   ariaLive?: AriaAttributes['aria-live'];
-};
+}>;
 
 type WriteErrorCardProps = Readonly<{
   error?: unknown;

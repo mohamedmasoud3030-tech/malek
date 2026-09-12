@@ -300,15 +300,15 @@ export function CommissionsView(props: Props) {
       >
         <div className="space-y-4 py-2">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">الحساب المالي للدفع</label>
-            <Select value={payAccount} onChange={(e) => setPayAccount(e.target.value)}>
+            <label htmlFor="commission-pay-account" className="mb-1 block text-xs font-semibold text-muted-foreground">الحساب المالي للدفع</label>
+            <Select id="commission-pay-account" value={payAccount} onChange={(e) => setPayAccount(e.target.value)}>
               <option value="1111">الخزينة النقدية (1111)</option>
               <option value="1201">الحساب البنكي الرئيسي (1201)</option>
             </Select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-muted-foreground">تاريخ الصرف</label>
-            <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+            <label htmlFor="commission-pay-date" className="mb-1 block text-xs font-semibold text-muted-foreground">تاريخ الصرف</label>
+            <Input id="commission-pay-date" type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
           </div>
         </div>
       </ConfirmDialog>
@@ -341,8 +341,8 @@ export function CommissionsView(props: Props) {
         }}
       >
         <div className="py-2">
-          <label className="mb-1 block text-xs font-semibold text-muted-foreground">سبب العكس المحاسبي (إلزامي)</label>
-          <Input required placeholder="اذكر سبب عكس صرف العمولة..." value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} />
+          <label htmlFor="commission-reverse-reason" className="mb-1 block text-xs font-semibold text-muted-foreground">سبب العكس المحاسبي (إلزامي)</label>
+          <Input id="commission-reverse-reason" required placeholder="اذكر سبب عكس صرف العمولة..." value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} />
         </div>
       </ConfirmDialog>
     </section>
@@ -429,7 +429,7 @@ function RowActions({
   onReverseClick?: () => void;
 }>) {
   return (
-    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+    <div className="flex">
       <ActionMenu
         label={`إجراءات عمولة ${row.staff_name}`}
         items={[

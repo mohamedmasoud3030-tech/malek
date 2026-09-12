@@ -72,7 +72,7 @@ function getOwnerName(owners: readonly Owner[], ownerId: string) {
   return owner?.display_name || owner?.full_name || 'مالك غير معروف';
 }
 
-function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreement: OwnerAgreement; versions: readonly OwnerAgreementVersion[]; owners: readonly Owner[]; onAmend: (agreement: OwnerAgreement, current: OwnerAgreementVersion | null) => void; tone: 'success' | 'info' | 'neutral' }) {
+function AgreementRow({ agreement, versions, owners, onAmend, tone }: Readonly<{ agreement: OwnerAgreement; versions: readonly OwnerAgreementVersion[]; owners: readonly Owner[]; onAmend: (agreement: OwnerAgreement, current: OwnerAgreementVersion | null) => void; tone: 'success' | 'info' | 'neutral' }>) {
   const { money: formatMoney, number: formatNumber, date: formatDate } = useCompanyFormatters();
   const current = versions.find((version) => version.superseded_at === null) ?? null;
   const displayedCommissionType = current?.commission_type ?? agreement.commission_type;
@@ -111,7 +111,7 @@ function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreemen
   );
 }
 
-export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
+export function OwnerAgreementsManager({ propertyId }: Readonly<{ propertyId: string }>) {
   const { money: formatMoney, number: formatNumber, date: formatDate } = useCompanyFormatters();
   const agreementsQuery = useOwnerAgreements(propertyId);
   const ownershipQuery = useQuery({

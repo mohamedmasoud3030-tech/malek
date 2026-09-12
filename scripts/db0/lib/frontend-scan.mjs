@@ -160,9 +160,9 @@ export async function scanFrontend({ includeTests = false } = {}) {
       .map((e) => ({
         name: e.name,
         count: e.count,
-        files: [...e.files].sort(),
+        files: [...e.files].sort((a, b) => a.localeCompare(b)),
         columns: [...e.columns.values()]
-          .map((c) => ({ name: c.name, files: [...c.files].sort() }))
+          .map((c) => ({ name: c.name, files: [...c.files].sort((a, b) => a.localeCompare(b)) }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));

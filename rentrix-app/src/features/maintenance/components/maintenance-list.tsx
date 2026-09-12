@@ -226,8 +226,6 @@ export function MaintenanceList(props: MaintenanceListProps) {
         return (
           <div
             className="flex"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
           >
             <ActionMenu label="إجراءات الطلب" items={menuItems} />
           </div>

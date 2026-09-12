@@ -193,12 +193,34 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
         className={labeled
           ? 'min-h-11 gap-1.5 rounded-lg px-3 text-xs font-bold'
           : 'size-11 text-muted-foreground hover:bg-muted hover:text-foreground'}
-        onClick={() => setOpen((current) => !current)}
+        onClick={(event) => {
+          // The trigger owns its event isolation: activating the menu inside a
+          // clickable table row/card must never activate the ancestor as well.
+          // Keeping this here removes the need for per-call-site
+          // stopPropagation wrappers around the menu.
+          event.stopPropagation();
+          setOpen((current) => !current);
+        }}
         onKeyDown={(event) => {
           if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.stopPropagation();
             event.preventDefault();
             setOpen(true);
             requestAnimationFrame(() => focusMenuItem(menuRef.current, event.key === 'ArrowUp' ? 'last' : 'first'));
+          } else if (open && event.key === 'Escape') {
+            // Propagation is contained while the menu is open, so the
+            // document-level menu handler cannot see these keys while focus is
+            // still on the trigger — close here instead.
+            event.stopPropagation();
+            event.preventDefault();
+            setOpen(false);
+          } else if (open && event.key === 'Tab') {
+            event.stopPropagation();
+            setOpen(false);
+          } else if (event.key === 'Enter' || event.key === ' ') {
+            // Keep row/card keyboard activation from double-firing; the button
+            // still toggles the menu through its own click.
+            event.stopPropagation();
           }
         }}
       >

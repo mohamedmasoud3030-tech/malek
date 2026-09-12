@@ -15,6 +15,13 @@ export interface ContractSchedulePreviewResult {
   sampleDates: string[];
 }
 
+const CYCLE_STEP_MONTHS: Record<string, number> = {
+  monthly: 1,
+  quarterly: 3,
+  semi_annual: 6,
+  annual: 12,
+};
+
 export function calculateContractSchedulePreview(
   startDateStr: string | undefined | null,
   endDateStr: string | undefined | null,
@@ -32,10 +39,7 @@ export function calculateContractSchedulePreview(
   }
 
   const cycle = paymentCycle || 'monthly';
-  const stepMonths =
-    cycle === 'quarterly' ? 3 :
-    cycle === 'semi_annual' ? 6 :
-    cycle === 'annual' ? 12 : 1;
+  const stepMonths = CYCLE_STEP_MONTHS[cycle] ?? 1;
 
   function formatLocalDate(date: Date): string {
     const year = date.getFullYear();

@@ -115,11 +115,13 @@ export function ExpiringContractsSection({
           </div>
         ) : (
           <ReportList>
-            {expiringRows.map((row) => (
+            {expiringRows.map((row) => {
+              const unitLabel = row.unitNumber ? `وحدة ${row.unitNumber}` : 'وحدة غير محددة';
+              return (
               <ReportListRow
                 key={row.contractId}
                 title={row.tenantName}
-                subtitle={`${row.propertyTitle} · ${row.unitNumber ? `وحدة ${row.unitNumber}` : 'وحدة غير محددة'}`}
+                subtitle={`${row.propertyTitle} · ${unitLabel}`}
                 meta={`ينتهي ${formatDate(row.endDate)}`}
                 value={(
                   <div className="space-y-1 text-end">
@@ -139,7 +141,8 @@ export function ExpiringContractsSection({
                   </Button>
                 )}
               />
-            ))}
+              );
+            })}
           </ReportList>
         )}
       </ReportPanel>

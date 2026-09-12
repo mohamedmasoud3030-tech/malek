@@ -245,13 +245,64 @@ export function CollectionsSection({
     </div>
   ) : undefined;
 
-  const collectionRateTone = !isCollectionRateAvailable
-    ? 'default'
-    : collectionRate! >= 85
-      ? 'good'
-      : collectionRate! >= 65
-        ? 'warning'
-        : 'critical';
+  const rateTone = (rate: number) => {
+    if (rate >= 85) return 'good';
+    if (rate >= 65) return 'warning';
+    return 'critical';
+  };
+  const shareTone = (share: number) => {
+    if (share <= 65) return 'good';
+    if (share <= 85) return 'warning';
+    return 'critical';
+  };
+  const collectionRateTone = !isCollectionRateAvailable ? 'default' : rateTone(collectionRate!);
+
+  const collectionInsight = (() => {
+    if (isLoading) return 'جارٍ تحميل مؤشر كفاءة التحصيل المعتمد.';
+    if (!isCollectionRateAvailable) {
+      return 'تعذر تحميل مؤشر كفاءة التحصيل المعتمد حاليًا؛ تبقى تفاصيل التحصيل متاحة دون افتراض نسبة بديلة.';
+    }
+    if (collectionRate! < 65) {
+      return 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.';
+    }
+    if (dominantMethodShare > 85) {
+      return 'التحصيل يعتمد بشدة على طريقة سداد واحدة؛ راجع الضوابط التشغيلية والتسوية اليومية لهذه الطريقة.';
+    }
+    return 'معدل التحصيل وتوزيع طرق السداد متوازنان نسبيًا داخل الفترة.';
+  })();
+
+  const renderRatePanel = () => {
+    if (isCollectionRateAvailable) {
+      return (
+        <ReportProgress
+          isLoading={isLoading}
+          label="نسبة التحصيل من الفواتير"
+          value={collectionRate!}
+          helper={
+            summary
+              ? `${formatMoney(summary.paid)} من ${formatMoney(summary.invoiced)}`
+              : 'تفاصيل الفترة غير متاحة'
+          }
+          tone={rateTone(collectionRate!)}
+        />
+      );
+    }
+    if (isLoading) {
+      return (
+        <ReportState
+          isLoading
+          title="جارٍ تحميل مؤشر كفاءة التحصيل"
+          message=""
+        />
+      );
+    }
+    return (
+      <ReportState
+        title="كفاءة التحصيل غير متاحة"
+        message="لم يصل المؤشر المعتمد من الخادم، لذلك لن يعرض مالك نسبة محسوبة محليًا بدلًا منه."
+      />
+    );
+  };
 
   return (
     <div className="space-y-3">
@@ -287,49 +338,10 @@ export function CollectionsSection({
         ]}
       />
 
-      <ReportInsightNote title="قراءة التحصيل">
-        {isLoading
-          ? 'جارٍ تحميل مؤشر كفاءة التحصيل المعتمد.'
-          : !isCollectionRateAvailable
-            ? 'تعذر تحميل مؤشر كفاءة التحصيل المعتمد حاليًا؛ تبقى تفاصيل التحصيل متاحة دون افتراض نسبة بديلة.'
-          : collectionRate! < 65
-            ? 'المحصّل أقل من ثلثي قيمة الفواتير في النطاق؛ راجع المتأخرات والعقود ذات الرصيد الأعلى.'
-            : dominantMethodShare > 85
-              ? 'التحصيل يعتمد بشدة على طريقة سداد واحدة؛ راجع الضوابط التشغيلية والتسوية اليومية لهذه الطريقة.'
-              : 'معدل التحصيل وتوزيع طرق السداد متوازنان نسبيًا داخل الفترة.'}
-      </ReportInsightNote>
+      <ReportInsightNote title="قراءة التحصيل">{collectionInsight}</ReportInsightNote>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        {isCollectionRateAvailable ? (
-          <ReportProgress
-            isLoading={isLoading}
-            label="نسبة التحصيل من الفواتير"
-            value={collectionRate!}
-            helper={
-              summary
-                ? `${formatMoney(summary.paid)} من ${formatMoney(summary.invoiced)}`
-                : 'تفاصيل الفترة غير متاحة'
-            }
-            tone={
-              collectionRate! >= 85
-                ? 'good'
-                : collectionRate! >= 65
-                  ? 'warning'
-                  : 'critical'
-            }
-          />
-        ) : isLoading ? (
-          <ReportState
-            isLoading
-            title="جارٍ تحميل مؤشر كفاءة التحصيل"
-            message=""
-          />
-        ) : (
-          <ReportState
-            title="كفاءة التحصيل غير متاحة"
-            message="لم يصل المؤشر المعتمد من الخادم، لذلك لن يعرض مالك نسبة محسوبة محليًا بدلًا منه."
-          />
-        )}
+        {renderRatePanel()}
         <ReportProgress
           isLoading={isLoading}
           label="تركيز طريقة السداد الأولى"
@@ -339,13 +351,7 @@ export function CollectionsSection({
               ? `${formatPaymentMethodLabel(dominantMethod[0])} · ${formatMoney(dominantMethod[1])}`
               : 'لا توجد تحصيلات'
           }
-          tone={
-            dominantMethodShare <= 65
-              ? 'good'
-              : dominantMethodShare <= 85
-                ? 'warning'
-                : 'critical'
-          }
+          tone={shareTone(dominantMethodShare)}
         />
       </div>
 

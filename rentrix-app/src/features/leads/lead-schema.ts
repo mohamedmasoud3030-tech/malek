@@ -9,7 +9,7 @@ const budget = z.string().trim().transform(value => value === '' ? null : Number
 export const leadFormSchema = z.object({
   name: z.string().trim().min(1, 'اسم العميل المحتمل مطلوب.').max(160),
   phone: optionalText(32),
-  email: z.string().trim().max(254).transform(value => value || null).refine(value => value === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), 'البريد الإلكتروني غير صالح'),
+  email: z.string().trim().max(254).transform(value => value || null).refine(value => value === null || /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(value), 'البريد الإلكتروني غير صالح'),
   source: leadSourceSchema,
   status: leadStatusSchema,
   desired_unit_type: optionalText(100),

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -120,13 +120,11 @@ export function BillingReadinessSection() {
     },
   ], []);
 
-  const status = readinessQuery.isLoading
-    ? ('loading' as const)
-    : readinessQuery.isError
-      ? ('error' as const)
-      : obligations.length === 0
-        ? ('empty' as const)
-        : ('ready' as const);
+  const status = resolveAsyncContentStatus({
+    isLoading: readinessQuery.isLoading,
+    isError: readinessQuery.isError,
+    isEmpty: obligations.length === 0,
+  });
 
   const openActionable = () => {
     setShowOnlyActionable(true);
@@ -140,6 +138,12 @@ export function BillingReadinessSection() {
     });
   };
 
+  const readinessBadge = (() => {
+    if (needsAttention > 0) return { tone: 'danger' as const, label: `${needsAttention} يحتاج إجراءً` };
+    if (totalDue > 0) return { tone: 'warning' as const, label: `${totalDue} جاهز للفوترة` };
+    return { tone: 'success' as const, label: 'مستقر' };
+  })();
+
   return (
     <Card data-billing-readiness data-billing-details={showDetails ? 'open' : 'closed'}>
       <CardHeader className="space-y-2">
@@ -148,9 +152,7 @@ export function BillingReadinessSection() {
             <CalendarDays className="size-5" aria-hidden="true" />
             جاهزية الفوترة
           </CardTitle>
-          <StatusBadge tone={needsAttention > 0 ? 'danger' : totalDue > 0 ? 'warning' : 'success'}>
-            {needsAttention > 0 ? `${needsAttention} يحتاج إجراءً` : totalDue > 0 ? `${totalDue} جاهز للفوترة` : 'مستقر'}
-          </StatusBadge>
+          <StatusBadge tone={readinessBadge.tone}>{readinessBadge.label}</StatusBadge>
         </div>
         <p className="text-xs font-medium leading-5 text-muted-foreground">
           ملخص سريع للعقود قبل إصدار الفواتير. افتح التفاصيل فقط عند الحاجة للمراجعة.

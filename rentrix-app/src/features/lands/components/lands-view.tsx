@@ -1,7 +1,7 @@
 import { Archive, Edit, Eye, FolderOpen, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -103,7 +103,7 @@ export function LandsView({
   };
 
   const rowActions = (row: LandRecord) => (
-    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+    <div className="flex">
       <ActionMenu
         label={`إجراءات ${row.name || row.plot_no || 'الأرض'}`}
         items={[
@@ -180,7 +180,7 @@ export function LandsView({
       {writeError ? <WriteErrorCard error={writeError} fallbackMessage="تعذر حفظ التغيير على سجل الأرض." /> : null}
 
       <AsyncContentState
-        status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
+        status={resolveAsyncContentStatus({ isLoading, isError: Boolean(error), isEmpty: rows.length === 0 })}
         error={error}
         errorTitle="تعذر تحميل الأراضي"
         errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."

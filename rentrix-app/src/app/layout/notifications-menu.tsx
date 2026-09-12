@@ -212,7 +212,8 @@ export function NotificationsMenu({
                   <span className="size-2.5 rounded-full bg-primary/45" aria-hidden="true" />
                   جارٍ تجميع أولويات اليوم…
                 </li>
-              ) : priorityCount > 0 ? (
+              ) : null}
+              {!prioritiesLoading && priorityCount > 0 ? (
                 <>
                   <li className="flex items-center gap-1.5 px-1 pt-1 text-[11px] font-black text-foreground">
                     <ListChecks className="size-3.5 text-primary" aria-hidden="true" />
@@ -304,7 +305,8 @@ export function NotificationsMenu({
                 <span className="size-2.5 rounded-full bg-primary/45" aria-hidden="true" />
                 جارٍ تحميل التنبيهات…
               </div>
-            ) : hasBlockingError ? (
+            ) : null}
+            {!isInitialLoading && hasBlockingError ? (
               <div role="alert" className="mt-1 rounded-xl border border-danger/20 bg-danger/5 p-3">
                 <p className="text-xs font-bold text-danger">تعذر تحميل التنبيهات</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -321,12 +323,14 @@ export function NotificationsMenu({
                   إعادة المحاولة
                 </Button>
               </div>
-            ) : visibleItems.length === 0 ? (
+            ) : null}
+            {!isInitialLoading && !hasBlockingError && visibleItems.length === 0 ? (
               <div className="py-3 text-center">
                 <p className="text-xs font-semibold text-muted-foreground">لا توجد أحداث جديدة حالياً</p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">ستظهر هنا الدفعات المسجلة وتحديثات العقود والصيانة والقرارات المكتملة.</p>
               </div>
-            ) : (
+            ) : null}
+            {!isInitialLoading && !hasBlockingError && visibleItems.length > 0 ? (
               <ul className="mt-1 space-y-1" aria-label={sharedLabel('notifications')}>
                 {visibleItems.map((item, index) => {
                   const Icon = item.type === 'permission_decision' ? ShieldCheck : Bell;
@@ -359,7 +363,7 @@ export function NotificationsMenu({
                   );
                 })}
               </ul>
-            )}
+            ) : null}
           </div>
         </>
       ) : null}

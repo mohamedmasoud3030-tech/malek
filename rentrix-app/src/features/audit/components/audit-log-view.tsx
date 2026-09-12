@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { Alert } from '@/components/ui/alert';
 import { EmptyState } from '@/components/ui/state-surfaces';
@@ -48,7 +48,7 @@ export function AuditLogView({ state, onRetry, isRefreshing = false }: AuditLogV
 
   return (
     <AsyncContentState
-      status={state.status === 'loading' ? 'loading' : state.status === 'error' ? 'error' : records.length === 0 ? 'empty' : 'ready'}
+      status={resolveAsyncContentStatus({ isLoading: state.status === 'loading', isError: state.status === 'error', isEmpty: records.length === 0 })}
       error={state.status === 'error' ? state.error : undefined}
       errorTitle="تعذر تحميل سجل التدقيق"
       errorFallbackMessage="يمكن إعادة المحاولة لاحقاً دون تغيير أي بيانات."

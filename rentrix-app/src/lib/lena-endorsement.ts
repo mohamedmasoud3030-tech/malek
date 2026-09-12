@@ -13,6 +13,8 @@
 
 export type LenaLocale = 'ar' | 'en';
 
+import { trimTrailingSlashes } from '@/lib/trailing-slashes';
+
 function readConfiguredOrigin(): string {
   try {
     const raw = import.meta.env?.VITE_LENA_HOUSE_ORIGIN;
@@ -49,7 +51,7 @@ export function isForbiddenLenaDestination(value: string): boolean {
  * Empty string means the operator has not configured the public company site yet.
  */
 export function resolveLenaHouseOrigin(raw: string | undefined | null = readConfiguredOrigin()): string {
-  const origin = String(raw ?? '').trim().replace(/\/+$/, '');
+  const origin = trimTrailingSlashes(String(raw ?? '').trim());
   if (!origin) return '';
   if (!/^https:\/\//i.test(origin)) return '';
   if (isForbiddenLenaDestination(origin)) return '';

@@ -242,11 +242,7 @@ export async function loadApprovedS08Reviews(): Promise<ApprovedS08ReviewOption[
 }
 
 export function createOwnerFundsCutoverRequestId(prefix = 'cutover'): string {
-  const random =
-    typeof globalThis.crypto?.randomUUID === 'function'
-      ? globalThis.crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return `${prefix}-${random}`;
+  return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
 export type CreateOwnerFundsCutoverDraftInput = {

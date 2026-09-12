@@ -98,6 +98,14 @@ export function buildNeedsAttentionSignal(params: {
   const maintenanceFollowUpCount = maintenanceFollowUp.actionableCount;
   if (urgentMaintenanceCount > 0 || maintenanceFollowUpCount > 0) {
     const hasUrgent = urgentMaintenanceCount > 0;
+    const maintenanceMeta = (() => {
+      if (hasUrgent && maintenanceFollowUpCount > 0) {
+        return `${urgentMaintenanceCount} عاجل مفتوح · ${maintenanceFollowUpCount} يحتاج متابعة تشغيلية`;
+      }
+      if (hasUrgent) return 'ابدأ بالحالات العاجلة من سجل الصيانة';
+      if (maintenanceFollowUp.stalledCount > 0) return `${maintenanceFollowUp.stalledCount} متوقف عن التقدم`;
+      return 'طلبات تجاوزت مواعيدها أو بانتظار الإغلاق';
+    })();
     items.push({
       key: 'maintenance-action',
       severity: hasUrgent ? 'danger' : 'warning',
@@ -105,13 +113,7 @@ export function buildNeedsAttentionSignal(params: {
       title: hasUrgent
         ? `${urgentMaintenanceCount} طلب صيانة عاجل يحتاج تدخلاً`
         : `${maintenanceFollowUpCount} طلب صيانة يحتاج متابعة`,
-      meta: hasUrgent && maintenanceFollowUpCount > 0
-        ? `${urgentMaintenanceCount} عاجل مفتوح · ${maintenanceFollowUpCount} يحتاج متابعة تشغيلية`
-        : hasUrgent
-          ? 'ابدأ بالحالات العاجلة من سجل الصيانة'
-          : maintenanceFollowUp.stalledCount > 0
-            ? `${maintenanceFollowUp.stalledCount} متوقف عن التقدم`
-            : 'طلبات تجاوزت مواعيدها أو بانتظار الإغلاق',
+      meta: maintenanceMeta,
       to: '/maintenance',
     });
   }

@@ -230,8 +230,8 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
             <Input dir="ltr" type="number" min="0" step={MONEY_STEP} inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />
           </EntityForm.Field>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-muted-foreground">توجيه التكلفة والجهة المسؤولة عن السداد</label>
+          <fieldset className="space-y-2">
+            <legend className="block text-xs font-bold text-muted-foreground">توجيه التكلفة والجهة المسؤولة عن السداد</legend>
             <div className="grid gap-3 sm:grid-cols-2">
               {(Object.keys(chargeTargetShortLabels) as ChargeTarget[]).map((key) => {
                 const info = chargeTargetShortLabels[key];
@@ -246,7 +246,7 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
                 );
               })}
             </div>
-          </div>
+          </fieldset>
 
           <EntityForm.Field label="رابط الفاتورة أو إثبات التنفيذ (اختياري)" error={form.formState.errors.evidenceUrl?.message}>
             <Input dir="ltr" type="url" placeholder="https://…" {...form.register('evidenceUrl')} />

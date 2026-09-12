@@ -1,7 +1,7 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { BarChart3, Edit, FilePlus2 } from 'lucide-react';
 import { useState } from 'react';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { DataRefreshAlert } from '@/components/data-refresh-alert';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -38,13 +38,12 @@ export function PropertyUnitDetailPage() {
   const property = propertyQuery.data;
   const unit = unitsQuery.data?.find((candidate) => candidate.id === unitId);
   const pendingDraft = unitDraftsQuery.data?.[0] ?? null;
-  const refreshError = unitsQuery.isError
-    ? unitsQuery.error
-    : propertyQuery.isError
-      ? propertyQuery.error
-      : unitDraftsQuery.isError
-        ? unitDraftsQuery.error
-        : undefined;
+  const refreshError = (() => {
+    if (unitsQuery.isError) return unitsQuery.error;
+    if (propertyQuery.isError) return propertyQuery.error;
+    if (unitDraftsQuery.isError) return unitDraftsQuery.error;
+    return undefined;
+  })();
   const retry = () => {
     void Promise.all([
       unitsQuery.refetch(),
@@ -55,15 +54,7 @@ export function PropertyUnitDetailPage() {
 
   return (
     <AsyncContentState
-      status={
-        unit
-          ? 'ready'
-          : unitsQuery.isLoading
-            ? 'loading'
-            : unitsQuery.isError
-              ? 'error'
-              : 'empty'
-      }
+      status={unit ? 'ready' : resolveAsyncContentStatus({ isLoading: unitsQuery.isLoading, isError: unitsQuery.isError, isEmpty: true })}
       error={unitsQuery.error}
       errorTitle="تعذر تحميل تفاصيل الوحدة"
       errorAction={<Button onClick={retry}>إعادة المحاولة</Button>}
@@ -130,7 +121,8 @@ export function PropertyUnitDetailPage() {
                       مراجعة المسودة
                     </Link>
                   </Button>
-                ) : unit.status === 'available' ? (
+                ) : null}
+                {!pendingDraft && unit.status === 'available' ? (
                   <Button asChild className="min-h-11">
                     <Link
                       to="/contracts/new"

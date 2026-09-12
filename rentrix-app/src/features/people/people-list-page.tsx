@@ -191,8 +191,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       render: (person) => (
         <div
           className="flex"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
         >
           <ActionMenu
             label={`إجراءات ${person.full_name}`}

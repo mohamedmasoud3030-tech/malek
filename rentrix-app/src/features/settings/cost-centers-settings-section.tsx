@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Archive, Pencil, RefreshCcw, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -29,10 +29,6 @@ function getPropertyTitle(properties: readonly PropertyOption[], propertyId: str
 function getParentName(costCenters: readonly CostCenterRecord[], parentId: string | null) {
   if (!parentId) return 'رئيسي';
   return costCenters.find((costCenter) => costCenter.id === parentId)?.name ?? 'مركز غير معروف';
-}
-
-function shouldSaveOnEnter(event: KeyboardEvent<HTMLElement>) {
-  return event.key === 'Enter' && !event.shiftKey && !(event.target instanceof HTMLTextAreaElement);
 }
 
 export function CostCentersSettingsSection() {
@@ -75,8 +71,7 @@ export function CostCentersSettingsSection() {
     resetForm();
   };
 
-  const handleEditorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!shouldSaveOnEnter(event)) return;
+  const handleEditorSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void handleSave();
   };
@@ -106,7 +101,7 @@ export function CostCentersSettingsSection() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <div className="space-y-3 rounded-2xl border bg-background/70 p-4" onKeyDown={handleEditorKeyDown}>
+      <EntityForm.Root className="block space-y-3 rounded-2xl border bg-background/70 p-4" onSubmit={handleEditorSubmit} noValidate={false}>
         <div>
           <p className="text-sm font-black">{editingId ? 'تعديل مركز تكلفة' : 'مركز تكلفة جديد'}</p>
           <p className="mt-1 text-xs text-muted-foreground">اربط المصروفات لاحقاً بعقار أو مركز تشغيلي بدون فتح دفتر أستاذ عام.</p>
@@ -136,13 +131,13 @@ export function CostCentersSettingsSection() {
         </label>
 
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => void handleSave()} disabled={isBusy || !form.name.trim()}>
+          <Button type="submit" disabled={isBusy || !form.name.trim()}>
             <Save className="me-2 size-4" />
             {isBusy ? 'جارٍ الحفظ...' : 'حفظ مركز التكلفة'}
           </Button>
           {editingId ? <Button type="button" variant="secondary" onClick={resetForm}>إلغاء التعديل</Button> : null}
         </div>
-      </div>
+      </EntityForm.Root>
 
       <div className="space-y-3 rounded-2xl border bg-background/70 p-4">
         <div className="flex items-center justify-between gap-3">

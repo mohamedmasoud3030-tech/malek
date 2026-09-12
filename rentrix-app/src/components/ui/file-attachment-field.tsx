@@ -9,13 +9,13 @@ import { formatFileSize } from '@/lib/formatters';
 const ALLOWED_TYPES = ATTACHMENTS_ALLOWED_MIME_TYPES;
 const MAX_SIZE_BYTES = ATTACHMENTS_MAX_FILE_SIZE;
 
-type FileAttachmentFieldProps = {
+type FileAttachmentFieldProps = Readonly<{
   value: string | null;
   onChange: (url: string | null) => void;
   label?: string;
   disabled?: boolean;
   accept?: string;
-};
+}>;
 
 function isImageUrl(url: string) {
   return /\.(jpg|jpeg|png|webp)(\?|$)/i.test(url);

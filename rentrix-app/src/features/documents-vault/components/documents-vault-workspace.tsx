@@ -6,7 +6,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { RegisterMetricStrip } from '@/components/layout/register-summary';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { AsyncContentState } from '@/components/async-content-state';
+import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ContextualDocumentsPanel } from '@/components/documents/contextual-documents-panel';
@@ -143,7 +143,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
       />
 
       <AsyncContentState
-        status={documentsQuery.isLoading ? 'loading' : documentsQuery.isError ? 'error' : documents.length === 0 ? 'empty' : 'ready'}
+        status={resolveAsyncContentStatus({ isLoading: documentsQuery.isLoading, isError: documentsQuery.isError, isEmpty: documents.length === 0 })}
         error={documentsQuery.error as Error}
         errorTitle="تعذر تحميل المستندات"
         errorAction={<Button onClick={() => documentsQuery.refetch()}>إعادة المحاولة</Button>}

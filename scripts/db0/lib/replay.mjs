@@ -25,7 +25,7 @@ export async function listMigrations() {
   return entries
     .filter((e) => e.isFile() && MIGRATION_NAME.test(e.name))
     .map((e) => e.name)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /**

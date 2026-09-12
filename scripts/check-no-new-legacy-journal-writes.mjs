@@ -49,7 +49,7 @@ const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], {
 
 const TARGET_ROOTS = ['supabase/migrations/', 'supabase/functions/', 'rentrix-app/src/'];
 const PRODUCTION_EXT = /\.(?:sql|ts|tsx|js|jsx|mjs|cjs)$/i;
-const TEST_OR_FIXTURE = /(?:^|\/)(?:__tests__|tests?|fixtures?|mocks?)(?:\/|$)|\.(?:test|spec)\.[^.]+$/i;
+const TEST_OR_FIXTURE = /(?:(?:^|\/)(?:__tests__|tests?|fixtures?|mocks?)(?:\/|$))|(?:\.(?:test|spec)\.[^.]+$)/i;
 
 const SQL_WRITE = /\b(?:insert\s+into|update|delete\s+from)\s+(?:public\s*\.\s*)?["']?journal_entries["']?\b/gi;
 const CLIENT_WRITE = /\.from\s*\(\s*(["'])journal_entries\1\s*\)\s*\.\s*(?:insert|update|delete|upsert)\s*\(/gi;
@@ -98,7 +98,7 @@ function changedPaths(baseRef) {
   return [...new Set(candidateChanges(REPO_ROOT, baseRef, TARGET_ROOTS)
     .filter(entry => entry.status !== 'D')
     .map(entry => entry.status === 'R' ? entry.newPath : entry.path)
-    .filter(isProductionTarget))].sort();
+    .filter(isProductionTarget))].sort((a, b) => a.localeCompare(b));
 }
 
 function readHead(path) {

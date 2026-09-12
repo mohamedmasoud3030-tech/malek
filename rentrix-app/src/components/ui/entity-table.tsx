@@ -300,7 +300,7 @@ function isNestedInteractive(target: EventTarget | null, currentTarget: EventTar
   return Boolean(target.closest("a,button,input,select,textarea,label,[role='button'],[role='menuitem'],[data-row-action]"));
 }
 
-const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: { rows: number; cols: number }) {
+const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: Readonly<{ rows: number; cols: number }>) {
   const totalColumns = cols;
   return (
     <Card className="overflow-hidden rounded-2xl border-border/60 bg-muted/[0.16] p-2 shadow-none" data-entity-table-grid>
@@ -332,7 +332,7 @@ const DesktopTableSkeleton = memo(function DesktopTableSkeleton({ rows, cols }: 
   );
 });
 
-const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: { rows: number }) {
+const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: Readonly<{ rows: number }>) {
   return (
     <div className="grid gap-2" aria-hidden="true" data-entity-table-mobile-skeleton>
       {Array.from({ length: rows }, (_, index) => (
@@ -359,7 +359,7 @@ const MobileRegisterSkeleton = memo(function MobileRegisterSkeleton({ rows }: { 
   );
 });
 
-const PaginationBar = memo(function PaginationBar({ pagination }: { pagination: PaginationState }) {
+const PaginationBar = memo(function PaginationBar({ pagination }: Readonly<{ pagination: PaginationState }>) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   if (totalPages <= 1) return null;
   const { page, onPageChange } = pagination;
@@ -380,7 +380,7 @@ const PaginationBar = memo(function PaginationBar({ pagination }: { pagination: 
   );
 });
 
-const PaginationRecovery = memo(function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
+const PaginationRecovery = memo(function PaginationRecovery({ pagination }: Readonly<{ pagination: PaginationState }>) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   return (
     <EmptyState
@@ -434,7 +434,10 @@ function MobileRegisterListItem<T>({
   // face layout unchanged.
   const foldSecondary = Boolean(primaryAction) && Boolean(secondaryToOverflow);
   const secondaryAction = foldSecondary ? undefined : actionList[0];
-  const overflowActions = foldSecondary ? actionList : actionList.length > 1 ? actionList.slice(1) : [];
+  const overflowActions = (() => {
+    if (foldSecondary) return actionList;
+    return actionList.length > 1 ? actionList.slice(1) : [];
+  })();
 
   return (
     <li role="listitem" data-entity-table-mobile-card className="min-w-0">
