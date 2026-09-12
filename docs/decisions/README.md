@@ -94,6 +94,11 @@ evidence pointers is not useful to a future agent — it's just an opinion.
 | 0009 | [MALEK canonical accounting model](./0009-malek-canonical-accounting-model.md) | 2026-08-01 | Accepted |
 | 0010 | [Stage 3 general ledger core](./0010-stage3-general-ledger-core.md) | 2026-08-01 | Accepted |
 | 0011 | [Final business, accounting, and operating policies](./0011-final-business-accounting-and-operating-policies.md) | 2026-08-04 | Accepted |
+| 0014 | [R11 legacy feature disposition](./0014-r11-legacy-feature-disposition.md) |  | Accepted |
+| 0015 | [Owner decisions: roles, void, due-from-owner, contract governance](./0015-owner-decisions-roles-void-due-from-owner-contract-governance.md) |  | Accepted |
+| 0016 | [Closeout external decision packets](./0016-closeout-external-decision-packets.md) |  | Accepted |
+| 0017 | [RC1 product scope closeout](./0017-rc1-product-scope-closeout.md) |  | Accepted |
+| 0018 | [Single execution model: human-driven sessions](./0018-execution-model-human-driven-sessions.md) | 2026-09-12 | Accepted |
 
 The index is oldest first. The duplicate historical `0003` record and the
-unused `0007` slot are preserved as-is; do not renumber existing files.
+unused `0007`/`0012`–`0013` slots are preserved as-is; do not renumber existing files.

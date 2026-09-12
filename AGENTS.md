@@ -2,7 +2,9 @@
 
 > **Compatibility note:** user-visible branding is MALEK. Historical technical identifiers such as the repository name, `rentrix-app/`, database object names, persisted keys, and infrastructure identifiers remain unchanged unless an explicit migration says otherwise.
 
-This file is the contributor/agent entry point. Product truth lives in the MALEK Canonical Pack.
+> **Execution model 2026-09-12: human-driven sessions** — one task, one session, one branch from `origin/main`, one PR. See ADR `0018` (`docs/decisions/0018-execution-model-human-driven-sessions.md`) and `docs/archive/2026-09-reconstruction/README.md`. No autonomous handoff loop, no rotating cast.
+
+This file is the contributor/agent entry point. Product truth lives in the MALEK Canonical Pack. `README.md` is the single living repo entry point.
 
 ## Before you start
 
@@ -45,6 +47,8 @@ Repository implementation does **not** grant stage credit. Lack of stage credit 
 **Conflict resolution:** preserve canonical/locked decisions and record mismatching implementation as `CONFLICT` or `PARTIAL`. Do not silently redefine a rule to match existing code.
 
 Do not use archived status snapshots, TODOs, handovers or superseded architecture/accounting documents as current authority. Git history remains available for historical evidence.
+
+**No new handoff docs:** do not create `HANDOFF*.md`, `NEXT_AGENT*.md`, `INTERFACE_CURRENT_STATE*.md`, or `*_AUDIT.md` at the repo root. The four reconstruction-era files are archived at `docs/archive/2026-09-reconstruction/` (see ADR 0018). For durable decisions open a GitHub issue and write an ADR under `docs/decisions/`.
 
 ## While you work
 

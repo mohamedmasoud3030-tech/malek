@@ -2,6 +2,8 @@
 
 This file is the Claude Code entry point. Keep it short. Product truth remains in the existing canonical documentation; do not create a parallel source of truth here.
 
+> **Execution model 2026-09-12: human-driven sessions** — one task, one session, one branch from `origin/main`, one PR. See ADR `0018` and `docs/archive/2026-09-reconstruction/README.md`. No autonomous handoff loop.
+
 ## Read before editing
 
 1. Read `AGENTS.md` and `DATABASE_RULES.md`.
@@ -20,16 +22,16 @@ This file is the Claude Code entry point. Keep it short. Product truth remains i
 
 Historical technical identifiers may still say Rentrix. User-visible product naming is MALEK unless an explicit migration says otherwise.
 
-## Default execution mode
+## Default execution mode — human-driven sessions (ADR 0018)
 
-- One task, one Claude Web session, one branch, one focused PR.
-- Start from the latest intended base branch; normally `origin/main` unless the task explicitly depends on another branch.
+- One task, one session, one branch from latest `origin/main`, one focused PR — human product owner drives priority via GitHub issue / PR discussion.
+- No autonomous handoff loop (`HANDOFF.md` archived), no `NEXT_AGENT_PROMPT.md`, no rotating cast.
 - Never push directly to `main` and never merge a PR unless the user explicitly asks.
 - Do not modify unrelated files merely because you notice them.
 - Before editing, inspect open/current work that may overlap the same files or subsystem when GitHub access is available.
-- For a clear task, execute autonomously. Do not stop for ordinary implementation choices. Ask only when the remaining choice is a genuine owner/accounting/legal decision, unavailable credential/access, or unauthorized production mutation.
+- For a clear task, execute autonomously *within* the human-driven session. Do not stop for ordinary implementation choices. Ask only when the remaining choice is a genuine owner/accounting/legal decision, unavailable credential/access, or unauthorized production mutation.
 - Prefer the smallest coherent implementation that preserves useful behavior and existing architecture.
-- Do not create duplicate abstractions, duplicate source-of-truth docs, parallel design systems, or replacement business rules.
+- Do not create duplicate abstractions, duplicate source-of-truth docs (`HANDOFF*.md`, `NEXT_AGENT*.md`, `*_AUDIT.md` at root), parallel design systems, or replacement business rules. See `docs/archive/2026-09-reconstruction/README.md`.
 - When removing legacy/dead code, prove references and preserve still-used behavior.
 
 ## Useful Claude helpers
