@@ -15,7 +15,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
 const REPORT_PATH = join(ROOT, '.guardian', 'report.json');
 
-const layers = [
+const coreIds = new Set([
+  'db0-gate',
+  'canonical-authority',
+  'sensitive-rpc-auth',
+  'internal-gl-rpc-boundary',
+  'tax-readiness-boundary',
+]);
+const isCore = process.argv.includes('--core');
+
+const allLayers = [
   {
     id: 'db0-gate',
     title: 'Canonical schema replay / DB0 gate',
@@ -77,14 +86,19 @@ const layers = [
     cmd: ['node', ['scripts/supabase-tests/privileged-key-scan.mjs']],
   },
 ];
+const layers = isCore ? allLayers.filter((l) => coreIds.has(l.id)) : allLayers;
 
 function tail(output, count = 24) {
   return output.trim().split('\n').slice(-count).join('\n');
 }
 
 const results = [];
-console.log('MALEK Database Guardian');
+console.log(`MALEK Database Guardian${isCore ? ' — CORE (5 high-signal layers; see docs/GOVERNANCE_TOOLING_AUDIT_2026-09-12.md)' : ''}`);
 console.log('='.repeat(72));
+if (isCore) {
+  console.log('Core layers: db0-gate, canonical-authority, sensitive-rpc-auth, internal-gl-rpc-boundary, tax-readiness-boundary');
+  console.log('Full 12-layer pre-release: pnpm db:guardian  (or pnpm db:guardian:full)');
+}
 
 for (const layer of layers) {
   const started = Date.now();

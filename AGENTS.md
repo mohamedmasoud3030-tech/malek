@@ -59,6 +59,19 @@ Do not use archived status snapshots, TODOs, handovers or superseded architectur
 - Do not describe S04/S06/S08 as absent merely because their governed credit is NOT_STARTED; inspect repository reality first.
 - Do not describe S04/S06/S08 as complete merely because migrations/tests exist; inspect Document 7 and governance ledgers first.
 
+## Checks that earn their keep (2026-09-12 consolidation)
+
+`docs/GOVERNANCE_TOOLING_AUDIT_2026-09-12.md` is the audit. Daily loop:
+
+```bash
+pnpm verify:quick   # <3 min — the 4 prod-safety invariants + architecture + type/contract parity
+```
+
+- **Blocking per-PR:** prod-mutation guard, migration hygiene, gl-write-boundary, db-governance, architecture core, frontend-db contract, type parity. All are cheap and catch shipped defects.
+- **Path-scoped governance:** canonical-business-rules and 10-stage plan guards run only when `governance/**` or `docs/execution/10_STAGE*` change. Day-to-day feature PRs no longer pay that tax.
+- **Pre-release:** `pnpm verify:full` or `pnpm db:guardian:core` (5 layers) vs `pnpm db:guardian` (12 layers). Guardian is not per-PR.
+- **Advisory:** `pnpm check:advisory` (doc links, enterprise-freeze tautology, manual-workflow) — run manually or weekly.
+
 ## Autonomous verification loop
 
 When a task changes a user-facing flow, API/RPC, authentication/permissions or data mapping, do not stop at code inspection or a static test result. Operate the application as part of the task, then fix and re-check what you observe.

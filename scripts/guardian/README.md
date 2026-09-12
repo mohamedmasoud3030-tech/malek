@@ -1,23 +1,31 @@
 # MALEK Database Guardian
 
-Run:
+Run core (daily) or full (pre-release):
 
 ```bash
-pnpm db:guardian
+pnpm db:guardian:core   # 5 high-signal layers — the daily gate (≈2 min)
+pnpm db:guardian        # 12 layers — full pre-release gate (alias: pnpm db:guardian:full)
 ```
+
+See `docs/GOVERNANCE_TOOLING_AUDIT_2026-09-12.md` for why the split exists.
 
 The Guardian is a local, disposable-database gate. It does **not** contact hosted Supabase and does **not** mutate production data.
 
-It composes the repository's existing database proofs with the governance-stabilization checks:
+**Core (daily, blocking):**
 
 - DB0 canonical replay/gate
 - canonical membership authority + Auth Hook behavior
 - sensitive RPC authorization behavior
 - internal GL posting/helper RPC browser EXECUTE boundary
+- tax-readiness boundary (P0-2)
+
+**Extended (pre-release / weekly, not per-PR):**
+
 - effective `SECURITY DEFINER` governance audit
 - internal `SECURITY DEFINER` EXECUTE-boundary audit
-- strict Guardian governance scan (`DG-GOV-008`)
-- migration/rollback hygiene
+- strict Guardian governance scan (`DG-GOV-008`) — allowlist churn
+- governance migration safety
+- migration/rollback hygiene (also in `pnpm check:fast`)
 - privileged-key exposure scan
 
 The machine-readable report is written to `.guardian/report.json` and is gitignored.

@@ -102,21 +102,40 @@ assertEqual(rules.financial_invariants?.corrections_use_reversal_not_delete, tru
 assertEqual(rules.financial_invariants?.owner_expense_treatment, 'DUE_FROM_OWNER_NOT_OFFICE_EXPENSE', 'financial_invariants.owner_expense_treatment');
 assertEqual(rules.financial_invariants?.tenant_deposit_treatment, 'LIABILITY_UNTIL_CONTRACTUALLY_APPLIED_OR_REFUNDED', 'financial_invariants.tenant_deposit_treatment');
 
+// Constitution/changelog sync is advisory by default — it forced 4-file lockstep
+// for every governance note and dominated PR churn. Strict mode restores the
+// old blocking behavior for a governance-closeout PR:
+//   CANONICAL_RULES_STRICT=1 node scripts/check-canonical-business-rules.mjs
+//   node scripts/check-canonical-business-rules.mjs --strict
+const strictMode =
+  process.env.CANONICAL_RULES_STRICT === '1' ||
+  process.argv.includes('--strict');
 const constitution = readFileSync(constitutionPath, 'utf8');
 const changelog = readFileSync(changelogPath, 'utf8');
+const advisoryFailures = [];
+function advisoryOrFail(message) {
+  if (strictMode) fail(message);
+  else advisoryFailures.push(message);
+}
 if (!constitution.includes(`**Schema version:** \`${rules.schema_version}\``)) {
-  fail('constitution does not declare the current schema version');
+  advisoryOrFail('constitution does not declare the current schema version');
 }
 if (!constitution.includes(`**SHA-256:** \`${actualChecksum}\``)) {
-  fail('constitution does not declare the current contract checksum');
+  advisoryOrFail('constitution does not declare the current contract checksum');
 }
 if (!changelog.includes(`## ${rules.schema_version} —`)) {
-  fail('changelog does not contain an entry for the current schema version');
+  advisoryOrFail('changelog does not contain an entry for the current schema version');
 }
 if (!changelog.includes(actualChecksum)) {
-  fail('changelog does not contain the current contract checksum');
+  advisoryOrFail('changelog does not contain the current contract checksum');
+}
+
+if (advisoryFailures.length && !process.exitCode) {
+  for (const m of advisoryFailures) {
+    console.warn(`CANONICAL_BUSINESS_RULES_ADVISORY: ${m} (run with --strict / CANONICAL_RULES_STRICT=1 to enforce)`);
+  }
 }
 
 if (!process.exitCode) {
-  console.log(`Canonical business rules verified: v${rules.schema_version} ${actualChecksum}`);
+  console.log(`Canonical business rules verified: v${rules.schema_version} ${actualChecksum}${advisoryFailures.length ? ' (advisory warnings above)' : ''}`);
 }

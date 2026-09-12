@@ -1,12 +1,29 @@
 name: Execution Plan Guard
 
+# Archived governance — 10-stage plan is now a reference, not a per-PR blocker.
+# See docs/GOVERNANCE_TOOLING_AUDIT_2026-09-12.md and docs/source-of-truth/08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md (WP-01..WP-07) for the current closeout authority.
+# This workflow remains for history and runs ONLY when the archived plan/ledger itself changes.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'governance/10-stage-master-plan.*'
+      - 'governance/final-decision-register.*'
+      - 'docs/execution/10_STAGE*'
+      - 'docs/decisions/0011-final-business-accounting-and-operating-policies.md'
+      - 'docs/accounting/ACCOUNTING_DECISION_GATES_AR.md'
+      - 'scripts/check-10-stage-execution-plan.mjs'
+      - '.github/workflows/execution-plan-guard.yml'
   pull_request_review:
     types: [submitted, dismissed]
   push:
     branches: [main]
+    paths:
+      - 'governance/10-stage-master-plan.*'
+      - 'governance/final-decision-register.*'
+      - 'docs/execution/10_STAGE*'
+      - 'docs/decisions/0011-final-business-accounting-and-operating-policies.md'
+      - 'docs/accounting/ACCOUNTING_DECISION_GATES_AR.md'
   workflow_dispatch:
 
 permissions:
@@ -21,11 +38,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Verify final decision register and execution plan
+      - name: Verify final decision register and execution plan (archived — only when plan itself changes)
         run: node scripts/check-10-stage-execution-plan.mjs
-
-      - name: Verify canonical business rules
-        run: node scripts/check-canonical-business-rules.mjs
 
   protected-review-ledger:
     name: Require owner approval for protected plan/review changes

@@ -1,12 +1,28 @@
 name: Canonical Business Rules Guard
 
+# Consolidated governance guard — path-scoped. See docs/GOVERNANCE_TOOLING_AUDIT_2026-09-12.md.
+# This is the ONLY workflow that checks canonical-business-rules integrity.
+# Execution-plan guard is now path-scoped separately (governance/10-stage*).
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'governance/canonical-business-rules.*'
+      - 'governance/BUSINESS_RULES_CHANGELOG.md'
+      - 'docs/business/CANONICAL_BUSINESS_AND_CONTRACT_RULES_AR.md'
+      - 'scripts/check-canonical-business-rules.mjs'
+      - '.github/workflows/canonical-business-rules-guard.yml'
+      - '.github/CODEOWNERS'
   pull_request_review:
     types: [submitted, dismissed]
   push:
     branches: [main]
+    paths:
+      - 'governance/canonical-business-rules.*'
+      - 'governance/BUSINESS_RULES_CHANGELOG.md'
+      - 'docs/business/CANONICAL_BUSINESS_AND_CONTRACT_RULES_AR.md'
+      - 'scripts/check-canonical-business-rules.mjs'
+      - '.github/workflows/canonical-business-rules-guard.yml'
   workflow_dispatch:
 
 permissions:
