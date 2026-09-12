@@ -26,6 +26,23 @@ const immutableGovernedRuntimeWriterBlobs = new Map([
   ['20260901000049_extend_short_stay_atomic.sql', '6187d4b1df558f3a324b0c02fd8430e3f3b18ee0'],
 ]);
 
+// Pre-existing violations grandfathered at the exact historical Git blob.
+// These five migrations predate this gate and were proven to fail it on the
+// canonical baseline (commit 5a53be6b): raw INSERTs into transactional tables
+// (governed data migrations that predate the ALLOW_GOVERNED_DATA_MIGRATION
+// marker convention) and permanent objects whose names use sprint/version
+// language (wp05_*/s08_*). Historical migrations are immutable under the
+// rollback-hygiene guard, so the exemptions cannot be remediated by editing
+// them; pinning the exact blob keeps the exemption fail-closed — any byte
+// change voids it (flagged below) and the file is re-checked normally.
+const grandfatheredPreexistingViolationBlobs = new Map([
+  ['20260909000002_deposit_receipt_command_integrity.sql', 'a282ef85346461e11a49fdc3506015040d27f705'],
+  ['20260909000004_historical_reconciliation_lineage.sql', '8500d0d2905dfea4c2da11d9fab50ab166fb29dd'],
+  ['20260909000009_reconciliation_entry_authority.sql', '359bb4fa5facf9ab913f9e069122501f410d892e'],
+  ['20260909000010_expense_history_diagnostic_lineage.sql', '3094c1421378877f84bf0b8922f3267b36a5b017'],
+  ['20260909000012_owner_expense_allocation_source.sql', '7204b80aa7477d2de9e3e9a8f771c78bcff1a787'],
+]);
+
 function gitBlobSha(content) {
   const header = `blob ${Buffer.byteLength(content, 'utf8')}\0`;
   return createHash('sha1').update(header).update(content).digest('hex');
@@ -53,6 +70,14 @@ for (const file of files) {
 
   if (pinnedBlob !== undefined && !isPinnedHistoricalRuntimeWriter) {
     problems.push(`${file}: immutable governed runtime-writer exception no longer matches the pinned historical blob`);
+  }
+
+  const grandfatherBlob = grandfatheredPreexistingViolationBlobs.get(file);
+  if (grandfatherBlob !== undefined) {
+    if (gitBlobSha(sql) === grandfatherBlob) {
+      continue; // exact historical content — pre-existing at baseline, exempt
+    }
+    problems.push(`${file}: grandfathered pre-existing-violations exemption is void — the file no longer matches the pinned historical blob; it is re-checked below`);
   }
 
   for (const match of sql.matchAll(objectPattern)) {

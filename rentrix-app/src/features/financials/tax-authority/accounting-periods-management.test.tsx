@@ -48,9 +48,10 @@ let root: ReturnType<typeof createRoot> | null = null;
 async function renderSection() {
   host = document.createElement('div');
   document.body.appendChild(host);
-  root = createRoot(host);
+  const r = createRoot(host);
+  root = r;
   await act(async () => {
-    root.render(
+    r.render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <AccountingPeriodsManagement />
       </QueryClientProvider>,
