@@ -45,7 +45,6 @@ let contractId = '';
 let leadId = '';
 
 const ADMIN = { userId: ADMIN_A, companyId: COMPANY_A };
-const MANAGER = { userId: MANAGER_A, companyId: COMPANY_A };
 const USER = { userId: USER_A, companyId: COMPANY_A };
 const MANAGER_B_ID = { userId: MANAGER_B, companyId: COMPANY_B };
 

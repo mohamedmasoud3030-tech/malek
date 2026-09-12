@@ -115,7 +115,7 @@ afterAll(async () => {
 
 describe('people direct-write ACL restore (20260912000002)', () => {
   it('person CREATE persists through the direct PostgREST insert path (exact client payload)', async () => {
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string; company_id: string; full_name: string; type: string }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `insert into public.people (full_name, type, phone, email, national_id, address, notes)
        values ($1, $2, $3, $4, $5, $6, $7)
@@ -131,7 +131,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
   });
 
   it('person EDIT persists through the direct PostgREST update path (exact client payload)', async () => {
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string; phone: string | null; notes: string | null }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `update public.people
           set full_name = $2, type = $3, phone = $4, email = $5,
@@ -148,7 +148,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
   });
 
   it('person ARCHIVE persists through the soft deleted_at update path', async () => {
-    const created = await asBrowser(
+    const created = await asBrowser<{ id: string }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `insert into public.people (full_name, type, phone, email, national_id, address, notes)
        values ('مستأجر ثانٍ', 'tenant', '+968 9300 2222', null, null, null, null) returning id`,
@@ -156,7 +156,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
     );
     archivedPersonId = created[0].id;
 
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `update public.people set deleted_at = now()
         where id = $1::uuid and deleted_at is null
@@ -165,7 +165,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
     );
     expect(rows).toHaveLength(1);
 
-    const archived = await asBrowser(
+    const archived = await asBrowser<{ deleted_at: string | null }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `select deleted_at from public.people where id = $1::uuid`,
       [archivedPersonId],
@@ -174,7 +174,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
   });
 
   it('reopened records survive a fresh read (refresh/reopen proof)', async () => {
-    const person = await asBrowser(
+    const person = await asBrowser<{ id: string; full_name: string; phone: string | null; notes: string | null; deleted_at: string | null }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `select id, full_name, phone, notes, deleted_at
          from public.people where id = $1::uuid`,
@@ -187,7 +187,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
       notes: 'تعديل التواصل',
       deleted_at: null,
     });
-    const list = await asBrowser(
+    const list = await asBrowser<{ n: number }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `select count(*)::int as n from public.people where deleted_at is null`,
     );
@@ -197,7 +197,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
 
   it('a plain USER (not ADMIN/MANAGER) still cannot insert a person', async () => {
     await expect(
-      asBrowser(
+      asBrowser<{ id: string }>(
         { userId: USER_A, companyId: COMPANY_A },
         `insert into public.people (full_name, type, phone, email, national_id, address, notes)
          values ('خارج الصلاحية', 'contact', '+968 9900 9999', null, null, null, null) returning id`,
@@ -211,7 +211,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
   });
 
   it('a MANAGER of another company cannot mutate this company person (tenant isolation)', async () => {
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string }>(
       { userId: MANAGER_B, companyId: COMPANY_B },
       `update public.people
           set phone = '+968 0000 0000'
@@ -229,7 +229,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
 
   it('hard DELETE remains denied for browser roles', async () => {
     await expect(
-      asBrowser(
+      asBrowser<Record<string, never>>(
         { userId: ADMIN_A, companyId: COMPANY_A },
         `delete from public.people where id = $1::uuid`,
         [archivedPersonId],

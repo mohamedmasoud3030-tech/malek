@@ -145,7 +145,7 @@ afterAll(async () => {
 
 describe('units direct-write ACL restore (20260912000001)', () => {
   it('unit CREATE persists through the direct PostgREST insert path (exact client payload)', async () => {
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string; company_id: string; unit_number: string; rent_amount: string }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `insert into public.units (unit_number, floor, status, rent_amount, daily_reference_rate, notes, property_id)
        values ($1, $2, $3, $4, $5, $6, $7::uuid)
@@ -161,7 +161,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
   });
 
   it('unit EDIT persists through the direct PostgREST update path (exact client payload)', async () => {
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string; rent_amount: string; notes: string | null }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `update public.units
           set unit_number = $2, floor = $3, status = $4,
@@ -176,7 +176,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
   });
 
   it('unit ARCHIVE persists through the soft deleted_at update path', async () => {
-    const created = await asBrowser(
+    const created = await asBrowser<{ id: string }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `insert into public.units (unit_number, floor, status, rent_amount, daily_reference_rate, notes, property_id)
        values ('C-202', '2', 'available', 400, null, null, $1::uuid) returning id`,
@@ -184,7 +184,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
     );
     archivedUnitId = created[0].id;
 
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `update public.units set deleted_at = now()
         where id = $1::uuid and deleted_at is null
@@ -193,7 +193,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
     );
     expect(rows).toHaveLength(1);
 
-    const archived = await asBrowser(
+    const archived = await asBrowser<{ deleted_at: string | null }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `select deleted_at from public.units where id = $1::uuid`,
       [archivedUnitId],
@@ -202,7 +202,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
   });
 
   it('reopened records survive a fresh read (refresh/reopen proof)', async () => {
-    const unit = await asBrowser(
+    const unit = await asBrowser<{ id: string; unit_number: string; rent_amount: string; notes: string | null; deleted_at: string | null }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `select id, unit_number, rent_amount::text as rent_amount, notes, deleted_at
          from public.units where id = $1::uuid`,
@@ -215,7 +215,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
       notes: 'تعديل الإيجار',
       deleted_at: null,
     });
-    const list = await asBrowser(
+    const list = await asBrowser<{ n: number }>(
       { userId: ADMIN_A, companyId: COMPANY_A },
       `select count(*)::int as n from public.units
         where property_id = $1::uuid and deleted_at is null`,
@@ -227,7 +227,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
 
   it('a plain USER (not ADMIN/MANAGER) still cannot insert a unit', async () => {
     await expect(
-      asBrowser(
+      asBrowser<{ id: string }>(
         { userId: USER_A, companyId: COMPANY_A },
         `insert into public.units (unit_number, floor, status, rent_amount, daily_reference_rate, notes, property_id)
          values ('X-901', '1', 'available', 100, null, null, $1::uuid) returning id`,
@@ -241,7 +241,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
   });
 
   it('a MANAGER of another company cannot mutate this company unit (tenant isolation)', async () => {
-    const rows = await asBrowser(
+    const rows = await asBrowser<{ id: string }>(
       { userId: MANAGER_B, companyId: COMPANY_B },
       `update public.units
           set rent_amount = 1
@@ -259,7 +259,7 @@ describe('units direct-write ACL restore (20260912000001)', () => {
 
   it('hard DELETE remains denied for browser roles', async () => {
     await expect(
-      asBrowser(
+      asBrowser<Record<string, never>>(
         { userId: ADMIN_A, companyId: COMPANY_A },
         `delete from public.units where id = $1::uuid`,
         [archivedUnitId],
