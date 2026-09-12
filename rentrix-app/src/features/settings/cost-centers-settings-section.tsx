@@ -101,7 +101,7 @@ export function CostCentersSettingsSection() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <form className="space-y-3 rounded-2xl border bg-background/70 p-4" onSubmit={handleEditorSubmit}>
+      <EntityForm.Root className="block space-y-3 rounded-2xl border bg-background/70 p-4" onSubmit={handleEditorSubmit} noValidate={false}>
         <div>
           <p className="text-sm font-black">{editingId ? 'تعديل مركز تكلفة' : 'مركز تكلفة جديد'}</p>
           <p className="mt-1 text-xs text-muted-foreground">اربط المصروفات لاحقاً بعقار أو مركز تشغيلي بدون فتح دفتر أستاذ عام.</p>
@@ -137,7 +137,7 @@ export function CostCentersSettingsSection() {
           </Button>
           {editingId ? <Button type="button" variant="secondary" onClick={resetForm}>إلغاء التعديل</Button> : null}
         </div>
-      </form>
+      </EntityForm.Root>
 
       <div className="space-y-3 rounded-2xl border bg-background/70 p-4">
         <div className="flex items-center justify-between gap-3">

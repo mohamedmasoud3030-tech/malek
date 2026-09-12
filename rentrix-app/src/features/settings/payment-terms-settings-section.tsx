@@ -91,7 +91,7 @@ export function PaymentTermsSettingsSection() {
       </div>
 
       {isEditorOpen ? (
-        <form className="grid gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.025] p-2.5 sm:grid-cols-2 sm:gap-3 sm:p-3" onSubmit={handleEditorSubmit}>
+        <EntityForm.Root className="grid gap-2.5 rounded-xl border border-primary/20 bg-primary/[0.025] p-2.5 sm:grid-cols-2 sm:gap-3 sm:p-3" onSubmit={handleEditorSubmit} noValidate={false}>
           <div className="flex items-center justify-between gap-2 sm:col-span-2">
             <p className="text-xs font-black">{editingId ? 'تعديل شرط السداد' : 'شرط سداد جديد'}</p>
             <Button type="button" variant="ghost" size="icon" onClick={closeEditor} aria-label="إغلاق المحرر">
@@ -136,7 +136,7 @@ export function PaymentTermsSettingsSection() {
             </Button>
             <Button type="button" size="sm" variant="secondary" onClick={closeEditor}>إلغاء</Button>
           </div>
-        </form>
+        </EntityForm.Root>
       ) : null}
 
       <div className="space-y-2">

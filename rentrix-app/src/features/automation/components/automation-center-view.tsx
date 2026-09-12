@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { StatusBadge, type SemanticTone } from '@/components/ui/status-badge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -71,7 +71,7 @@ function formatAutomationDate(value: string | number | null | undefined) {
   return Number.isNaN(date.getTime()) ? '—' : formatLatinDateTime(date, 'ar');
 }
 
-const JOB_STATUS_TONES: Record<string, 'success' | 'danger' | 'neutral' | 'warning'> = {
+const JOB_STATUS_TONES: Record<string, SemanticTone> = {
   SUCCEEDED: 'success',
   DEAD: 'danger',
   CANCELLED: 'neutral',
