@@ -304,17 +304,36 @@ describe('contract approval/activation chain (S04-T03)', () => {
     });
   });
 
-  it('approves a pending contract with the checker signature', async () => {
-    const row = { status: 'draft', approval_status: 'APPROVED', maker_signature: 'محمد', checker_signature: 'خالد' };
-    supabaseMock.rpc.mockResolvedValue({ data: row, error: null });
+  it('approves a pending contract with the checker signature (deployed envelope shape)', async () => {
+    // The deployed approve_contract_atomic returns the approval envelope, not
+    // the full row: {success, id, status:'APPROVED', checker_user_id,
+    // is_sole_admin_exception}. A previous mock returned the full row and hid
+    // the client parser rejecting the real envelope as a false failure.
+    const envelope = {
+      success: true,
+      id: 'contract-1',
+      status: 'APPROVED',
+      checker_user_id: '11111111-1111-4111-8111-111111111111',
+      is_sole_admin_exception: false,
+    };
+    supabaseMock.rpc.mockResolvedValue({ data: envelope, error: null });
     const { approveContract } = await import('./contractService');
 
-    await expect(approveContract('contract-1', 'خالد')).resolves.toEqual(row);
+    const result = await approveContract('contract-1', 'خالد');
 
+    expect(result.status).toBe('draft');
+    expect(result.approval_status).toBe('APPROVED');
     expect(supabaseMock.rpc).toHaveBeenCalledWith('approve_contract_atomic', {
       p_contract_id: 'contract-1',
       p_checker_signature: 'خالد',
     });
+  });
+
+  it('rejects an approval envelope whose shape is not the deployed approve contract', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { success: true, status: 'APPROVED' }, error: null });
+    const { approveContract } = await import('./contractService');
+
+    await expect(approveContract('contract-1', 'خالد')).rejects.toThrow('ناقصة الحقول');
   });
 
   it('rejects a pending contract with checker signature and a mandatory reason', async () => {

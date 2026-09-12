@@ -313,8 +313,40 @@ export async function renewContract(contractId: string, payload: RenewalPayload)
 // complete maker→checker approval with signature evidence.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * `approve_contract_atomic` returns the approval envelope
+ * `{success, id, status:'APPROVED', checker_user_id, is_sole_admin_exception}`
+ * — NOT the full contract row the other lifecycle RPCs return. Its `status`
+ * is the APPROVAL status; the contract itself remains a `draft` until
+ * activation. Regression-locked against the deployed RPC shape (same class
+ * as the S09 list-envelope defect).
+ */
+type ApproveContractEnvelope = Readonly<{
+  success: true;
+  id: string;
+  status: 'APPROVED';
+  checker_user_id: string;
+  is_sole_admin_exception: boolean;
+}>;
+
+function isApproveContractEnvelope(value: object): value is ApproveContractEnvelope {
+  const envelope = value as Partial<ApproveContractEnvelope>;
+  return envelope.success === true
+    && envelope.status === 'APPROVED'
+    && typeof envelope.id === 'string'
+    && typeof envelope.checker_user_id === 'string'
+    && typeof envelope.is_sole_admin_exception === 'boolean';
+}
+
 function toApprovalResult(data: unknown): Contract {
-  if (!data || typeof data !== 'object') throw new Error('استجابة غير صالحة من خادم الاعتماد');
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('استجابة غير صالحة من خادم الاعتماد');
+  if (isApproveContractEnvelope(data)) {
+    return {
+      ...(data as ApproveContractEnvelope),
+      status: 'draft',
+      approval_status: 'APPROVED',
+    } as unknown as Contract;
+  }
   const result = data as Contract;
   if (typeof result.status !== 'string' || typeof result.approval_status !== 'string') {
     throw new Error('استجابة الاعتماد ناقصة الحقول المطلوبة');

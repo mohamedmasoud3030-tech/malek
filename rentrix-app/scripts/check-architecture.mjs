@@ -54,7 +54,13 @@ const featureDependencyAllowList = new Map([
   // real owner with an active agreement (migration-12 allocation/evidence law).
   // The seam is hook-only — no owners presentation or data-plane modules are
   // imported; owners→financials remains the reverse reviewed seam.
-  ['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings'])],
+  // financials/tax-authority also reads the accounting-period management seam
+  // (useAccountingPeriods query/mutation hooks + shared domain types) so the
+  // Settings Finance Readiness surface can create/reopen periods through the
+  // audited Stage-3 RPCs instead of duplicating them. Reviewed integration
+  // seam: hook/type-only — no accounting presentation modules and no direct
+  // accounting service imports; the server RPCs remain the authority.
+  ['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings', 'accounting'])],
   // governance-hub composes settings/system/audit/auth workspaces under /settings.
   ['governance-hub', new Set(['auth', 'audit', 'settings', 'system'])],
   // maintenance reads the shared document-print readiness seam

@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useActiveCompanyId } from '@/hooks/use-company';
+import { AccountingPeriodsManagement } from './accounting-periods-management';
 import {
   getFinanceReadiness,
   type FinanceReadiness,
@@ -203,6 +204,14 @@ function GeneralReadiness({ readiness }: Readonly<{ readiness: FinanceReadiness 
               لا توجد فترة محاسبية مفتوحة. افتح فترة قبل تسجيل القيود الجديدة.
             </p>
           )}
+          {/*
+            Period management lives here so the instruction above is actionable:
+            list + create + reopen through the existing audited Stage-3 RPCs
+            (accountingPeriodsService), gated by the settings-management
+            permission. The server remains the authority for every period rule
+            (overlap, final-close immutability, the mandatory reopen reason).
+          */}
+          <AccountingPeriodsManagement />
         </CardContent>
       </Card>
 
