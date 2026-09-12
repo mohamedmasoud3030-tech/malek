@@ -82,7 +82,7 @@ async function asBrowser<T>(
   }
 }
 
-// Exact client shapes (rentrix-app/src/features/units/unit-schema.ts →
+// Exact client shapes (src/features/units/unit-schema.ts →
 // UnitPayload, normalized by normalizeUnitPayload in unit-service.ts).
 const UNIT_CREATE_PAYLOAD = {
   unit_number: 'C-201',

@@ -34,8 +34,12 @@ describe('architecture guard v2 contract', () => {
     // financials→owners is a reviewed hook-only seam (usePropertyOwners /
     // useOwnerAgreements: an OWNER-charged expense may only be allocated to a
     // real owner with an active agreement — migration-12 allocation law).
+    // financials→accounting is a reviewed hook-only seam (the accounting
+    // period management UI under financials/tax-authority consumes
+    // useAccountingPeriods / useCreateAccountingPeriod /
+    // useUpdateAccountingPeriodStatus from features/accounting).
     // The exact-set literal keeps the reports and finance-hub edges removed.
-    expect(guard).toContain("['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings'])]");
+    expect(guard).toContain("['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings', 'accounting'])]");
     expect(guard).not.toContain("['finance-hub'");
   });
 

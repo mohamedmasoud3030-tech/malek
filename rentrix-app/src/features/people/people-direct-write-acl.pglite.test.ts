@@ -69,7 +69,7 @@ async function asBrowser<T>(
   }
 }
 
-// Exact client shape (rentrix-app/src/features/people/person-schema.ts →
+// Exact client shape (src/features/people/person-schema.ts →
 // PersonPayload, normalized by normalizePersonPayload in people-service.ts).
 const PERSON_CREATE_PAYLOAD = {
   full_name: 'عبدالله سعيد العلي',

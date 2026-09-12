@@ -27,9 +27,10 @@ import type { AccountingPeriod, AccountingPeriodStatus } from '@/features/accoun
  *
  * Editors render in EntityForm.Overlay dialogs (Radix portals at body level):
  * the settings workspace wraps every section in one shared company-settings
- * <form>, and an inline nested <form> is invalid HTML — the browser performs
- * a native GET submission and React's onSubmit never runs. The dialog portal
- * is the same pattern the property/contract/approval editors already use.
+ * HTML form, and an inline nested HTML form is invalid HTML — the browser
+ * performs a native GET submission and React's onSubmit never runs. The
+ * dialog portal is the same pattern the property/contract/approval editors
+ * already use.
  */
 
 const periodStatusLabels: Readonly<Record<AccountingPeriodStatus, string>> = {
