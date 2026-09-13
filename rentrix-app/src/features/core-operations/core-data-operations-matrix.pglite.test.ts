@@ -193,7 +193,12 @@ describe('PROPERTY — core operations', () => {
       title: 'برج المصفوفة — بعد التعديل',
       notes: 'تعديل المصفوفة',
       name: 'برج المصفوفة — بعد التعديل',
-      current_value: '310000.00',
+      // 3 decimals, not 2: `properties.current_value` is numeric(18,3) per
+      // DATABASE_RULES ("authoritative OMR money columns use numeric(18,3)") and
+      // the form accepts 0.001. This string is ::text of the column, so it is a
+      // live check on the stored scale — the pre-widening '310000.00' was the
+      // silent-truncation behaviour, not the intent.
+      current_value: '310000.000',
     });
   });
 
