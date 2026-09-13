@@ -6,6 +6,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
+import { ReceiptsWorkspace } from '@/features/financials/receipts/receipts-page';
 import {
   FINANCE_SECTIONS,
   FINANCE_VIEWS,
@@ -29,9 +30,6 @@ function SectionFallback() {
 
 const InvoicesWorkspace = lazy(async () => ({
   default: (await import('@/features/financials/invoices/invoices-page')).InvoicesWorkspace,
-}));
-const ReceiptsWorkspace = lazy(async () => ({
-  default: (await import('@/features/financials/receipts/receipts-page')).ReceiptsWorkspace,
 }));
 const ExpensesWorkspace = lazy(async () => ({
   default: (await import('@/features/financials/expenses/expenses-page')).ExpensesWorkspace,
@@ -188,7 +186,7 @@ export function FinancePage() {
           ) : null}
           {activeSection === 'collections' && activeView === 'receipts' ? (
             <div id="finance-view-panel-receipts" role="tabpanel" aria-labelledby="finance-view-tab-receipts">
-              <Suspense fallback={<SectionFallback />}><ReceiptsWorkspace embedded /></Suspense>
+              <ReceiptsWorkspace embedded />
             </div>
           ) : null}
           {activeSection === 'collections' && activeView === 'arrears' ? (
