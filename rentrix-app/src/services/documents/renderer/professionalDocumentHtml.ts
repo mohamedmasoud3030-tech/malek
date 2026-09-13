@@ -26,7 +26,9 @@
  * chunk boundary at all.
  */
 import type { ProfessionalReportBody, ReportChart, ReportKpi, ReportNote, ReportTable } from '../types';
+import { DOCUMENT_COLORS, DOCUMENT_SPACING, DOCUMENT_TYPE } from '../documentDesignTokens';
 import { MAX_ROWS_PER_TABLE_CHUNK } from '../documentRegistry';
+import { buildEmptyNoteRow, buildTableFootHtml, buildTableHeadHtml, buildTableRowsHtml } from './documentTableHtml';
 import { escapeDocumentHtml } from './documentHtmlShared';
 import { formatLatinNumber } from '@/lib/formatters';
 
@@ -35,15 +37,10 @@ import { formatLatinNumber } from '@/lib/formatters';
 /* ------------------------------------------------------------------ */
 
 const BLOCK_CLASS = 'document-block';
-const SECTION_WRAP = 'margin-bottom: 22px; page-break-inside: avoid; break-inside: avoid;';
-const COMPACT_SECTION_WRAP = 'margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid;';
-const TABLE_HEAD_BG = '#0F172A';
-const TABLE_HEAD_FG = '#FFFFFF';
-const TABLE_BORDER = '#CBD5E1';
-const TABLE_TEXT = '#1E293B';
-const ACCENT = '#0284C7';
+const SECTION_WRAP = `margin-bottom: ${DOCUMENT_SPACING.sectionGapMm}px; page-break-inside: avoid; break-inside: avoid;`;
+const ACCENT = DOCUMENT_COLORS.accent;
 
-const CHART_COLORS = ['#0284C7', '#F59E0B', '#94A3B8', '#0F766E', '#7C3AED', '#DC2626', '#64748B'];
+const CHART_COLORS = DOCUMENT_COLORS.chartPalette;
 
 /* ------------------------------------------------------------------ */
 /* Numeric helpers (chart labels only — financial cells are formatted   */
@@ -87,9 +84,9 @@ function buildIdentityBlock(body: ProfessionalReportBody): string {
   const cells = body.identity
     .map(
       (row) => `
-      <div style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 8px 12px; background: #F8FAFC;">
-        <span style="display: block; font-size: 10px; font-weight: 700; color: #64748B; margin-bottom: 2px;">${escapeDocumentHtml(row.label)}</span>
-        <span style="display: block; font-size: 13px; font-weight: 800; color: #0F172A;">${escapeDocumentHtml(row.value)}</span>
+      <div style="border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 8px; padding: 8px 12px; background: ${DOCUMENT_COLORS.surface};">
+        <span style="display: block; ${DOCUMENT_TYPE.caption}; font-weight: 700; color: ${DOCUMENT_COLORS.muted}; margin-bottom: 2px;">${escapeDocumentHtml(row.label)}</span>
+        <span style="display: block; font-size: 13px; font-weight: 800; color: ${DOCUMENT_COLORS.ink};">${escapeDocumentHtml(row.value)}</span>
       </div>`,
     )
     .join('');
@@ -106,77 +103,29 @@ function buildKpiStripBlock(kpis: ReportKpi[]): string {
     .map((kpi) => {
       const comparison =
         kpi.comparison != null
-          ? `<span style="display: block; font-size: 10px; font-weight: 700; margin-top: 4px; color: #475569; border-top: 1px dashed #CBD5E1; padding-top: 4px;">التغير: <strong>${escapeDocumentHtml(kpi.comparison)}</strong></span>`
+          ? `<span style="display: block; ${DOCUMENT_TYPE.caption}; font-weight: 700; margin-top: 4px; color: ${DOCUMENT_COLORS.secondary}; border-top: 1px dashed ${DOCUMENT_COLORS.tableBorder}; padding-top: 4px;">التغير: <strong>${escapeDocumentHtml(kpi.comparison)}</strong></span>`
           : '';
       return `
-      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; page-break-inside: avoid; break-inside: avoid;">
-        <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 2px;">${escapeDocumentHtml(kpi.label)}</span>
-        <span style="display: block; font-size: 16px; font-weight: 900; color: #0F172A;">${escapeDocumentHtml(kpi.value)}</span>
+      <div style="background: ${DOCUMENT_COLORS.page}; border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 10px; padding: 10px 14px; page-break-inside: avoid; break-inside: avoid;">
+        <span style="display: block; ${DOCUMENT_TYPE.meta}; color: ${DOCUMENT_COLORS.muted}; margin-bottom: 2px;">${escapeDocumentHtml(kpi.label)}</span>
+        <span style="display: block; ${DOCUMENT_TYPE.kpiValue}; color: ${DOCUMENT_COLORS.ink};">${escapeDocumentHtml(kpi.value)}</span>
         ${comparison}
       </div>`;
     })
     .join('');
-  return `<section class="${BLOCK_CLASS}" style="background-color: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px; ${SECTION_WRAP}"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">${chips}</div></section>`;
+  return `<section class="${BLOCK_CLASS}" style="background-color: ${DOCUMENT_COLORS.surfaceAlt}; border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 12px; padding: 12px; ${SECTION_WRAP}"><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">${chips}</div></section>`;
 }
 
-/* ------------------------------------------------------------------ */
-/* Compact print table                                                 */
-/* ------------------------------------------------------------------ */
-
-const NUMERIC_CELL_REGEX = /^[\s\-+]*[\d,.]+(?:\s?(?:ر\.?ع\.?|OMR|SAR|AED|USD|%))?\s*$/;
-
-const isNumericCell = (value: string): boolean => NUMERIC_CELL_REGEX.test(value.trim());
-
-const compactCellAlignment = (rows: string[][], columnIndex: number): string => {
-  const values = rows.map((row) => row[columnIndex]).filter((value): value is string => Boolean(value?.trim()));
-  const numeric = values.length > 0 && values.every((value) => isNumericCell(value));
-  return numeric ? 'font-weight: 700; text-align: left;' : 'text-align: right;';
-};
-
-const compactRowsHtml = (rows: string[][]): string =>
-  rows
-    .map(
-      (row) =>
-        `<tr style="page-break-inside: avoid; break-inside: avoid;">${row
-          .map(
-            (cell, index) =>
-              `<td style="border: 1px solid ${TABLE_BORDER}; padding: 6px 8px; font-size: 12px; color: ${TABLE_TEXT}; ${compactCellAlignment(rows, index)}">${escapeDocumentHtml(cell)}</td>`,
-          )
-          .join('')}</tr>`,
-    )
-    .join('');
-
-const compactHeadHtml = (columns: string[], rows: string[][]): string =>
-  `<thead><tr>${columns
-    .map(
-      (column, index) =>
-        `<th style="background-color: ${TABLE_HEAD_BG}; color: ${TABLE_HEAD_FG}; font-weight: 700; font-size: 12px; padding: 8px; border: 1px solid ${TABLE_HEAD_BG}; text-align: ${
-          compactCellAlignment(rows, index) === 'font-weight: 700; text-align: left;' ? 'left' : 'right'
-        };">${escapeDocumentHtml(column)}</th>`,
-    )
-    .join('')}</tr></thead>`;
-
-const compactFootHtml = (totals: string[]): string =>
-  totals.length
-    ? `<tfoot><tr style="background-color: #F8FAFC; font-weight: 800;">${totals
-        .map(
-          (total, index) =>
-            `<th style="border: 1px solid ${TABLE_BORDER}; padding: 8px; font-size: 12px; color: ${ACCENT}; text-align: ${
-              index === totals.length - 1 ? 'left' : 'right'
-            };">${escapeDocumentHtml(total)}</th>`,
-        )
-        .join('')}</tr></tfoot>`
-    : '';
-
-const compactEmptyNote = (note: string, columnCount: number): string =>
-  `<tr><td colspan="${Math.max(1, columnCount)}" style="border: 1px solid ${TABLE_BORDER}; padding: 10px; font-size: 11px; color: #64748B; text-align: center;">${escapeDocumentHtml(note)}</td></tr>`;
-
 /**
- * Compact tables render in page-sized chunks (each chunk = one atomic
+ * Compact tables render in page-sized chunks (each chunk = one paginator
  * block). This protects pathological >1-page tables; normal report groups
  * are one chunk and therefore one atomic block. Headers repeat per chunk,
  * totals only on the final chunk, and the title never orphans from the
- * table because title + first chunk share one block.
+ * table because title + first chunk share one block. If a chunk still
+ * exceeds one page (tall wrapping rows), the paginator splits it further
+ * by measured row heights. Chunks deliberately carry NO break-avoidance:
+ * table flow must stay natural in browser print (headers repeat via
+ * `thead { display: table-header-group }`).
  */
 function buildCompactTableBlocks(table: ReportTable): string[] {
   const chunks: string[][][] = [];
@@ -189,18 +138,18 @@ function buildCompactTableBlocks(table: ReportTable): string[] {
     const isFirst = chunkIndex === 0;
     const isLast = chunkIndex === chunks.length - 1;
     const body = chunkRows.length === 0 && table.emptyNote
-      ? compactEmptyNote(table.emptyNote, table.columns.length)
-      : compactRowsHtml(chunkRows);
+      ? buildEmptyNoteRow(table.emptyNote, table.columns.length)
+      : buildTableRowsHtml(chunkRows);
     const titleHtml = isFirst && table.title
-      ? `<h3 style="font-size: 14px; font-weight: 800; color: #0F172A; margin: 0 0 8px 0; border-right: 3px solid ${ACCENT}; padding-right: 8px;">${escapeDocumentHtml(table.title)}</h3>`
+      ? `<h3 style="${DOCUMENT_TYPE.sectionTitle}; color: ${DOCUMENT_COLORS.ink}; margin: 0 0 ${DOCUMENT_SPACING.titleGapMm}px 0; border-right: 3px solid ${ACCENT}; padding-right: 8px;">${escapeDocumentHtml(table.title)}</h3>`
       : '';
     const html = `
       <table style="width: 100%; border-collapse: collapse;">
-        ${compactHeadHtml(table.columns, table.rows)}
+        ${buildTableHeadHtml(table.columns, table.rows)}
         <tbody>${body}</tbody>
-        ${isLast ? compactFootHtml(table.totals ?? []) : ''}
+        ${isLast ? buildTableFootHtml(table.totals ?? []) : ''}
       </table>`;
-    return `<section class="${BLOCK_CLASS}" style="${isFirst ? COMPACT_SECTION_WRAP : 'margin-bottom: 10px; page-break-inside: avoid; break-inside: avoid;'}">${titleHtml}${html}</section>`;
+    return `<section class="${BLOCK_CLASS}" style="margin-bottom: ${isFirst ? 16 : DOCUMENT_SPACING.tableChunkGapMm}px;">${titleHtml}${html}</section>`;
   });
 }
 
@@ -209,17 +158,17 @@ function buildCompactTableBlocks(table: ReportTable): string[] {
 /* ------------------------------------------------------------------ */
 
 const NOTE_TONES: Record<ReportNote['tone'], { bg: string; border: string; label: string }> = {
-  info: { bg: '#EFF6FF', border: '#93C5FD', label: 'ملاحظة' },
-  risk: { bg: '#FEF2F2', border: '#FCA5A5', label: 'مؤشر خطر' },
-  success: { bg: '#F0FDF4', border: '#86EFAC', label: 'مؤشر إيجابي' },
-  neutral: { bg: '#F8FAFC', border: '#CBD5E1', label: 'بيان' },
+  info: { bg: DOCUMENT_COLORS.noteInfo.bg, border: DOCUMENT_COLORS.noteInfo.border, label: 'ملاحظة' },
+  risk: { bg: DOCUMENT_COLORS.noteRisk.bg, border: DOCUMENT_COLORS.noteRisk.border, label: 'مؤشر خطر' },
+  success: { bg: DOCUMENT_COLORS.noteSuccess.bg, border: DOCUMENT_COLORS.noteSuccess.border, label: 'مؤشر إيجابي' },
+  neutral: { bg: DOCUMENT_COLORS.noteNeutral.bg, border: DOCUMENT_COLORS.noteNeutral.border, label: 'بيان' },
 };
 
 function buildNoteBlock(note: ReportNote): string {
   const tone = NOTE_TONES[note.tone] ?? NOTE_TONES.neutral;
   return `<section class="${BLOCK_CLASS}" style="background: ${tone.bg}; border: 1px solid ${tone.border}; border-radius: 10px; padding: 10px 14px; ${SECTION_WRAP}">
-    <span style="display: block; font-size: 11px; font-weight: 800; color: #334155; margin-bottom: 4px;">${tone.label}</span>
-    <span style="display: block; font-size: 12px; font-weight: 600; color: #1E293B;">${escapeDocumentHtml(note.text)}</span>
+    <span style="display: block; ${DOCUMENT_TYPE.meta}; font-weight: 800; color: ${DOCUMENT_COLORS.strong}; margin-bottom: 4px;">${tone.label}</span>
+    <span style="display: block; ${DOCUMENT_TYPE.body}; font-weight: 600; color: ${DOCUMENT_COLORS.text};">${escapeDocumentHtml(note.text)}</span>
   </section>`;
 }
 
@@ -233,7 +182,7 @@ const SVG_PLOT_RIGHT = 20;
 const SVG_AXIS_Y = 236;
 const SVG_CHART_BOTTOM = 236;
 const SVG_TOP_PAD = 30;
-const SVG_TEXT_COLOR = '#334155';
+const SVG_TEXT_COLOR = DOCUMENT_COLORS.strong;
 
 function buildLegendHtml(chart: ReportChart): string {
   if (chart.series.length <= 1) return '';
@@ -249,8 +198,8 @@ function buildLegendHtml(chart: ReportChart): string {
 }
 
 function buildChartTitle(chart: ReportChart): string {
-  return `<h3 style="font-size: 14px; font-weight: 800; color: #0F172A; margin: 0 0 2px 0; border-right: 3px solid ${ACCENT}; padding-right: 8px;">${escapeDocumentHtml(chart.title)}</h3>${
-    chart.caption ? `<div style="font-size: 11px; color: #64748B; margin: 2px 0 4px 0;">${escapeDocumentHtml(chart.caption)}</div>` : ''
+  return `<h3 style="${DOCUMENT_TYPE.sectionTitle}; color: ${DOCUMENT_COLORS.ink}; margin: 0 0 2px 0; border-right: 3px solid ${ACCENT}; padding-right: 8px;">${escapeDocumentHtml(chart.title)}</h3>${
+    chart.caption ? `<div style="${DOCUMENT_TYPE.meta.replace("; font-weight: 700", "")}; color: ${DOCUMENT_COLORS.muted}; margin: 2px 0 4px 0;">${escapeDocumentHtml(chart.caption)}</div>` : ''
   }`;
 }
 
@@ -268,9 +217,9 @@ function buildChartSvg(chart: ReportChart): string {
   }
 
   const note = chart.note
-    ? `<div style="font-size: 10px; color: #64748B; margin-top: 4px; border-top: 1px dashed #CBD5E1; padding-top: 4px;">${escapeDocumentHtml(chart.note)}</div>`
+    ? `<div style="${DOCUMENT_TYPE.caption}; color: ${DOCUMENT_COLORS.muted}; margin-top: 4px; border-top: 1px dashed ${DOCUMENT_COLORS.tableBorder}; padding-top: 4px;">${escapeDocumentHtml(chart.note)}</div>`
     : '';
-  return `<section class="${BLOCK_CLASS}" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; ${SECTION_WRAP}">
+  return `<section class="${BLOCK_CLASS}" style="background: ${DOCUMENT_COLORS.page}; border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 12px; padding: 12px 14px; ${SECTION_WRAP}">
     ${buildChartTitle(chart)}
     ${buildLegendHtml(chart)}
     ${svg}
@@ -307,7 +256,7 @@ function buildGroupedBarSvg(chart: ReportChart, yMax: number): string {
       const color = CHART_COLORS[s % CHART_COLORS.length];
       bars += `<rect x="${barX}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="2" fill="${color}" />`;
       if (value !== 0) {
-        bars += `<text x="${barX + barWidth / 2}" y="${barY - 4}" font-size="9" font-weight="700" fill="#0F172A" text-anchor="middle">${chartNumber(value)}</text>`;
+        bars += `<text x="${barX + barWidth / 2}" y="${barY - 4}" font-size="9" font-weight="700" fill="${DOCUMENT_COLORS.ink}" text-anchor="middle">${chartNumber(value)}</text>`;
       }
     }
   }
@@ -316,12 +265,12 @@ function buildGroupedBarSvg(chart: ReportChart, yMax: number): string {
   for (let step = 0; step <= 4; step += 1) {
     const y = SVG_AXIS_Y - (plotHeight * step) / 4;
     const tickValue = (yMax * step) / 4;
-    axis += `<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${y}" y2="${y}" stroke="#E2E8F0" stroke-width="1" />`;
-    axis += `<text x="${SVG_PLOT_LEFT - 6}" y="${y + 3}" font-size="9" fill="#64748B" text-anchor="end">${chartNumber(tickValue)}</text>`;
+    axis += `<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${y}" y2="${y}" stroke="${DOCUMENT_COLORS.border}" stroke-width="1" />`;
+    axis += `<text x="${SVG_PLOT_LEFT - 6}" y="${y + 3}" font-size="9" fill="${DOCUMENT_COLORS.muted}" text-anchor="end">${chartNumber(tickValue)}</text>`;
   }
 
   const height = SVG_CHART_BOTTOM + 26;
-  return `<svg viewBox="0 0 ${SVG_WIDTH} ${height}" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeDocumentHtml(chart.title)}">${axis}${bars}<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${SVG_AXIS_Y}" y2="${SVG_AXIS_Y}" stroke="#94A3B8" stroke-width="1.5" />${labels}</svg>`;
+  return `<svg viewBox="0 0 ${SVG_WIDTH} ${height}" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeDocumentHtml(chart.title)}">${axis}${bars}<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${SVG_AXIS_Y}" y2="${SVG_AXIS_Y}" stroke="${DOCUMENT_COLORS.subtle}" stroke-width="1.5" />${labels}</svg>`;
 }
 
 /** Horizontal bars (RTL: labels on the right, bars grow leftwards). */
@@ -348,12 +297,12 @@ function buildHBarSvg(chart: ReportChart, yMax: number): string {
     // Label column on the RIGHT (RTL document order).
     rows += `<text x="${labelWidth - 8}" y="${y + rowHeight / 2 + 3}" font-size="11" font-weight="700" fill="${SVG_TEXT_COLOR}" text-anchor="end">${escapeDocumentHtml(categories[index] ?? '')}</text>`;
     rows += `<rect x="${labelWidth - width}" y="${y + (rowHeight - barHeight) / 2}" width="${width}" height="${barHeight}" rx="2" fill="${CHART_COLORS[index % CHART_COLORS.length]}" />`;
-    rows += `<text x="${labelWidth - width - 6}" y="${y + rowHeight / 2 + 3}" font-size="10" font-weight="700" fill="#0F172A" text-anchor="end">${chartNumber(value)}</text>`;
-    rows += `<text x="${labelWidth + 6}" y="${y + rowHeight / 2 + 3}" font-size="9" fill="#64748B">${chartNumber(share)}%</text>`;
+    rows += `<text x="${labelWidth - width - 6}" y="${y + rowHeight / 2 + 3}" font-size="10" font-weight="700" fill="${DOCUMENT_COLORS.ink}" text-anchor="end">${chartNumber(value)}</text>`;
+    rows += `<text x="${labelWidth + 6}" y="${y + rowHeight / 2 + 3}" font-size="9" fill="${DOCUMENT_COLORS.muted}">${chartNumber(share)}%</text>`;
   }
 
   const title = seriesName
-    ? `<div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 6px;">${escapeDocumentHtml(seriesName)}</div>`
+    ? `<div style="${DOCUMENT_TYPE.caption}; font-weight: 700; color: ${DOCUMENT_COLORS.secondary}; margin-bottom: 6px;">${escapeDocumentHtml(seriesName)}</div>`
     : '';
   const height = chartBottom + 8;
   return `<div>${title}<svg viewBox="0 0 ${SVG_WIDTH} ${height}" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeDocumentHtml(chart.title)}">${rows}</svg></div>`;
@@ -397,19 +346,19 @@ function buildStackedBarSvg(chart: ReportChart): string {
       bars += `<rect x="${barX}" y="${y}" width="${barWidth}" height="${Math.max(1, barHeight)}" fill="${CHART_COLORS[s % CHART_COLORS.length]}" />`;
     }
     if (columnTotal > 0) {
-      bars += `<text x="${barX + barWidth / 2}" y="${y - 4}" font-size="9" font-weight="700" fill="#0F172A" text-anchor="middle">${chartNumber(columnTotal)}</text>`;
+      bars += `<text x="${barX + barWidth / 2}" y="${y - 4}" font-size="9" font-weight="700" fill="${DOCUMENT_COLORS.ink}" text-anchor="middle">${chartNumber(columnTotal)}</text>`;
     }
   }
 
   let axis = '';
   for (let step = 0; step <= 4; step += 1) {
     const y = SVG_AXIS_Y - (plotHeight * step) / 4;
-    axis += `<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${y}" y2="${y}" stroke="#E2E8F0" stroke-width="1" />`;
-    axis += `<text x="${SVG_PLOT_LEFT - 6}" y="${y + 3}" font-size="9" fill="#64748B" text-anchor="end">${chartNumber((yMax * step) / 4)}</text>`;
+    axis += `<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${y}" y2="${y}" stroke="${DOCUMENT_COLORS.border}" stroke-width="1" />`;
+    axis += `<text x="${SVG_PLOT_LEFT - 6}" y="${y + 3}" font-size="9" fill="${DOCUMENT_COLORS.muted}" text-anchor="end">${chartNumber((yMax * step) / 4)}</text>`;
   }
 
   const height = SVG_CHART_BOTTOM + 26;
-  return `<svg viewBox="0 0 ${SVG_WIDTH} ${height}" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeDocumentHtml(chart.title)}">${axis}${bars}<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${SVG_AXIS_Y}" y2="${SVG_AXIS_Y}" stroke="#94A3B8" stroke-width="1.5" />${labels}</svg>`;
+  return `<svg viewBox="0 0 ${SVG_WIDTH} ${height}" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeDocumentHtml(chart.title)}">${axis}${bars}<line x1="${SVG_PLOT_LEFT}" x2="${SVG_WIDTH - SVG_PLOT_RIGHT}" y1="${SVG_AXIS_Y}" y2="${SVG_AXIS_Y}" stroke="${DOCUMENT_COLORS.subtle}" stroke-width="1.5" />${labels}</svg>`;
 }
 
 /* ------------------------------------------------------------------ */

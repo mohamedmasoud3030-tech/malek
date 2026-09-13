@@ -1,6 +1,19 @@
 /**
  * DocumentRenderer — the ONLY place print and PDF output happens.
  *
+ * One pipeline, every document, every language:
+ *  - the engine model becomes inline-styled HTML blocks (documentHtml);
+ *  - PRINT renders those blocks in a scoped A4 RTL popup and lets the
+ *    browser paginate (repeated table headers via `thead` groups);
+ *  - PDF paginates the same blocks into A4 shells and captures them with
+ *    html2canvas into a real application/pdf — never a print dialog.
+ *
+ * Historically there was a second, Latin-only jsPDF text pipeline. It
+ * produced documents that shared no visual system with the HTML layout
+ * (no logo, no tables, no charts, no professional report bodies), so it
+ * was removed: a Malek document must look identical on screen, on paper,
+ * and in the exported PDF, regardless of the languages inside it.
+ *
  * Print contract:
  *  - prints the document alone in a scoped A4 RTL popup, never the app screen;
  *  - waits for the POPUP's fonts and images before invoking print() (with a
@@ -11,11 +24,12 @@
  *
  * PDF contract:
  *  - produces a real application/pdf (multi-page A4), never a print dialog;
- *  - Arabic page numbers are captured as pixels (jsPDF core fonts cannot
- *    shape Arabic);
- *  - long documents are chunked/paginated between whole blocks — rows,
- *    totals and signature blocks are never clipped mid-way, table headers
- *    repeat on following pages, and blank pages are skipped;
+ *  - page footer bands (company / reference / page number) are captured as
+ *    pixels (jsPDF core fonts cannot shape Arabic);
+ *  - long documents are paginated between whole blocks — rows, totals and
+ *    signature blocks are never clipped mid-way; oversized tables are
+ *    split by measured row heights with headers repeated on every page,
+ *    and blank pages are skipped;
  *  - a page-count cap prevents browser freezes on pathological documents;
  *  - every offscreen container is removed on success AND failure;
  *  - filenames pass through the registry sanitizer.
@@ -24,13 +38,12 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas-pro';
 import type { UnifiedDocumentModel } from './types';
 import { MAX_DOCUMENT_PDF_PAGES, sanitizeDocumentFileName } from './documentRegistry';
-import { buildDocumentBodyHtml, buildPrintableDocumentHtml, collectDocumentTextChunks, escapeDocumentHtml, modelHasArabicText } from './renderer/documentHtml';
-import { buildLatinPdf } from './renderer/latinPdf';
-import { createPageNumberLabel, measureA4Metrics, paginateBlocks, type A4PageShell } from './renderer/pagination';
+import { buildDocumentBodyHtml, buildPrintableDocumentHtml, collectDocumentTextChunks, escapeDocumentHtml } from './renderer/documentHtml';
+import { createPageFooterBand, measureA4Metrics, paginateBlocks, type A4PageShell } from './renderer/pagination';
 import { createOffscreenContainer, removeAllRenderContainers, settleLayout, waitForFontsReady, waitForImages, yieldToEventLoop, POPUP_READY_TIMEOUT_MS } from './renderer/offscreen';
 import { documentIdentityKey } from './renderer/documentIdentity';
 
-export { collectDocumentTextChunks, escapeDocumentHtml, modelHasArabicText };
+export { collectDocumentTextChunks, escapeDocumentHtml };
 
 /**
  * Errors the print/PDF engine raises. Callers (page components) should
@@ -45,7 +58,7 @@ export class DocumentRenderError extends Error {
 }
 
 const POPUP_BLOCKED_MESSAGE = 'تعذر فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع ثم إعادة المحاولة.';
-const FONT_LOAD_FAILED_MESSAGE = 'تعذر تحميل الخط العربي المطلوب للطباعة. يرجى إعادة المحاولة أو التحقق من الاتصال بالإنترنت.';
+const FONT_LOAD_FAILED_MESSAGE = 'تعذر تحميل الخط المطلوب للطباعة. يرجى إعادة المحاولة أو التحقق من الاتصال بالإنترنت.';
 const PDF_GENERATION_FAILED_MESSAGE = 'تعذر إنشاء ملف PDF لهذا المستند. يرجى إعادة المحاولة، وإذا استمرت المشكلة يرجى التواصل مع الدعم الفني.';
 const POPUP_LOAD_FAILED_MESSAGE = 'تعذر تجهيز نافذة الطباعة في الوقت المناسب. يرجى إعادة المحاولة.';
 const EMPTY_DOCUMENT_MESSAGE = 'تعذر إنشاء المستند: لا يوجد محتوى قابل للطباعة في هذا المستند. يرجى التحقق من البيانات ثم إعادة المحاولة.';
@@ -129,7 +142,7 @@ async function waitForPopupAssets(popup: Window): Promise<void> {
  * print dialog for that document only — never the whole app screen. This
  * is the *print* path; it never produces a downloadable file.
  */
-async function printRtlDocument(model: UnifiedDocumentModel): Promise<void> {
+async function printDocument(model: UnifiedDocumentModel): Promise<void> {
   try {
     await waitForFontsReady(document);
   } catch (error) {
@@ -175,18 +188,18 @@ async function printRtlDocument(model: UnifiedDocumentModel): Promise<void> {
 /* PDF path                                                             */
 /* ------------------------------------------------------------------ */
 
-export type ArabicPdfBuildResult = Readonly<{
+export type DocumentPdfBuildResult = Readonly<{
   doc: jsPDF;
   pageCount: number;
   skippedBlankPages: number;
 }>;
 
 /**
- * Renders an Arabic-containing model into a real multi-page A4 jsPDF
- * document (does not save it). Exposed so artifact tests can assert on the
- * produced file (`%PDF-` magic, page count, blank-page behavior).
+ * Renders the model into a real multi-page A4 jsPDF document (does not
+ * save it). Exposed so artifact tests can assert on the produced file
+ * (`%PDF-` magic, page count, blank-page behavior).
  */
-export async function buildArabicDocumentPdf(model: UnifiedDocumentModel): Promise<ArabicPdfBuildResult> {
+export async function buildDocumentPdf(model: UnifiedDocumentModel): Promise<DocumentPdfBuildResult> {
   try {
     await waitForFontsReady(document);
   } catch (error) {
@@ -199,7 +212,9 @@ export async function buildArabicDocumentPdf(model: UnifiedDocumentModel): Promi
     await settleLayout();
 
     const metrics = measureA4Metrics(container);
-    const pages = paginateBlocks(container, metrics);
+    const pages = paginateBlocks(container, metrics, {
+      footer: { companyName: model.header.companyName, documentRef: model.header.documentNo },
+    });
 
     if (pages.length > MAX_DOCUMENT_PDF_PAGES) {
       throw new DocumentRenderError(TOO_MANY_PAGES_MESSAGE);
@@ -218,10 +233,15 @@ export async function buildArabicDocumentPdf(model: UnifiedDocumentModel): Promi
 
     for (const page of visiblePages) {
       renderedPages += 1;
-      page.shell.appendChild(createPageNumberLabel(renderedPages, visiblePages.length));
+      page.shell.appendChild(
+        createPageFooterBand(renderedPages, visiblePages.length, {
+          companyName: model.header.companyName,
+          documentRef: model.header.documentNo,
+        }),
+      );
 
       // Each A4 page shell is captured inside its own sized render root.
-      const host = createOffscreenContainer('');
+      const host = createOffscreenContainer('', { padded: false });
       host.appendChild(page.shell);
 
       let canvas: HTMLCanvasElement;
@@ -260,67 +280,10 @@ export async function buildArabicDocumentPdf(model: UnifiedDocumentModel): Promi
   }
 }
 
-/** Saves the Arabic PDF with a sanitized, registry-aligned filename. */
-async function downloadRtlDocumentPdf(model: UnifiedDocumentModel): Promise<void> {
-  const { doc } = await buildArabicDocumentPdf(model);
+/** Saves the PDF with a sanitized, registry-aligned filename. */
+async function downloadDocumentPdf(model: UnifiedDocumentModel): Promise<void> {
+  const { doc } = await buildDocumentPdf(model);
   doc.save(`${sanitizeDocumentFileName(model.fileName)}.pdf`);
-}
-
-/* ------------------------------------------------------------------ */
-/* Latin (non-Arabic) fallback                                          */
-/* ------------------------------------------------------------------ */
-
-async function printLatinDocument(model: UnifiedDocumentModel): Promise<void> {
-  let blobUrl: string | null = null;
-  let popup: Window | null = null;
-  // Belt-and-braces: even if `afterprint` never fires, the object URL is
-  // revoked after a bounded delay so it cannot leak for the session.
-  let revokeTimer: ReturnType<typeof setTimeout> | null = null;
-  const revoke = () => {
-    if (revokeTimer) clearTimeout(revokeTimer);
-    if (blobUrl) URL.revokeObjectURL(blobUrl);
-    blobUrl = null;
-  };
-  try {
-    const doc = buildLatinPdf(model);
-    doc.autoPrint();
-    popup = openPrintWindowSafely();
-    blobUrl = String(doc.output('bloburl'));
-    const openedPopup = popup;
-    openedPopup.addEventListener(
-      'afterprint',
-      () => {
-        try {
-          openedPopup.close();
-        } catch {
-          // Already closed by the user.
-        }
-        // `revoke()` clears the watchdog timer as well, so the successful
-        // path leaves neither an object URL nor a pending timer behind.
-        revoke();
-      },
-      { once: true },
-    );
-    openedPopup.location.href = blobUrl;
-    revokeTimer = setTimeout(revoke, 120_000);
-  } catch (error) {
-    try {
-      popup?.close();
-    } catch {
-      // Already closed.
-    }
-    revoke();
-    if (error instanceof DocumentRenderError) throw error;
-    throw new DocumentRenderError(PDF_GENERATION_FAILED_MESSAGE, error);
-  }
-}
-
-async function downloadLatinDocumentPdf(model: UnifiedDocumentModel): Promise<void> {
-  try {
-    buildLatinPdf(model).save(`${sanitizeDocumentFileName(model.fileName)}.pdf`);
-  } catch (error) {
-    throw new DocumentRenderError(PDF_GENERATION_FAILED_MESSAGE, error);
-  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -330,24 +293,12 @@ async function downloadLatinDocumentPdf(model: UnifiedDocumentModel): Promise<vo
 export const DocumentRenderer = {
   /** Opens a scoped A4 print preview of this document and triggers the print dialog. Never a full-page print. */
   async printDocument(model: UnifiedDocumentModel): Promise<void> {
-    await withSingleFlight(documentIdentityKey('print', model), async () => {
-      if (modelHasArabicText(model)) {
-        await printRtlDocument(model);
-        return;
-      }
-      await printLatinDocument(model);
-    });
+    await withSingleFlight(documentIdentityKey('print', model), () => printDocument(model));
   },
 
   /** Downloads a real application/pdf file for this document. Never opens window.print. */
   async downloadDocumentPdf(model: UnifiedDocumentModel): Promise<void> {
-    await withSingleFlight(documentIdentityKey('pdf', model), async () => {
-      if (modelHasArabicText(model)) {
-        await downloadRtlDocumentPdf(model);
-        return;
-      }
-      await downloadLatinDocumentPdf(model);
-    });
+    await withSingleFlight(documentIdentityKey('pdf', model), () => downloadDocumentPdf(model));
   },
 
   /**
@@ -361,17 +312,8 @@ export const DocumentRenderer = {
   async buildDocumentPdfFile(model: UnifiedDocumentModel): Promise<File> {
     return withSingleFlight(documentIdentityKey('pdf-file', model), async () => {
       const filename = `${sanitizeDocumentFileName(model.fileName)}.pdf`;
-      if (modelHasArabicText(model)) {
-        const { doc } = await buildArabicDocumentPdf(model);
-        return new File([doc.output('blob')], filename, { type: 'application/pdf' });
-      }
-      try {
-        const doc = buildLatinPdf(model);
-        return new File([doc.output('blob')], filename, { type: 'application/pdf' });
-      } catch (error) {
-        if (error instanceof DocumentRenderError) throw error;
-        throw new DocumentRenderError(PDF_GENERATION_FAILED_MESSAGE, error);
-      }
+      const { doc } = await buildDocumentPdf(model);
+      return new File([doc.output('blob')], filename, { type: 'application/pdf' });
     });
   },
 };

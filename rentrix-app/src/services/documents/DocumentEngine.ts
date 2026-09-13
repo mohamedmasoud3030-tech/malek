@@ -537,12 +537,16 @@ function buildIncomeStatementModel(entry: DocumentTemplateEntry, settings: Docum
     ],
     tables: [
       moneyRowTable('الإيرادات', payload.revenues, 'إجمالي الإيرادات', payload.totalRevenue, ctx),
-      moneyRowTable('المصروفات', payload.expenses, 'إجمالي المصروفات', payload.totalExpense, ctx),
       {
-        title: 'صافي النتيجة',
-        columns: ['البيان', `المبلغ (${ctx.symbol})`],
-        rows: [['صافي الدخل / الخسارة', money(payload.netIncome, ctx)]],
-      },
+        // The net result concludes the statement directly under total
+        // expenses (multi-row footer) — one page-friendly composition
+        // instead of a third table repeating its own header chrome.
+        ...moneyRowTable('المصروفات', payload.expenses, 'إجمالي المصروفات', payload.totalExpense, ctx),
+        totals: [
+          ['إجمالي المصروفات', money(payload.totalExpense, ctx)],
+          ['صافي الدخل / الخسارة', money(payload.netIncome, ctx)],
+        ],
+      } satisfies DocumentTable,
     ],
     footer: buildFooter(
       entry,

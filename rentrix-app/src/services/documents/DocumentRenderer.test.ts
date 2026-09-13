@@ -20,9 +20,12 @@ describe('collectDocumentTextChunks', () => {
     );
   });
 
-  it('does not inject default signature labels into Arabic detection chunks', () => {
+  it('projects signature labels as document text (they are printed content)', () => {
     const chunks = collectDocumentTextChunks(baseModel);
-    expect(chunks.join(' ')).not.toContain('\u062a\u0648\u0642\u064a\u0639');
+    // The unified pipeline renders every language, so signature labels are
+    // plain document content — always part of the text projection.
+    expect(chunks).toContain('توقيع المالك');
+    expect(chunks).toContain('توقيع المستأجر');
   });
 
   it('keeps actual Arabic content in chunks', () => {

@@ -135,9 +135,9 @@ describe('no parallel document engine outside the platform', () => {
   const rendererInternals = new Set([
     'services/documents/DocumentRenderer.ts',
     'services/documents/renderer/documentHtml.ts',
+    'services/documents/renderer/documentTableHtml.ts',
     'services/documents/renderer/pagination.ts',
     'services/documents/renderer/offscreen.ts',
-    'services/documents/renderer/latinPdf.ts',
     'services/documents/renderer/documentIdentity.ts',
     // The rules module necessarily CONTAINS the forbidden patterns (they are
     // its detection regexes), so it can never be scanned by itself. Its own

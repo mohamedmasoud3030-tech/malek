@@ -28,10 +28,10 @@ const html2canvasMock = vi.hoisted(() =>
 
 vi.mock('html2canvas-pro', () => ({ default: html2canvasMock }));
 
-import { buildArabicDocumentPdf, DocumentRenderError, DocumentRenderer } from '../DocumentRenderer';
+import { buildDocumentPdf, DocumentRenderError, DocumentRenderer } from '../DocumentRenderer';
 import { buildDocumentBodyBlocks, buildDocumentBodyHtml, buildPrintableDocumentHtml, chunkTableBlocks } from './documentHtml';
 import { createOffscreenContainer, IMAGE_WAIT_TIMEOUT_MS, removeAllRenderContainers, RENDER_ROOT_ATTRIBUTE, waitForImages } from './offscreen';
-import { createPageNumberLabel, measureA4Metrics, paginateBlocks } from './pagination';
+import { createPageFooterBand, measureA4Metrics, paginateBlocks } from './pagination';
 
 const baseModel: UnifiedDocumentModel = {
   type: 'invoice',
@@ -165,16 +165,20 @@ describe('A4 pagination', () => {
     container.remove();
   });
 
-  it('renders page numbers as Arabic pixel labels (jsPDF cannot shape Arabic text)', () => {
-    const label = createPageNumberLabel(2, 5);
-    expect(label.textContent).toBe('صفحة 2 من 5');
-    expect(label.getAttribute('data-document-page-number')).not.toBeNull();
+  it('renders the page footer band with an Arabic pixel page-number label', () => {
+    const band = createPageFooterBand(2, 5, { companyName: 'شركة الأفق', documentRef: 'INV-100' });
+    expect(band.getAttribute('data-document-page-footer')).not.toBeNull();
+    const label = band.querySelector('[data-document-page-number]');
+    expect(label?.textContent).toBe('صفحة 2 من 5');
+    // Company identity and the real reference join the band on every page.
+    expect(band.textContent).toContain('شركة الأفق');
+    expect(band.textContent).toContain('INV-100');
   });
 });
 
 describe('PDF render lifecycle', () => {
   it('produces one captured canvas per page and cleans every offscreen container', async () => {
-    const result = await buildArabicDocumentPdf(baseModel);
+    const result = await buildDocumentPdf(baseModel);
     expect(result.pageCount).toBeGreaterThanOrEqual(1);
     expect(html2canvasMock).toHaveBeenCalledTimes(result.pageCount);
     expect(renderRootCount()).toBe(0);
@@ -182,7 +186,7 @@ describe('PDF render lifecycle', () => {
   });
 
   it('injects an Arabic page-number label into every captured page', async () => {
-    await buildArabicDocumentPdf(baseModel);
+    await buildDocumentPdf(baseModel);
     for (const call of html2canvasMock.mock.calls) {
       const shell = call[0] as HTMLElement;
       expect(shell.querySelector('[data-document-page-number]')?.textContent).toMatch(/صفحة \d+ من \d+/);
@@ -191,7 +195,7 @@ describe('PDF render lifecycle', () => {
 
   it('cleans up offscreen containers when capture fails', async () => {
     html2canvasMock.mockRejectedValueOnce(new Error('canvas exploded'));
-    await expect(buildArabicDocumentPdf(baseModel)).rejects.toThrow(DocumentRenderError);
+    await expect(buildDocumentPdf(baseModel)).rejects.toThrow(DocumentRenderError);
     expect(renderRootCount()).toBe(0);
   });
 
@@ -201,7 +205,7 @@ describe('PDF render lifecycle', () => {
       configurable: true,
       value: { ready: Promise.reject(new Error('font boom')) },
     });
-    await expect(buildArabicDocumentPdf(baseModel)).rejects.toThrow(/تعذر تحميل الخط العربي المطلوب للطباعة/);
+    await expect(buildDocumentPdf(baseModel)).rejects.toThrow(/تعذر تحميل الخط المطلوب للطباعة/);
     expect(renderRootCount()).toBe(0);
     if (fontsDescriptor) Object.defineProperty(document, 'fonts', fontsDescriptor);
     else Reflect.deleteProperty(document, 'fonts');

@@ -10,6 +10,7 @@
  *    than freezing the action);
  *  - a broken logo/image never blocks the rest of the document.
  */
+import { DOCUMENT_PAGE } from '../documentDesignTokens';
 
 /** Max time we wait for web fonts before degrading to the fallback stack. */
 export const FONT_WAIT_TIMEOUT_MS = 8000;
@@ -21,6 +22,8 @@ export const IMAGE_WAIT_TIMEOUT_MS = 8000;
 export const POPUP_READY_TIMEOUT_MS = 10000;
 
 export const RENDER_ROOT_ATTRIBUTE = 'data-document-render-root';
+
+const PAGE_MARGINS_MM = DOCUMENT_PAGE.marginsMm;
 
 const timeout = (ms: number) => new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), ms));
 
@@ -80,14 +83,25 @@ export const settleLayout = nextFrame;
  * Creates the offscreen measurement container. Body-fragment HTML only —
  * never a full document with `<style>`/`<link>` tags (those would leak
  * into the live app DOM while rendering).
+ *
+ * Geometry contract: the container mirrors the A4 PAGE SHELL — same A4
+ * width with the page margins applied as padding (border-box) — so every
+ * block is measured at EXACTLY the width it will occupy inside a page's
+ * content area. Measuring at full A4 width used to under-measure wrapped
+ * text/tables, overfilling pages and clipping bottom content.
  */
-export function createOffscreenContainer(bodyFragmentHtml: string): HTMLDivElement {
+export function createOffscreenContainer(bodyFragmentHtml: string, options: { padded?: boolean } = {}): HTMLDivElement {
+  const padded = options.padded !== false;
   const container = document.createElement('div');
   container.setAttribute(RENDER_ROOT_ATTRIBUTE, '');
   container.style.position = 'fixed';
   container.style.left = '-10000px';
   container.style.top = '0';
   container.style.width = '794px'; // A4 width at 96dpi
+  if (padded) {
+    container.style.boxSizing = 'border-box';
+    container.style.padding = `${PAGE_MARGINS_MM.top}mm ${PAGE_MARGINS_MM.right}mm ${PAGE_MARGINS_MM.bottom}mm ${PAGE_MARGINS_MM.left}mm`;
+  }
   container.style.direction = 'rtl';
   container.style.background = '#FFFFFF';
   container.style.fontFamily = '"Cairo", "Segoe UI", Tahoma, sans-serif';

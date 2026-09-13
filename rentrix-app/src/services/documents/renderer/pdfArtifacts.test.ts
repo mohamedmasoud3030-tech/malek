@@ -52,7 +52,7 @@ vi.mock('jspdf', async (importOriginal) => {
   return { ...actual, jsPDF: RecordingJsPDF };
 });
 
-import { buildArabicDocumentPdf, DocumentRenderError, DocumentRenderer } from '../DocumentRenderer';
+import { buildDocumentPdf, DocumentRenderError, DocumentRenderer } from '../DocumentRenderer';
 import { removeAllRenderContainers, RENDER_ROOT_ATTRIBUTE } from './offscreen';
 import { sanitizeDocumentFileName } from '../documentRegistry';
 
@@ -94,11 +94,15 @@ const longStatementModel: UnifiedDocumentModel = {
   fileName: 'owner-statement-شركة-الأفق',
 };
 
-/** Give happy-dom elements realistic heights so pagination is exercised. */
+/** Give happy-dom elements realistic heights so pagination is exercised.
+ * Table rows measure 42px each; a section containing rows measures
+ * rows×42+90 (header/title overhead); other document blocks 90px. */
 function stubRealisticHeights() {
   const original = HTMLElement.prototype.getBoundingClientRect;
   HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
     const base = original.call(this);
+    const tag = this.tagName?.toLowerCase();
+    if (tag === 'tr') return { ...base, height: 42, width: 794 };
     const rows = this.querySelectorAll?.('tr').length ?? 0;
     const isBlock = this.classList?.contains('document-block');
     const height = rows > 0 ? rows * 42 + 90 : isBlock ? 90 : base.height;
@@ -123,7 +127,7 @@ afterEach(() => {
 
 describe('real PDF artifacts', () => {
   it('produces a genuine non-empty application/pdf file', async () => {
-    const { doc } = await buildArabicDocumentPdf(smallModel);
+    const { doc } = await buildDocumentPdf(smallModel);
     const bytes = pdfBytes(doc);
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
     expect(bytes.byteLength).toBeGreaterThan(500);
@@ -146,8 +150,8 @@ describe('real PDF artifacts', () => {
       fileName: 'oversized',
     };
     html2canvasMock.mockClear();
-    await expect(buildArabicDocumentPdf(oversized)).rejects.toThrow(/طويل جدًا/);
-    await expect(buildArabicDocumentPdf(oversized)).rejects.toBeInstanceOf(DocumentRenderError);
+    await expect(buildDocumentPdf(oversized)).rejects.toThrow(/طويل جدًا/);
+    await expect(buildDocumentPdf(oversized)).rejects.toBeInstanceOf(DocumentRenderError);
     expect(html2canvasMock).not.toHaveBeenCalled(); // nothing rendered before the fail-closed check
     expect(document.querySelectorAll(`[${RENDER_ROOT_ATTRIBUTE}]`).length).toBe(0);
     restore();
@@ -155,7 +159,7 @@ describe('real PDF artifacts', () => {
 
   it('a short document renders as exactly one A4 page', async () => {
     const restore = stubRealisticHeights();
-    const { doc, pageCount } = await buildArabicDocumentPdf(smallModel);
+    const { doc, pageCount } = await buildDocumentPdf(smallModel);
     expect(pageCount).toBe(1);
     expect(doc.getNumberOfPages()).toBe(1);
     restore();
@@ -163,10 +167,11 @@ describe('real PDF artifacts', () => {
 
   it('a long owner statement renders the expected multi-page count with no blank trailing page', async () => {
     const restore = stubRealisticHeights();
-    const { doc, pageCount, skippedBlankPages } = await buildArabicDocumentPdf(longStatementModel);
-    // 120 rows ⇒ 6 chunk blocks (~22 rows each ≈ 1014px > 1000px budget) —
-    // each chunk occupies its own page, header/KPI block joins the first.
-    expect(pageCount).toBeGreaterThanOrEqual(6);
+    const { doc, pageCount, skippedBlankPages } = await buildDocumentPdf(longStatementModel);
+    // 120 rows × 42px + header/KPI/signature blocks ≈ 5500px of content —
+    // the paginator packs measured rows across pages (never clipping), so
+    // the statement must span several pages and never pad a blank one.
+    expect(pageCount).toBeGreaterThanOrEqual(5);
     expect(doc.getNumberOfPages()).toBe(pageCount);
     expect(skippedBlankPages).toBe(0);
     // Every captured page carried an Arabic page-number label.
@@ -180,7 +185,7 @@ describe('real PDF artifacts', () => {
 
   it('does not clip content: every 42px row fits within whole-block pages', async () => {
     const restore = stubRealisticHeights();
-    const { doc } = await buildArabicDocumentPdf(longStatementModel);
+    const { doc } = await buildDocumentPdf(longStatementModel);
     // With whole-block pagination each page maps 1:1 to an A4 canvas.
     expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(6);
     restore();

@@ -262,16 +262,8 @@
     border-color: #cbd5e1 !important;
   }
 
-  .print-page-break {
-    page-break-before: always !important;
-    break-before: page !important;
-  }
-
   tr,
-  .print-avoid-break,
-  .kpi-card,
-  [data-entity-card],
-  .signature-block {
+  [data-entity-card] {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }

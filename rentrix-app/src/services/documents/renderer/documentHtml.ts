@@ -12,27 +12,26 @@
  *    NO `<style>`/`<link>` tags — earlier code injected a whole document
  *    into a `<div>`, which leaked document styles into the live app DOM.
  *
+ * Both artifacts share ONE block source and ONE design-token contract
+ * (`documentDesignTokens`), so browser print and generated PDF paginate
+ * and look identically for every document type and every language.
+ *
  * Long tables are chunked into page-sized table blocks up-front so the
- * paginator can always break BETWEEN chunks (never mid-row), and every
- * chunk repeats its column header at the top of the next page.
+ * paginator can break BETWEEN chunks (never mid-row); the paginator
+ * additionally splits any chunk that still exceeds a page by measured row
+ * heights, repeating the column header on every continuation page.
  */
 import type { SignatureRole, UnifiedDocumentModel } from '../types';
-import { formatLatinDateTime } from '@/lib/formatters';
-import { MAX_ROWS_PER_TABLE_CHUNK } from '../documentRegistry';
+import { formatLatinDate, formatLatinTime } from '@/lib/formatters';
+
+/** Intl bidi embedding marks — stripped so rasterizers keep digit order. */
+const BIDI_MARKS = /[‎‏؜‪-‮⁦-⁩]/g;
+import { DOCUMENT_COLORS, DOCUMENT_PAGE, DOCUMENT_SPACING, DOCUMENT_TABLE, DOCUMENT_TYPE } from '../documentDesignTokens';
+import { buildEmptyNoteRow, buildTableFootHtml, buildTableHeadHtml, buildTableRowsHtml } from './documentTableHtml';
 import { buildProfessionalDocumentBlocks, collectProfessionalTextChunks } from './professionalDocumentHtml';
 import { escapeDocumentHtml } from './documentHtmlShared';
 
 export { escapeDocumentHtml } from './documentHtmlShared';
-
-const ARABIC_REGEX = /[\u0600-\u06FF]/;
-const DEFAULT_SIGNATURE_LABELS = new Set([
-  'توقيع المالك',
-  'توقيع المستأجر',
-  'توقيع المحاسب',
-  'اعتماد المدير العام',
-  'توقيع الفاحص / المفتش',
-  'توقيع المقاول / الفني',
-]);
 
 export const signatureLabel: Record<SignatureRole, string> = {
   owner: 'توقيع المالك',
@@ -43,10 +42,13 @@ export const signatureLabel: Record<SignatureRole, string> = {
   vendor: 'توقيع المقاول / الفني',
 };
 
+/**
+ * Every user-visible string of the model, in render order. This is the
+ * canonical "what text does this document contain" projection — used by
+ * tests and by any future text-level tooling.
+ */
 export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[] => {
-  const signatureTexts = model.footer.signatures
-    .map((role) => signatureLabel[role])
-    .filter((label) => !DEFAULT_SIGNATURE_LABELS.has(label));
+  const signatureTexts = model.footer.signatures.map((role) => signatureLabel[role]);
 
   const professionalChunks = model.professional ? collectProfessionalTextChunks(model.professional) : [];
 
@@ -62,7 +64,7 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
     model.header.dateLabel,
     model.header.dateValue,
     ...model.kpis.flatMap((k) => [k.label, k.value]),
-    ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? []), t.emptyNote]),
+    ...model.tables.flatMap((t) => [t.title, ...t.columns, ...t.rows.flat(), ...(t.totals ?? []).flat(), t.emptyNote]),
     ...professionalChunks,
     model.footer.companyStampLabel,
     model.footer.metadata,
@@ -70,77 +72,20 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
   ].filter((v): v is string => Boolean(v));
 };
 
-export const modelHasArabicText = (model: UnifiedDocumentModel): boolean =>
-  collectDocumentTextChunks(model).some((chunk) => ARABIC_REGEX.test(chunk));
-
-/**
- * A column is treated as numeric (amounts/counts/balances are aligned left
- * and bolded for scan stability in RTL) only when its cell values actually
- * look numeric. Plain-text columns stay right-aligned like other text.
- */
-const NUMERIC_CELL_REGEX = /^[\s\-+]*[\d,.]+(?:\s?(?:ر\.?ع\.?|OMR|SAR|AED|USD|%))?\s*$/;
-
-const isNumericColumn = (rows: string[][], columnIndex: number): boolean => {
-  const values = rows.map((row) => row[columnIndex]).filter((value): value is string => Boolean(value && value.trim()));
-  if (values.length === 0) return false;
-  return values.every((value) => NUMERIC_CELL_REGEX.test(value.trim()));
-};
-
-const cellAlignment = (rows: string[][], columnIndex: number): string =>
-  isNumericColumn(rows, columnIndex) ? 'font-weight: 700; text-align: left;' : 'text-align: right;';
-
-const buildHtmlRows = (rows: string[][]) =>
-  rows
-    .map(
-      (row) =>
-        `<tr style="page-break-inside: avoid; break-inside: avoid;">${row
-          .map(
-            (cell, index) =>
-              `<td style="border: 1px solid #CBD5E1; padding: 8px 10px; font-size: 13px; color: #1E293B; ${cellAlignment(rows, index)}">${escapeDocumentHtml(cell)}</td>`,
-          )
-          .join('')}</tr>`,
-    )
-    .join('');
-
-const buildHtmlTableHead = (columns: string[], rows: string[][]) =>
-  `<thead><tr>${columns
-    .map(
-      (column, index) =>
-        `<th style="background-color: #0F172A; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 10px; border: 1px solid #0F172A; text-align: ${
-          isNumericColumn(rows, index) ? 'left' : 'right'
-        };">${escapeDocumentHtml(column)}</th>`,
-    )
-    .join('')}</tr></thead>`;
-
-const buildHtmlTableFoot = (totals: string[] | undefined) =>
-  totals?.length
-    ? `<tfoot><tr style="background-color: #F8FAFC; font-weight: 800;">${totals
-        .map(
-          (total, index) =>
-            // Totals rows legitimately end in the grand-total figure, so the
-            // last cell is always treated as the numeric one.
-            `<th style="border: 1px solid #CBD5E1; padding: 10px; font-size: 14px; color: #0284C7; text-align: ${
-              index === totals.length - 1 ? 'left' : 'right'
-            };">${escapeDocumentHtml(total)}</th>`,
-        )
-        .join('')}</tr></tfoot>`
-    : '';
-
-const buildEmptyNoteRow = (note: string, columnCount: number) =>
-  `<tr style="page-break-inside: avoid; break-inside: avoid;"><td colspan="${Math.max(1, columnCount)}" style="border: 1px solid #CBD5E1; padding: 10px; font-size: 12px; color: #64748B; text-align: center;">${escapeDocumentHtml(note)}</td></tr>`;
-
 type TableBlock = { title?: string; html: string };
 
 /**
  * Splits one logical table into page-sized blocks. Each block carries its
  * own `<thead>` so a table spanning pages always shows its column header at
  * the top of the following page; `<tfoot>` totals live only on the last
- * block. The paginator only ever breaks between these blocks.
+ * block. The paginator only ever breaks between these blocks — and when a
+ * block still exceeds one page (tall wrapping rows) the paginator splits
+ * it further by measured row heights.
  */
 export function chunkTableBlocks(table: UnifiedDocumentModel['tables'][number]): TableBlock[] {
   const chunks: string[][][] = [];
-  for (let i = 0; i < table.rows.length; i += MAX_ROWS_PER_TABLE_CHUNK) {
-    chunks.push(table.rows.slice(i, i + MAX_ROWS_PER_TABLE_CHUNK));
+  for (let i = 0; i < table.rows.length; i += DOCUMENT_TABLE.maxRowsPerChunk) {
+    chunks.push(table.rows.slice(i, i + DOCUMENT_TABLE.maxRowsPerChunk));
   }
   if (chunks.length === 0) chunks.push([]);
 
@@ -149,19 +94,19 @@ export function chunkTableBlocks(table: UnifiedDocumentModel['tables'][number]):
     const isLast = index === chunks.length - 1;
     const bodyRows = chunkRows.length === 0 && table.emptyNote
       ? buildEmptyNoteRow(table.emptyNote, table.columns.length)
-      : buildHtmlRows(chunkRows);
+      : buildTableRowsHtml(chunkRows);
     const html = `
       <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
-        ${buildHtmlTableHead(table.columns, table.rows)}
+        ${buildTableHeadHtml(table.columns, table.rows)}
         <tbody>${bodyRows}</tbody>
-        ${isLast ? buildHtmlTableFoot(table.totals) : ''}
+        ${isLast ? buildTableFootHtml(table.totals) : ''}
       </table>`;
     return { title: isFirst ? table.title : undefined, html };
   });
 }
 
 const tableTitleHtml = (title: string) =>
-  `<h3 style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 0 0 10px 0; border-bottom: 2px solid #0284C7; padding-bottom: 4px; display: inline-block;">${escapeDocumentHtml(title)}</h3>`;
+  `<h3 style="${DOCUMENT_TYPE.sectionTitle}; color: ${DOCUMENT_COLORS.ink}; margin: 0 0 ${DOCUMENT_SPACING.titleGapMm * 0.75}px 0; border-right: 3px solid ${DOCUMENT_COLORS.accent}; padding-right: 8px;">${escapeDocumentHtml(title)}</h3>`;
 
 /**
  * Document blocks are FULLY inline-styled: the offscreen PDF container
@@ -170,16 +115,16 @@ const tableTitleHtml = (title: string) =>
  * layout here — otherwise PDF and print would diverge.
  */
 const HEADER_CONTAINER_STYLE =
-  'display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px double #0F172A; padding-bottom: 16px; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid;';
-const COMPANY_BRAND_STYLE = 'font-size: 20px; font-weight: 900; color: #0284C7; letter-spacing: -0.5px; margin: 0 0 4px 0;';
-const COMPANY_SUB_STYLE = 'font-size: 11px; color: #475569; margin: 2px 0;';
+  `display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px double ${DOCUMENT_COLORS.ink}; padding-bottom: 12px; margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid;`;
+const COMPANY_BRAND_STYLE = `${DOCUMENT_TYPE.companyBrand}; color: ${DOCUMENT_COLORS.accent}; margin: 0 0 4px 0;`;
+const COMPANY_SUB_STYLE = `${DOCUMENT_TYPE.meta.replace('; font-weight: 700', '')}; color: ${DOCUMENT_COLORS.muted}; margin: 2px 0;`;
 const DOC_TITLE_BADGE_STYLE =
-  'background: #0F172A; color: #FFFFFF; font-size: 18px; font-weight: 800; padding: 8px 20px; border-radius: 8px; text-align: center; display: inline-block;';
-const DOC_META_STYLE = 'font-size: 11px; color: #475569; margin: 6px 0 0 0; text-align: right;';
+  `background: ${DOCUMENT_COLORS.ink}; color: ${DOCUMENT_COLORS.tableHeadFg}; ${DOCUMENT_TYPE.docTitle}; padding: 8px 20px; border-radius: 8px; text-align: center; display: inline-block;`;
+const DOC_META_STYLE = `${DOCUMENT_TYPE.meta.replace('; font-weight: 700', '')}; color: ${DOCUMENT_COLORS.muted}; margin: 6px 0 0 0; text-align: right;`;
 const STAMP_BOX_STYLE =
-  'border: 2px dashed #0284C7; border-radius: 12px; padding: 12px; text-align: center; background: #F0F9FF; width: 140px;';
+  `border: 2px dashed ${DOCUMENT_COLORS.accent}; border-radius: 12px; padding: 10px; text-align: center; background: ${DOCUMENT_COLORS.accentSoft}; width: 132px;`;
 const FOOTER_AUDIT_STYLE =
-  'border-top: 1px solid #E2E8F0; padding-top: 12px; margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px; color: #64748B; page-break-inside: avoid; break-inside: avoid;';
+  `border-top: 1px solid ${DOCUMENT_COLORS.border}; padding-top: 10px; margin-top: 14px; display: flex; justify-content: space-between; ${DOCUMENT_TYPE.caption}; color: ${DOCUMENT_COLORS.muted}; page-break-inside: avoid; break-inside: avoid;`;
 
 const buildHeaderBlock = (model: UnifiedDocumentModel): string => {
   const logoHtml = model.header.companyLogoUrl
@@ -188,7 +133,7 @@ const buildHeaderBlock = (model: UnifiedDocumentModel): string => {
 
   const contactLines = [
     model.header.companyAddress ? `<p style="${COMPANY_SUB_STYLE}">${escapeDocumentHtml(model.header.companyAddress)}</p>` : '',
-    model.header.companyPhone ? `<p style="${COMPANY_SUB_STYLE}">الهاتف: ${escapeDocumentHtml(model.header.companyPhone)}</p>` : '',
+    model.header.companyPhone ? `<p style="${COMPANY_SUB_STYLE}">الهاتف: <span dir="ltr" style="unicode-bidi: isolate;">${escapeDocumentHtml(model.header.companyPhone)}</span></p>` : '',
     model.header.companyEmail ? `<p style="${COMPANY_SUB_STYLE}">البريد الإلكتروني: ${escapeDocumentHtml(model.header.companyEmail)}</p>` : '',
     model.header.companyRegistrationNumber ? `<p style="${COMPANY_SUB_STYLE}">السجل التجاري: ${escapeDocumentHtml(model.header.companyRegistrationNumber)}</p>` : '',
     model.header.companyTaxNumber ? `<p style="${COMPANY_SUB_STYLE}">الرقم الضريبي: ${escapeDocumentHtml(model.header.companyTaxNumber)}</p>` : '',
@@ -216,13 +161,13 @@ const buildHeaderBlock = (model: UnifiedDocumentModel): string => {
 
 const buildKpiBlock = (model: UnifiedDocumentModel): string =>
   model.kpis.length
-    ? `<div class="document-block" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 24px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;">
+    ? `<div class="document-block" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; margin-bottom: ${DOCUMENT_SPACING.sectionGapMm}px; background-color: ${DOCUMENT_COLORS.surface}; border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 12px; padding: 12px; page-break-inside: avoid; break-inside: avoid;">
         ${model.kpis
           .map(
             (kpi) => `
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 14px; page-break-inside: avoid; break-inside: avoid;">
-            <span style="display: block; font-size: 11px; font-weight: 700; color: #64748B; margin-bottom: 2px;">${escapeDocumentHtml(kpi.label)}</span>
-            <span style="display: block; font-size: 14px; font-weight: 800; color: #0F172A;">${escapeDocumentHtml(kpi.value)}</span>
+          <div style="background: ${DOCUMENT_COLORS.page}; border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 8px; padding: 8px 12px;">
+            <span style="display: block; ${DOCUMENT_TYPE.meta}; color: ${DOCUMENT_COLORS.muted}; margin-bottom: 2px;">${escapeDocumentHtml(kpi.label)}</span>
+            <span style="display: block; ${DOCUMENT_TYPE.kpiValue}; color: ${DOCUMENT_COLORS.ink};">${escapeDocumentHtml(kpi.value)}</span>
           </div>`,
           )
           .join('')}
@@ -235,21 +180,21 @@ const buildSignatureBlock = (model: UnifiedDocumentModel): string => {
   const signaturesHtml = model.footer.signatures
     .map(
       (role) => `
-      <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; background: #FFFFFF; text-align: center; min-height: 90px; display: flex; flex-direction: column; justify-content: space-between;">
-        <span style="font-size: 12px; font-weight: 800; color: #0F172A;">${escapeDocumentHtml(signatureLabel[role])}</span>
-        <div style="border-bottom: 1px dashed #94A3B8; margin-top: 36px;"></div>
-        <span style="font-size: 10px; color: #94A3B8; margin-top: 4px;">التاريخ: ____ / ____ / ________</span>
+      <div style="border: 1px solid ${DOCUMENT_COLORS.border}; border-radius: 10px; padding: 10px; background: ${DOCUMENT_COLORS.page}; text-align: center; min-height: 78px; display: flex; flex-direction: column; justify-content: space-between;">
+        <span style="${DOCUMENT_TYPE.body}; font-weight: 800; color: ${DOCUMENT_COLORS.ink};">${escapeDocumentHtml(signatureLabel[role])}</span>
+        <div style="border-bottom: 1px dashed ${DOCUMENT_COLORS.subtle}; margin-top: 24px;"></div>
+        <span style="${DOCUMENT_TYPE.caption}; color: ${DOCUMENT_COLORS.subtle}; margin-top: 4px;">التاريخ: ____ / ____ / ________</span>
       </div>`,
     )
     .join('');
 
   return `
-    <div class="document-block" style="margin-top: 30px; page-break-inside: avoid; break-inside: avoid;">
-      <h4 style="font-size: 13px; font-weight: 800; color: #0F172A; margin-bottom: 12px; border-right: 3px solid #0284C7; padding-right: 8px;">التوقيعات والاعتماد</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+    <div class="document-block" style="margin-top: 20px; page-break-inside: avoid; break-inside: avoid;">
+      <h4 style="font-size: 13px; font-weight: 800; color: ${DOCUMENT_COLORS.ink}; margin-bottom: 8px; border-right: 3px solid ${DOCUMENT_COLORS.accent}; padding-right: 8px;">التوقيعات والاعتماد</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; margin-bottom: 12px;">
         ${signaturesHtml}
         <div class="stamp-box" style="${STAMP_BOX_STYLE} margin-right: auto;">
-          <span style="font-size: 11px; font-weight: 800; color: #0284C7; display: block;">${escapeDocumentHtml(
+          <span style="${DOCUMENT_TYPE.meta}; color: ${DOCUMENT_COLORS.accent}; display: block;">${escapeDocumentHtml(
             model.footer.companyStampLabel || 'ختم الشركة',
           )}</span>
         </div>
@@ -261,7 +206,7 @@ const buildAuditFooterBlock = (model: UnifiedDocumentModel): string =>
   [
     `<div class="document-block" style="${FOOTER_AUDIT_STYLE}">`,
     `  <span>${escapeDocumentHtml(model.footer.metadata || model.header.companyName)}</span>`,
-    `  <span>وقت الإنشاء: ${escapeDocumentHtml(formatLatinDateTime(new Date(), 'ar-OM', { dateStyle: 'short', timeStyle: 'short' }))}</span>`,
+    `  <span>وقت الإنشاء: <span dir="ltr" style="unicode-bidi: isolate;">${escapeDocumentHtml(formatLatinDate(new Date(), 'ar-OM', { dateStyle: 'short' }).replace(BIDI_MARKS, ''))}</span> <span dir="ltr" style="unicode-bidi: isolate;">${escapeDocumentHtml(formatLatinTime(new Date(), 'ar-OM', { timeStyle: 'short', hour12: false }).replace(BIDI_MARKS, ''))}</span></span>`,
     '</div>',
   ].join('');
 
@@ -284,11 +229,12 @@ export function buildDocumentBodyBlocks(model: UnifiedDocumentModel, options: { 
     if (kpiBlock) blocks.push(kpiBlock);
 
     for (const table of model.tables) {
-      for (const block of chunkTableBlocks(table)) {
+      const chunked = chunkTableBlocks(table);
+      chunked.forEach((block, index) => {
         blocks.push(
-          `<section class="document-block" style="margin-bottom: 24px;">${block.title ? tableTitleHtml(block.title) : ''}${block.html}</section>`,
+          `<section class="document-block" style="margin-bottom: ${index === 0 ? DOCUMENT_SPACING.sectionGapMm : DOCUMENT_SPACING.tableChunkGapMm}px;">${block.title ? tableTitleHtml(block.title) : ''}${block.html}</section>`,
         );
-      }
+      });
     }
   }
 
@@ -305,23 +251,44 @@ export function buildDocumentBodyHtml(model: UnifiedDocumentModel, options: { wi
 }
 
 /**
- * The popup-only stylesheet: page setup + body defaults + table-header
- * repetition. Every document block is already fully inline-styled (see
+ * The popup-only stylesheet: page setup + body defaults + pagination
+ * semantics. Every document block is already fully inline-styled (see
  * buildHeaderBlock et al.), so nothing here is needed for the offscreen
  * PDF path — print and PDF share one inline-styled layout source.
+ *
+ * Page geometry mirrors `DOCUMENT_PAGE` exactly: the browser paginates the
+ * same printable area the PDF paginator fills, so print and PDF page
+ * counts match instead of drifting.
  */
 const PRINT_STYLESHEET = `
-@page { size: A4 portrait; margin: 12mm 10mm 15mm 10mm; }
+@page { size: A4 portrait; margin: ${DOCUMENT_PAGE.marginsMm.top}mm ${DOCUMENT_PAGE.marginsMm.right}mm ${DOCUMENT_PAGE.marginsMm.bottom}mm ${DOCUMENT_PAGE.marginsMm.left}mm; }
+/* Progressive enhancement: engines that implement @page margin boxes
+   (Gecko) print the same page-number format the PDF pipeline renders;
+   engines that don't (Blink/WebKit) ignore the rule harmlessly. */
+@page { @bottom-center { content: "صفحة " counter(page) " من " counter(pages); font-size: 9px; color: ${DOCUMENT_COLORS.muted}; } }
 * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-body { font-family: "Cairo", "Segoe UI", Tahoma, sans-serif; background: #FFFFFF; color: #0F172A; margin: 0; padding: 20px; line-height: 1.6; font-size: 12px; }
+html, body { margin: 0; padding: 0; background: ${DOCUMENT_COLORS.page}; }
+body { font-family: ${DOCUMENT_TYPE.fontFamily}; color: ${DOCUMENT_COLORS.ink}; line-height: ${DOCUMENT_TYPE.lineHeight}; ${DOCUMENT_TYPE.body}; }
+/* Print fragmentation semantics:
+   - table headers repeat on every page, totals stay attached;
+   - rows never split mid-way;
+   - headings never orphan from the content they introduce. */
 thead { display: table-header-group; }
 tfoot { display: table-footer-group; }
+tr { page-break-inside: avoid; break-inside: avoid; }
+h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
+table { border-collapse: collapse; }
+img { max-width: 100%; }
 `;
 
 /**
  * The full standalone document for the scoped print popup. Print
  * pagination is delegated to the browser (`thead` repeats on every page);
  * the same flat blocks are used so print and PDF share one layout source.
+ * The document language of the engine is Arabic-first (labels, signature
+ * roles, metadata captions), so the sheet is RTL regardless of the party
+ * names it carries — Latin identifiers stay readable inside it via the
+ * numeric/text alignment rules of the shared table primitives.
  */
 export function buildPrintableDocumentHtml(model: UnifiedDocumentModel): string {
   return [

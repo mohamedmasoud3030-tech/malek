@@ -95,7 +95,13 @@ export type DocumentTable = {
   title?: string;
   columns: string[];
   rows: string[][];
-  totals?: string[];
+  /**
+   * Footer totals: one row (`string[]`) or several stacked rows
+   * (`string[][]`) for statements whose conclusion follows the section
+   * total (e.g. an income statement's net result under total expenses).
+   * The LAST cell of the LAST row is rendered as the grand total figure.
+   */
+  totals?: string[] | string[][];
   /** Explicit Arabic note rendered as a full-width row when `rows` is empty. */
   emptyNote?: string;
 };

@@ -10,6 +10,7 @@
  * registry↔engine parity test keeps it that way.
  */
 import type { DocumentTypeId } from './documentPayloads';
+import { DOCUMENT_PAGE, DOCUMENT_TABLE } from './documentDesignTokens';
 import type { SignatureRole } from './types';
 
 export type DocumentOutputKind = 'print' | 'pdf';
@@ -91,10 +92,12 @@ export type DocumentTemplateEntry = Readonly<{
   notes?: string;
 }>;
 
+/** Page geometry comes from the document design tokens — the registry,
+ * the print stylesheet and the PDF paginator all share ONE A4 model. */
 const A4_PORTRAIT: PagePolicy = {
   size: 'A4',
   orientation: 'portrait',
-  marginsMm: { top: 12, right: 10, bottom: 15, left: 10 },
+  marginsMm: { ...DOCUMENT_PAGE.marginsMm },
 };
 
 const CURRENCY_POLICY: CurrencyPolicy = { source: 'company-settings', precision: 'currency-derived' };
@@ -559,7 +562,7 @@ export function truthfulStatusLabel(entry: DocumentTemplateEntry, status: string
 }
 
 /** Maximum number of rows a table chunk may contain before its header repeats. */
-export const MAX_ROWS_PER_TABLE_CHUNK = 22;
+export const MAX_ROWS_PER_TABLE_CHUNK = DOCUMENT_TABLE.maxRowsPerChunk;
 
 /** Hard cap on rendered PDF pages so pathological documents cannot freeze the browser. */
 export const MAX_DOCUMENT_PDF_PAGES = 50;
