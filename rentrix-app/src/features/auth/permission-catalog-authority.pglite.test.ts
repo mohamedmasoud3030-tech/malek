@@ -15,53 +15,77 @@
  *   - `app_private.can_manage_company_members()`, which gates on
  *     `users.manage`, was permanently false.
  */
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
-import type { PGlite } from '@electric-sql/pglite';
-import { createFullReplayedDatabase } from '@/p1/replay-bootstrap';
-import { appPermissions } from './permissions';
+import { readdirSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { PGlite } from "@electric-sql/pglite";
+import { createFullReplayedDatabase } from "@/p1/replay-bootstrap";
+import { appPermissions } from "./permissions";
 
-const repoRoot = resolve(import.meta.dirname, '../../../..');
-const migrationsDir = resolve(repoRoot, 'supabase/migrations');
+const repoRoot = resolve(import.meta.dirname, "../../../..");
+const migrationsDir = resolve(repoRoot, "supabase/migrations");
 
-const COMPANY = '92000000-0000-4000-8000-00000000000a';
-const OTHER_COMPANY = '92000000-0000-4000-8000-00000000000b';
+const COMPANY = "92000000-0000-4000-8000-00000000000a";
+const OTHER_COMPANY = "92000000-0000-4000-8000-00000000000b";
 
 /** A plain USER member used as the target of owner permission decisions. */
-const TARGET_EMPLOYEE = '92000000-0000-4000-8000-0000000000c1';
+const TARGET_EMPLOYEE = "92000000-0000-4000-8000-0000000000c1";
 
 const MEMBERS = {
-  ADMIN: '92000000-0000-4000-8000-0000000000a1',
-  MANAGER: '92000000-0000-4000-8000-0000000000a2',
-  ACCOUNTANT: '92000000-0000-4000-8000-0000000000a3',
-  OPERATIONS: '92000000-0000-4000-8000-0000000000a4',
-  USER: '92000000-0000-4000-8000-0000000000a5',
-  VIEWER: '92000000-0000-4000-8000-0000000000a6',
-  OUTSIDER: '92000000-0000-4000-8000-0000000000b1',
+  ADMIN: "92000000-0000-4000-8000-0000000000a1",
+  MANAGER: "92000000-0000-4000-8000-0000000000a2",
+  ACCOUNTANT: "92000000-0000-4000-8000-0000000000a3",
+  OPERATIONS: "92000000-0000-4000-8000-0000000000a4",
+  USER: "92000000-0000-4000-8000-0000000000a5",
+  VIEWER: "92000000-0000-4000-8000-0000000000a6",
+  OUTSIDER: "92000000-0000-4000-8000-0000000000b1",
 } as const;
 
 type MemberRole = keyof typeof MEMBERS;
-const EMPLOYEE_ROLES: MemberRole[] = ['MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'];
+const EMPLOYEE_ROLES: MemberRole[] = [
+  "MANAGER",
+  "ACCOUNTANT",
+  "OPERATIONS",
+  "USER",
+  "VIEWER",
+];
 
 let db: PGlite;
+// Built with the migration-only database in beforeAll, not in a test body: a
+// full replay is uncached (fresh PGlite + every migration) and takes seconds,
+// which is what pushed this case past vitest's 5s default once 108th migration
+// landed. It is a read-only comparison, so sharing the hook budget is exact.
+let seeded: Awaited<ReturnType<typeof createFullReplayedDatabase>>;
 
 async function assume(userId: string, companyId: string) {
-  const claims = JSON.stringify({ sub: userId, role: 'authenticated', app_metadata: { company_id: companyId } });
-  await db.exec(`reset role; select set_config('request.jwt.claims', '${claims}', false); set role authenticated;`);
+  const claims = JSON.stringify({
+    sub: userId,
+    role: "authenticated",
+    app_metadata: { company_id: companyId },
+  });
+  await db.exec(
+    `reset role; select set_config('request.jwt.claims', '${claims}', false); set role authenticated;`,
+  );
 }
 
 async function reset() {
-  await db.exec(`reset role; select set_config('request.jwt.claims', '{}', false);`);
+  await db.exec(
+    `reset role; select set_config('request.jwt.claims', '{}', false);`,
+  );
 }
 
 async function effectivePermissions(): Promise<string[]> {
-  const { rows } = await db.query<{ permission: string }>('select permission from public.list_my_effective_app_permissions()');
+  const { rows } = await db.query<{ permission: string }>(
+    "select permission from public.list_my_effective_app_permissions()",
+  );
   return rows.map((row) => row.permission).sort();
 }
 
 async function hasEffective(permission: string): Promise<boolean> {
-  const { rows } = await db.query<{ allowed: boolean }>('select public.current_user_has_effective_app_permission($1) as allowed', [permission]);
+  const { rows } = await db.query<{ allowed: boolean }>(
+    "select public.current_user_has_effective_app_permission($1) as allowed",
+    [permission],
+  );
   return rows[0]?.allowed === true;
 }
 
@@ -84,16 +108,25 @@ async function serverRoleMatrix(role: string): Promise<string[]> {
  */
 function compatibilityParents(): Map<string, string> {
   const parents = new Map<string, string>();
-  for (const file of readdirSync(migrationsDir).filter((name) => name.endsWith('.sql')).sort()) {
-    const sql = readFileSync(resolve(migrationsDir, file), 'utf8');
-    const index = sql.lastIndexOf('function public.current_user_has_effective_app_permission');
+  for (const file of readdirSync(migrationsDir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort()) {
+    const sql = readFileSync(resolve(migrationsDir, file), "utf8");
+    const index = sql.lastIndexOf(
+      "function public.current_user_has_effective_app_permission",
+    );
     if (index < 0) continue;
     const body = sql.slice(index);
-    const caseIndex = body.indexOf('v_parent := case p_permission');
+    const caseIndex = body.indexOf("v_parent := case p_permission");
     if (caseIndex < 0) continue;
-    const caseBlock = body.slice(caseIndex, body.indexOf('else null', caseIndex));
+    const caseBlock = body.slice(
+      caseIndex,
+      body.indexOf("else null", caseIndex),
+    );
     parents.clear();
-    for (const match of caseBlock.matchAll(/when\s+'([a-z0-9_.]+)'\s+then\s+'([a-z0-9_.]+)'/g)) {
+    for (const match of caseBlock.matchAll(
+      /when\s+'([a-z0-9_.]+)'\s+then\s+'([a-z0-9_.]+)'/g,
+    )) {
       parents.set(match[1], match[2]);
     }
   }
@@ -110,11 +143,14 @@ const parents = compatibilityParents();
 async function expectedEffectiveProjection(role: string): Promise<string[]> {
   const matrix = new Set(await serverRoleMatrix(role));
   const { rows } = await db.query<{ permission: string }>(
-    'select permission from public.app_permission_catalog order by permission',
+    "select permission from public.app_permission_catalog order by permission",
   );
   return rows
     .map((row) => row.permission)
-    .filter((permission) => matrix.has(permission) || matrix.has(parents.get(permission) ?? ''))
+    .filter(
+      (permission) =>
+        matrix.has(permission) || matrix.has(parents.get(permission) ?? ""),
+    )
     .sort();
 }
 
@@ -124,7 +160,7 @@ async function errorOf(operation: () => Promise<unknown>): Promise<string> {
   } catch (error) {
     return String((error as { message?: string }).message ?? error);
   }
-  throw new Error('Expected operation to fail');
+  throw new Error("Expected operation to fail");
 }
 
 beforeAll(async () => {
@@ -133,6 +169,8 @@ beforeAll(async () => {
   const replay = await createFullReplayedDatabase({ applySeed: false });
   db = replay.db;
   expect(replay.failed, JSON.stringify(replay.failed.slice(-5))).toEqual([]);
+  seeded = await createFullReplayedDatabase();
+  expect(seeded.failed, JSON.stringify(seeded.failed.slice(-5))).toEqual([]);
 
   await db.query(
     `insert into public.companies(id, name, slug, is_active) values
@@ -144,7 +182,10 @@ beforeAll(async () => {
 
   for (const [role, userId] of Object.entries(MEMBERS)) {
     const email = `${role.toLowerCase()}-authority@test.invalid`;
-    await db.query(`insert into auth.users(id, email, raw_app_meta_data) values($1,$2,'{}') on conflict(id) do nothing`, [userId, email]);
+    await db.query(
+      `insert into auth.users(id, email, raw_app_meta_data) values($1,$2,'{}') on conflict(id) do nothing`,
+      [userId, email],
+    );
     await db.query(
       `insert into public.users(id, email, name, full_name, role, status, is_active, deleted_at)
        values($1,$2,$3,$3,'USER','ACTIVE',true,null)
@@ -155,9 +196,13 @@ beforeAll(async () => {
 
   // company_members.role is the sole operational role authority.
   const memberships: Array<[string, string, MemberRole]> = [
-    ...EMPLOYEE_ROLES.map((role): [string, string, MemberRole] => [COMPANY, MEMBERS[role], role]),
-    [COMPANY, MEMBERS.ADMIN, 'ADMIN'],
-    [OTHER_COMPANY, MEMBERS.OUTSIDER, 'ADMIN'],
+    ...EMPLOYEE_ROLES.map((role): [string, string, MemberRole] => [
+      COMPANY,
+      MEMBERS[role],
+      role,
+    ]),
+    [COMPANY, MEMBERS.ADMIN, "ADMIN"],
+    [OTHER_COMPANY, MEMBERS.OUTSIDER, "ADMIN"],
   ];
   for (const [companyId, userId, role] of memberships) {
     await db.query(
@@ -185,48 +230,62 @@ beforeAll(async () => {
   );
   // Start from a clean override slate so the projection assertions measure role
   // defaults plus catalog coverage, not leftover owner decisions.
-  await db.query(`delete from public.user_permission_overrides where company_id = $1`, [COMPANY]);
+  await db.query(
+    `delete from public.user_permission_overrides where company_id = $1`,
+    [COMPANY],
+  );
+}, 420000);
+
+// Both databases were never closed: `db` had no afterAll at all, and the seeded
+// one was closed inside the test that used it (so a mid-test throw leaked it).
+afterAll(async () => {
+  await db?.close();
+  await seeded?.db.close();
 });
 
-describe('P0-1 database replay reproduces the authoritative catalog from migrations alone', () => {
-  it('produces exactly the frontend permission vocabulary', async () => {
+describe("P0-1 database replay reproduces the authoritative catalog from migrations alone", () => {
+  it("produces exactly the frontend permission vocabulary", async () => {
     const { rows } = await db.query<{ permission: string }>(
-      'select permission from public.app_permission_catalog order by permission',
+      "select permission from public.app_permission_catalog order by permission",
     );
-    expect(rows.map((row) => row.permission)).toEqual([...appPermissions].sort());
+    expect(rows.map((row) => row.permission)).toEqual(
+      [...appPermissions].sort(),
+    );
   });
 
-  it('produces the same catalog whether or not the reference seed is applied', async () => {
-    const seeded = await createFullReplayedDatabase();
-    expect(seeded.failed, JSON.stringify(seeded.failed.slice(-5))).toEqual([]);
-    const { rows } = await seeded.db.query<{ permission: string; requestable: boolean }>(
-      'select permission, requestable from public.app_permission_catalog order by permission',
+  it("produces the same catalog whether or not the reference seed is applied", async () => {
+    const { rows } = await seeded.db.query<{
+      permission: string;
+      requestable: boolean;
+    }>(
+      "select permission, requestable from public.app_permission_catalog order by permission",
     );
-    await seeded.db.close();
 
-    const { rows: migrationOnly } = await db.query<{ permission: string; requestable: boolean }>(
-      'select permission, requestable from public.app_permission_catalog order by permission',
+    const { rows: migrationOnly } = await db.query<{
+      permission: string;
+      requestable: boolean;
+    }>(
+      "select permission, requestable from public.app_permission_catalog order by permission",
     );
     expect(rows).toEqual(migrationOnly);
   });
 
-
-  it('upgrades a previously seeded settings.manage database without translating legacy authority', async () => {
+  it("upgrades a previously seeded settings.manage database without translating legacy authority", async () => {
     // Model the production-upgrade shape explicitly: replay only through the
     // last pre-fix migration, then recreate the legacy seed-only alias and
     // permission state that could already exist in a deployed database.
     const legacy = await createFullReplayedDatabase({
-      throughMigration: '20260904000000',
+      throughMigration: "20260904000000",
       applySeed: false,
     });
     expect(legacy.failed, JSON.stringify(legacy.failed.slice(-5))).toEqual([]);
     const legacyDb = legacy.db;
 
-    const legacyCompany = '92000000-0000-4000-8000-0000000000d0';
-    const legacyAdmin = '92000000-0000-4000-8000-0000000000d1';
-    const legacyEmployee = '92000000-0000-4000-8000-0000000000d2';
-    const pendingRequest = '92000000-0000-4000-8000-0000000000d3';
-    const approvedRequest = '92000000-0000-4000-8000-0000000000d4';
+    const legacyCompany = "92000000-0000-4000-8000-0000000000d0";
+    const legacyAdmin = "92000000-0000-4000-8000-0000000000d1";
+    const legacyEmployee = "92000000-0000-4000-8000-0000000000d2";
+    const pendingRequest = "92000000-0000-4000-8000-0000000000d3";
+    const approvedRequest = "92000000-0000-4000-8000-0000000000d4";
 
     await legacyDb.query(
       `insert into public.companies(id, name, slug, is_active)
@@ -234,8 +293,13 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
       [legacyCompany],
     );
     for (const [id, email, name, role] of [
-      [legacyAdmin, 'legacy-admin@test.invalid', 'Legacy Admin', 'ADMIN'],
-      [legacyEmployee, 'legacy-employee@test.invalid', 'Legacy Employee', 'USER'],
+      [legacyAdmin, "legacy-admin@test.invalid", "Legacy Admin", "ADMIN"],
+      [
+        legacyEmployee,
+        "legacy-employee@test.invalid",
+        "Legacy Employee",
+        "USER",
+      ],
     ] as const) {
       await legacyDb.query(
         `insert into auth.users(id, email, raw_app_meta_data) values($1,$2,'{}')`,
@@ -278,26 +342,40 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
     );
 
     const paritySql = readFileSync(
-      resolve(migrationsDir, '20260904000001_authoritative_permission_catalog_parity.sql'),
-      'utf8',
+      resolve(
+        migrationsDir,
+        "20260904000001_authoritative_permission_catalog_parity.sql",
+      ),
+      "utf8",
     );
     await legacyDb.exec(paritySql);
 
     const catalog = await legacyDb.query<{ permission: string }>(
-      'select permission from public.app_permission_catalog order by permission',
+      "select permission from public.app_permission_catalog order by permission",
     );
-    expect(catalog.rows.map((row) => row.permission)).toEqual([...appPermissions].sort());
-    expect(catalog.rows.some((row) => row.permission === 'settings.manage')).toBe(false);
+    expect(catalog.rows.map((row) => row.permission)).toEqual(
+      [...appPermissions].sort(),
+    );
+    expect(
+      catalog.rows.some((row) => row.permission === "settings.manage"),
+    ).toBe(false);
 
-    const grants = await legacyDb.query<{ permission: string; revoked: boolean }>(
+    const grants = await legacyDb.query<{
+      permission: string;
+      revoked: boolean;
+    }>(
       `select permission, revoked_at is not null as revoked
          from public.user_permission_grants
         where company_id=$1 and user_id=$2
         order by permission`,
       [legacyCompany, legacyEmployee],
     );
-    expect(grants.rows).toEqual([{ permission: 'settings.manage', revoked: true }]);
-    expect(grants.rows.some((row) => row.permission === 'company.settings.manage')).toBe(false);
+    expect(grants.rows).toEqual([
+      { permission: "settings.manage", revoked: true },
+    ]);
+    expect(
+      grants.rows.some((row) => row.permission === "company.settings.manage"),
+    ).toBe(false);
 
     const overrides = await legacyDb.query<{ count: number }>(
       `select count(*)::int as count
@@ -321,13 +399,14 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
     expect(requests.rows).toEqual([
       {
         id: pendingRequest,
-        status: 'REJECTED',
-        decision_reason: 'PERMISSION_RETIRED: settings.manage removed; no automatic grant translation performed',
+        status: "REJECTED",
+        decision_reason:
+          "PERMISSION_RETIRED: settings.manage removed; no automatic grant translation performed",
       },
       {
         id: approvedRequest,
-        status: 'APPROVED',
-        decision_reason: 'historical approval',
+        status: "APPROVED",
+        decision_reason: "historical approval",
       },
     ]);
 
@@ -341,7 +420,7 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
     const exactGuardError = await errorOf(() => legacyDb.exec(paritySql));
     expect(exactGuardError).toMatch(/PERMISSION_CATALOG_EXACT_SET_MISMATCH/);
     expect(exactGuardError).toMatch(/unexpected\.permission/);
-    await legacyDb.exec('rollback;').catch(() => undefined);
+    await legacyDb.exec("rollback;").catch(() => undefined);
 
     const unexpected = await legacyDb.query<{ count: number }>(
       `select count(*)::int as count
@@ -354,12 +433,18 @@ describe('P0-1 database replay reproduces the authoritative catalog from migrati
   });
 });
 
-describe('P0-1 non-admin roles do not silently lose capabilities', () => {
-  it('projects the complete server role matrix for every employee role', async () => {
-    expect(parents.size, 'compatibility parent chain must be derived from the resolver').toBeGreaterThan(0);
+describe("P0-1 non-admin roles do not silently lose capabilities", () => {
+  it("projects the complete server role matrix for every employee role", async () => {
+    expect(
+      parents.size,
+      "compatibility parent chain must be derived from the resolver",
+    ).toBeGreaterThan(0);
     for (const role of EMPLOYEE_ROLES) {
       const expected = await expectedEffectiveProjection(role);
-      expect(expected.length, `${role} matrix must not be empty`).toBeGreaterThan(0);
+      expect(
+        expected.length,
+        `${role} matrix must not be empty`,
+      ).toBeGreaterThan(0);
       await assume(MEMBERS[role], COMPANY);
       const projected = await effectivePermissions();
       await reset();
@@ -369,22 +454,22 @@ describe('P0-1 non-admin roles do not silently lose capabilities', () => {
     }
   });
 
-  it('restores capabilities that were previously unreachable for MANAGER', async () => {
+  it("restores capabilities that were previously unreachable for MANAGER", async () => {
     await assume(MEMBERS.MANAGER, COMPANY);
     for (const permission of [
-      'expenses.view',
-      'lands.view',
-      'documents.write',
-      'financial.invoices.generate',
-      'financial.bank_reconciliation.match',
-      'support.operations.view',
+      "expenses.view",
+      "lands.view",
+      "documents.write",
+      "financial.invoices.generate",
+      "financial.bank_reconciliation.match",
+      "support.operations.view",
     ]) {
       expect(await hasEffective(permission), permission).toBe(true);
     }
     await reset();
   });
 
-  it('restores ADMIN authority over the whole catalog', async () => {
+  it("restores ADMIN authority over the whole catalog", async () => {
     await assume(MEMBERS.ADMIN, COMPANY);
     const projected = await effectivePermissions();
     for (const permission of appPermissions) {
@@ -394,10 +479,10 @@ describe('P0-1 non-admin roles do not silently lose capabilities', () => {
     expect(projected).toEqual([...appPermissions].sort());
   });
 
-  it('repairs the users.manage gate that authorizes membership management', async () => {
+  it("repairs the users.manage gate that authorizes membership management", async () => {
     await assume(MEMBERS.ADMIN, COMPANY);
     const { rows } = await db.query<{ allowed: boolean }>(
-      'select app_private.can_manage_company_members($1) as allowed',
+      "select app_private.can_manage_company_members($1) as allowed",
       [COMPANY],
     );
     expect(rows[0]?.allowed).toBe(true);
@@ -407,7 +492,7 @@ describe('P0-1 non-admin roles do not silently lose capabilities', () => {
     // stays closed for it — the repair did not widen membership management.
     await assume(MEMBERS.MANAGER, COMPANY);
     const manager = await db.query<{ allowed: boolean }>(
-      'select app_private.can_manage_company_members($1) as allowed',
+      "select app_private.can_manage_company_members($1) as allowed",
       [COMPANY],
     );
     expect(manager.rows[0]?.allowed).toBe(false);
@@ -415,11 +500,16 @@ describe('P0-1 non-admin roles do not silently lose capabilities', () => {
   });
 });
 
-describe('P0-1 unknown permission codes still fail closed', () => {
-  const unknownCodes = ['made.up.permission', 'people.view', 'settings.manage', 'financial.reports.delete'];
+describe("P0-1 unknown permission codes still fail closed", () => {
+  const unknownCodes = [
+    "made.up.permission",
+    "people.view",
+    "settings.manage",
+    "financial.reports.delete",
+  ];
 
-  it('denies them for ADMIN and for every employee role', async () => {
-    for (const role of ['ADMIN', ...EMPLOYEE_ROLES] as MemberRole[]) {
+  it("denies them for ADMIN and for every employee role", async () => {
+    for (const role of ["ADMIN", ...EMPLOYEE_ROLES] as MemberRole[]) {
       await assume(MEMBERS[role], COMPANY);
       for (const code of unknownCodes) {
         expect(await hasEffective(code), `${role}/${code}`).toBe(false);
@@ -428,49 +518,64 @@ describe('P0-1 unknown permission codes still fail closed', () => {
     }
   });
 
-  it('rejects them in the permission-request workflow and as explicit grants', async () => {
+  it("rejects them in the permission-request workflow and as explicit grants", async () => {
     await assume(MEMBERS.USER, COMPANY);
-    expect(await errorOf(() => db.query('select public.request_permission($1,$2,$3)', ['made.up.permission', '/lands', 'سبب'])))
-      .toMatch(/unknown permission/i);
+    expect(
+      await errorOf(() =>
+        db.query("select public.request_permission($1,$2,$3)", [
+          "made.up.permission",
+          "/lands",
+          "سبب",
+        ]),
+      ),
+    ).toMatch(/unknown permission/i);
     await reset();
 
     await assume(MEMBERS.ADMIN, COMPANY);
     expect(
       await errorOf(() =>
-        db.query('select public.set_employee_permission($1,$2,true,$3)', [
+        db.query("select public.set_employee_permission($1,$2,true,$3)", [
           TARGET_EMPLOYEE,
-          'made.up.permission',
-          'سبب',
+          "made.up.permission",
+          "سبب",
         ]),
       ),
     ).toMatch(/EMPLOYEE_PERMISSION_NOT_ASSIGNABLE/);
     await reset();
   });
 
-  it('denies everything when identity, membership or company context cannot be proven', async () => {
+  it("denies everything when identity, membership or company context cannot be proven", async () => {
     // No company claim: require_company_id() fails closed before any shortcut.
-    await db.exec(`reset role; select set_config('request.jwt.claims', '{"sub":"${MEMBERS.ADMIN}","role":"authenticated"}', false); set role authenticated;`);
-    expect(await errorOf(() => hasEffective('app.dashboard.view'))).toMatch(/company context is required/i);
+    await db.exec(
+      `reset role; select set_config('request.jwt.claims', '{"sub":"${MEMBERS.ADMIN}","role":"authenticated"}', false); set role authenticated;`,
+    );
+    expect(await errorOf(() => hasEffective("app.dashboard.view"))).toMatch(
+      /company context is required/i,
+    );
     await reset();
 
     // Valid claim, but a member of a different company.
     await assume(MEMBERS.OUTSIDER, OTHER_COMPANY);
-    expect(await hasEffective('app.dashboard.view')).toBe(true);
-    expect(await hasEffective('users.manage')).toBe(true); // ADMIN of its own company only
+    expect(await hasEffective("app.dashboard.view")).toBe(true);
+    expect(await hasEffective("users.manage")).toBe(true); // ADMIN of its own company only
     await reset();
   });
 });
 
-describe('P0-1 compatibility parents stay resolvable but non-assignable', () => {
-  it('keeps broad writes out of the owner-facing editor', async () => {
+describe("P0-1 compatibility parents stay resolvable but non-assignable", () => {
+  it("keeps broad writes out of the owner-facing editor", async () => {
     await assume(MEMBERS.ADMIN, COMPANY);
-    for (const parent of ['properties.write', 'contracts.write', 'maintenance.write']) {
+    for (const parent of [
+      "properties.write",
+      "contracts.write",
+      "maintenance.write",
+    ]) {
       expect(
         await errorOf(() =>
-          db.query('select public.set_employee_permission($1,$2,true,$3)', [
+          db.query("select public.set_employee_permission($1,$2,true,$3)", [
             TARGET_EMPLOYEE,
             parent,
-            'سبب',
+            "سبب",
           ]),
         ),
         parent,
@@ -479,7 +584,7 @@ describe('P0-1 compatibility parents stay resolvable but non-assignable', () => 
     // The granular child the parent was replaced by remains assignable.
     const { rows } = await db.query<{ allowed: boolean }>(
       `select (public.set_employee_permission($1,$2,true,$3)->>'allowed')::boolean as allowed`,
-      [TARGET_EMPLOYEE, 'properties.create', 'سبب'],
+      [TARGET_EMPLOYEE, "properties.create", "سبب"],
     );
     expect(rows[0]?.allowed).toBe(true);
     await reset();
