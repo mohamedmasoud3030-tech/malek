@@ -9,6 +9,7 @@ import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
 import {
   areCompanySettingsDraftsEqual,
+  companySettingsDraftFields,
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
@@ -132,15 +133,31 @@ export function useSettingsPageController() {
     event.preventDefault();
     if (!draft) return;
 
-    const validationErrors = validateCompanySettingsDraft(draft);
+    const currentBaseDraft = baseDraftRef.current;
+    const changedFields = companySettingsDraftFields.filter(
+      (field) => !currentBaseDraft || draft[field] !== currentBaseDraft[field],
+    );
+    if (changedFields.length === 0) return;
+
+    const allValidationErrors = validateCompanySettingsDraft(draft);
+    const validationErrors = Object.fromEntries(
+      Object.entries(allValidationErrors).filter(([field]) =>
+        changedFields.includes(field as CompanySettingsDraftField),
+      ),
+    ) as CompanySettingsValidationErrors;
     setErrors(validationErrors);
     if (hasCompanySettingsValidationErrors(validationErrors)) {
       toast.error('يرجى تصحيح أخطاء إعدادات الشركة قبل الحفظ');
       return;
     }
 
+    const normalizedPayload = companySettingsDraftToPayload(draft);
+    const updatePayload = Object.fromEntries(
+      changedFields.map((field) => [field, normalizedPayload[field]]),
+    );
+
     try {
-      const savedSettings = await updateCompanySettingsMutation.mutateAsync(companySettingsDraftToPayload(draft));
+      const savedSettings = await updateCompanySettingsMutation.mutateAsync(updatePayload);
       const savedDraft = companySettingsRecordToDraft(savedSettings);
       baseDraftRef.current = savedDraft;
       draftRef.current = savedDraft;
