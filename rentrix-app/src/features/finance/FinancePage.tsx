@@ -228,7 +228,7 @@ export function FinancePage() {
           ) : null}
           {activeSection === 'funds' && displayedView === 'owner_settlements' ? (
             <div id="finance-view-panel-owner_settlements" role="tabpanel" aria-labelledby="finance-view-tab-owner_settlements">
-              <Suspense fallback={<SuspenseFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
+              <Suspense fallback={<SectionFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
