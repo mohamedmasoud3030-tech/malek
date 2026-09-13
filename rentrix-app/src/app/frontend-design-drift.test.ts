@@ -38,6 +38,12 @@ const EXCLUDED_SEGMENTS = new Set([
   'services/documents/renderer',
   'services/documents/DocumentRenderer.ts',
   'services/documents/DocumentRenderer.tsx',
+  // Fixed standalone print palette (ADR 0014 print surface) — same exemption
+  // as services/documents/renderer/**.
+  'services/documents/documentDesignTokens.ts',
+  // Golden-document browser harness + scenarios are test fixtures, not
+  // authenticated-app surfaces.
+  'test/documents',
   'features/design-system/design-system-showcase.tsx',
 ]);
 

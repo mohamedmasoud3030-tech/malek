@@ -13,7 +13,7 @@ describe('dashboard desktop workspace contract', () => {
   });
 
   it('keeps the four Office Pulse surfaces in one bounded desktop row', () => {
-    expect(officePulse).toContain('<ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4}');
+    expect(officePulse).toContain('<ResponsiveCardGrid gap="md" aria-label="نبض المكتب" desktopColumns={4}');
     expect(page).toContain('sectionId="office-pulse"');
   });
 

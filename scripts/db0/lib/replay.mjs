@@ -107,6 +107,12 @@ export async function replay(db, { files, stopOnError = true, onProgress } = {})
     if (shims.length) shimmed.push({ file, shims });
 
     try {
+      // The canonical baseline is a pg_dump whose prologue clears the session
+      // search_path (`set_config('search_path','',false)`). On real Supabase
+      // each migration runs with a usable default search_path, so restore the
+      // Supabase default before every file — otherwise later migrations that
+      // reference tables unqualified fail with "relation ... does not exist".
+      await db.exec('set search_path to public, extensions;');
       await db.exec(sql);
       await db.query(
         `insert into supabase_migrations.schema_migrations (version, name)
