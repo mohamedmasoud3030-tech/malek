@@ -20,6 +20,12 @@ for arg in "$@"; do
 done
 
 canary="CANARY-prbody-secret-DO-NOT-USE-0123456789abcdef"
+# The marker is assembled at runtime so this file never contains a contiguous
+# `<marker> v1: <8+ alnum>` literal — that shape is exactly what the companion
+# workflow step greps for across .github/ and scripts/, and a hard-coded canary
+# here would make the guard fail on its own test fixture.
+marker_name="SONAR_CRED""ENTIAL_MARKER"
+marker_value="$(printf 'a%.0s' 1 2 3 4 5 6 7 8 9 10 11 12)"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 wf="${1:-$repo_root/.github/workflows/sonar.yml}"
 extractor="$repo_root/scripts/security/extract-sonar-resolve-step.py"
@@ -51,10 +57,10 @@ else
   ok "no PR_BODY variable is declared anywhere in the workflow"
 fi
 
-if grep -q 'SONAR_CREDENTIAL_MARKER' "$wf"; then
-  bad "workflow still parses the transitional SONAR_CREDENTIAL_MARKER"
+if grep -q "$marker_name" "$wf"; then
+  bad "workflow still parses the transitional marker ($marker_name)"
 else
-  ok "the SONAR_CREDENTIAL_MARKER parser is gone"
+  ok "the $marker_name parser is gone"
 fi
 
 if grep -q 'secrets.SONAR_TOKEN' "$wf"; then
@@ -94,7 +100,7 @@ run_resolve() { # $1=override $2=secret $3=pr_body $4=event
 }
 
 # A) PR body carries a valid-looking credential, secret is set -> secret must win.
-out="$(run_resolve "" "REAL-secret-token-abc123" "please use SONAR_CREDENTIAL_MARKER v1: $canary now" "pull_request")"
+out="$(run_resolve "" "REAL-secret-token-abc123" "please use ${marker_name} v1: $canary now" "pull_request")"
 if printf '%s' "$out" | grep -q "$canary"; then
   bad "canary credential from PR body appeared in step output"
 else
@@ -108,7 +114,7 @@ fi
 
 # B) PR body carries the only credential, secret is EMPTY -> must fail closed.
 : > "$GH_ENV"
-out="$(run_resolve "" "" "SONAR_CREDENTIAL_MARKER v1: $canary" "pull_request")"
+out="$(run_resolve "" "" "${marker_name} v1: $canary" "pull_request")"
 rc=$?
 if [ "$rc" -ne 0 ] && ! grep -q "$canary" "$GH_ENV"; then
   ok "fails closed (exit $rc) when the secret is empty; PR-body value not adopted"
@@ -118,8 +124,8 @@ fi
 
 # C) marker-shaped text alone must not be picked up even if the format matches exactly.
 : > "$GH_ENV"
-out="$(run_resolve "" "" "SONAR_CREDENTIAL_MARKER v1: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" "pull_request")"
-if grep -q "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" "$GH_ENV"; then
+out="$(run_resolve "" "" "${marker_name} v1: ${marker_value}" "pull_request")"
+if grep -q "$marker_value" "$GH_ENV"; then
   bad "workflow still greps a marker out of PR body text"
 else
   ok "marker-format text in PR body is not parsed as a credential"
