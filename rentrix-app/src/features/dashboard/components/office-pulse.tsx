@@ -76,14 +76,14 @@ export const OfficePulse = memo(function OfficePulse({
     : 'لا توجد متأخرات مسجلة';
 
   const pulseLinkClass =
-    'group block min-w-0 rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary';
+    'group block h-full min-w-0 rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary';
 
   return (
     <div
       data-dashboard-office-pulse
-      className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-card"
+      className="rounded-2xl border border-border/60 bg-card p-3 shadow-card sm:p-4"
     >
-      <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4} className="dashboard-pulse-grid">
+      <ResponsiveCardGrid gap="md" aria-label="نبض المكتب" desktopColumns={4} className="dashboard-pulse-grid">
         <Link
           to="/financials"
           data-dashboard-kpi-link
@@ -97,7 +97,7 @@ export const OfficePulse = memo(function OfficePulse({
             icon={HandCoins}
             accent={collectionAccent(collectionRate)}
             compact
-            className="dashboard-pulse-card"
+            className="dashboard-pulse-card h-full"
           />
         </Link>
 
@@ -115,7 +115,7 @@ export const OfficePulse = memo(function OfficePulse({
             icon={Building2}
             accent={occupancyAccent(occupancyRate)}
             compact
-            className="dashboard-pulse-card"
+            className="dashboard-pulse-card h-full"
           />
         </Link>
 
@@ -133,7 +133,7 @@ export const OfficePulse = memo(function OfficePulse({
             icon={AlertOctagon}
             accent={arrearsAccent(totalOverdue, over90Count)}
             compact
-            className="dashboard-pulse-card"
+            className="dashboard-pulse-card h-full"
           />
         </Link>
 
@@ -152,7 +152,7 @@ export const OfficePulse = memo(function OfficePulse({
             icon={TrendingUp}
             accent={netCash >= 0 ? 'emerald' : 'rose'}
             compact
-            className="dashboard-pulse-card"
+            className="dashboard-pulse-card h-full"
           />
         </Link>
       </ResponsiveCardGrid>
