@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { lazy, Suspense, useCallback, useId, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useId, useMemo, useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -16,6 +16,7 @@ import {
   getRoutineFinanceViews,
   resolveFinanceLocation,
   type FinanceSectionId,
+  type FinanceViewId,
   type FinancialsSearch,
 } from './shell/financeShellModel';
 
@@ -57,6 +58,7 @@ export function FinancePage() {
   const { authorization } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as FinancialsSearch;
+  const [optimisticView, setOptimisticView] = useState<{ sectionId: FinanceSectionId; viewId: FinanceViewId } | null>(null);
 
   const permittedViews = useMemo(() => getPermittedViews(authorization), [authorization]);
   const permittedSections = useMemo(() => getPermittedSections(authorization), [authorization]);
@@ -82,10 +84,16 @@ export function FinancePage() {
   const activeView = permittedViews.some((view) => view.id === resolvedViewId)
     ? resolvedViewId
     : getDefaultFinanceView(authorization, activeSection)?.id ?? null;
+  const displayedView = optimisticView
+    && optimisticView.sectionId === activeSection
+    && optimisticView.viewId !== activeView
+    ? optimisticView.viewId
+    : activeView;
 
   const handleSectionChange = useCallback((sectionId: FinanceSectionId) => {
     const defaultView = getDefaultFinanceView(authorization, sectionId)?.id;
     if (!defaultView) return;
+    setOptimisticView({ sectionId, viewId: defaultView });
     void navigate({
       to: '.',
       search: (previous: Record<string, unknown>) => ({
@@ -98,20 +106,24 @@ export function FinancePage() {
   }, [navigate, authorization]);
 
   const handleViewChange = useCallback((viewId: string) => {
+    if (!activeSection) return;
+    const nextViewId = viewId as FinanceViewId;
+    if (!routineViews.some((view) => view.id === nextViewId)) return;
+    setOptimisticView({ sectionId: activeSection, viewId: nextViewId });
     void navigate({
       to: '.',
-      search: (previous: Record<string, unknown>) => ({ ...previous, view: viewId }),
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: activeSection, view: nextViewId }),
       replace: true,
     });
-  }, [navigate]);
+  }, [navigate, activeSection, routineViews]);
 
   const routineViews = useMemo(
     () => getRoutineFinanceViews(authorization, activeSection),
     [activeSection, authorization],
   );
   const activeSectionDefinition = FINANCE_SECTIONS.find((section) => section.id === activeSection) ?? null;
-  const activeViewDefinition = FINANCE_VIEWS.find((view) => view.id === activeView) ?? null;
-  const routineActiveView = routineViews.some((view) => view.id === activeView) ? activeView ?? '' : '';
+  const activeViewDefinition = FINANCE_VIEWS.find((view) => view.id === displayedView) ?? null;
+  const routineActiveView = routineViews.some((view) => view.id === displayedView) ? displayedView ?? '' : '';
   const specialistViewLabelId = useId();
 
   if (isRequestedViewForbidden) {
@@ -140,11 +152,7 @@ export function FinancePage() {
       />
 
       <div data-finance-root className="min-w-0 space-y-3 sm:space-y-4">
-        <nav
-          aria-label="أقسام المالية"
-          className="min-w-0"
-          data-finance-primary-nav
-        >
+        <nav aria-label="أقسام المالية" className="min-w-0" data-finance-primary-nav>
           <SectionTabs
             items={permittedSections}
             activeId={activeSection}
@@ -169,67 +177,57 @@ export function FinancePage() {
         ) : null}
 
         {activeViewDefinition?.showInSectionNavigation === false ? (
-          <div
-            id={specialistViewLabelId}
-            className="sr-only"
-            data-finance-specialist-view
-          >
+          <div id={specialistViewLabelId} className="sr-only" data-finance-specialist-view>
             {activeViewDefinition.label}
           </div>
         ) : null}
 
         <section id="finance-workspace-panel" className="min-w-0" aria-label="مساحة العمل المالية الحالية">
-          {activeSection === 'collections' && activeView === 'invoices' ? (
+          {activeSection === 'collections' && displayedView === 'invoices' ? (
             <div id="finance-view-panel-invoices" role="tabpanel" aria-labelledby="finance-view-tab-invoices">
               <Suspense fallback={<SectionFallback />}><InvoicesWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'collections' && activeView === 'receipts' ? (
+          {activeSection === 'collections' && displayedView === 'receipts' ? (
             <div id="finance-view-panel-receipts" role="tabpanel" aria-labelledby="finance-view-tab-receipts">
               <ReceiptsWorkspace embedded />
             </div>
           ) : null}
-          {activeSection === 'collections' && activeView === 'arrears' ? (
-            /*
-             * Arrears is a specialist view (showInSectionNavigation: false), so
-             * no tab ever controls it. It is a standalone region named by the
-             * specialist-view heading rather than an orphan tabpanel whose
-             * aria-labelledby would point at an element that is never rendered.
-             */
+          {activeSection === 'collections' && displayedView === 'arrears' ? (
             <div id="finance-view-panel-arrears" role="region" aria-labelledby={specialistViewLabelId}>
               <Suspense fallback={<SectionFallback />}><ArrearsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'fees' && activeView === 'fixed_monthly_accruals' ? (
+          {activeSection === 'fees' && displayedView === 'fixed_monthly_accruals' ? (
             <div id="finance-view-panel-fixed_monthly_accruals" role="tabpanel" aria-labelledby="finance-view-tab-fixed_monthly_accruals">
               <Suspense fallback={<SectionFallback />}><FixedMonthlyAccrualWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'fees' && activeView === 'commissions' ? (
+          {activeSection === 'fees' && displayedView === 'commissions' ? (
             <div id="finance-view-panel-commissions" role="tabpanel" aria-labelledby="finance-view-tab-commissions">
               <Suspense fallback={<SectionFallback />}><CommissionsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'expenses' && activeView === 'expenses' ? (
+          {activeSection === 'expenses' && displayedView === 'expenses' ? (
             <div id="finance-view-panel-expenses" role="tabpanel" aria-labelledby="finance-view-tab-expenses">
               <Suspense fallback={<SectionFallback />}><ExpensesWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'funds' && activeView === 'deposits' ? (
+          {activeSection === 'funds' && displayedView === 'deposits' ? (
             <div id="finance-view-panel-deposits" role="tabpanel" aria-labelledby="finance-view-tab-deposits">
               <Suspense fallback={<SectionFallback />}><DepositsWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'funds' && activeView === 'owner_settlements' ? (
+          {activeSection === 'funds' && displayedView === 'owner_settlements' ? (
             <div id="finance-view-panel-owner_settlements" role="tabpanel" aria-labelledby="finance-view-tab-owner_settlements">
-              <Suspense fallback={<SectionFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
+              <Suspense fallback={<OwnerSettlementsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'banking' && activeView === 'bank_reconciliation' ? (
+          {activeSection === 'banking' && displayedView === 'bank_reconciliation' ? (
             <div id="finance-view-panel-bank_reconciliation" role="tabpanel" aria-labelledby="finance-view-tab-bank_reconciliation">
               <Suspense fallback={<SectionFallback />}><BankReconciliationWorkspace embedded /></Suspense>
             </div>
