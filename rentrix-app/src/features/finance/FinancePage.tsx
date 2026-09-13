@@ -90,6 +90,11 @@ export function FinancePage() {
     ? optimisticView.viewId
     : activeView;
 
+  const routineViews = useMemo(
+    () => getRoutineFinanceViews(authorization, activeSection),
+    [activeSection, authorization],
+  );
+
   const handleSectionChange = useCallback((sectionId: FinanceSectionId) => {
     const defaultView = getDefaultFinanceView(authorization, sectionId)?.id;
     if (!defaultView) return;
@@ -112,15 +117,15 @@ export function FinancePage() {
     setOptimisticView({ sectionId: activeSection, viewId: nextViewId });
     void navigate({
       to: '.',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: activeSection, view: nextViewId }),
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        section: activeSection,
+        view: nextViewId,
+      }),
       replace: true,
     });
   }, [navigate, activeSection, routineViews]);
 
-  const routineViews = useMemo(
-    () => getRoutineFinanceViews(authorization, activeSection),
-    [activeSection, authorization],
-  );
   const activeSectionDefinition = FINANCE_SECTIONS.find((section) => section.id === activeSection) ?? null;
   const activeViewDefinition = FINANCE_VIEWS.find((view) => view.id === displayedView) ?? null;
   const routineActiveView = routineViews.some((view) => view.id === displayedView) ? displayedView ?? '' : '';
@@ -223,7 +228,7 @@ export function FinancePage() {
           ) : null}
           {activeSection === 'funds' && displayedView === 'owner_settlements' ? (
             <div id="finance-view-panel-owner_settlements" role="tabpanel" aria-labelledby="finance-view-tab-owner_settlements">
-              <Suspense fallback={<OwnerSettlementsWorkspace embedded /></Suspense>
+              <Suspense fallback={<SuspenseFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
