@@ -126,3 +126,37 @@ It does **not** modify `.github/workflows/sonar.yml` — §1 confirms that chang
 - History scrub of the §2 commit message is *optional once the token is revoked*: `git filter-repo --message-callback 'return re.sub(rb"SONAR_CREDENTIAL_MARKER v1: [0-9a-f]{40}", b"SONAR_CREDENTIAL_MARKER v1: [REDACTED-REVOKED]", message)'` on a fresh mirror, then force-push. All commit SHAs change; every open PR, fork and clone retains the old object, so treat revocation — not scrubbing — as the actual control.
 - Add a `gitleaks protect --staged` pre-commit hook plus `gitleaks detect --log-opts="--all"` scheduled weekly, with the metadata sweep from §5.
 - GitHub Secret scanning is off for the owner plan checks here (403 on `security-manager`); enabling push protection would have blocked §2 had the value matched a known format.
+
+## Residual CI hazard found while locking this in (2026-09-13): unfixed siblings of the timeout I patched
+
+`tax-posting-history.test.ts` was failing CI because two `it.each` cases built a fresh
+`createOfficeCreditorFixture` — a full uncached PGlite migration replay — inside the test body,
+measured at 4,035 ms and 3,774 ms against vitest's 5,000 ms default. Fixed by moving those builds
+into the file's existing `beforeAll` (420 s hook budget); assertions untouched.
+
+Five cases share the same structure and are green today but have the same thin margin (worst case
+measured **4,057 ms** against the same 5,000 ms default):
+
+- `features/financials/expenses/owner-expense-source.test.ts:308,429,597` — all three replay to the
+  **same** cut-off `20260909000011`, so one hoisted fixture could serve all three.
+- `features/financials/reports/expense-correction-source-control.test.ts:285` — needs `…000010`,
+  which differs from the file-level fixture's `…000011`, so it cannot share that database.
+- `features/financials/reports/owner-receivable-reconciliation.test.ts:87` — needs `…000006`, likewise
+  a distinct database.
+
+Deliberately **not** changed in the same pass: no failure had been observed for these, and the fix
+could not be validated under the project's real vitest config here — this sandbox is a 2 GB/2 CPU
+container and the app config (`vite.config.ts`: PWA plugin, jsdom, worker pool) is OOM-killed by the
+kernel for *any* suite (`dmesg`: `Out of memory: Killed process … (node (vitest))`, `SIGKILL`), which
+is an environment limit and also exactly the "SIGKILL = INFRA, not app" rule recorded in `HANDOFF.md`.
+`pnpm run typecheck` does pass here. A follow-up that lifts the three same-cut-off cases in
+`owner-expense-source` into one `beforeAll` is mechanical and verifiable on a CI-sized runner; the two
+different-cut-off cases should instead be given an explicit per-test timeout as `tax-posting-history`
+already does.
+
+Also noted while verifying: the inventory line *"Columns at scale 2 … identical set, none is money"*
+was true for the ledger but missed `properties.current_value`, which the property form sends at
+`MONEY_STEP = 0.001` and `optionalMoney` validates without a scale check — silent truncation
+(`760000.123 → 760000.12`). `20260913000001_owner_valuation_omr_precision.sql` widens it to
+`numeric(18,3)` per `DATABASE_RULES.md` ("Authoritative OMR money columns use numeric(18,3)"),
+idempotently, with a postcondition. Not applied to any live database by this work.
