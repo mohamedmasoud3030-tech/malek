@@ -10,6 +10,12 @@ const at = (day: number) => `${new Date().toISOString().slice(0, 7)}-${String(da
 let db: PGlite;
 let invoiceId: string;
 let creditId: string;
+// The two configured-treatment cases below build their own replayed database.
+// `createFullReplayedDatabase` is never cached (fresh PGlite + every migration),
+// so that work must live in this file's hook budget, not in a test body: on a
+// loaded CI runner one replay runs past the 5s default per-test timeout and the
+// case reports "Test timed out" although the treatment is correct.
+const treatmentFixtures = new Map<string, Awaited<ReturnType<typeof createOfficeCreditorFixture>>>();
 async function report(from: number, to: number) { return getVatReturnReport({ dateFrom: at(from), dateTo: at(to) }); }
 async function vat(day: number) {
   const { rows } = await db.query<{ source: string; control: string }>(
@@ -25,8 +31,15 @@ beforeAll(async () => {
     try { return { data: (await db.query<{ data: unknown }>('select public.rpt_vat_return($1::date,$2::date) as data', [args.p_from_date, args.p_to_date])).rows[0].data, error: null }; }
     catch (error) { return { data: null, error }; }
   });
+  // Built here, not in the case bodies, so the replay shares the 420s hook budget
+  // above instead of racing the default 5s test timeout.
+  for (const taxCode of ['NON_TAXABLE', 'VAT_ZERO'] as const) treatmentFixtures.set(taxCode, await createOfficeCreditorFixture({ taxCode }));
 }, 420000);
-afterAll(async () => { await db?.close(); });
+afterAll(async () => {
+  await db?.close();
+  for (const fixture of treatmentFixtures.values()) await fixture.db.close();
+  treatmentFixtures.clear();
+});
 it('keeps earlier VAT unchanged when a later original-basis credit posts', async () => {
   expect(await vat(8)).toEqual({ source: 50, control: 50 });
   const { rows } = await db.query<{ data: { credit_id: string } }>('select public.create_invoice_credit_atomic($1::jsonb) as data', [JSON.stringify({
@@ -117,10 +130,8 @@ it('includes independently configured daily fixed-fee tax and its compensating r
 });
 
 it.each([['NON_TAXABLE', 0, 0], ['VAT_ZERO', 1000, 1]] as const)('preserves configured %s treatment without inventing a positive rate', async (taxCode, base, count) => {
-  const fixture = await createOfficeCreditorFixture({ taxCode });
-  try {
-    await fixture.db.exec('set role authenticated');
-    const { rows } = await fixture.db.query<{ data: Record<string, unknown> }>('select public.rpt_vat_return($1::date,$2::date) as data', [at(1), at(28)]);
-    expect(rows[0].data).toMatchObject({ total_sales_amount: base, total_tax_amount: 0, invoice_count: count });
-  } finally { await fixture.db.close(); }
+  const fixture = treatmentFixtures.get(taxCode)!;
+  await fixture.db.exec('set role authenticated');
+  const { rows } = await fixture.db.query<{ data: Record<string, unknown> }>('select public.rpt_vat_return($1::date,$2::date) as data', [at(1), at(28)]);
+  expect(rows[0].data).toMatchObject({ total_sales_amount: base, total_tax_amount: 0, invoice_count: count });
 });
