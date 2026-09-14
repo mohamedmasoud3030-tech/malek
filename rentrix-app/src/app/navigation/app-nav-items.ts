@@ -66,8 +66,8 @@ export const navGroups: readonly NavGroup[] = [
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
-    ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view', { section: 'units' }],
-    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRound, 'owners.hub.view', { section: 'owners' }],
+    ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view'],
+    ['/owners', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRound, 'owners.hub.view'],
     ['/lands', 'lands', 'قطع الأراضي كأصول ضمن المحفظة', MapPinned, 'lands.view'],
   ],
   '/contracts': [
