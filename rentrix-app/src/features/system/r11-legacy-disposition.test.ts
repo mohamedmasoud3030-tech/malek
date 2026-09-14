@@ -32,7 +32,7 @@ describe('R11 — legacy disposition register', () => {
       .filter(([, , deps]) => /'lands'|'leads'|'communication'/.test(deps))
       .map(([, feature]) => feature);
 
-    expect(frozenConsumers.sort()).toEqual(['automation', 'commissions', 'portfolio-hub', 'relationships-hub']);
+    expect(frozenConsumers.sort()).toEqual(['automation', 'commissions', 'relationships-hub']);
     expect(archGuard).not.toMatch(/\['lands',\s*new Set\(\[[^\]]+\]\)/);
     expect(archGuard).not.toMatch(/\['communication',\s*new Set\(\[[^\]]+\]\)/);
   });

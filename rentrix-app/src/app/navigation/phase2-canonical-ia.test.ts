@@ -6,8 +6,6 @@ import { ROUTE_CONTRACT, TARGET_IA_TOP_LEVEL } from './route-contract';
 import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
-const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
-const portfolioSectionsSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-sections.ts', import.meta.url), 'utf8');
 const leasingHubSource = readFileSync(new URL('../../features/relationships-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
 const leasingSectionsSource = readFileSync(new URL('../../features/relationships-hub/leasing-hub-sections.ts', import.meta.url), 'utf8');
 const financePageSource = readFileSync(new URL('../../features/finance/FinancePage.tsx', import.meta.url), 'utf8');
@@ -28,13 +26,16 @@ describe('Task-centric canonical IA', () => {
   });
 
   it('keeps Portfolio focused while revealing the specialist Lands register', () => {
-    for (const path of ['/properties', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties', '/lands']);
+    // portfolio-hub was dismantled (nav-architecture-consolidation): properties,
+    // units, lands and owners each resolve to their own standalone route —
+    // no tabbed hub shell renders more than one of them behind a shared path.
+    for (const path of ['/properties', '/units', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units', '/owners', '/lands']);
     expect(workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey)).toEqual(['units', 'owners', 'lands']);
-    expect(portfolioHubSource).toContain('LandsWorkspace');
-    expect(portfolioHubSource).toContain('OwnersWorkspace');
-    // Hub tabs stay routine-first; /lands remains the canonical register page.
-    expect(portfolioSectionsSource).toMatch(/id: 'lands'[\s\S]*?showInPrimaryNavigation: false/);
+    expect(hasRoute('/units')).toBe(true);
+    // Legacy /properties?section= deep links still redirect, they never render a hub.
+    expect(routeTreeSource).toContain('PORTFOLIO_LEGACY_SECTION_ROUTES');
+    expect(routeTreeSource).not.toContain('portfolio-hub');
   });
 
   it('keeps Leasing focused while revealing people, leads and communication registers', () => {
@@ -94,7 +95,7 @@ describe('Task-centric canonical IA', () => {
 
   it('keeps standalone compatibility routes without treating them as global products', () => {
     const primary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const path of ['/commissions', '/owners', '/tenants', '/people', '/lands', '/service-providers']) {
+    for (const path of ['/commissions', '/owners', '/tenants', '/people', '/lands', '/units', '/service-providers']) {
       expect(hasRoute(path)).toBe(true);
       expect(primary).not.toContain(path);
     }

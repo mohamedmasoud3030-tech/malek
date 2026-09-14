@@ -14,8 +14,10 @@ import { describe, expect, it } from 'vitest';
  * Deep links are preserved by the route layer: legacy child routes
  * (/owners, /invoices, ...) still redirect into the hub with ?section=.
  */
+// portfolio-hub was dismantled under nav-architecture-consolidation: properties,
+// units, lands and owners are each a standalone route now, so there is no
+// portfolio-hub workspace file left to check here.
 const HUB_WORKSPACES = [
-  'portfolio-hub/portfolio-hub-workspace.tsx',
   'operations-hub/operations-hub-workspace.tsx',
   'governance-hub/components/GovernanceHubWorkspace.tsx',
 ] as const;
