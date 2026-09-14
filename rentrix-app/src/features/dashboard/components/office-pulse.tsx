@@ -83,7 +83,7 @@ export const OfficePulse = memo(function OfficePulse({
       data-dashboard-office-pulse
       className="rounded-2xl border border-border/60 bg-card p-3 shadow-card sm:p-4"
     >
-      <ResponsiveCardGrid gap="md" aria-label="نبض المكتب" desktopColumns={4} className="dashboard-pulse-grid">
+      <ResponsiveCardGrid gap="sm" aria-label="نبض المكتب" desktopColumns={4} className="dashboard-pulse-grid">
         <Link
           to="/financials"
           data-dashboard-kpi-link
