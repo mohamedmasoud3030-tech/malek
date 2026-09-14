@@ -4,7 +4,7 @@ import { workspaceChildNavItems } from './navigation/app-nav-items';
 import { governanceHubSections } from '@/features/governance-hub/governance-hub-sections';
 import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
 import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sections';
-import { portfolioHubSections } from '@/features/portfolio-hub/portfolio-hub-sections';
+import { ROUTE_CONTRACT } from './navigation/route-contract';
 import { operationsHubSections } from '@/features/operations-hub/operations-hub.sections';
 import { REPORT_PRODUCTS } from '@/features/reports/report-products';
 import { settingsSectionRegistry } from '@/features/settings/registry/sectionRegistry';
@@ -52,16 +52,22 @@ describe('production product simplification contract', () => {
   });
 
   it('keeps Portfolio routine navigation focused on properties, units and owners', () => {
+    // portfolio-hub was dismantled (nav-architecture-consolidation): properties,
+    // units, lands and owners are each a standalone route now, so their
+    // primary-nav status lives in the route contract, not a hub sections file.
+    const portfolioEntries = ROUTE_CONTRACT.filter((entry) =>
+      ['/properties', '/units', '/lands', '/owners'].includes(entry.canonical),
+    );
     expect(
-      portfolioHubSections
-        .filter((section) => section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['properties', 'units', 'owners']);
+      portfolioEntries
+        .filter((entry) => entry.isPrimaryNav)
+        .map((entry) => entry.canonical),
+    ).toEqual(['/properties']);
     expect(
-      portfolioHubSections
-        .filter((section) => !section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['lands']);
+      portfolioEntries
+        .filter((entry) => !entry.isPrimaryNav)
+        .map((entry) => entry.canonical),
+    ).toEqual(['/units', '/lands', '/owners']);
     expect(
       workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey),
     ).toEqual(['units', 'owners', 'lands']);
