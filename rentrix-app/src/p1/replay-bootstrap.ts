@@ -104,6 +104,7 @@ export async function createFullReplayedDatabase(options?: {
     const isS02Acl = file.includes(S02_ACL_MIGRATION_MARKER);
     const provided = isS02Acl ? await provideS02AclPrerequisites(db) : false;
     try {
+      await db.exec("SET search_path TO public, extensions;");
       await db.exec(sql);
       applied.push(file);
     } catch (error) {
