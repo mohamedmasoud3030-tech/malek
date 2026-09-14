@@ -1,50 +1,11 @@
-import {
-  BarChart3,
-  Building2,
-  CircleDollarSign,
-  ContactRound,
-  DoorOpen,
-  FileText,
-  FolderKanban,
-  Gauge,
-  HandCoins,
-  HardHat,
-  KeyRound,
-  LayoutDashboard,
-  LifeBuoy,
-  MapPinned,
-  MessageSquareText,
-  Percent,
-  Receipt,
-  ReceiptText,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  Users,
-  Wallet,
-  Wrench,
-} from 'lucide-react';
+import { BarChart3, Building2, CircleDollarSign, ContactRound, DoorOpen, FileText, FolderKanban, Gauge, HandCoins, HardHat, KeyRound, LayoutDashboard, LifeBuoy, MapPinned, MessageSquareText, Percent, Receipt, ReceiptText, Settings, ShieldCheck, UserRound, Users, Wallet, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
-export type NavItem = readonly [
-  to: string,
-  labelKey: string,
-  description: string,
-  Icon: LucideIcon,
-  permission?: AppPermission,
-  search?: Readonly<Record<string, string>>,
-];
-export type MobileNavItem = readonly [
-  to: string,
-  labelKey: string,
-  Icon: LucideIcon,
-  permission?: AppPermission,
-  search?: Readonly<Record<string, string>>,
-];
+export type NavItem = readonly [to: string, labelKey: string, description: string, Icon: LucideIcon, permission?: AppPermission, search?: Readonly<Record<string, string>>];
+export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission, search?: Readonly<Record<string, string>>];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-/** Task-centric product IA: Today → Portfolio → Leasing → Money → Services → Reports → Settings. */
 export const navGroups: readonly NavGroup[] = [
   ['العمل', [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
@@ -59,11 +20,6 @@ export const navGroups: readonly NavGroup[] = [
   ]],
 ];
 
-/**
- * Workspace children are the shortest routine paths, not an inventory of every
- * specialist register. Extra finance capabilities stay inside the Money shell
- * or behind contextual deep links so the global navigation remains obvious.
- */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view'],
@@ -71,7 +27,8 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/lands', 'lands', 'قطع الأراضي كأصول ضمن المحفظة', MapPinned, 'lands.view'],
   ],
   '/contracts': [
-    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', KeyRound, 'contracts.view', { workspace: 'tenants' }],
+    ['/contracts', 'contracts', 'العقود وعلاقات الإيجار', FileText, 'contracts.view'],
+    ['/tenants', 'tenants', 'المستأجرون وعلاقات الإيجار', KeyRound, 'contracts.view'],
     ['/people', 'peopleDirectory', 'دليل أطراف التأجير والتعامل', Users, 'contracts.view'],
     ['/leads', 'leads', 'الفرص قبل التعاقد ومتابعة تحويلها', ContactRound, 'leads.view'],
     ['/communication', 'communication', 'المتابعات والتواصل مع الأطراف', MessageSquareText, 'communication.view'],
@@ -83,14 +40,17 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/commissions', 'commissions', 'عمولات الوسطاء والتشغيل', Percent, 'commissions.view'],
   ],
   '/maintenance': [
-    ['/maintenance', 'utilities', 'المرافق والعدادات', Gauge, 'maintenance.view', { section: 'utilities' }],
+    ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
+    ['/utilities', 'utilities', 'المرافق والعدادات', Gauge],
     ['/service-providers', 'serviceProviders', 'مزودو الخدمات ومهامهم', HardHat, 'service_providers.view'],
-    ['/maintenance', 'documentsVault', 'المستندات التشغيلية', FolderKanban, undefined, { section: 'documents_vault' }],
+    ['/documents-vault', 'documentsVault', 'المستندات التشغيلية', FolderKanban],
   ],
   '/reports': [],
   '/settings': [
-    ['/settings', 'companySettings', 'بيانات الشركة وإعداداتها', Building2, 'company.settings.manage', { section: 'company' }],
-    ['/settings', 'usersPermissions', 'الموظفون والصلاحيات', ShieldCheck, 'users.manage', { section: 'users-permissions' }],
+    ['/settings/company', 'companySettings', 'بيانات الشركة وإعداداتها', Building2, 'company.settings.manage'],
+    ['/settings/users-permissions', 'usersPermissions', 'الموظفون والصلاحيات', ShieldCheck, 'users.manage'],
+    ['/settings/automation', 'automation', 'قواعد الأتمتة والتنبيهات', Settings, 'automation.view'],
+    ['/settings/audit-log', 'auditLog', 'سجل التدقيق', ShieldCheck, 'audit.view'],
     ['/admin-support', 'adminSupport', 'عمليات الدعم والتحقيق حسب صلاحياتك', LifeBuoy, 'support.operations.view'],
   ],
 };
@@ -98,25 +58,10 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
 export function getAllNavItems(): readonly NavItem[] {
   return [...navGroups.flatMap((group) => group[1]), ...Object.values(workspaceChildNavItems).flat()];
 }
-
-/**
- * Destination-style mobile bottom navigation is intentionally EMPTY: phones use
- * the primary NavigationLinks sheet plus the dock (menu/notifications/AI)
- * instead of a second destination model.
- */
 export const mobileNavItems: readonly MobileNavItem[] = [];
-
-/**
- * Canonical mobile quick-create rail (phones).
- *
- * This is the SINGLE quick-create model shared by the phone header and the
- * navigation tests. Deep links keep the user inside the owning workspace
- * (section/view/quickAdd search), and every item carries the same permission
- * the destination surface enforces.
- */
 export const quickCreateItems: readonly MobileNavItem[] = [
   ['/contracts/new', 'newContract', FileText, 'contracts.create'],
   ['/financials', 'collectPayment', HandCoins, 'financial.payments.create', { section: 'collections', view: 'invoices', quickAdd: 'collect' }],
-  ['/maintenance', 'maintenanceRequest', Wrench, 'maintenance.create', { section: 'maintenance', quickAdd: 'maintenance' }],
-  ['/maintenance', 'utilityBill', ReceiptText, 'maintenance.create', { section: 'utilities', quickAdd: 'utility-bill' }],
+  ['/maintenance', 'maintenanceRequest', Wrench, 'maintenance.create', { quickAdd: 'maintenance' }],
+  ['/utilities', 'utilityBill', ReceiptText, undefined, { quickAdd: 'utility-bill' }],
 ];
