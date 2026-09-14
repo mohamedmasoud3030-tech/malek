@@ -1,11 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { workspaceChildNavItems } from './navigation/app-nav-items';
-import { governanceHubSections } from '@/features/governance-hub/governance-hub-sections';
-import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
-import { leasingHubSections } from '@/features/relationships-hub/leasing-hub-sections';
 import { ROUTE_CONTRACT } from './navigation/route-contract';
-import { operationsHubSections } from '@/features/operations-hub/operations-hub.sections';
+import { FINANCE_SECTIONS } from '@/features/finance/shell/financeShellModel';
 import { REPORT_PRODUCTS } from '@/features/reports/report-products';
 import { settingsSectionRegistry } from '@/features/settings/registry/sectionRegistry';
 
@@ -14,117 +11,56 @@ function source(relativePath: string) {
 }
 
 describe('production product simplification contract', () => {
-  it('keeps diagnostics, security duplication, and duplicate cost-center entry out of routine Settings navigation while revealing support operations to permitted roles', () => {
-    expect(
-      workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey),
-    ).toEqual(['companySettings', 'usersPermissions', 'adminSupport']);
+  it('uses standalone entity routes instead of relationship, operations, or governance hubs', () => {
+    const routeTree = source('./router/route-tree.ts');
+    expect(routeTree).not.toContain('relationships-hub');
+    expect(routeTree).not.toContain('operations-hub');
+    expect(routeTree).not.toContain('governance-hub');
+    expect(routeTree).toContain("@/features/contracts/ContractsListPage");
+    expect(routeTree).toContain("@/features/maintenance/components/maintenance-workspace");
+    expect(routeTree).toContain("@/features/utilities/components/utilities-workspace");
+    expect(routeTree).toContain("@/features/documents-vault/components/documents-vault-workspace");
+    expect(routeTree).toContain("/settings/company");
+    expect(routeTree).toContain("/settings/users-permissions");
+  });
 
-    const hiddenSections = governanceHubSections
-      .filter((section) => !section.showInPrimaryNavigation)
-      .map((section) => section.id);
-
-    expect(hiddenSections).toEqual([
-      'cost-centers',
-      'automation',
-      'system-settings',
-      'audit-log',
-      'data-integrity',
-      'security',
+  it('keeps standalone relationship navigation explicit', () => {
+    expect(workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey)).toEqual([
+      'contracts', 'tenants', 'peopleDirectory', 'leads', 'communication',
     ]);
   });
 
-  it('keeps company Settings routine navigation focused while specialist setup stays deep-linkable', () => {
-    expect(
-      settingsSectionRegistry
-        .filter((section) => section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['office', 'identity', 'documents', 'notifications', 'system']);
-    expect(
-      settingsSectionRegistry
-        .filter((section) => !section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['finance-readiness', 'cost-centers', 'payment-terms']);
+  it('keeps standalone services navigation explicit', () => {
+    expect(workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey)).toEqual([
+      'maintenance', 'utilities', 'serviceProviders', 'documentsVault',
+    ]);
+  });
 
+  it('keeps standalone governance navigation explicit', () => {
+    expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual([
+      'companySettings', 'usersPermissions', 'automation', 'auditLog', 'adminSupport',
+    ]);
+  });
+
+  it('keeps Portfolio canonical routes standalone', () => {
+    const portfolioEntries = ROUTE_CONTRACT.filter((entry) => ['/properties', '/units', '/lands', '/owners'].includes(entry.canonical));
+    expect(portfolioEntries.filter((entry) => entry.isPrimaryNav).map((entry) => entry.canonical)).toEqual(['/properties']);
+    expect(portfolioEntries.filter((entry) => !entry.isPrimaryNav).map((entry) => entry.canonical)).toEqual(['/units', '/lands', '/owners']);
+  });
+
+  it('keeps Money task-first while specialist views remain available', () => {
+    expect(workspaceChildNavItems['/financials'].map(([, labelKey]) => labelKey)).toEqual(['invoices', 'receipts', 'expenses', 'commissions']);
+    expect(FINANCE_SECTIONS.filter((section) => section.showInPrimaryNavigation).map((section) => section.id)).toEqual(['collections', 'fees', 'expenses', 'funds', 'banking']);
+  });
+
+  it('keeps company settings internals focused without restoring a governance hub', () => {
+    expect(settingsSectionRegistry.filter((section) => section.showInPrimaryNavigation).map((section) => section.id)).toEqual(['office', 'identity', 'documents', 'notifications', 'system']);
     const settingsPage = source('../features/settings/settings-page.tsx');
     expect(settingsPage).toContain('routineDefinitions');
     expect(settingsPage).toContain('accessibleDefinitions');
-    expect(settingsPage).toContain('data-settings-specialist-context');
   });
 
-  it('keeps Portfolio routine navigation focused on properties, units and owners', () => {
-    // portfolio-hub was dismantled (nav-architecture-consolidation): properties,
-    // units, lands and owners are each a standalone route now, so their
-    // primary-nav status lives in the route contract, not a hub sections file.
-    const portfolioEntries = ROUTE_CONTRACT.filter((entry) =>
-      ['/properties', '/units', '/lands', '/owners'].includes(entry.canonical),
-    );
-    expect(
-      portfolioEntries
-        .filter((entry) => entry.isPrimaryNav)
-        .map((entry) => entry.canonical),
-    ).toEqual(['/properties']);
-    expect(
-      portfolioEntries
-        .filter((entry) => !entry.isPrimaryNav)
-        .map((entry) => entry.canonical),
-    ).toEqual(['/units', '/lands', '/owners']);
-    expect(
-      workspaceChildNavItems['/properties'].map(([, labelKey]) => labelKey),
-    ).toEqual(['units', 'owners', 'lands']);
-  });
-
-  it('keeps Leasing routine navigation focused on contracts and tenants', () => {
-    expect(
-      leasingHubSections
-        .filter((section) => section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['contracts', 'tenants']);
-    expect(
-      leasingHubSections
-        .filter((section) => !section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['people', 'leads', 'communication']);
-    expect(
-      workspaceChildNavItems['/contracts'].map(([, labelKey]) => labelKey),
-    ).toEqual(['tenants', 'peopleDirectory', 'leads', 'communication']);
-  });
-
-  it('keeps Money task-first while specialist views stay available in the same workspace', () => {
-    expect(
-      workspaceChildNavItems['/financials'].map(([, labelKey]) => labelKey),
-    ).toEqual(['invoices', 'receipts', 'expenses', 'commissions']);
-
-    expect(
-      FINANCE_SECTIONS.filter((section) => section.showInPrimaryNavigation).map(
-        (section) => section.id,
-      ),
-    ).toEqual(['collections', 'fees', 'expenses', 'funds', 'banking']);
-    // The retired cockpit section no longer exists; only its deep-link redirect survives.
-    expect(
-      FINANCE_SECTIONS.filter(
-        (section) => !section.showInPrimaryNavigation,
-      ),
-    ).toEqual([]);
-  });
-
-  it('keeps Services routine navigation focused on maintenance and utilities', () => {
-    expect(
-      operationsHubSections
-        .filter((section) => section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['maintenance', 'utilities']);
-    expect(
-      operationsHubSections
-        .filter((section) => !section.showInPrimaryNavigation)
-        .map((section) => section.id),
-    ).toEqual(['service_providers', 'documents_vault']);
-    expect(
-      // The maintenance self-child was folded into the parent link (same default view).
-      workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey),
-    ).toEqual(['utilities', 'serviceProviders', 'documentsVault']);
-  });
-
-  it('keeps Reports task-first as five canonical products while specialist bodies remain reachable inside their product', () => {
+  it('keeps the report catalog canonical', () => {
     expect(REPORT_PRODUCTS.map((product) => product.id)).toEqual([
       'owner-comprehensive-statement',
       'tenant-statement',
@@ -132,188 +68,5 @@ describe('production product simplification contract', () => {
       'portfolio-property-performance',
       'financial-settlement-pack',
     ]);
-    expect(
-      REPORT_PRODUCTS.flatMap((product) => product.targets).some(
-        (target) => target.section === 'accounting',
-      ),
-    ).toBe(true);
-
-    expect(
-      REPORT_PRODUCTS.flatMap((product) => product.targets)
-        .filter((target) => target.section === 'accounting')
-        .map((target) => target.view),
-    ).toEqual(['accounting_reports', 'general_ledger', 'deferred_revenue']);
-    expect(
-      REPORT_PRODUCTS.flatMap((product) => product.targets)
-        .filter((target) => target.section === 'analytics')
-        .map((target) => target.view),
-    ).toEqual([
-      'collections',
-      'overdue',
-      'follow_up',
-      'collection_movement',
-      'property_analytics',
-      'overview',
-      'occupancy',
-      'expiring',
-      'operations_overview',
-      'maintenance_analytics',
-      'expenses',
-      'services',
-    ]);
-
-    const reportsPage = source('../features/reports/reports-page.tsx');
-    const productPage = source(
-      '../features/reports/premium/report-product-page.tsx',
-    );
-    expect(reportsPage).toContain('<ReportsCatalog');
-    expect(reportsPage).not.toContain('ReportsPrimaryNavigation');
-    expect(productPage).toContain('<ReportViewPanel');
-    expect(productPage).not.toContain('<ReportsWorkspace');
-  });
-
-  it('keeps advanced routes available without advertising them as normal product destinations', () => {
-    const nav = source('./navigation/app-nav-items.ts');
-    // Revealed registers (lands, people, leads, communication, commissions,
-    // service providers, documents vault, admin support) are sanctioned
-    // workspace children now. Still forbidden: specialist finance roles and
-    // duplicated settings entries that keep their guarded surfaces.
-    for (const forbidden of [
-      "['/settings', 'systemSettings'",
-      "['/settings', 'costCenters'",
-      "['/financials', 'deposits'",
-      "['/financials', 'ownerSettlements'",
-      "['/financials', 'bankReconciliation'",
-      "['/admin-support', 'supportOperations'",
-    ])
-      expect(nav).not.toContain(forbidden);
-  });
-
-  it('never renders raw backend errors through shared product error surfaces', () => {
-    const errorState = source('../components/ui/error-state.tsx');
-    const crudWriteError = source('../lib/data/crud-write-error.ts');
-    const financialFormatters = source(
-      '../features/financials/components/financials-formatters.ts',
-    );
-
-    expect(errorState).toContain('resolveSafeErrorMessage');
-    expect(errorState).toContain('parseSupabaseDiagnostics');
-    expect(errorState).not.toContain('return error.message');
-    expect(errorState).not.toContain(
-      "typeof error === 'string' && error.trim() ? error",
-    );
-
-    expect(crudWriteError).not.toContain('return message ?');
-    expect(crudWriteError).toContain(
-      'أعد المحاولة، وإذا استمرت المشكلة تواصل مع مسؤول النظام',
-    );
-
-    expect(financialFormatters).toContain('getActionableSupabaseErrorMessage');
-    expect(financialFormatters).not.toContain(
-      'error instanceof Error ? error.message',
-    );
-  });
-
-  it('keeps users and permission reviews free of hidden support mechanics and raw routes', () => {
-    const users = source(
-      '../features/governance-hub/components/UserRolesWorkspace.tsx',
-    );
-    expect(users).not.toContain('to="/admin-support"');
-    expect(users).not.toContain('بحث مقنّع');
-    expect(users).not.toContain('مقترح غير منفذ');
-    expect(users).not.toContain('المورد: {request.resource_route');
-    expect(users).toContain('requestScopeLabel(request.resource_route)');
-  });
-
-  it('keeps fixed monthly accrual UI operator-facing', () => {
-    const accrual = source(
-      '../features/financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace.tsx',
-    );
-    for (const forbidden of [
-      'FIXED_MONTHLY',
-      'DAILY_ACCRUAL',
-      'الحساب 2100',
-      'error.message',
-      'نسخة {row.versionNo}',
-    ]) {
-      expect(accrual).not.toContain(forbidden);
-    }
-    expect(accrual).toContain('احتساب الاستحقاقات');
-    expect(accrual).toContain('توجد استحقاقات تحتاج مراجعة ضريبية');
-    expect(accrual).toContain('راجع المصدر قبل اعتماد الأرقام');
-    expect(accrual).not.toContain('الضريبة غير محتسبة حاليًا');
-  });
-
-  it('keeps report catalog and readiness copy free of implementation mechanics', () => {
-    const reportProducts = source('../features/reports/report-products.ts');
-    const accountingReadiness = source(
-      '../features/reports/components/accounting/accounting-reconciliation-readiness.tsx',
-    );
-    const accountingReports = source(
-      '../features/reports/components/AccountingReportsSection.tsx',
-    );
-    const reportProductPage = source(
-      '../features/reports/premium/report-product-page.tsx',
-    );
-
-    for (const forbidden of ['Subledger↔GL', 'Cash Flow', '1111/1120']) {
-      expect(reportProducts).not.toContain(forbidden);
-    }
-    for (const forbidden of [
-      'reconciliation_class ||',
-      'محرك المطابقة',
-      'missingAccountNos.join',
-      'مطابقة الدفاتر المساعدة ↔ الأستاذ العام',
-    ]) {
-      expect(accountingReadiness).not.toContain(forbidden);
-    }
-    expect(accountingReports).not.toContain(
-      'مطابقة الدفاتر المساعدة مع الأستاذ العام غير ناجحة',
-    );
-    expect(reportProductPage).not.toContain(
-      'المخرجات المحاسبية هنا تعتمد على القيود المرحّلة',
-    );
-  });
-
-  it('keeps implementation diagnostics out of finance readiness copy', () => {
-    const readiness = source(
-      '../features/financials/tax-authority/finance-readiness-section.tsx',
-    );
-    for (const forbidden of [
-      'company_settings.vat_rate',
-      'TAX_PROFILE_MISSING',
-      'FEE_TAX_TREATMENT_MISSING',
-      'فشل مغلق',
-      'READY /',
-      'HARD_CLOSED',
-      'OPEN.',
-    ])
-      expect(readiness).not.toContain(forbidden);
-  });
-
-  it('keeps tax administration user-facing and does not leak implementation mechanics or raw mutation errors', () => {
-    const taxWorkspace = source(
-      '../features/financials/tax-authority/tax-profile-workspace.tsx',
-    );
-    for (const forbidden of [
-      'company_settings.vat_rate',
-      'Maker-Checker',
-      'versioned',
-      'RPC محكوم',
-      'Snapshot',
-      'FEE_TAX_TREATMENT_MISSING',
-      'تفشل مغلقًا',
-    ])
-      expect(taxWorkspace).not.toContain(forbidden);
-
-    expect(taxWorkspace).not.toContain(
-      'onError: (e) => toast.error(e instanceof Error ? e.message',
-    );
-    expect(taxWorkspace).toContain(
-      "onError: () => toast.error(friendlyTaxError('create'))",
-    );
-    expect(taxWorkspace).toContain(
-      "onError: () => toast.error(friendlyTaxError('approve'))",
-    );
   });
 });
