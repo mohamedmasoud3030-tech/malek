@@ -197,9 +197,7 @@ describe('UX completion contract', () => {
       'features/governance-hub/governance-hub-sections.ts',
     );
     const finance = source('features/finance/shell/financeShellModel.ts');
-    const portfolio = source(
-      'features/portfolio-hub/portfolio-hub-sections.ts',
-    );
+    const routeContract = source('app/navigation/route-contract.ts');
     const leasing = source(
       'features/relationships-hub/leasing-hub-sections.ts',
     );
@@ -224,8 +222,11 @@ describe('UX completion contract', () => {
     expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: true/);
     expect(finance).toMatch(/id: 'funds'[\s\S]*?showInPrimaryNavigation: true/);
     expect(finance).toMatch(/id: 'banking'[\s\S]*?showInPrimaryNavigation: true/);
-    expect(portfolio).toMatch(
-      /id: 'lands'[\s\S]*?showInPrimaryNavigation: false/,
+    // portfolio-hub was dismantled (nav-architecture-consolidation): lands is
+    // a standalone route now, so its "not routine navigation" status lives in
+    // the route contract instead of a hub sections file.
+    expect(routeContract).toMatch(
+      /canonical: '\/lands',[\s\S]*?isPrimaryNav: false/,
     );
     expect(leasing).toMatch(
       /id: 'people'[\s\S]*?showInPrimaryNavigation: false/,
