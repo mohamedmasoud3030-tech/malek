@@ -70,7 +70,7 @@ export const ACTIVE_REGISTER_INVENTORY = [
   },
   {
     component: 'features/units/units-page.tsx',
-    routes: ['/properties?section=units'],
+    routes: ['/units'],
   },
   {
     component: 'features/properties/properties-list-page.tsx',
