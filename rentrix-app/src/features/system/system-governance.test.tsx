@@ -11,7 +11,7 @@ import { assertSessionPermission } from '@/features/auth/route-guards';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { getDataIntegrityViewState } from './data-integrity-page';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
-import { getAllNavItems, type NavItem } from '@/app/navigation/app-nav-items';
+import { getAllNavItems } from '@/app/navigation/app-nav-items';
 
 
 vi.mock('@/features/auth/effective-permissions', async () => {
@@ -88,21 +88,24 @@ describe('system and governance route authorization', () => {
   });
 
   it('exposes governance surfaces in navigation from v0.3 onwards', () => {
-    const settingsAndGovernanceItems: readonly NavItem[] = getAllNavItems().filter(([to]) =>
-      ['/settings', '/change-password', '/audit-log', '/data-integrity', '/system'].includes(to),
-    );
+    const allNav = getAllNavItems();
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
-    const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
+    // Navigation architecture consolidation: every governance surface is a
+    // standalone canonical route under /settings, so the settings root no longer
+    // carries its children as ?section= query links.
+    const systemRoutes = allNav
+      .map(([to]) => to)
+      .filter((to) => to === '/settings' || to.startsWith('/settings/'));
 
-    // Routine reduction (#1615): the settings root plus its two children
-    // (company settings, users & permissions) are the only nav surfaces.
-    expect(systemRoutes).toHaveLength(3);
-    expect(systemRoutes.every((route) => route === '/settings')).toBe(true);
-    expect(systemRoutes).not.toContain('/system');
-    expect(systemRoutes).not.toContain('/audit-log');
-    expect(systemRoutes).not.toContain('/data-integrity');
-    expect(systemRoutes).not.toContain('/change-password');
-    const filteredSettingsItems = settingsAndGovernanceItems.filter(([, , , , permission]) => {
+    expect(systemRoutes).toContain('/settings');
+    expect(systemRoutes).toContain('/settings/company');
+    expect(systemRoutes).toContain('/settings/users-permissions');
+    // The retired top-level aliases must never reappear in navigation.
+    for (const retired of ['/system', '/audit-log', '/data-integrity', '/change-password']) {
+      expect(allNav.map(([to]) => to), `${retired} must stay retired`).not.toContain(retired);
+    }
+    const settingsSurfaces = allNav.filter(([to]) => to === '/settings' || to.startsWith('/settings/'));
+    const filteredSettingsItems = settingsSurfaces.filter(([, , , , permission]) => {
       const canShow = canShowNavigationItem(adminContext, permission);
       return canShow;
     }).map(([to]) => to);

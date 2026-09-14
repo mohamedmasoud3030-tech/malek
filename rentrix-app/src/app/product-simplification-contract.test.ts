@@ -43,9 +43,12 @@ describe('production product simplification contract', () => {
   });
 
   it('keeps Portfolio canonical routes standalone', () => {
-    const portfolioEntries = ROUTE_CONTRACT.filter((entry) => ['/properties', '/units', '/lands', '/owners'].includes(entry.canonical));
+    // '/units' is retired as a top-level route: the units register is canonical
+    // under the property detail subtree (/properties/$propertyId/units) and is
+    // disclosed through the Portfolio workspace, so it is not a contract route.
+    const portfolioEntries = ROUTE_CONTRACT.filter((entry) => ['/properties', '/lands', '/owners'].includes(entry.canonical));
     expect(portfolioEntries.filter((entry) => entry.isPrimaryNav).map((entry) => entry.canonical)).toEqual(['/properties']);
-    expect(portfolioEntries.filter((entry) => !entry.isPrimaryNav).map((entry) => entry.canonical)).toEqual(['/units', '/lands', '/owners']);
+    expect(portfolioEntries.filter((entry) => !entry.isPrimaryNav).map((entry) => entry.canonical)).toEqual(['/lands', '/owners']);
   });
 
   it('keeps Money task-first while specialist views remain available', () => {

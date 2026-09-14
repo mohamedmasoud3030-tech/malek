@@ -11,12 +11,25 @@ describe('Navigation consolidation — documents vault standalone route', () => 
   });
 
   it('/maintenance legacy documents_vault deep links redirect directly to /documents-vault', () => {
-    const maintenanceToken = "path: '/maintenance'";
-    const idx = routeTreeSource.indexOf(maintenanceToken);
+    // The legacy operations mapping is declared immediately above the
+    // /maintenance route that consumes it, so assert the mapping and its
+    // consumer directly instead of relying on a fixed source window.
+    const mapping = /const operationLegacy[^=]*=\s*\{([^}]*)\}/.exec(routeTreeSource);
+    expect(mapping, 'operationLegacy mapping must exist').not.toBeNull();
+    expect(mapping![1]).toContain("documents_vault: '/documents-vault'");
+    expect(mapping![1]).toContain("utilities: '/utilities'");
+    expect(mapping![1]).toContain("service_providers: '/service-providers'");
+
+    const idx = routeTreeSource.indexOf("path: '/maintenance'");
     expect(idx).toBeGreaterThanOrEqual(0);
-    const block = routeTreeSource.slice(idx, idx + 900);
-    expect(block).toContain("documents_vault: '/documents-vault'");
-    expect(block).toContain("to: target");
+    const route = routeTreeSource.slice(
+      routeTreeSource.lastIndexOf('createRoute({', idx),
+      routeTreeSource.indexOf('});', idx) + 3,
+    );
+    // The route resolves ?section= / ?view= against that mapping and hard
+    // redirects straight to the canonical standalone destination.
+    expect(route).toContain('operationLegacy[key]');
+    expect(route).toContain('throw redirect({ to: target');
   });
 
   it('does not retain an Operations Hub section model or retired route authority', () => {

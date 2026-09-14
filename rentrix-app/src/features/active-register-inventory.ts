@@ -82,15 +82,15 @@ export const ACTIVE_REGISTER_INVENTORY = [
   },
   {
     component: 'features/utilities/components/utilities-workspace.tsx',
-    routes: ['/maintenance?section=utilities'],
+    routes: ['/utilities'],
   },
   {
     component: 'features/automation/components/automation-center-view.tsx',
-    routes: ['/settings?section=automation'],
+    routes: ['/settings/automation'],
   },
   {
     component: 'features/audit/components/audit-log-view.tsx',
-    routes: ['/settings?section=audit-log'],
+    routes: ['/settings/audit-log'],
   },
   {
     component: 'features/commissions/components/commissions-view.tsx',

@@ -102,6 +102,11 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
     expect(anchor(html, '/settings')?.getAttribute('aria-disabled')).toBeNull();
     const host = document.createElement('div');
     host.innerHTML = html;
-    expect(host.querySelectorAll('a[href="/settings"][aria-disabled="true"]').length).toBeGreaterThan(0);
+    // Navigation architecture consolidation: settings children are standalone
+    // canonical routes, so a locked child renders at its own /settings/* href
+    // rather than at the retired /settings?section= hub URL.
+    const lockedSettingsChildren = [...host.querySelectorAll('a[data-nav-child="true"][aria-disabled="true"]')]
+      .filter((anchor) => (anchor.getAttribute('href') ?? '').startsWith('/settings/'));
+    expect(lockedSettingsChildren.length).toBeGreaterThan(0);
   });
 });

@@ -24,7 +24,9 @@ const featureDependencyAllowList = new Map([
   ['people', new Set(['contracts', 'financials', 'tenants'])],
   ['properties', new Set(['contracts', 'financials', 'owners', 'settings', 'units'])],
   ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units', 'utilities'])],
-  ['settings', new Set(['properties', 'financials', 'units'])],
+  // settings owns users & permissions after the navigation consolidation, so it
+  // consumes the auth permission seam (AppPermission / permission-request-service).
+  ['settings', new Set(['auth', 'properties', 'financials', 'units'])],
   ['system', new Set(['auth', 'settings', 'financials'])],
   ['tenants', new Set(['contracts', 'financials', 'people'])],
   ['units', new Set(['contracts', 'properties'])],

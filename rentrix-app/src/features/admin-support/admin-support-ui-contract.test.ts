@@ -48,9 +48,9 @@ describe("admin/support UI safety contract", () => {
   });
 
   it("retires direct browser user-role updates", () => {
-    const service = read("features/governance-hub/user-roles-service.ts");
+    const service = read("features/settings/user-roles-service.ts");
     const workspace = read(
-      "features/governance-hub/components/UserRolesWorkspace.tsx",
+      "features/settings/components/UserRolesWorkspace.tsx",
     );
     expect(service).not.toContain(".from('users').update");
     expect(service).not.toContain("updateGovernedUserAccess");

@@ -22,7 +22,7 @@ export const navGroups: readonly NavGroup[] = [
 
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
-    ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view'],
+    ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view', { section: 'units' }],
     ['/owners', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRound, 'owners.hub.view'],
     ['/lands', 'lands', 'قطع الأراضي كأصول ضمن المحفظة', MapPinned, 'lands.view'],
   ],
@@ -41,7 +41,7 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
-    ['/utilities', 'utilities', 'المرافق والعدادات', Gauge],
+    ['/utilities', 'utilities', 'المرافق والعدادات', Gauge, 'maintenance.view'],
     ['/service-providers', 'serviceProviders', 'مزودو الخدمات ومهامهم', HardHat, 'service_providers.view'],
     ['/documents-vault', 'documentsVault', 'المستندات التشغيلية', FolderKanban],
   ],
@@ -63,5 +63,5 @@ export const quickCreateItems: readonly MobileNavItem[] = [
   ['/contracts/new', 'newContract', FileText, 'contracts.create'],
   ['/financials', 'collectPayment', HandCoins, 'financial.payments.create', { section: 'collections', view: 'invoices', quickAdd: 'collect' }],
   ['/maintenance', 'maintenanceRequest', Wrench, 'maintenance.create', { quickAdd: 'maintenance' }],
-  ['/utilities', 'utilityBill', ReceiptText, undefined, { quickAdd: 'utility-bill' }],
+  ['/utilities', 'utilityBill', ReceiptText, 'maintenance.create', { quickAdd: 'utility-bill' }],
 ];

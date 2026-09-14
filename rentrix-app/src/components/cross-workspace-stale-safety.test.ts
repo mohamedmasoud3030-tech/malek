@@ -42,7 +42,7 @@ describe('cross-workspace stale-data safety contracts', () => {
 
   it('prevents stale permission decisions and permission overwrites', () => {
     const roles = src(
-      'features/governance-hub/components/UserRolesWorkspace.tsx',
+      'features/settings/components/UserRolesWorkspace.tsx',
     );
     expect(roles).toContain('hasUsersReadError && hasCachedUsersSnapshot');
     expect(roles).toContain(

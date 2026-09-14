@@ -14,8 +14,6 @@ import { registeredRoutePaths, topLevelRoutePaths } from './route-tree-paths';
 const RETIRED_ROUTES = [
   '/landing',
   '/units',
-  '/utilities',
-  '/documents-vault',
   '/finance/collections',
   '/finance/expenses',
   '/finance/deposits',

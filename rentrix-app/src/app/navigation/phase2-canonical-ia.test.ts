@@ -18,8 +18,10 @@ describe('Task-centric canonical IA', () => {
   });
 
   it('keeps Portfolio entities standalone', () => {
-    for (const path of ['/properties', '/units', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units', '/owners', '/lands']);
+    // '/units' is retired as a route: the units register is disclosed through
+    // the Portfolio workspace (?section=units) and recovered at the not-found boundary.
+    for (const path of ['/properties', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/owners', '/lands']);
     expect(routeTreeSource).not.toContain('portfolio-hub');
   });
 
