@@ -85,8 +85,6 @@ const featureDependencyAllowList = new Map([
   // same query-only invoice-read seam already granted to owners, tenants and
   // reports. No writes, no second invoices authority.
   ['people', new Set(['contracts', 'financials', 'tenants'])],
-  // portfolio-hub composes properties/owners/units/lands under /properties.
-  ['portfolio-hub', new Set(['auth', 'lands', 'owners', 'properties', 'units'])],
   // properties reads the shared company-settings seam (useCompanySettingsContract)
   // for canonical company-aware money/number/date formatting in the property
   // dossier — same reviewed seam already granted to owners/maintenance.
