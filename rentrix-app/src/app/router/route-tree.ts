@@ -1,10 +1,4 @@
-import {
-  createRootRoute,
-  createRoute,
-  lazyRouteComponent,
-  redirect,
-  isRedirect,
-} from '@tanstack/react-router';
+import { createRootRoute, createRoute, lazyRouteComponent, redirect, isRedirect } from '@tanstack/react-router';
 import { RouteErrorFallback } from '@/components/error-boundary';
 import { NotFoundPage } from '@/app/not-found-page';
 import { RootRouteComponent } from '@/routes/__root';
@@ -12,65 +6,11 @@ import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import type { AppPermission } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
 
-const rootRoute = createRootRoute({
-  component: RootRouteComponent,
-  errorComponent: RouteErrorFallback,
-  notFoundComponent: NotFoundPage,
-});
-
-const authRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: 'auth',
-  beforeLoad: async () => {
-    const { getCurrentSession } = await import('@/services/auth-service');
-    const session = await getCurrentSession();
-    if (session) throw redirect({ to: '/dashboard' });
-  },
-  component: lazyRouteComponent(() => import('@/routes/_auth'), 'AuthRouteComponent'),
-});
-
-const protectedRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: 'protected',
-  beforeLoad: async () => {
-    const { getCurrentSession } = await import('@/services/auth-service');
-    if (!await getCurrentSession()) throw redirect({ to: '/login' });
-  },
-  component: lazyRouteComponent(() => import('@/routes/_protected'), 'ProtectedRouteComponent'),
-});
-
-const requirePermission = (permission: AppPermission) => async () => {
-  const { getCurrentSession } = await import('@/services/auth-service');
-  try {
-    const session = await getCurrentSession();
-    if (!session) throw redirect({ to: '/login' });
-    await assertSessionPermission(session, permission);
-  } catch (err) {
-    if (isRedirect(err)) throw err;
-    throw redirect({ to: '/login' });
-  }
-};
-
-const requireAnyPermission = (...permissions: AppPermission[]) => async () => {
-  const { getCurrentSession } = await import('@/services/auth-service');
-  try {
-    const session = await getCurrentSession();
-    if (!session) throw redirect({ to: '/login' });
-    let lastError: unknown = null;
-    for (const permission of permissions) {
-      try {
-        await assertSessionPermission(session, permission);
-        return;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-    throw lastError ?? new Error('Permission denied');
-  } catch (err) {
-    if (isRedirect(err)) throw err;
-    throw redirect({ to: '/login' });
-  }
-};
+const rootRoute = createRootRoute({ component: RootRouteComponent, errorComponent: RouteErrorFallback, notFoundComponent: NotFoundPage });
+const authRoute = createRoute({ getParentRoute: () => rootRoute, id: 'auth', beforeLoad: async () => { const { getCurrentSession } = await import('@/services/auth-service'); const session = await getCurrentSession(); if (session) throw redirect({ to: '/dashboard' }); }, component: lazyRouteComponent(() => import('@/routes/_auth'), 'AuthRouteComponent') });
+const protectedRoute = createRoute({ getParentRoute: () => rootRoute, id: 'protected', beforeLoad: async () => { const { getCurrentSession } = await import('@/services/auth-service'); if (!await getCurrentSession()) throw redirect({ to: '/login' }); }, component: lazyRouteComponent(() => import('@/routes/_protected'), 'ProtectedRouteComponent') });
+const requirePermission = (permission: AppPermission) => async () => { const { getCurrentSession } = await import('@/services/auth-service'); try { const session = await getCurrentSession(); if (!session) throw redirect({ to: '/login' }); await assertSessionPermission(session, permission); } catch (err) { if (isRedirect(err)) throw err; throw redirect({ to: '/login' }); } };
+const requireAnyPermission = (...permissions: AppPermission[]) => async () => { const { getCurrentSession } = await import('@/services/auth-service'); try { const session = await getCurrentSession(); if (!session) throw redirect({ to: '/login' }); let lastError: unknown = null; for (const permission of permissions) { try { await assertSessionPermission(session, permission); return; } catch (error) { lastError = error; } } throw lastError ?? new Error('Permission denied'); } catch (err) { if (isRedirect(err)) throw err; throw redirect({ to: '/login' }); } };
 
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
 const forgotPasswordRoute = createRoute({ getParentRoute: () => authRoute, path: '/forgot-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ForgotPasswordPage'), staticData: { title: 'استعادة كلمة المرور' } });
@@ -98,85 +38,22 @@ const personDetailRoute = createRoute({ getParentRoute: () => protectedRoute, pa
 const personNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/new', beforeLoad: requirePermission('contracts.create'), component: lazyRouteComponent(() => import('@/features/people/person-new-route'), 'PersonNewRouteComponent'), staticData: { title: 'إضافة شخص' } });
 const personEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/$personId/edit', beforeLoad: requirePermission('contracts.edit'), component: lazyRouteComponent(() => import('@/features/people/person-edit-route'), 'PersonEditRouteComponent'), staticData: { title: 'تعديل شخص' } });
 
-const LEGACY_RELATIONSHIP_ROUTES: Record<string, string> = { people: '/people', tenants: '/tenants', leads: '/leads', communication: '/communication' };
-const contractsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/contracts',
-  beforeLoad: ({ search }) => {
-    const query = search as Record<string, unknown>;
-    const legacyKey = typeof query.section === 'string' ? query.section : typeof query.view === 'string' ? query.view : typeof query.workspace === 'string' ? query.workspace : '';
-    const legacyTarget = LEGACY_RELATIONSHIP_ROUTES[legacyKey];
-    if (legacyTarget) throw redirect({ to: legacyTarget, search: {} });
-  },
-  component: lazyRouteComponent(() => import('@/features/contracts/ContractsListPage'), 'ContractsWorkspace'),
-  staticData: { title: 'العقود' },
-});
+const relationshipLegacy: Record<string, string> = { people: '/people', tenants: '/tenants', leads: '/leads', communication: '/communication' };
+const contractsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts', beforeLoad: ({ search }) => { const query = search as Record<string, unknown>; const key = typeof query.section === 'string' ? query.section : typeof query.view === 'string' ? query.view : typeof query.workspace === 'string' ? query.workspace : ''; const target = relationshipLegacy[key]; if (target) throw redirect({ to: target, search: {} }); }, component: lazyRouteComponent(() => import('@/features/contracts/ContractsListPage'), 'ContractsWorkspace'), staticData: { title: 'العقود' } });
 const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/new', beforeLoad: requirePermission('contracts.create'), component: lazyRouteComponent(() => import('@/features/contracts/ContractFormPage'), 'ContractFormPage'), staticData: { title: 'إنشاء عقد' } });
 const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: lazyRouteComponent(() => import('@/features/contracts/pages/ContractDetailPage'), 'ContractDetailPage'), staticData: { title: 'تفاصيل العقد' } });
 const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', beforeLoad: requirePermission('contracts.edit'), component: lazyRouteComponent(() => import('@/features/contracts/ContractFormPage'), 'ContractFormPage'), staticData: { title: 'تعديل عقد' } });
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: lazyRouteComponent(() => import('@/features/finance/FinancePage'), 'FinancePage'), staticData: { title: 'المال' } });
 const commissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/commissions', beforeLoad: requirePermission('commissions.view'), component: lazyRouteComponent(() => import('@/features/commissions/commissions-page'), 'CommissionsWorkspace'), staticData: { title: 'العمولات' } });
-const receiptsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/receipts',
-  beforeLoad: ({ search }) => {
-    const requestedReceiptId = (search as Record<string, unknown>).receiptId;
-    if (typeof requestedReceiptId === 'string' && requestedReceiptId !== '') return;
-    throw redirect({ to: '/financials', search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'receipts' }) });
-  },
-  component: lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page'), 'ReceiptsWorkspace'),
-  staticData: { title: 'الإيصالات' },
-});
-const reportsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/reports',
-  beforeLoad: async ({ search }) => {
-    await requirePermission('financial.reports.view')();
-    const { buildReportProductSearch, resolveLegacyReportLocation } = await import('@/features/reports/report-route');
-    const destination = resolveLegacyReportLocation(search as Record<string, unknown>);
-    if (!destination) return;
-    throw redirect({ to: '/reports/$reportId', params: { reportId: destination.product.id }, search: buildReportProductSearch(search as Record<string, unknown>, destination.target) });
-  },
-  component: lazyRouteComponent(() => import('@/features/reports/reports-page'), 'ReportsPage'),
-  staticData: { title: 'المحاسبة والتقارير' },
-});
-const reportProductRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/reports/$reportId',
-  beforeLoad: async ({ params, search }) => {
-    await requirePermission('financial.reports.view')();
-    const { buildReportProductSearch, resolveLegacyProductTarget } = await import('@/features/reports/report-route');
-    const { getReportProduct, getReportProductTarget } = await import('@/features/reports/report-products');
-    const product = getReportProduct(params.reportId);
-    if (!product) return;
-    const routeSearch = search as Record<string, unknown>;
-    const hasRetiredKey = 'target' in routeSearch || 'section' in routeSearch || 'workspace' in routeSearch || 'report' in routeSearch;
-    const requestedTarget = 'target' in routeSearch ? routeSearch.target : routeSearch.view;
-    const legacyTarget = resolveLegacyProductTarget(product, requestedTarget);
-    if (!hasRetiredKey && !legacyTarget) return;
-    const target = legacyTarget ?? getReportProductTarget(product, requestedTarget);
-    throw redirect({ to: '/reports/$reportId', params: { reportId: product.id }, search: buildReportProductSearch(routeSearch, target) });
-  },
-  component: lazyRouteComponent(() => import('@/features/reports/premium/report-product-page'), 'ReportProductPage'),
-  staticData: { title: 'تقرير' },
-});
+const receiptsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/receipts', beforeLoad: ({ search }) => { const id = (search as Record<string, unknown>).receiptId; if (typeof id === 'string' && id !== '') return; throw redirect({ to: '/financials', search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'receipts' }) }); }, component: lazyRouteComponent(() => import('@/features/financials/receipts/receipts-page'), 'ReceiptsWorkspace'), staticData: { title: 'الإيصالات' } });
+const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', beforeLoad: async ({ search }) => { await requirePermission('financial.reports.view')(); const { buildReportProductSearch, resolveLegacyReportLocation } = await import('@/features/reports/report-route'); const destination = resolveLegacyReportLocation(search as Record<string, unknown>); if (!destination) return; throw redirect({ to: '/reports/$reportId', params: { reportId: destination.product.id }, search: buildReportProductSearch(search as Record<string, unknown>, destination.target) }); }, component: lazyRouteComponent(() => import('@/features/reports/reports-page'), 'ReportsPage'), staticData: { title: 'المحاسبة والتقارير' } });
+const reportProductRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports/$reportId', beforeLoad: async ({ params, search }) => { await requirePermission('financial.reports.view')(); const { buildReportProductSearch, resolveLegacyProductTarget } = await import('@/features/reports/report-route'); const { getReportProduct, getReportProductTarget } = await import('@/features/reports/report-products'); const product = getReportProduct(params.reportId); if (!product) return; const routeSearch = search as Record<string, unknown>; const hasRetiredKey = 'target' in routeSearch || 'section' in routeSearch || 'workspace' in routeSearch || 'report' in routeSearch; const requestedTarget = 'target' in routeSearch ? routeSearch.target : routeSearch.view; const legacyTarget = resolveLegacyProductTarget(product, requestedTarget); if (!hasRetiredKey && !legacyTarget) return; const target = legacyTarget ?? getReportProductTarget(product, requestedTarget); throw redirect({ to: '/reports/$reportId', params: { reportId: product.id }, search: buildReportProductSearch(routeSearch, target) }); }, component: lazyRouteComponent(() => import('@/features/reports/premium/report-product-page'), 'ReportProductPage'), staticData: { title: 'تقرير' } });
 const aiAssistantRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/ai-assistant', component: lazyRouteComponent(() => import('@/features/ai-assistant/ai-assistant-page'), 'AiAssistantPage'), staticData: { title: 'المساعد الذكي' } });
 const helpSupportRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/help', component: lazyRouteComponent(() => import('@/features/help-support/help-support-page'), 'HelpSupportPage'), staticData: { title: 'المساعدة والدعم' } });
 const adminSupportRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/admin-support', beforeLoad: requirePermission('support.operations.view'), component: lazyRouteComponent(() => import('@/features/admin-support/admin-support-page'), 'AdminSupportOperationsPage'), staticData: { title: 'عمليات الدعم والتحقيق' } });
 
-const LEGACY_OPERATIONS_ROUTES: Record<string, string> = { service_providers: '/service-providers', utilities: '/utilities', documents_vault: '/documents-vault' };
-const maintenanceRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/maintenance',
-  beforeLoad: ({ search }) => {
-    const query = search as Record<string, unknown>;
-    const section = typeof query.section === 'string' ? query.section : typeof query.view === 'string' ? query.view : '';
-    const legacyTarget = LEGACY_OPERATIONS_ROUTES[section];
-    if (legacyTarget) throw redirect({ to: legacyTarget, search: {} });
-  },
-  component: lazyRouteComponent(() => import('@/features/maintenance/components/maintenance-workspace'), 'MaintenanceWorkspace'),
-  staticData: { title: 'الصيانة' },
-});
+const operationLegacy: Record<string, string> = { service_providers: '/service-providers', utilities: '/utilities', documents_vault: '/documents-vault' };
+const maintenanceRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/maintenance', beforeLoad: ({ search }) => { const query = search as Record<string, unknown>; const key = typeof query.section === 'string' ? query.section : typeof query.view === 'string' ? query.view : ''; const target = operationLegacy[key]; if (target) throw redirect({ to: target, search: {} }); }, component: lazyRouteComponent(() => import('@/features/maintenance/components/maintenance-workspace'), 'MaintenanceWorkspace'), staticData: { title: 'الصيانة' } });
 const serviceProvidersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/features/service-providers/service-providers-page'), 'ServiceProvidersPage'), staticData: { title: 'مزودو الخدمات' } });
 const serviceProviderNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/new', beforeLoad: requirePermission('service_providers.write'), component: lazyRouteComponent(() => import('@/features/service-providers/service-provider-new-route'), 'ServiceProviderNewRouteComponent'), staticData: { title: 'إضافة مزود خدمة' } });
 const serviceProviderDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/$providerId', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/features/service-providers/service-provider-detail-page'), 'ServiceProviderDetailPage'), staticData: { title: 'ملف مزود الخدمة' } });
@@ -184,30 +61,10 @@ const serviceProviderEditRoute = createRoute({ getParentRoute: () => protectedRo
 const utilitiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/utilities', component: lazyRouteComponent(() => import('@/features/utilities/components/utilities-workspace'), 'UtilitiesWorkspace'), staticData: { title: 'المرافق والعدادات' } });
 const documentsVaultRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/documents-vault', component: lazyRouteComponent(() => import('@/features/documents-vault/components/documents-vault-workspace'), 'DocumentsVaultWorkspace'), staticData: { title: 'المستندات التشغيلية' } });
 
-const LEGACY_GOVERNANCE_ROUTES: Record<string, string> = {
-  company: '/settings/company',
-  'users-permissions': '/settings/users-permissions',
-  'cost-centers': '/settings/cost-centers',
-  automation: '/settings/automation',
-  'system-settings': '/settings/system',
-  'audit-log': '/settings/audit-log',
-  'data-integrity': '/settings/data-integrity',
-  security: '/settings/security',
-};
-const settingsRoute = createRoute({
-  getParentRoute: () => protectedRoute,
-  path: '/settings',
-  beforeLoad: ({ search }) => {
-    const query = search as Record<string, unknown>;
-    const requested = typeof query.section === 'string' ? query.section : 'company';
-    const target = LEGACY_GOVERNANCE_ROUTES[requested] ?? '/settings/company';
-    throw redirect({ to: target, search: typeof query.companySection === 'string' ? { companySection: query.companySection } : {} });
-  },
-  component: () => null,
-  staticData: { title: 'الإعدادات' },
-});
+const governanceLegacy: Record<string, string> = { company: '/settings/company', 'users-permissions': '/settings/users-permissions', 'cost-centers': '/settings/cost-centers', automation: '/settings/automation', 'system-settings': '/settings/system', 'audit-log': '/settings/audit-log', 'data-integrity': '/settings/data-integrity', security: '/settings/security' };
+const settingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings', beforeLoad: ({ search }) => { const query = search as Record<string, unknown>; const key = typeof query.section === 'string' ? query.section : 'company'; const target = governanceLegacy[key] ?? '/settings/company'; throw redirect({ to: target, search: typeof query.companySection === 'string' ? { companySection: query.companySection } : {} }); }, component: () => null, staticData: { title: 'الإعدادات' } });
 const companySettingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/company', beforeLoad: requirePermission('company.settings.manage'), component: lazyRouteComponent(() => import('@/features/settings/settings-page'), 'SettingsWorkspace'), staticData: { title: 'إعدادات الشركة' } });
-const userRolesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/users-permissions', beforeLoad: requireAnyPermission('users.manage', 'permission_requests.review'), component: lazyRouteComponent(() => import('@/features/governance-hub/components/UserRolesWorkspace'), 'UserRolesWorkspace'), staticData: { title: 'المستخدمون والصلاحيات' } });
+const userRolesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/users-permissions', beforeLoad: requireAnyPermission('users.manage', 'permission_requests.review'), component: lazyRouteComponent(() => import('@/features/settings/components/UserRolesWorkspace'), 'UserRolesWorkspace'), staticData: { title: 'المستخدمون والصلاحيات' } });
 const costCentersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/cost-centers', beforeLoad: requirePermission('cost_centers.manage'), component: lazyRouteComponent(() => import('@/features/settings/cost-centers-settings-section'), 'CostCentersSettingsSection'), staticData: { title: 'مراكز التكلفة' } });
 const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/automation', beforeLoad: requirePermission('automation.view'), component: lazyRouteComponent(() => import('@/features/automation/components/automation-workspace'), 'AutomationWorkspace'), staticData: { title: 'الأتمتة' } });
 const systemSettingsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/system', beforeLoad: requirePermission('system.view'), component: lazyRouteComponent(() => import('@/features/system/system-page'), 'SystemWorkspace'), staticData: { title: 'إعدادات النظام' } });
@@ -221,71 +78,15 @@ const ownerPortalRoute = createRoute({ getParentRoute: () => rootRoute, path: '/
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'), staticData: { title: 'سياسة الخصوصية' } });
 const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: lazyRouteComponent(() => import('@/routes/terms'), 'TermsRouteComponent'), staticData: { title: 'شروط الاستخدام' } });
 const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: '/support', component: lazyRouteComponent(() => import('@/features/help-support/public-support-page'), 'PublicSupportPage'), staticData: { title: 'الدعم والتواصل' } });
-const designSystemRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/dev/design-system',
-  beforeLoad: () => { if (!import.meta.env.DEV) throw redirect({ to: '/' }); },
-  component: import.meta.env.DEV ? lazyRouteComponent(() => import('@/features/design-system/design-system-showcase'), 'DesignSystemShowcase') : () => null,
-  staticData: { title: 'MALEK Design System' },
-});
+const designSystemRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dev/design-system', beforeLoad: () => { if (!import.meta.env.DEV) throw redirect({ to: '/' }); }, component: import.meta.env.DEV ? lazyRouteComponent(() => import('@/features/design-system/design-system-showcase'), 'DesignSystemShowcase') : () => null, staticData: { title: 'MALEK Design System' } });
 
 export const routeTree = rootRoute.addChildren([
-  authRoute.addChildren([loginRoute, forgotPasswordRoute]),
-  resetPasswordRoute,
-  landingRoute,
-  tenantPortalRoute,
-  ownerPortalRoute,
-  privacyRoute,
-  termsRoute,
-  publicSupportRoute,
-  designSystemRoute,
+  authRoute.addChildren([loginRoute, forgotPasswordRoute]), resetPasswordRoute, landingRoute, tenantPortalRoute, ownerPortalRoute, privacyRoute, termsRoute, publicSupportRoute, designSystemRoute,
   protectedRoute.addChildren([
-    dashboardRoute,
-    propertiesRoute,
-    unitsRoute,
-    propertyNewRoute,
-    propertyDetailRoute.addChildren([propertyIndexRoute, propertyUnitsRoute, propertyUnitDetailRoute]),
-    propertyEditRoute,
-    landsRoute,
-    landDetailRoute,
-    ownersRoute,
-    ownerDetailRoute,
-    ownerEditRoute,
-    tenantsRoute,
-    tenantDetailRoute,
-    peopleRoute,
-    leadsRoute,
-    communicationRoute,
-    personDetailRoute,
-    personNewRoute,
-    personEditRoute,
-    contractsRoute,
-    contractNewRoute,
-    contractDetailRoute,
-    contractEditRoute,
-    financialsRoute,
-    commissionsRoute,
-    receiptsRoute,
-    reportsRoute,
-    reportProductRoute,
-    aiAssistantRoute,
-    helpSupportRoute,
-    adminSupportRoute,
-    maintenanceRoute,
-    serviceProvidersRoute,
-    serviceProviderNewRoute,
-    serviceProviderDetailRoute,
-    serviceProviderEditRoute,
-    utilitiesRoute,
-    documentsVaultRoute,
-    settingsRoute,
-    companySettingsRoute,
-    userRolesRoute,
-    costCentersRoute,
-    automationRoute,
-    systemSettingsRoute,
-    auditLogRoute,
-    dataIntegrityRoute,
-    securityRoute,
+    dashboardRoute, propertiesRoute, unitsRoute, propertyNewRoute, propertyDetailRoute.addChildren([propertyIndexRoute, propertyUnitsRoute, propertyUnitDetailRoute]), propertyEditRoute,
+    landsRoute, landDetailRoute, ownersRoute, ownerDetailRoute, ownerEditRoute, tenantsRoute, tenantDetailRoute, peopleRoute, leadsRoute, communicationRoute, personDetailRoute, personNewRoute, personEditRoute,
+    contractsRoute, contractNewRoute, contractDetailRoute, contractEditRoute, financialsRoute, commissionsRoute, receiptsRoute, reportsRoute, reportProductRoute, aiAssistantRoute, helpSupportRoute, adminSupportRoute,
+    maintenanceRoute, serviceProvidersRoute, serviceProviderNewRoute, serviceProviderDetailRoute, serviceProviderEditRoute, utilitiesRoute, documentsVaultRoute,
+    settingsRoute, companySettingsRoute, userRolesRoute, costCentersRoute, automationRoute, systemSettingsRoute, auditLogRoute, dataIntegrityRoute, securityRoute,
   ]),
 ]);
