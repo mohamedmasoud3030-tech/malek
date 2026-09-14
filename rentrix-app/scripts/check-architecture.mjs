@@ -7,127 +7,34 @@ const sourceFiles = collectSourceFiles(sourceRoot);
 const sourceSet = new Set(sourceFiles);
 const violations = [];
 
-// Every existing cross-feature edge is explicit. A new feature starts with no
-// cross-feature access until its integration seam is reviewed and added here.
 const featureDependencyAllowList = new Map([
   ['admin-support', new Set(['auth'])],
-  // ai-assistant reads the canonical maintenance lifecycle seam
-  // (normalize/attention derivation + the Maintenance row type) so its
-  // operational snapshot reuses the single maintenance vocabulary instead of
-  // duplicating it. Reviewed integration seam: query-only, no writes, and the
-  // maintenance workspace stays the authority for lifecycle transitions.
   ['ai-assistant', new Set(['financials', 'maintenance'])],
   ['automation', new Set(['communication'])],
   ['audit', new Set(['auth', 'settings'])],
-  // UX-049: commissions source selector queries contracts, leads, lands, people, and
-  // properties to build a typed, permission-aware source selector that replaces
-  // the free-text UUID entry.
   ['commissions', new Set(['contracts', 'financials', 'lands', 'leads', 'people', 'properties'])],
-  // command-palette gates each registered command by permission, so it reads
-  // the shared `AppPermission` type from the auth feature (type-only import —
-  // no runtime coupling). This is the reviewed integration seam for the
-  // Phase 6 command palette.
   ['command-palette', new Set(['auth'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
-  // dashboard (Today) reads the canonical utilities seam (useUtilityBills hook,
-  // the shared obligation derivation and its Arabic labels) to place utility
-  // obligations in the Today action hierarchy. Reviewed integration seam:
-  // query-only, no writes and no second utilities authority — P3 Today must
-  // answer "what needs action now?" without opening the Services workspace.
-  // dashboard (Today) also reads the canonical units register seam (useAllUnits
-  // + the shared UnitStatus type) and the properties title seam
-  // (listPropertyTitles, complete paged read) to name the vacant and
-  // maintenance-parked units behind the server vacancy KPI. Reviewed
-  // integration seam: query-only, and the server snapshot stays the authority
-  // for the vacancy number itself.
   ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding', 'properties', 'units', 'utilities'])],
-  // finance is the unified WP-B finance domain: its shell model reads the
-  // shared auth permission seam (canAccess / AppPermission /
-  // AuthorizationContext) and FinancePage composes the financials
-  // workspaces (collections, expenses, fees, funds, banking) plus the
-  // finance-readiness section, financial date/report hooks, and the
-  // operational analytics report types — operational workflows only;
-  // accounting statements stay authoritative under reports.
   ['finance', new Set(['auth', 'financials'])],
-  // financials/expenses reads the owners feature hooks (usePropertyOwners /
-  // useOwnerAgreements) so an OWNER-charged expense can only be allocated to a
-  // real owner with an active agreement (migration-12 allocation/evidence law).
-  // The seam is hook-only — no owners presentation or data-plane modules are
-  // imported; owners→financials remains the reverse reviewed seam.
-  // financials/tax-authority also reads the accounting-period management seam
-  // (useAccountingPeriods query/mutation hooks + shared domain types) so the
-  // Settings Finance Readiness surface can create/reopen periods through the
-  // audited Stage-3 RPCs instead of duplicating them. Reviewed integration
-  // seam: hook/type-only — no accounting presentation modules and no direct
-  // accounting service imports; the server RPCs remain the authority.
   ['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings', 'accounting'])],
-  // governance-hub composes settings/system/audit/auth workspaces under /settings.
-  ['governance-hub', new Set(['auth', 'audit', 'settings', 'system'])],
-  // maintenance reads the shared document-print readiness seam
-  // (useDocumentSettings) so the A4 statement only prints with real company
-  // identity — same reviewed seam already granted to financials/owners/reports.
   ['maintenance', new Set(['financials', 'properties', 'reports', 'service-providers', 'settings', 'units'])],
   ['onboarding', new Set(['owners'])],
-  // operations-hub composes maintenance/utilities/automation/documents-vault.
-  ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'service-providers', 'utilities'])],
-  // the owner dossier lists that owner's units and renders their status with the
-  // canonical units vocabulary (unitStatusLabelFor / unitStatusToneFor from
-  // units/unit-schema). It previously kept a private copy of both maps, and that
-  // copy CONTRADICTED the register (available/occupied tones were swapped,
-  // reserved differed), so the same unit status read green on one screen and blue
-  // on another. Reviewed integration seam: label/tone vocabulary only — no unit
-  // queries, no writes — and the units register stays the single authority for
-  // what a status means and how it is coloured. Same seam already granted to
-  // properties (unit cards), dashboard (vacancy KPI), reports and maintenance.
   ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings', 'units'])],
-  // people dossier (getPersonDossier) reads the canonical dossier invoice
-  // read (listDossierInvoicesForContracts) from financials/invoices — the
-  // same query-only invoice-read seam already granted to owners, tenants and
-  // reports. No writes, no second invoices authority.
   ['people', new Set(['contracts', 'financials', 'tenants'])],
-  // properties reads the shared company-settings seam (useCompanySettingsContract)
-  // for canonical company-aware money/number/date formatting in the property
-  // dossier — same reviewed seam already granted to owners/maintenance.
-  // properties reads useUnitContractDrafts to surface pending-draft state on
-  // unit cards (property-unit-detail-page). Reviewed integration seam: the
-  // hook is query-only and does not write through the contracts feature.
   ['properties', new Set(['contracts', 'financials', 'owners', 'settings', 'units'])],
-  // relationships-hub composes contracts/people/tenants/leads/communication.
-  ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
-  // reports reads canonical utilities query hooks and shared labels for the
-  // services report. This seam is query-only and preserves utilities as the
-  // single source of truth; reports does not write utility data.
   ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units', 'utilities'])],
-  // settings reads finance readiness/tax authority to surface authoritative tax config and fail-closed states
-  // in the finance-readiness settings section — governed RPCs only, no raw writes, per FOM-005.
   ['settings', new Set(['properties', 'financials', 'units'])],
   ['system', new Set(['auth', 'settings', 'financials'])],
   ['tenants', new Set(['contracts', 'financials', 'people'])],
-  // units reads useUnitContractDrafts to show pending-draft indicators in the
-  // unit list (units-list). Reviewed integration seam: query-only, no write
-  // coupling to the contracts feature.
   ['units', new Set(['contracts', 'properties'])],
-  // utilities reads the shared document-print readiness seam
-  // (useDocumentSettings) so the utilities statement only prints with real
-  // company identity — same reviewed seam already granted to financials.
   ['utilities', new Set(['financials', 'properties', 'reports', 'settings'])],
 ]);
 
-// Existing presentation/service debt has been migrated to hooks or feature-local
-// seams. Keep the reviewed-debt mechanism fail-closed: future temporary entries
-// are allowed only while the corresponding violation still exists.
 const presentationServiceDebtAllowList = new Set([]);
-
-// Presentation modules outside components/ are checked for direct data-plane
-// access (supabase.from / supabase.rpc) instead of the bare import, because
-// supabase.auth.* session wiring in page-level shells is an accepted pattern.
-// The current reviewed debt is zero; any future bounded exception must remain
-// self-validating and disappear as soon as the direct access is removed.
 const presentationDataPlaneDebtAllowList = new Set([]);
-
 const allowedAppDirectories = new Set(['layout', 'navigation', 'providers', 'router']);
 const allowedAppFiles = new Set(['not-found-page.tsx']);
-
 const graph = new Map();
 
 for (const file of sourceFiles) {
@@ -135,51 +42,34 @@ for (const file of sourceFiles) {
   const displayPath = relative(cwd, file);
   const imports = getImportSpecifiers(content);
   const runtimeImports = getRuntimeImportSpecifiers(content);
-
   const appBoundaryViolation = getAppBoundaryViolation(file);
   if (appBoundaryViolation) violations.push(`${displayPath}: ${appBoundaryViolation}`);
-
   if (isComponentsDirectoryModule(file) && imports.some((specifier) => specifier === '@/lib/supabase')) {
     violations.push(`${displayPath}: presentation components must not import Supabase directly`);
   }
-
-  if (
-    isPresentationComponent(file)
-    && hasDirectSupabaseDataPlaneAccess(content)
-    && !presentationDataPlaneDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))
-  ) {
+  if (isPresentationComponent(file) && hasDirectSupabaseDataPlaneAccess(content) && !presentationDataPlaneDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))) {
     violations.push(`${displayPath}: presentation components must not call supabase.from()/supabase.rpc() directly; move data access to a feature service or hook`);
   }
-
-  if (
-    isComponentsDirectoryModule(file)
-    && runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier))
-    && !presentationServiceDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))
-  ) {
+  if (isComponentsDirectoryModule(file) && runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier)) && !presentationServiceDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))) {
     violations.push(`${displayPath}: presentation components must use a feature hook instead of importing a cross-feature service`);
   }
-
   if (isFeatureFile(file)) {
     for (const specifier of imports) {
       const dependencyViolation = getFeatureDependencyViolation(file, specifier);
       if (dependencyViolation) violations.push(`${displayPath}: ${dependencyViolation}`);
     }
   }
-
   if (isPage(file) && lineCount(content) > 650) {
     violations.push(`${displayPath}: pages must stay below 650 lines; split new responsibilities before extending this page`);
   }
-
   graph.set(file, resolveImports(file, imports));
 }
 
 validateDebtAllowLists();
 validateFeatureDependencyAllowListFeatures();
-
 for (const cycle of findCycles(graph)) {
   violations.push(`${cycle.map((file) => relative(cwd, file)).join(' -> ')}: circular import`);
 }
-
 if (violations.length > 0) {
   console.error('Architecture boundary check failed:\n' + violations.map((violation) => `- ${violation}`).join('\n'));
   process.exitCode = 1;
@@ -192,33 +82,17 @@ function collectSourceFiles(directory) {
     return /\.(ts|tsx)$/.test(entry.name) && !/\.test\.(ts|tsx)$/.test(entry.name) ? [fullPath] : [];
   });
 }
-
 function getImportSpecifiers(content) {
   return [...content.matchAll(/import(?:\s+type)?[\s\S]*?from\s+['"]([^'"]+)['"]/g)].map((match) => match[1])
     .concat([...content.matchAll(/import\s+['"]([^'"]+)['"]/g)].map((match) => match[1]));
 }
-
 function getRuntimeImportSpecifiers(content) {
   return [...content.matchAll(/import(?!\s+type)[\s\S]*?from\s+['"]([^'"]+)['"]/g)].map((match) => match[1])
     .concat([...content.matchAll(/import\s+['"]([^'"]+)['"]/g)].map((match) => match[1]));
 }
-
-// Legacy scope: everything under a components/ directory (including .ts
-// helpers co-located with components). The strict "no Supabase import at
-// all" and cross-feature-service rules keep this exact scope so existing
-// clean code sees no behavior change.
 function isComponentsDirectoryModule(file) {
   return relative(sourceRoot, file).split(sep).includes('components');
 }
-
-// Widened scope: a presentation component is any component-bearing module
-// (.tsx by project convention — JSX only compiles in .tsx here), not just
-// files under a "components/" directory. The old path-only heuristic let
-// feature-root modals/pages (e.g. features/properties/property-form-modal.tsx)
-// reach the Supabase data plane directly without being caught. Hooks
-// (use-*.tsx / hooks/) and service modules (services/ / *-service.tsx /
-// *Service.tsx) are the data layer and stay exempt; e2e fixtures are test
-// scaffolding.
 function isPresentationComponent(file) {
   if (isComponentsDirectoryModule(file)) return true;
   if (!file.endsWith('.tsx')) return false;
@@ -230,13 +104,11 @@ function isPresentationComponent(file) {
   if (/\.e2e-fixture\.tsx$/.test(fileName)) return false;
   return true;
 }
-
 function hasDirectSupabaseDataPlaneAccess(content) {
   return /\bsupabase\s*(?:\n\s*)?\.\s*(?:from|rpc)\s*\(/.test(content);
 }
 function isPage(file) { return /(?:page|Page)\.tsx$/.test(file); }
 function lineCount(content) { return content.split('\n').length; }
-
 function getAppBoundaryViolation(file) {
   const normalized = relative(sourceRoot, file).split(sep).join('/');
   const match = normalized.match(/^app\/([^/]+)(?:\/|$)/);
@@ -245,33 +117,23 @@ function getAppBoundaryViolation(file) {
   if (allowedAppDirectories.has(entry) || allowedAppFiles.has(entry)) return null;
   return 'app/ is reserved for composition infrastructure; move business pages, services, snapshots, and domain logic to features/<domain>';
 }
-
 function resolveImports(file, specifiers = getImportSpecifiers(readFileSync(file, 'utf8'))) {
   return specifiers.flatMap((specifier) => resolveImport(file, specifier));
 }
-
 function resolveImport(file, specifier) {
   let absoluteBase = null;
   if (specifier.startsWith('@/')) absoluteBase = resolve(sourceRoot, specifier.slice(2));
   else if (specifier.startsWith('.')) absoluteBase = resolve(dirname(file), specifier);
   if (!absoluteBase) return [];
-  return ['', '.ts', '.tsx', '/index.ts', '/index.tsx']
-    .map((suffix) => `${absoluteBase}${suffix}`)
-    .filter((candidate) => sourceSet.has(candidate));
+  return ['', '.ts', '.tsx', '/index.ts', '/index.tsx'].map((suffix) => `${absoluteBase}${suffix}`).filter((candidate) => sourceSet.has(candidate));
 }
-
-function isFeatureFile(file) {
-  return getFeatureNameFromPath(file) !== null;
-}
-
+function isFeatureFile(file) { return getFeatureNameFromPath(file) !== null; }
 function isCrossFeatureServiceImport(file, specifier) {
   const sourceFeature = getFeatureNameFromPath(file);
   const targetFeature = getFeatureNameFromSpecifier(file, specifier);
   if (!sourceFeature || !targetFeature || sourceFeature === targetFeature) return false;
-  return /(?:^|\/)services?\//.test(specifier)
-    || /(?:[-.]service|Service)(?:\.[cm]?[jt]sx?)?$/.test(specifier);
+  return /(?:^|\/)services?\//.test(specifier) || /(?:[-.]service|Service)(?:\.[cm]?[jt]sx?)?$/.test(specifier);
 }
-
 function validateDebtAllowLists() {
   for (const normalizedPath of presentationDataPlaneDebtAllowList) {
     const file = resolve(sourceRoot, normalizedPath);
@@ -280,11 +142,8 @@ function validateDebtAllowLists() {
       continue;
     }
     const content = readFileSync(file, 'utf8');
-    if (!isPresentationComponent(file) || !hasDirectSupabaseDataPlaneAccess(content)) {
-      violations.push(`${normalizedPath}: stale presentation data-plane debt allowlist entry; direct supabase.from()/supabase.rpc() access is gone`);
-    }
+    if (!isPresentationComponent(file) || !hasDirectSupabaseDataPlaneAccess(content)) violations.push(`${normalizedPath}: stale presentation data-plane debt allowlist entry; direct supabase.from()/supabase.rpc() access is gone`);
   }
-
   for (const normalizedPath of presentationServiceDebtAllowList) {
     const file = resolve(sourceRoot, normalizedPath);
     if (!sourceSet.has(file)) {
@@ -293,29 +152,16 @@ function validateDebtAllowLists() {
     }
     const content = readFileSync(file, 'utf8');
     const runtimeImports = getRuntimeImportSpecifiers(content);
-    if (
-      !isComponentsDirectoryModule(file)
-      || !runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier))
-    ) {
-      violations.push(`${normalizedPath}: stale presentation service debt allowlist entry; cross-feature runtime service import is gone`);
-    }
+    if (!isComponentsDirectoryModule(file) || !runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier))) violations.push(`${normalizedPath}: stale presentation service debt allowlist entry; cross-feature runtime service import is gone`);
   }
 }
-
 function validateFeatureDependencyAllowListFeatures() {
   const featureNames = new Set(sourceFiles.map((file) => getFeatureNameFromPath(file)).filter(Boolean));
   for (const [sourceFeature, targetFeatures] of featureDependencyAllowList) {
-    if (!featureNames.has(sourceFeature)) {
-      violations.push(`features/${sourceFeature}: stale feature dependency allowlist key; source feature no longer exists`);
-    }
-    for (const targetFeature of targetFeatures) {
-      if (!featureNames.has(targetFeature)) {
-        violations.push(`features/${sourceFeature}: stale feature dependency target ${targetFeature}; target feature no longer exists`);
-      }
-    }
+    if (!featureNames.has(sourceFeature)) violations.push(`features/${sourceFeature}: stale feature dependency allowlist key; source feature no longer exists`);
+    for (const targetFeature of targetFeatures) if (!featureNames.has(targetFeature)) violations.push(`features/${sourceFeature}: stale feature dependency target ${targetFeature}; target feature no longer exists`);
   }
 }
-
 function getFeatureDependencyViolation(file, specifier) {
   const sourceFeature = getFeatureNameFromPath(file);
   const targetFeature = getFeatureNameFromSpecifier(file, specifier);
@@ -324,12 +170,10 @@ function getFeatureDependencyViolation(file, specifier) {
   if (allowedTargets.has(targetFeature)) return null;
   return `unexpected cross-feature import from ${sourceFeature} to ${targetFeature}; use a feature hook/service seam or move shared-neutral code to a real shared module`;
 }
-
 function getFeatureNameFromPath(file) {
   const parts = relative(sourceRoot, file).split(sep);
   return parts[0] === 'features' ? parts[1] : null;
 }
-
 function getFeatureNameFromSpecifier(file, specifier) {
   if (specifier.startsWith('@/features/')) return specifier.split('/')[2] ?? null;
   if (!specifier.startsWith('.')) return null;
@@ -337,14 +181,12 @@ function getFeatureNameFromSpecifier(file, specifier) {
   const relativeToSource = relative(sourceRoot, resolved).split(sep);
   return relativeToSource[0] === 'features' ? relativeToSource[1] : null;
 }
-
 function findCycles(graph) {
   const cycles = [];
   const visiting = new Set();
   const visited = new Set();
   const stack = [];
   const seen = new Set();
-
   function visit(node) {
     if (visiting.has(node)) {
       const cycle = stack.slice(stack.indexOf(node)).concat(node);
@@ -360,7 +202,6 @@ function findCycles(graph) {
     visiting.delete(node);
     visited.add(node);
   }
-
   for (const node of graph.keys()) visit(node);
   return cycles;
 }
