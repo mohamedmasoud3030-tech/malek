@@ -120,7 +120,7 @@ function layoutGuardCoversPath(pathname: string, permission: string): boolean {
 }
 
 function ownerEditorPermissions(): string[] {
-  const source = read('rentrix-app/src/features/governance-hub/components/UserRolesWorkspace.tsx');
+  const source = read('rentrix-app/src/features/settings/components/UserRolesWorkspace.tsx');
   const block = source.slice(source.indexOf('employeeCapabilityGroups'), source.indexOf('] as const;'));
   return [...block.matchAll(/'([a-z0-9_.]+)'/g)].map((match) => match[1]);
 }
@@ -220,7 +220,12 @@ describe('P0-1 permission authority parity — route guards and navigation', () 
       const index = routeTree.indexOf(token);
       const block = routeTree.slice(routeTree.lastIndexOf('createRoute({', index), routeTree.indexOf('});', index));
       expect(
-        block.includes(`requirePermission('${route.permission}')`) || layoutGuardCoversPath(route.canonical, route.permission),
+        block.includes(`requirePermission('${route.permission}')`) ||
+          // A compound guard (requireAnyPermission) still enforces the declared
+          // permission as one of its accepted gates — e.g. users & permissions
+          // accepts users.manage OR permission_requests.review.
+          (/requireAnyPermission\([^)]*\)/.exec(block)?.[0].includes(`'${route.permission}'`) ?? false) ||
+          layoutGuardCoversPath(route.canonical, route.permission),
         `${route.canonical} must be gated by ${route.permission} at route or layout level`,
       ).toBe(true);
     }

@@ -19,7 +19,7 @@ const requiredOperationalRoutes = [
 ] as const;
 
 const retiredOperationalRoutes = [
-  '/units', '/utilities', '/documents-vault', '/automation', '/invoices', '/expenses',
+  '/units', '/automation', '/invoices', '/expenses',
   '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/accounting',
   '/change-password', '/audit-log', '/data-integrity', '/system', '/landing',
   '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking',
@@ -49,16 +49,17 @@ describe('task-centric app navigation', () => {
     expect(portfolio.map(([, labelKey]) => labelKey)).toEqual(['units', 'owners', 'lands']);
     expect(portfolio.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
       { labelKey: 'units', permission: 'properties.view', search: { section: 'units' } },
-      { labelKey: 'owners', permission: 'owners.hub.view', search: { section: 'owners' } },
+      { labelKey: 'owners', permission: 'owners.hub.view', search: undefined },
       { labelKey: 'lands', permission: 'lands.view', search: undefined },
     ]);
   });
 
   it('reveals Leasing registers: tenants plus people, leads and communication', () => {
     const leasing = workspaceChildNavItems['/contracts'];
-    expect(leasing.map(([, labelKey]) => labelKey)).toEqual(['tenants', 'peopleDirectory', 'leads', 'communication']);
+    expect(leasing.map(([, labelKey]) => labelKey)).toEqual(['contracts', 'tenants', 'peopleDirectory', 'leads', 'communication']);
     expect(leasing.map(([, , , , permission, search]) => ({ permission, search }))).toEqual([
-      { permission: 'contracts.view', search: { workspace: 'tenants' } },
+      { permission: 'contracts.view', search: undefined },
+      { permission: 'contracts.view', search: undefined },
       { permission: 'contracts.view', search: undefined },
       { permission: 'leads.view', search: undefined },
       { permission: 'communication.view', search: undefined },
@@ -81,22 +82,26 @@ describe('task-centric app navigation', () => {
 
   it('reveals Services registers: maintenance, utilities, service providers and documents vault', () => {
     const services = workspaceChildNavItems['/maintenance'];
-    // The maintenance self-child was removed: the parent link already lands on
-    // the default maintenance section, so a duplicate row added nothing.
-    expect(services.map(([, labelKey]) => labelKey)).toEqual(['utilities', 'serviceProviders', 'documentsVault']);
+    // Navigation architecture consolidation: every register is a standalone
+    // canonical destination, so no child carries a ?section= hub query any more.
+    expect(services.map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities', 'serviceProviders', 'documentsVault']);
     expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'utilities', permission: 'maintenance.view', search: { section: 'utilities' } },
+      { labelKey: 'maintenance', permission: 'maintenance.view', search: undefined },
+      { labelKey: 'utilities', permission: 'maintenance.view', search: undefined },
       { labelKey: 'serviceProviders', permission: 'service_providers.view', search: undefined },
-      { labelKey: 'documentsVault', permission: undefined, search: { section: 'documents_vault' } },
+      { labelKey: 'documentsVault', permission: undefined, search: undefined },
     ]);
   });
 
   it('keeps Settings focused on routine administration and reveals support operations to permitted roles', () => {
     const settings = workspaceChildNavItems['/settings'];
     expect(settings.map(([, labelKey]) => labelKey)).toEqual([
-      'companySettings', 'usersPermissions', 'adminSupport',
+      'companySettings', 'usersPermissions', 'automation', 'auditLog', 'adminSupport',
     ]);
-    expect(settings.some(([, labelKey]) => labelKey === 'automation')).toBe(false);
+    // Automation and audit log are standalone canonical routes under /settings.
+    expect(settings.find(([, labelKey]) => labelKey === 'automation')?.[0]).toBe('/settings/automation');
+    expect(settings.find(([, labelKey]) => labelKey === 'auditLog')?.[0]).toBe('/settings/audit-log');
+    // System settings and cost centers stay addressable but are not routine nav.
     expect(settings.some(([, labelKey]) => labelKey === 'systemSettings')).toBe(false);
     expect(settings.some(([, labelKey]) => labelKey === 'costCenters')).toBe(false);
     const adminSupport = settings.find(([, labelKey]) => labelKey === 'adminSupport');

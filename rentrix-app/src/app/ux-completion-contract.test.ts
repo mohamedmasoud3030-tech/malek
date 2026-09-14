@@ -193,28 +193,18 @@ describe('UX completion contract', () => {
   it('keeps specialist work out of routine navigation while preserving deep links', () => {
     const appNav = source('app/navigation/app-nav-items.ts');
     const commands = source('features/command-palette/command-registry.ts');
-    const governance = source(
-      'features/governance-hub/governance-hub-sections.ts',
-    );
     const finance = source('features/finance/shell/financeShellModel.ts');
-    const portfolio = source(
-      'features/portfolio-hub/portfolio-hub-sections.ts',
-    );
-    const leasing = source(
-      'features/relationships-hub/leasing-hub-sections.ts',
-    );
-    const operations = source(
-      'features/operations-hub/operations-hub.sections.ts',
-    );
+    const routeContract = source('app/navigation/route-contract.ts');
     const reports = source('features/reports/report-products.ts');
     const settings = source('features/settings/registry/sectionRegistry.ts');
     const routes = source('app/router/route-tree.ts');
 
     expect(appNav).not.toContain("['/settings', 'automation'");
     expect(commands).not.toContain("id: 'automation'");
-    expect(governance).toContain("id: 'automation'");
-    expect(governance).toMatch(
-      /id: 'automation'[\s\S]*?showInPrimaryNavigation: false/,
+    // The dismantled governance hub's "not routine navigation" status lives in
+    // the route contract now that automation is a standalone canonical route.
+    expect(routeContract).toMatch(
+      /canonical: '\/settings\/automation',[\s\S]*?isPrimaryNav: false/,
     );
 
     // Money keeps its five routine sections; the retired overview cockpit is gone
@@ -224,24 +214,20 @@ describe('UX completion contract', () => {
     expect(finance).toMatch(/id: 'fees'[\s\S]*?showInPrimaryNavigation: true/);
     expect(finance).toMatch(/id: 'funds'[\s\S]*?showInPrimaryNavigation: true/);
     expect(finance).toMatch(/id: 'banking'[\s\S]*?showInPrimaryNavigation: true/);
-    expect(portfolio).toMatch(
-      /id: 'lands'[\s\S]*?showInPrimaryNavigation: false/,
+    // portfolio-hub was dismantled (nav-architecture-consolidation): lands is
+    // a standalone route now, so its "not routine navigation" status lives in
+    // the route contract instead of a hub sections file.
+    expect(routeContract).toMatch(
+      /canonical: '\/lands',[\s\S]*?isPrimaryNav: false/,
     );
-    expect(leasing).toMatch(
-      /id: 'people'[\s\S]*?showInPrimaryNavigation: false/,
-    );
-    expect(leasing).toMatch(
-      /id: 'leads'[\s\S]*?showInPrimaryNavigation: false/,
-    );
-    expect(leasing).toMatch(
-      /id: 'communication'[\s\S]*?showInPrimaryNavigation: false/,
-    );
-    expect(operations).toMatch(
-      /id: 'service_providers'[\s\S]*?showInPrimaryNavigation: false/,
-    );
-    expect(operations).toMatch(
-      /id: 'documents_vault'[\s\S]*?showInPrimaryNavigation: false/,
-    );
+    // relationships-hub and operations-hub were dismantled; each register is a
+    // standalone canonical route whose non-primary status is contract-declared.
+    for (const specialist of ['/people', '/leads', '/communication', '/service-providers', '/documents-vault']) {
+      expect(
+        routeContract,
+        `${specialist} must stay out of routine primary navigation`,
+      ).toMatch(new RegExp(`canonical: '${specialist.replace('/', '\\/')}',[\\s\\S]*?isPrimaryNav: false`));
+    }
     expect(reports).not.toContain('showInPrimaryNavigation');
     for (const retainedTarget of [
       "id: 'revenue'",
@@ -261,8 +247,11 @@ describe('UX completion contract', () => {
       /id: 'payment-terms'[\s\S]*?showInPrimaryNavigation: false/,
     );
 
+    // Top-level hub-era aliases stay retired; the canonical destinations are
+    // the standalone routes (automation lives under /settings).
     expect(routes).not.toContain("path: '/automation'");
-    expect(routes).not.toContain("path: '/documents-vault'");
+    expect(routes).toContain("path: '/settings/automation'");
+    expect(routes).toContain("path: '/documents-vault'");
     expect(routes).toContain("path: '/lands'");
     expect(routes).toContain("path: '/service-providers'");
   });

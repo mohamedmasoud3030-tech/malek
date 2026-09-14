@@ -24,22 +24,7 @@ type UserRow = {
 };
 
 export async function fetchGovernedUsers(): Promise<GovernedUser[]> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, email, name, full_name, role, status, is_active, last_login')
-    .is('deleted_at', null)
-    .order('name', { ascending: true });
-
+  const { data, error } = await supabase.from('users').select('id, email, name, full_name, role, status, is_active, last_login').is('deleted_at', null).order('name', { ascending: true });
   if (error) throw error;
-
-  return ((data ?? []) as UserRow[]).map((user) => ({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    fullName: user.full_name,
-    role: user.role,
-    status: user.status,
-    isActive: user.is_active,
-    lastLogin: user.last_login,
-  }));
+  return ((data ?? []) as UserRow[]).map((user) => ({ id: user.id, email: user.email, name: user.name, fullName: user.full_name, role: user.role, status: user.status, isActive: user.is_active, lastLogin: user.last_login }));
 }

@@ -81,6 +81,8 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
 
   // Services
   { canonical: '/maintenance', workspaceGuard: 'subtree', titleAr: 'الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: true, inMobileNav: false, permission: 'maintenance.view' },
+  { canonical: '/utilities', workspaceGuard: 'exact', titleAr: 'المرافق والعدادات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'maintenance.view', targetIANote: 'Standalone register disclosed inside Services; route access stays authenticated-only (RLS at the data layer), matching the pre-consolidation utilities tab.' },
+  { canonical: '/documents-vault', titleAr: 'المستندات التشغيلية', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: null, targetIANote: 'Authenticated-only register; enforcement is RLS at the data layer, so there is no navigation gate.' },
   { canonical: '/service-providers', titleAr: 'مزودو الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.view' },
   { canonical: '/service-providers/new', titleAr: 'إضافة مزود خدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.write' },
   { canonical: '/service-providers/$providerId', titleAr: 'ملف مزود الخدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.view' },
@@ -100,6 +102,14 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/help', titleAr: 'المساعدة والدعم', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: null },
   { canonical: '/admin-support', titleAr: 'عمليات الدعم والتحقيق', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'support.operations.view' },
   { canonical: '/settings', titleAr: 'الإعدادات', sidebarRoot: '/settings', isPrimaryNav: true, inMobileNav: false, permission: null },
+  { canonical: '/settings/company', titleAr: 'بيانات الشركة', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'company.settings.manage' },
+  { canonical: '/settings/users-permissions', titleAr: 'المستخدمون والصلاحيات', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'users.manage' },
+  { canonical: '/settings/cost-centers', titleAr: 'مراكز التكلفة', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'cost_centers.manage' },
+  { canonical: '/settings/automation', titleAr: 'الأتمتة', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'automation.view' },
+  { canonical: '/settings/system', titleAr: 'إعدادات النظام', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'system.view' },
+  { canonical: '/settings/audit-log', titleAr: 'سجل التدقيق', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'audit.view' },
+  { canonical: '/settings/data-integrity', titleAr: 'سلامة البيانات', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'integrity.view' },
+  { canonical: '/settings/security', titleAr: 'الأمان وكلمة المرور', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'auth.password.change' },
 ] as const;
 
 export const TARGET_IA_TOP_LEVEL = [

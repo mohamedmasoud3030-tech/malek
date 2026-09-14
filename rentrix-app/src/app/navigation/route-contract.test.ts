@@ -17,8 +17,6 @@ function hasRoutePath(path: string): boolean {
 const RETIRED_ROUTE_PATHS = [
   '/landing',
   '/units',
-  '/utilities',
-  '/documents-vault',
   '/finance/collections',
   '/finance/expenses',
   '/finance/deposits',

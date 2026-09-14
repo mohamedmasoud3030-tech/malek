@@ -5,21 +5,24 @@ import { navGroups, workspaceChildNavItems } from '../app/navigation/app-nav-ite
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('P2 — contextual documents contract', () => {
-  it('keeps the legacy vault route under Services authority, never as a global product', () => {
-    const operations = read('./operations-hub/operations-hub.sections.ts');
+  it('keeps the vault under Services authority as a standalone route, never as a global product', () => {
     const routeTree = read('../app/router/route-tree.ts');
     const globalPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
     const servicesChildren = workspaceChildNavItems['/maintenance'];
 
+    // The vault is disclosed as a Services child — the owning workspace,
+    // never a competing global product.
     expect(globalPaths).not.toContain('/documents-vault');
-    // The vault is disclosed as a Services child via its section deep link —
-    // the owning workspace, never a global product.
-    expect(servicesChildren.some(([to, , , , , search]) => to === '/maintenance' && search?.section === 'documents_vault')).toBe(true);
-    // documents_vault remains a real Services section (aggregate authority);
-    // the standalone /documents-vault route is retired — internal navigation
-    // reaches the vault only through /maintenance?section=documents_vault.
-    expect(operations).toContain("id: 'documents_vault'");
-    expect(routeTree).not.toContain("path: '/documents-vault'");
+    expect(servicesChildren.some(([to]) => to === '/documents-vault')).toBe(true);
+
+    // Navigation architecture consolidation: the vault owns exactly one
+    // standalone canonical route, and the retired hub section model is gone.
+    expect(routeTree).toContain("path: '/documents-vault'");
+    expect(routeTree).toContain("@/features/documents-vault/components/documents-vault-workspace");
+    expect(routeTree).not.toContain('operations-hub');
+
+    // The legacy hub deep link hard redirects straight to the canonical route.
+    expect(routeTree).toContain("documents_vault: '/documents-vault'");
   });
 
   it('uses one shared foundation for contract, property, owner, unit, and maintenance contexts', () => {

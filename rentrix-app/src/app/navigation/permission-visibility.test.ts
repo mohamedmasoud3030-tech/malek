@@ -99,11 +99,11 @@ describe('permission visibility — task-centric IA must not widen access', () =
     // Registers stay OUT of the global primary groups and are disclosed as
     // permission-gated children of their owning workspace.
     expect(workspaceChildNavItems['/properties'].length).toBe(3);
-    expect(workspaceChildNavItems['/contracts'].length).toBe(4);
+    expect(workspaceChildNavItems['/contracts'].length).toBe(5);
     expect(workspaceChildNavItems['/financials'].length).toBe(4);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(3);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(4);
     expect(workspaceChildNavItems['/reports'].length).toBe(0);
-    expect(workspaceChildNavItems['/settings'].length).toBe(3);
+    expect(workspaceChildNavItems['/settings'].length).toBe(5);
     expect(workspaceChildNavItems['/people']).toBeUndefined();
     expect(workspaceChildNavItems['/lands']).toBeUndefined();
     expect(workspaceChildNavItems['/commissions']).toBeUndefined();
