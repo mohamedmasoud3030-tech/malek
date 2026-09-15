@@ -149,6 +149,18 @@ export function getActionableSupabaseErrorMessage(error: unknown, fallbackMessag
     return withContext(fallbackMessage, 'الخدمة المطلوبة غير متاحة في النسخة الحالية. حدّث التطبيق ثم أعد المحاولة.');
   }
 
+  if (normalized.includes('people_live_name_phone_uidx')) {
+    return withContext(fallbackMessage, 'يوجد شخص حي بالاسم ورقم الهاتف نفسيهما بعد توحيد الصيغة. افتح السجل الحالي أو صحّح بيانات التواصل.');
+  }
+  if (normalized.includes('people_live_email_uidx')) {
+    return withContext(fallbackMessage, 'البريد الإلكتروني مستخدم لشخص حي داخل الشركة. استخدم البريد الصحيح أو افتح السجل الحالي.');
+  }
+  if (normalized.includes('people_live_national_id_uidx')) {
+    return withContext(fallbackMessage, 'رقم الهوية مستخدم لشخص حي داخل الشركة. تحقّق من الهوية قبل الحفظ.');
+  }
+  if (normalized.includes('person_archive_blocked_live_contract')) {
+    return 'لا يمكن أرشفة هذا الشخص لأنه مرتبط بعقد نشط أو مسودة. أنهِ أو أرشف العقد أولاً مع الحفاظ على السجل التاريخي.';
+  }
   if (code === '23505') {
     return withContext(fallbackMessage, 'يوجد سجل مطابق بالفعل. راجع البيانات قبل إنشاء سجل جديد.');
   }

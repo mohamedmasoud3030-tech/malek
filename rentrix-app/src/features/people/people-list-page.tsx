@@ -22,6 +22,7 @@ import type { Person } from "@/types/domain";
 import type { PersonTypeFilter } from "./people-service";
 import { usePeople, useSoftDeletePerson } from "./use-people";
 import { formatCount } from '@/lib/formatters';
+import { useOptionalAuth } from '@/hooks/use-auth';
 
 const pageSize = 10;
 
@@ -42,6 +43,14 @@ export type PeopleListPageProps = Readonly<{
 
 export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   const navigate = useNavigate();
+  const auth = useOptionalAuth();
+  // The route guard is the navigation boundary; these capability checks keep
+  // the register honest for employees who can view people but cannot mutate.
+  // Isolated component tests render without AuthProvider, so preserve their
+  // read/write fixture behavior with the explicit null fallback only.
+  const canCreate = auth ? auth.canAccess('contracts.create') : true;
+  const canEdit = auth ? auth.canAccess('contracts.edit') : true;
+  const canArchive = auth ? auth.canAccess('contracts.cancel') : true;
   const url = useSearch({ strict: false }) as Record<string, unknown>;
   const [search, setSearch] = useState(typeof url.search === 'string' ? url.search : '');
   const [type, setType] = useState<PersonTypeFilter>(personTypeValues.includes(url.type as never) ? url.type as PersonTypeFilter : 'all');
@@ -197,14 +206,14 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             items={[
               { id: 'full-page', label: 'فتح الملف الكامل', icon: FolderOpen, onClick: () => void navigate({ to: '/people/$personId', params: { personId: person.id } }) },
               { id: 'preview', label: 'معاينة سريعة', icon: Eye, onClick: () => setPreviewPerson(person) },
-              { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEdit(person.id) },
-              { id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setDeleteId(person.id) },
+              ...(canEdit ? [{ id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEdit(person.id) }] : []),
+              ...(canArchive ? [{ id: 'archive', label: 'أرشفة', icon: Trash2, danger: true, onClick: () => setDeleteId(person.id) }] : []),
             ]}
           />
         </div>
       ),
     },
-  ], [navigate, openEdit]);
+  ], [canArchive, canEdit, navigate, openEdit]);
 
   return (
     <>
@@ -214,12 +223,12 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         title="الأشخاص"
         description="سجل موحد للمستأجرين والملاك وجهات الاتصال مع بيانات التواصل والهوية."
         count={totalCount || undefined}
-        primaryAction={
+        primaryAction={canCreate ? (
           <Button onClick={openCreate}>
             <Plus className="me-2 size-4" />
             إضافة شخص
           </Button>
-        }
+        ) : undefined}
         search={{
           value: search,
           onChange: (value) => {
@@ -293,20 +302,20 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 ariaLabel: `فتح ملف ${person.full_name}`,
                 onClick: () => void navigate({ to: '/people/$personId', params: { personId: person.id } }),
               },
-              {
+              ...(canEdit ? [{
                 label: "تعديل",
                 icon: Edit,
-                variant: "secondary",
+                variant: "secondary" as const,
                 ariaLabel: `تعديل ${person.full_name}`,
                 onClick: () => openEdit(person.id),
-              },
-              {
+              }] : []),
+              ...(canArchive ? [{
                 label: "أرشفة",
                 icon: Trash2,
-                variant: "danger",
+                variant: "danger" as const,
                 ariaLabel: `أرشفة ${person.full_name}`,
                 onClick: () => setDeleteId(person.id),
-              },
+              }] : []),
             ]}
             keyOf={(person) => person.id}
             isLoading={peopleQuery.isLoading}
@@ -328,9 +337,9 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 <Button variant="secondary" onClick={clearFilters}>
                   مسح الفلاتر
                 </Button>
-              ) : (
+              ) : canCreate ? (
                 <Button onClick={openCreate}>إضافة شخص</Button>
-              )
+              ) : undefined
             }
             pagination={{
               page,
@@ -347,7 +356,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         person={previewPerson}
         open={previewPerson !== null}
         onOpenChange={(open) => { if (!open) setPreviewPerson(null); }}
-        onEdit={(personId) => { setPreviewPerson(null); openEdit(personId); }}
+        onEdit={canEdit ? (personId) => { setPreviewPerson(null); openEdit(personId); } : undefined}
       />
 
       <PersonFormModal

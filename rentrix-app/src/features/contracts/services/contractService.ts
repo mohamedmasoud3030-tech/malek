@@ -31,6 +31,7 @@ export type PaginatedContracts = {
   count: number;
 };
 export type AllContractsRead = Readonly<{ rows: ContractListItem[]; truncated: boolean }>;
+export type ContractCreateOptions = Readonly<{ requestId?: string }>;
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 // Shared select clauses - single source of truth for contract relations
@@ -200,7 +201,7 @@ async function assertNoDuplicateDraftForUnitTenant({
   }
 }
 
-export async function createContract(payload: ContractPayload): Promise<Contract> {
+export async function createContract(payload: ContractPayload, options: ContractCreateOptions = {}): Promise<Contract> {
   await assertContractPropertyIsOperational(payload.property_id);
   if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id });
   const { data, error } = await supabase.rpc('create_contract_atomic_v2', {
@@ -221,9 +222,13 @@ export async function createContract(payload: ContractPayload): Promise<Contract
     p_grace_days: payload.grace_days,
     p_lease_mode: payload.lease_mode ?? 'long_term',
     p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
+    // The form keeps this id stable across a network retry. The server
+    // fingerprints the full command and returns the original contract instead
+    // of inserting a second row.
+    p_request_id: options.requestId ?? crypto.randomUUID(),
   });
   if (error) throw error;
-  return data as Contract;
+  return parseContractMutationResponse(data, 'create');
 }
 
 export async function updateContract(contractId: string, payload: ContractPayload): Promise<Contract> {
@@ -233,18 +238,10 @@ export async function updateContract(contractId: string, payload: ContractPayloa
   // supabase/migrations/20260901000000_canonical_baseline.sql.
   await assertContractPropertyIsOperational(payload.property_id, payload.status);
   if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id, excludedContractId: contractId });
-  // R4: billing policy is DRAFT-only editable and lives behind its own
-  // server command; run it BEFORE the general update so a rejected policy
-  // change fails the whole edit atomically from the user's perspective.
-  {
-    const { error: policyError } = await supabase.rpc('update_contract_billing_policy_atomic', {
-      p_contract_id: contractId,
-      p_billing_day: payload.billing_day,
-      p_grace_days: payload.grace_days,
-    });
-    if (policyError) throw policyError;
-  }
-  const { data, error } = await supabase.rpc('update_contract_atomic_v2', {
+  // Billing policy and commercial fields share one server transaction. This
+  // prevents a successful policy update from being left behind when the
+  // general contract edit fails its overlap/lifecycle checks.
+  const { data, error } = await supabase.rpc('update_contract_with_billing_atomic', {
     p_contract_id: contractId,
     p_property_id: payload.property_id,
     p_unit_id: payload.unit_id ?? null,
@@ -259,14 +256,65 @@ export async function updateContract(contractId: string, payload: ContractPayloa
     p_cancellation_reason: payload.cancellation_reason ?? null,
     p_notes: payload.notes ?? null,
     p_attachment_url: payload.attachment_url ?? null,
+    p_billing_day: payload.billing_day,
+    p_grace_days: payload.grace_days,
     p_lease_mode: payload.lease_mode ?? 'long_term',
     p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
   });
   if (error) throw error;
+  return parseContractMutationResponse(data, 'update', contractId);
+}
+
+const contractMutationStatuses = new Set(['draft', 'active', 'expired', 'terminated', 'ACTIVE', 'DRAFT', 'EXPIRED', 'ENDED']);
+
+type ContractMutationResponse = Pick<Contract, 'id' | 'status'> & {
+  idempotent?: boolean;
+};
+
+/**
+ * RPC generics are not runtime validation. Keep the database response
+ * authoritative by rejecting an HTTP-success response that is not a contract
+ * row (or that identifies a different row than the mutation requested).
+ */
+export function parseContractMutationResponse(
+  data: unknown,
+  action: 'create' | 'update',
+  expectedContractId?: string,
+): Contract {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(`تعذر تأكيد ${action === 'create' ? 'إنشاء' : 'تحديث'} العقد: استجابة الخادم غير صالحة.`);
+  }
+
+  const result = data as Partial<ContractMutationResponse>;
+  if (typeof result.id !== 'string' || result.id.trim() === '') {
+    throw new Error(`تعذر تأكيد ${action === 'create' ? 'إنشاء' : 'تحديث'} العقد: الاستجابة لا تحتوي على معرّف العقد.`);
+  }
+  if (expectedContractId && result.id !== expectedContractId) {
+    throw new Error('تعذر تأكيد تحديث العقد: أعاد الخادم عقداً مختلفاً عن العقد المطلوب.');
+  }
+  if (typeof result.status !== 'string' || !contractMutationStatuses.has(result.status)) {
+    throw new Error('تعذر تأكيد حالة العقد المحفوظة: أعاد الخادم حالة غير معروفة.');
+  }
+  if ('idempotent' in result && typeof result.idempotent !== 'boolean') {
+    throw new Error('تعذر تأكيد نتيجة العقد: حقل idempotent غير صالح.');
+  }
+
   return data as Contract;
 }
 
 export type TerminateContractResult = { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
+
+export function parseTerminationResult(data: unknown, expectedContractId: string): TerminateContractResult {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('تعذر تأكيد إنهاء العقد: استجابة الخادم غير صالحة.');
+  }
+  const result = data as Partial<TerminateContractResult>;
+  if (result.status !== 'terminated' || result.contract_id !== expectedContractId || !Array.isArray(result.cancelled_invoice_ids)
+      || result.cancelled_invoice_ids.some((invoiceId) => typeof invoiceId !== 'string' || invoiceId.trim() === '')) {
+    throw new Error('تعذر تأكيد إنهاء العقد: الاستجابة لا تثبت العقد أو الفواتير المتأثرة.');
+  }
+  return result as TerminateContractResult;
+}
 
 export async function terminateContract(contractId: string, reason: string): Promise<TerminateContractResult> {
   const { data, error } = await supabase.rpc('terminate_contract_atomic', {
@@ -274,7 +322,7 @@ export async function terminateContract(contractId: string, reason: string): Pro
     p_reason: reason,
   });
   if (error) throw error;
-  return data as TerminateContractResult;
+  return parseTerminationResult(data, contractId);
 }
 
 export async function softDeleteContract(contractId: string): Promise<void> {
@@ -282,11 +330,18 @@ export async function softDeleteContract(contractId: string): Promise<void> {
   if (error) throw error;
 }
 
-function parseRenewalResult(data: unknown): RenewalResult {
-  if (!data || typeof data !== 'object') throw new Error('Renewal RPC returned an invalid response');
+export function parseRenewalResult(data: unknown, expectedOldContractId?: string): RenewalResult {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('تعذر تأكيد تجديد العقد: استجابة الخادم غير صالحة.');
+  }
   const result = data as Partial<RenewalResult>;
-  if (result.status !== 'renewed' || !result.old_contract_id || !result.new_contract_id) {
-    throw new Error('Renewal RPC response is missing the new contract id');
+  if (result.status !== 'renewed'
+      || typeof result.old_contract_id !== 'string'
+      || typeof result.new_contract_id !== 'string'
+      || result.old_contract_id.trim() === ''
+      || result.new_contract_id.trim() === ''
+      || (expectedOldContractId && result.old_contract_id !== expectedOldContractId)) {
+    throw new Error('تعذر تأكيد تجديد العقد: الاستجابة لا تثبت العقد الجديد والقديم المطلوبين.');
   }
   return result as RenewalResult;
 }
@@ -302,7 +357,7 @@ export async function renewContract(contractId: string, payload: RenewalPayload)
     },
   });
   if (error) throw error;
-  return parseRenewalResult(data);
+  return parseRenewalResult(data, contractId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

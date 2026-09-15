@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { PaginatedPeople } from '@/features/people/people-service';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import type { Contract, Person } from '@/types/domain';
 import { ContractAgreementMissingAlert } from './components/ContractAgreementMissingAlert';
 import { ContractFormFields } from './components/ContractFormFields';
@@ -34,6 +35,7 @@ export function ContractFormModal({
   onCreated,
 }: ContractFormModalProps) {
   const queryClient = useQueryClient();
+  const companySettings = useCompanyFormatters();
   const [tenantFormOpen, setTenantFormOpen] = useState(false);
   const controller = useContractForm({
     contractId,
@@ -78,6 +80,8 @@ export function ContractFormModal({
         payment_cycle: contractQuery.data.payment_cycle,
         billing_day: contractQuery.data.billing_day ?? 1,
         grace_days: contractQuery.data.grace_days ?? 0,
+        lease_mode: contractQuery.data.lease_mode === 'short_stay' ? 'short_stay' : 'long_term',
+        daily_reference_rate: contractQuery.data.daily_reference_rate ?? '',
         payment_terms_id: contractQuery.data.payment_terms_id ?? '',
         // Stored rows may carry the legacy 'ACTIVE'/'ENDED' spellings the
         // contracts CHECK still permits; the form works in canonical values.
@@ -160,6 +164,7 @@ export function ContractFormModal({
                   hasSelectedPeriod={hasSelectedPeriod}
                   hasAgreement={Boolean(agreementCoverageQuery.data)}
                   onRetry={() => agreementCoverageQuery.refetch()}
+                  companySettings={companySettings}
                 />
               </div>
             )}
@@ -185,6 +190,7 @@ export function ContractFormModal({
               coverageError={coverageMissing ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. راجع الإشعار أعلاه.' : null}
               showAttachment
               autoFocusProperty={!initialPropertyId}
+              companySettings={companySettings}
             />
           </>
         )}

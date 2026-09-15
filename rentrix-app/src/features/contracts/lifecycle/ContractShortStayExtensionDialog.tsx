@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { MONEY_STEP } from '@/lib/money';
 import type { ContractDetail } from '../services/contractService';
 import { useExtendShortStayContract } from '../useContracts';
@@ -14,6 +14,7 @@ type Props = Readonly<{
 
 export function ContractShortStayExtensionDialog({ contract, open, onOpenChange }: Props) {
   const mutation = useExtendShortStayContract(contract.id);
+  const companyFormatters = useCompanyFormatters();
   const [newEndDate, setNewEndDate] = useState('');
   const [extensionAmount, setExtensionAmount] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -62,9 +63,9 @@ export function ContractShortStayExtensionDialog({ contract, open, onOpenChange 
       >
         <EntityForm.Section title="التمديد">
           <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
-            <p className="font-bold">الخروج الحالي: {contract.end_date}</p>
+            <p className="font-bold">الخروج الحالي: {companyFormatters.date(contract.end_date)}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              إجمالي الإقامة الحالي: {formatDefaultCompanyMoney(contract.rent_amount)}
+              إجمالي الإقامة الحالي: {companyFormatters.money(contract.rent_amount)}
             </p>
           </div>
 

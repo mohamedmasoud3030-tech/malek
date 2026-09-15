@@ -236,11 +236,24 @@ describe('R4 — contract → billing authority journey', () => {
 
   it('renewal carries the billing policy forward — never a silent reset to day 1', async () => {
     await assumeIdentity(db, MAKER, COMPANY);
+    await expect(db.query(
+      `select public.renew_contract_atomic($1::text, $2::jsonb) as out`,
+      [contractId, JSON.stringify({ new_start: '2026-12-31', new_end: '2027-12-31', new_amount: 520 })],
+    )).rejects.toThrow(/CONTRACT_RENEWAL_MUST_START_AFTER_CURRENT_END/);
+
+    const renewalPayload = { new_start: '2027-01-01', new_end: '2027-12-31', new_amount: 520 };
     const renewed = (await db.query<{ out: any }>(
       `select public.renew_contract_atomic($1::text, $2::jsonb) as out`,
-      [contractId, JSON.stringify({ new_start: '2027-01-01', new_end: '2027-12-31', new_amount: 520 })],
+      [contractId, JSON.stringify(renewalPayload)],
+    )).rows[0]?.out as any;
+    const renewedRetry = (await db.query<{ out: any }>(
+      `select public.renew_contract_atomic($1::text, $2::jsonb) as out`,
+      [contractId, JSON.stringify(renewalPayload)],
     )).rows[0]?.out as any;
     expect(renewed.status).toBe('renewed');
+    expect(renewed.idempotent).toBe(false);
+    expect(renewedRetry.new_contract_id).toBe(renewed.new_contract_id);
+    expect(renewedRetry.idempotent).toBe(true);
     expect(num(renewed.billing_day)).toBe(BILLING_DAY);
     expect(num(renewed.grace_days)).toBe(GRACE_DAYS);
 

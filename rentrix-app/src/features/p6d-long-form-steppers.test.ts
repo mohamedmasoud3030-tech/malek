@@ -39,7 +39,9 @@ describe('P6d — long form mobile steppers (closeout)', () => {
   it('keeps contract submission semantics unchanged', () => {
     const hook = read('./contracts/useContractForm.ts');
     expect(hook).toContain('contractSchema.parse(values)');
-    expect(hook).toContain('createMutation.mutateAsync(finalPayload)');
+    expect(hook).toContain('createMutation.mutateAsync({');
+    expect(hook).toContain('payload: finalPayload');
+    expect(hook).toContain('options: { requestId: request.requestId }');
     expect(hook).toContain('updateMutation.mutateAsync(finalPayload)');
     expect(hook).toContain('const agreementId = agreementCoverageQuery.data?.id ?? null');
   });

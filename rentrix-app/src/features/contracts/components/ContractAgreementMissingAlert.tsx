@@ -1,6 +1,8 @@
 import { AlertTriangle, ArrowRightLeft, FileCheck } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
+import { formatCompanyDate } from '@/lib/companyFormatters';
+import { defaultCompanySettingsContract, type CompanySettingsContract } from '@/lib/companySettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Property } from '@/types/domain';
 
@@ -13,6 +15,7 @@ export interface ContractAgreementMissingAlertProps {
   readonly hasSelectedPeriod: boolean;
   readonly hasAgreement: boolean;
   readonly onRetry?: () => void;
+  readonly companySettings?: CompanySettingsContract;
 }
 
 /**
@@ -30,7 +33,12 @@ export function ContractAgreementMissingAlert({
   hasSelectedPeriod,
   hasAgreement,
   onRetry,
+  companySettings = defaultCompanySettingsContract,
 }: ContractAgreementMissingAlertProps) {
+  const formatDate = (value: string | null | undefined) => {
+    const dateOnly = value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value;
+    return formatCompanyDate(companySettings, dateOnly);
+  };
   // Success state — agreement found
   if (hasAgreement) {
     return (
@@ -102,8 +110,8 @@ export function ContractAgreementMissingAlert({
         </CardTitle>
         <CardDescription className="text-destructive/80">
           يجب إنشاء اتفاقية إدارة فعالة للمالك لتغطية الفترة من{' '}
-          <span className="font-bold text-destructive">{startDate}</span> إلى{' '}
-          <span className="font-bold text-destructive">{endDate}</span> قبل حفظ العقد.
+          <span className="font-bold text-destructive">{formatDate(startDate)}</span> إلى{' '}
+          <span className="font-bold text-destructive">{formatDate(endDate)}</span> قبل حفظ العقد.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

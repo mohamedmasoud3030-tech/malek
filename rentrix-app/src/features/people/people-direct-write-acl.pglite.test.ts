@@ -38,6 +38,11 @@ const COMPANY_B = 'b8000000-0000-4000-8000-000000000002';
 const ADMIN_A = 'b8000000-0000-4000-8000-000000000011';
 const USER_A = 'b8000000-0000-4000-8000-000000000013';
 const MANAGER_B = 'b8000000-0000-4000-8000-000000000014';
+const OWNER_A = 'b8000000-0000-4000-8000-000000000021';
+const PROPERTY_A = 'b8000000-0000-4000-8000-000000000031';
+const UNIT_A = 'b8000000-0000-4000-8000-000000000041';
+const AGREEMENT_A = 'b8000000-0000-4000-8000-000000000051';
+const BLOCKED_CONTRACT = 'b8000000-0000-4000-8000-000000000061';
 
 let db: PGlite;
 let personId: string;
@@ -105,6 +110,17 @@ beforeAll(async () => {
       ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN', true),
       ('${COMPANY_A}', '${USER_A}', 'USER', true),
       ('${COMPANY_B}', '${MANAGER_B}', 'MANAGER', true);
+
+    insert into public.owners (id, full_name, name, company_id)
+      values ('${OWNER_A}', 'مالك اختبار دورة الحياة', 'مالك اختبار دورة الحياة', '${COMPANY_A}');
+    insert into public.properties (id, title, name, type, address, status, company_id)
+      values ('${PROPERTY_A}', 'عقار اختبار دورة الحياة', 'عقار اختبار دورة الحياة', 'residential', 'مسقط', 'active', '${COMPANY_A}');
+    insert into public.property_owners (property_id, owner_id, ownership_percentage, is_primary, starts_on, company_id)
+      values ('${PROPERTY_A}', '${OWNER_A}', 100, true, date '2020-01-01', '${COMPANY_A}');
+    insert into public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
+      values ('${AGREEMENT_A}', '${OWNER_A}', '${PROPERTY_A}', 'property_management', 'RATE', 5, date '2020-01-01', '${COMPANY_A}');
+    insert into public.units (id, property_id, name, unit_number, status, rent_amount, company_id)
+      values ('${UNIT_A}', '${PROPERTY_A}', 'وحدة دورة الحياة', 'L-1', 'available', 500, '${COMPANY_A}');
   `);
   await assumeIdentity(db, ADMIN_A, COMPANY_A);
 }, 420_000);
@@ -241,4 +257,50 @@ describe('people direct-write ACL restore (20260912000002)', () => {
     );
     expect(rows[0].n).toBe(1); // row intact
   });
+
+  it('rejects normalized duplicate live identity instead of creating a second person', async () => {
+    await expect(
+      asBrowser<{ id: string }>(
+        { userId: ADMIN_A, companyId: COMPANY_A },
+        `insert into public.people (full_name, type, phone, email, national_id, address, notes)
+         values ('عبدالله سعيد العلي', 'tenant', '00968 9200 1111', null, null, null, null) returning id`,
+        [],
+      ),
+    ).rejects.toThrow(/people_live_name_phone_uidx|duplicate key/i);
+  });
+
+  it('blocks archiving a person while a live draft contract still references the history', async () => {
+    const blocked = await asBrowser<{ id: string }>(
+      { userId: ADMIN_A, companyId: COMPANY_A },
+      `insert into public.people (full_name, type, phone, email, national_id, address, notes)
+       values ('شخص مرتبط بعقد', 'tenant', '+968 9500 1111', null, null, null, null) returning id`,
+      [],
+    );
+    const blockedId = blocked[0].id;
+
+    await db.exec(`
+      insert into public.contracts
+        (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date,
+         rent_amount, payment_cycle, status, company_id)
+      values
+        ('${BLOCKED_CONTRACT}', '${PROPERTY_A}', '${UNIT_A}', '${blockedId}', '${AGREEMENT_A}',
+         date '2026-01-01', date '2026-12-31', 500, 'monthly', 'draft', '${COMPANY_A}');
+    `);
+
+    await expect(
+      asBrowser<{ id: string }>(
+        { userId: ADMIN_A, companyId: COMPANY_A },
+        `update public.people set deleted_at = now()
+          where id = $1::uuid and deleted_at is null returning id`,
+        [blockedId],
+      ),
+    ).rejects.toThrow(/PERSON_ARCHIVE_BLOCKED_LIVE_CONTRACT/i);
+
+    const { rows } = await db.query<{ deleted_at: string | null }>(
+      `select deleted_at from public.people where id = $1::uuid`,
+      [blockedId],
+    );
+    expect(rows[0].deleted_at).toBeNull();
+  });
+
 });

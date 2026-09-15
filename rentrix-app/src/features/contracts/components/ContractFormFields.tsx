@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { defaultCompanySettingsContract, type CompanySettingsContract } from '@/lib/companySettings';
 import { calculateContractSchedulePreview } from '../contract-schedule-preview';
 import { getContractUnitDailyReferenceRate, getContractUnitDefaultRent } from '../contract-unit-options';
 import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
@@ -33,6 +34,7 @@ type ContractFormFieldsProps = Readonly<{
   coverageError?: string | null;
   showAttachment?: boolean;
   autoFocusProperty?: boolean;
+  companySettings?: CompanySettingsContract;
 }>;
 
 /**
@@ -79,6 +81,7 @@ export function ContractFormFields({
   coverageError,
   showAttachment = false,
   autoFocusProperty = false,
+  companySettings = defaultCompanySettingsContract,
 }: ContractFormFieldsProps) {
   const {
     form,
@@ -95,6 +98,13 @@ export function ContractFormFields({
     selectedProperty,
     currentLinkedUnitId,
   } = controller;
+  const companyFormatters = useMemo(() => ({
+    money: (value: number | null | undefined) => formatCompanyMoney(companySettings, value),
+    date: (value: string | null | undefined) => {
+      const dateOnly = value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value;
+      return formatCompanyDate(companySettings, dateOnly);
+    },
+  }), [companySettings]);
   const [step, setStep] = useState(0);
   const [billingOptionsOpen, setBillingOptionsOpen] = useState(false);
   const [optionalDetailsOpen, setOptionalDetailsOpen] = useState(false);
@@ -348,11 +358,11 @@ export function ContractFormFields({
             <EntityForm.Field label="سعر اليوم المرجعي للوحدة">
               <div className="min-h-11 rounded-lg border border-border bg-muted/25 px-3 py-2 text-sm">
                 <p className="font-bold">
-                  {dailyReferenceRate === null ? 'غير محدد' : formatDefaultCompanyMoney(dailyReferenceRate)}
+                  {dailyReferenceRate === null ? 'غير محدد' : companyFormatters.money(dailyReferenceRate)}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
                   اقتراح من الوحدة فقط، وليس قيدًا على السعر المتفق عليه.
-                  {referenceStayTotal !== null ? ` مرجع المدة الحالية: ${formatDefaultCompanyMoney(referenceStayTotal)}.` : ''}
+                  {referenceStayTotal !== null ? ` مرجع المدة الحالية: ${companyFormatters.money(referenceStayTotal)}.` : ''}
                 </p>
               </div>
             </EntityForm.Field>
@@ -429,7 +439,7 @@ export function ContractFormFields({
           </div>
           <div>
             <span className="text-xs text-muted-foreground">المدة</span>
-            <p className="font-semibold">{startDate || '—'} إلى {endDate || '—'}</p>
+            <p className="font-semibold">{startDate ? companyFormatters.date(startDate) : '—'} إلى {endDate ? companyFormatters.date(endDate) : '—'}</p>
           </div>
           {isShortStay ? (
             <div>
@@ -443,7 +453,7 @@ export function ContractFormFields({
             <div>
               <span className="text-xs text-muted-foreground">السداد</span>
               <p className="font-semibold">
-                {formatDefaultCompanyMoney(schedulePreview.amountPerInstallment)} • {paymentCycleLabels[paymentCycle]}
+                {companyFormatters.money(schedulePreview.amountPerInstallment)} • {paymentCycleLabels[paymentCycle]}
               </p>
             </div>
           )}
@@ -459,6 +469,7 @@ export function ContractFormFields({
             hasSelectedPeriod={Boolean(propertyId && startDate && endDate)}
             hasAgreement={Boolean(agreementCoverageQuery.data)}
             onRetry={() => agreementCoverageQuery.refetch()}
+            companySettings={companySettings}
           />
         </div>
 
@@ -467,7 +478,7 @@ export function ContractFormFields({
             <div className="rounded-xl border border-border/70 p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold">فاتورة الإقامة</span>
-                <span className="text-muted-foreground">{formatDefaultCompanyMoney(rentAmount)}</span>
+                <span className="text-muted-foreground">{companyFormatters.money(rentAmount)}</span>
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 تُصدر فاتورة واحدة بإجمالي الإقامة عند تاريخ الوصول وتُستحق بعد أيام السماح، وتُحمّل على نفس
@@ -482,7 +493,7 @@ export function ContractFormFields({
               </div>
               {schedulePreview.sampleDates.length > 0 ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  تبدأ الدفعات تقريبًا في: {schedulePreview.sampleDates.slice(0, 4).join(' • ')}
+                  تبدأ الدفعات تقريبًا في: {schedulePreview.sampleDates.slice(0, 4).map((date) => companyFormatters.date(date)).join(' • ')}
                   {schedulePreview.sampleDates.length > 4 ? ' • …' : ''}
                 </p>
               ) : null}

@@ -55,7 +55,7 @@ describe('granular Employee server write boundaries', () => {
 
   it('keeps contracts RPC-only at the database boundary as well as in the frontend', () => {
     expect(contractService).toContain("supabase.rpc('create_contract_atomic_v2'");
-    expect(contractService).toContain("supabase.rpc('update_contract_atomic_v2'");
+    expect(contractService).toContain("supabase.rpc('update_contract_with_billing_atomic'");
     expect(contractService).toContain("supabase.rpc('terminate_contract_atomic'");
     expect(contractService).toContain("supabase.rpc('soft_delete_contract_atomic'");
 

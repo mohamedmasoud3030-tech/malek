@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import type { OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ArrearsSummaryCards } from './arrears-summary-cards';
 import { ArrearsWorkflowSection } from './arrears-workflow-section';
@@ -78,5 +79,16 @@ describe('ArrearsWorkflowSection', () => {
     expect(html).toContain('ملخص المتأخرات');
     expect(html).toContain('المتبقي');
     expect(html).toContain('50.000');
+  });
+
+  it('uses the active company locale for the date filter summary', () => {
+    const html = renderToStaticMarkup(
+      <ArrearsWorkflowSection
+        {...baseProps}
+        companySettings={{ ...defaultCompanySettingsContract, locale: 'en-OM', defaultLanguage: 'en', direction: 'ltr' }}
+      />,
+    );
+
+    expect(html).toContain('May 15, 2026');
   });
 });
