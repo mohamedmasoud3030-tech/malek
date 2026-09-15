@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ActiveFilterBar, type ActiveFilterItem } from './active-filter-bar';
@@ -56,6 +56,7 @@ export function FilterBar({
 }: FilterBarProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [desktopAdvancedOpen, setDesktopAdvancedOpen] = useState(false);
+  const advancedFiltersId = `advanced-filters-${useId().replace(/:/g, '')}`;
   const showSearch = typeof onSearchChange === 'function';
   const activeFilterCount = activeFilters.length;
   const hasFilterContent = Boolean(filters || advancedFilters || actions || activeFilterCount > 0);
@@ -117,7 +118,7 @@ export function FilterBar({
             className="hidden min-h-11 shrink-0 rounded-lg px-3 text-xs md:inline-flex"
             aria-label={activeFilterCount > 0 ? `${advancedFilterTitle}، ${activeFilterCount} نشطة` : advancedFilterTitle}
             aria-expanded={desktopAdvancedOpen}
-            aria-controls="desktop-advanced-filters"
+            aria-controls={advancedFiltersId}
             onClick={() => setDesktopAdvancedOpen((open) => !open)}
           >
             <SlidersHorizontal className="me-1.5 size-3.5" aria-hidden="true" />
@@ -156,7 +157,7 @@ export function FilterBar({
 
       {desktopAdvancedOpen && advancedFilters ? (
         <div
-          id="desktop-advanced-filters"
+          id={advancedFiltersId}
           className="hidden min-w-0 border-t border-border/50 pt-2 md:block"
           data-advanced-filter-desktop
         >
