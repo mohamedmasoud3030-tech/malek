@@ -274,6 +274,10 @@ describe("P0-1 database replay reproduces the authoritative catalog from migrati
     // Model the production-upgrade shape explicitly: replay only through the
     // last pre-fix migration, then recreate the legacy seed-only alias and
     // permission state that could already exist in a deployed database.
+    // This test runs its own full migration-chain replay (createFullReplayedDatabase)
+    // inline, unlike its siblings which reuse the beforeAll-created `db`/`seeded`
+    // connections — that replay alone regularly exceeds the 5s default timeout
+    // under normal CI load, so it gets an explicit per-test budget.
     const legacy = await createFullReplayedDatabase({
       throughMigration: "20260904000000",
       applySeed: false,
@@ -430,7 +434,7 @@ describe("P0-1 database replay reproduces the authoritative catalog from migrati
     expect(unexpected.rows[0]?.count).toBe(1);
 
     await legacyDb.close();
-  }, 420000);
+  }, 30000);
 });
 
 describe("P0-1 non-admin roles do not silently lose capabilities", () => {

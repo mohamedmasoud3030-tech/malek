@@ -22,8 +22,13 @@ import { describe, expect, it } from 'vitest';
  *   - services/documents/renderer/** — the A4 print engine keeps a fixed
  *     standalone palette so printed financial/legal documents do not drift
  *     when theme tokens change (ADR 0014 print surface)
+ *   - services/documents/documentDesignTokens.ts — the single source of
+ *     print-document color/type/geometry tokens that renderer/** consumes;
+ *     same ADR 0014 fixed standalone palette, one directory level up
  *   - features/design-system/design-system-showcase.tsx — DEV-only surface
  *     that intentionally displays swatches
+ *   - test/documents/** — golden-document test harness/fixtures (hand-typed
+ *     SVG demo logo, html2canvas options), not application source
  *   - *.test.*, *.e2e-fixture.* — tests and hermetic fixtures
  *
  * Behavioral contract tests (preferred over class assertions) live with the
@@ -35,12 +40,12 @@ const srcDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const EXCLUDED_SEGMENTS = new Set([
   'features/landing',
-  'test',
   'services/documents/renderer',
-  'services/documents/documentDesignTokens.ts',
   'services/documents/DocumentRenderer.ts',
   'services/documents/DocumentRenderer.tsx',
+  'services/documents/documentDesignTokens.ts',
   'features/design-system/design-system-showcase.tsx',
+  'test/documents',
 ]);
 
 const PALETTE_NAMES =

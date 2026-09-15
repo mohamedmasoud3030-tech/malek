@@ -190,51 +190,51 @@ export function FinancePage() {
         ) : null}
 
         <section id="finance-workspace-panel" className="min-w-0" aria-label="مساحة العمل المالية الحالية">
-          {activeSection === 'collections' && displayedView === 'invoices' ? (
+          {activeSection === 'collections' && activeView === 'invoices' ? (
             <div id="finance-view-panel-invoices" role="tabpanel" aria-labelledby="finance-view-tab-invoices">
               <Suspense fallback={<SectionFallback />}><InvoicesWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'collections' && displayedView === 'receipts' ? (
+          {activeSection === 'collections' && activeView === 'receipts' ? (
             <div id="finance-view-panel-receipts" role="tabpanel" aria-labelledby="finance-view-tab-receipts">
               <Suspense fallback={<SectionFallback />}><ReceiptsWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'collections' && displayedView === 'arrears' ? (
+          {activeSection === 'collections' && activeView === 'arrears' ? (
             <div id="finance-view-panel-arrears" role="region" aria-labelledby={specialistViewLabelId}>
               <Suspense fallback={<SectionFallback />}><ArrearsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'fees' && displayedView === 'fixed_monthly_accruals' ? (
+          {activeSection === 'fees' && activeView === 'fixed_monthly_accruals' ? (
             <div id="finance-view-panel-fixed_monthly_accruals" role="tabpanel" aria-labelledby="finance-view-tab-fixed_monthly_accruals">
               <Suspense fallback={<SectionFallback />}><FixedMonthlyAccrualWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'fees' && displayedView === 'commissions' ? (
+          {activeSection === 'fees' && activeView === 'commissions' ? (
             <div id="finance-view-panel-commissions" role="tabpanel" aria-labelledby="finance-view-tab-commissions">
               <Suspense fallback={<SectionFallback />}><CommissionsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'expenses' && displayedView === 'expenses' ? (
+          {activeSection === 'expenses' && activeView === 'expenses' ? (
             <div id="finance-view-panel-expenses" role="tabpanel" aria-labelledby="finance-view-tab-expenses">
               <Suspense fallback={<SectionFallback />}><ExpensesWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'funds' && displayedView === 'deposits' ? (
+          {activeSection === 'funds' && activeView === 'deposits' ? (
             <div id="finance-view-panel-deposits" role="tabpanel" aria-labelledby="finance-view-tab-deposits">
               <Suspense fallback={<SectionFallback />}><DepositsWorkspace embedded /></Suspense>
             </div>
           ) : null}
-          {activeSection === 'funds' && displayedView === 'owner_settlements' ? (
+          {activeSection === 'funds' && activeView === 'owner_settlements' ? (
             <div id="finance-view-panel-owner_settlements" role="tabpanel" aria-labelledby="finance-view-tab-owner_settlements">
               <Suspense fallback={<SectionFallback />}><OwnerSettlementsWorkspace embedded /></Suspense>
             </div>
           ) : null}
 
-          {activeSection === 'banking' && displayedView === 'bank_reconciliation' ? (
+          {activeSection === 'banking' && activeView === 'bank_reconciliation' ? (
             <div id="finance-view-panel-bank_reconciliation" role="tabpanel" aria-labelledby="finance-view-tab-bank_reconciliation">
               <Suspense fallback={<SectionFallback />}><BankReconciliationWorkspace embedded /></Suspense>
             </div>
