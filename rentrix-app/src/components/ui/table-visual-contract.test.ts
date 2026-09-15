@@ -15,6 +15,8 @@ describe('canonical table visual contract', () => {
     expect(tableSource).toContain('hover:!bg-muted/25');
     expect(tableSource).toContain('!font-extrabold');
     expect(tableSource).toContain('[&_[data-column-priority=identity]]:font-bold');
+    expect(tableSource).toContain("import { Button } from './button';");
+    expect(tableSource).toContain('<Button');
   });
 
   it('does not allow route or global CSS to re-skin the canonical table', () => {
