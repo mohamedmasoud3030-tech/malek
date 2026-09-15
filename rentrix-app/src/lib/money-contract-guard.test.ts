@@ -45,6 +45,7 @@ const TO_FIXED_2_ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
 /** Files allowed to use Math.round(x*100)/100 — every use is a percentage. */
 const ROUND_100_ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
   { file: 'features/owners/services/owner-service.ts', reason: 'ownership percentage share' },
+  { file: 'test/documents/golden-harness-entry.ts', reason: 'pixel layout measurements (overflowPx/shellHeightPx), not money' },
 ];
 
 /**
