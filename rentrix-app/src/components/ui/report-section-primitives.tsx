@@ -68,6 +68,7 @@ export function ReportPanel({
       role={ariaLabelledBy || ariaLabel ? 'region' : undefined}
       aria-labelledby={ariaLabelledBy}
       aria-label={ariaLabel}
+      aria-busy={isLoading || undefined}
       className={cn('relative min-w-0 overflow-hidden rounded-2xl border-border/60 shadow-card', className)}
     >
       <CardHeader

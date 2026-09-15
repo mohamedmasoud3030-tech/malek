@@ -25,6 +25,7 @@ export {
 export { Textarea } from "./textarea";
 export { Dialog, DialogClose, DialogContent, DialogDescription, DialogPortal, DialogTitle, DialogTrigger } from "./dialog";
 export { BottomSheet } from "./bottom-sheet";
+export { FloatingPanel, type FloatingPanelProps } from "./floating-panel";
 
 // Shared product surfaces
 export { SearchInput } from "./search-input";
