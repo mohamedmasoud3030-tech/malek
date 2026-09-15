@@ -63,6 +63,12 @@ const REVIEWED = new Map([
   ['mutation|features/settings/paymentTermsService.ts|payment_terms_templates|insert', 1],
   ['mutation|features/settings/paymentTermsService.ts|payment_terms_templates|update', 2],
   ['rpc-payload|features/reports/reports-collection-efficiency.ts|rpt_dashboard_snapshot', 1],
+  // Contract creation intentionally passes a typed command assembled from the
+  // form payload plus the stable retry request id. The RPC name is literal and
+  // the server remains authoritative for validation, authorization, idempotency,
+  // overlap, and lifecycle invariants; this inventory closes the dynamic payload
+  // scanner finding without weakening the database boundary.
+  ['rpc-payload|features/contracts/services/contractService.ts|create_contract_atomic_v2', 1],
   // The dynamic resolve_active_tax_profile browser payload is gone: the dead
   // getActiveTaxProfile / getActiveTaxProfileForCompany helpers were deleted and
   // tax readiness now flows through the single governed boundary
