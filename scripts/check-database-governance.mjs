@@ -24,6 +24,11 @@ const transactionalTables = [
 // goes through the normal fail-closed rule below.
 const immutableGovernedRuntimeWriterBlobs = new Map([
   ['20260901000049_extend_short_stay_atomic.sql', '6187d4b1df558f3a324b0c02fd8430e3f3b18ee0'],
+  // PR #1825 remediation: transactional INSERTs are runtime writes inside
+  // governed SECURITY DEFINER contract RPC bodies, not migration-time data.
+  // Pin the exact reviewed blob so any future edit must pass the normal marker
+  // review instead of silently inheriting this exception.
+  ['20260915000001_contract_release_blocker_remediation.sql', 'f496143b7cb24cebcead1037aa49a577b9f90612'],
 ]);
 
 // Pre-existing violations grandfathered at the exact historical Git blob.
