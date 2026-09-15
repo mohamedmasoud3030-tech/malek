@@ -112,7 +112,7 @@ export const DOCUMENT_TYPE = {
   /** Shared rhythm for all document text. */
   lineHeight: '1.6',
   /** The Arabic-first font stack used by every rendered artifact. */
-  fontFamily: '"Cairo", "Segoe UI", Tahoma, sans-serif',
+  fontFamily: '"Tajawal", "Cairo", "Segoe UI", Tahoma, sans-serif',
 } as const;
 
 /* ------------------------------------------------------------------ */

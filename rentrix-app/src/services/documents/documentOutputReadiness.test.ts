@@ -13,41 +13,34 @@
  * Nothing here asserts authorization behavior — permission semantics remain
  * owned by the security track.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 vi.mock('sonner', () => ({ toast: toastMock }));
 
-const html2canvasMock = vi.hoisted(() =>
-  vi.fn(async (_element: HTMLElement) => ({
-    width: 794,
-    height: 1122,
-    toDataURL: () =>
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-  }) as unknown as HTMLCanvasElement),
-);
-vi.mock('html2canvas-pro', () => ({ default: html2canvasMock }));
-
-const saveRecorder = vi.hoisted(() => ({ names: [] as string[] }));
-vi.mock('jspdf', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('jspdf')>();
-  class RecordingJsPDF extends actual.jsPDF {
-    constructor(...args: ConstructorParameters<typeof actual.jsPDF>) {
-      super(...args);
-      this.save = ((filename?: string) => {
-        saveRecorder.names.push(filename ?? 'generated.pdf');
-        return this;
-      }) as unknown as typeof this.save;
-    }
-  }
-  return { ...actual, jsPDF: RecordingJsPDF };
+const reactPdfMock = vi.hoisted(() => ({ failNext: false }));
+vi.mock('@react-pdf/renderer', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@react-pdf/renderer')>();
+  return {
+    ...actual,
+    pdf: (element: never) => {
+      if (reactPdfMock.failNext) {
+        reactPdfMock.failNext = false; // consume: the retry must re-render
+        return { toBlob: async () => Promise.reject(new Error('vectorizer crash')) };
+      }
+      return actual.pdf(element);
+    },
+  };
 });
+
+const downloadRecorder = vi.hoisted(() => ({ names: [] as string[] }));
 
 import { documentEngine, DocumentDataError } from './DocumentEngine';
 import { documentService } from './DocumentService';
-import { DocumentRenderer, DocumentRenderError, resetDocumentRenderState } from './DocumentRenderer';
+import { DocumentRenderer, DocumentRenderError, resetDocumentRenderState, setDocumentPdfFontBaseUrl } from './DocumentRenderer';
 import { assertDocumentCompanySettings, MissingDocumentSettingsError, type DocumentCompanySettings } from './companyIdentity';
-import { removeAllRenderContainers, RENDER_ROOT_ATTRIBUTE } from './renderer/offscreen';
 import {
   documentActionErrorMessage,
   DocumentReadinessError,
@@ -59,6 +52,8 @@ import {
 import type { UnifiedDocumentModel } from './types';
 import { documentIdentityKey } from './renderer/documentIdentity';
 import { APP_BRAND_NAME } from '@/lib/brand';
+
+const appRoot = resolve(__dirname, '..', '..', '..');
 
 const readySettings: DocumentCompanySettings = {
   companyName: 'شركة الأفق لإدارة الأملاك',
@@ -85,18 +80,29 @@ const modelOf = (fileName: string, amount: string): UnifiedDocumentModel => ({
 });
 
 beforeEach(() => {
+  // Under happy-dom fontkit loads TTFs from disk — point it at the real files.
+  setDocumentPdfFontBaseUrl(`${resolve(appRoot, 'public/fonts')}/`);
   toastMock.error.mockClear();
   toastMock.success.mockClear();
-  saveRecorder.names.length = 0;
-  html2canvasMock.mockClear();
+  downloadRecorder.names.length = 0;
+  reactPdfMock.failNext = false;
   resetDocumentRenderState();
-  removeAllRenderContainers();
+  // Record the anchor-based download instead of jsPDF.save().
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+    downloadRecorder.names.push(this.download);
+  });
+  if (typeof URL.createObjectURL !== 'function') {
+    vi.stubGlobal('URL', { ...URL, createObjectURL: () => 'blob:mock', revokeObjectURL: () => undefined });
+  } else {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  }
 });
 
 afterEach(() => {
   resetDocumentRenderState();
-  removeAllRenderContainers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 /* ------------------------------------------------------------------ */
@@ -256,7 +262,7 @@ describe('single-flight — one document, one output', () => {
       DocumentRenderer.downloadDocumentPdf(model),
       DocumentRenderer.downloadDocumentPdf(model),
     ]);
-    expect(saveRecorder.names).toEqual(['receipt-REC-1.pdf']);
+    expect(downloadRecorder.names).toEqual(['receipt-REC-1.pdf']);
   });
 
   it('does NOT coalesce two different documents that share a filename', async () => {
@@ -271,20 +277,19 @@ describe('single-flight — one document, one output', () => {
       DocumentRenderer.downloadDocumentPdf(second),
     ]);
 
-    expect(saveRecorder.names).toHaveLength(2);
-    expect(html2canvasMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(downloadRecorder.names).toHaveLength(2);
   });
 
   it('releases the in-flight slot after a failure so a retry can still run', async () => {
     const model = modelOf('receipt-RETRY', '10.000 ر.ع');
-    html2canvasMock.mockRejectedValueOnce(new Error('rasterizer crash'));
+    reactPdfMock.failNext = true;
 
     await expect(DocumentRenderer.downloadDocumentPdf(model)).rejects.toThrow(DocumentRenderError);
-    expect(saveRecorder.names).toHaveLength(0);
+    expect(downloadRecorder.names).toHaveLength(0);
 
     // The retry must actually render rather than joining a stuck promise.
     await DocumentRenderer.downloadDocumentPdf(model);
-    expect(saveRecorder.names).toEqual(['receipt-RETRY.pdf']);
+    expect(downloadRecorder.names).toEqual(['receipt-RETRY.pdf']);
   });
 
   it('coalesces a double activation of the SAME document on the PRINT channel', async () => {
@@ -316,7 +321,7 @@ describe('single-flight — one document, one output', () => {
 
     expect(pdfResult.status).toBe('fulfilled');
     expect(printResult.status).toBe('rejected');
-    expect(saveRecorder.names).toEqual(['receipt-SPLIT.pdf']);
+    expect(downloadRecorder.names).toEqual(['receipt-SPLIT.pdf']);
     expect(openMock).toHaveBeenCalledTimes(1);
   });
 
@@ -326,22 +331,22 @@ describe('single-flight — one document, one output', () => {
     await DocumentRenderer.downloadDocumentPdf(model);
     // Two SEQUENTIAL user actions are two legitimate documents (not a
     // double-click), so the guard must not permanently dedupe them.
-    expect(saveRecorder.names).toEqual(['receipt-SEQUENTIAL.pdf', 'receipt-SEQUENTIAL.pdf']);
+    expect(downloadRecorder.names).toEqual(['receipt-SEQUENTIAL.pdf', 'receipt-SEQUENTIAL.pdf']);
   });
 
   it('a rejected flight is not cached: concurrent joiners share the failure, the retry re-renders', async () => {
     const model = modelOf('receipt-REJOIN', '30.000 ر.ع');
-    html2canvasMock.mockRejectedValueOnce(new Error('rasterizer crash'));
+    reactPdfMock.failNext = true;
 
     const results = await Promise.allSettled([
       DocumentRenderer.downloadDocumentPdf(model),
       DocumentRenderer.downloadDocumentPdf(model),
     ]);
     expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected']);
-    expect(saveRecorder.names).toHaveLength(0);
+    expect(downloadRecorder.names).toHaveLength(0);
 
     await DocumentRenderer.downloadDocumentPdf(model);
-    expect(saveRecorder.names).toEqual(['receipt-REJOIN.pdf']);
+    expect(downloadRecorder.names).toEqual(['receipt-REJOIN.pdf']);
   });
 
   it('never writes the single-flight key into the DOM, the filename or the console', async () => {
@@ -363,8 +368,8 @@ describe('single-flight — one document, one output', () => {
     expect(logs.join('\n')).not.toContain(digest);
     expect(document.body.innerHTML).not.toContain(digest);
     // The saved filename stays the registry-sanitized name, never the key.
-    expect(saveRecorder.names).toEqual(['receipt-OPAQUE.pdf']);
-    for (const name of saveRecorder.names) expect(name).not.toContain(digest);
+    expect(downloadRecorder.names).toEqual(['receipt-OPAQUE.pdf']);
+    for (const name of downloadRecorder.names) expect(name).not.toContain(digest);
   });
 });
 
@@ -373,19 +378,17 @@ describe('single-flight — one document, one output', () => {
 /* ------------------------------------------------------------------ */
 
 describe('cleanup — nothing leaks into the live app DOM', () => {
-  const renderRoots = () => document.querySelectorAll(`[${RENDER_ROOT_ATTRIBUTE}]`).length;
-
-  it('removes every offscreen container after a successful render', async () => {
+  it('leaves no download anchor behind after a successful render', async () => {
     await DocumentRenderer.downloadDocumentPdf(modelOf('receipt-OK', '5.000 ر.ع'));
-    expect(renderRoots()).toBe(0);
+    expect(document.querySelectorAll('a[download]').length).toBe(0);
   });
 
-  it('removes every offscreen container after a failed render', async () => {
-    html2canvasMock.mockRejectedValueOnce(new Error('capture failed'));
+  it('leaves no download anchor behind after a failed render', async () => {
+    reactPdfMock.failNext = true;
     await expect(DocumentRenderer.downloadDocumentPdf(modelOf('receipt-FAIL', '5.000 ر.ع'))).rejects.toThrow(
       DocumentRenderError,
     );
-    expect(renderRoots()).toBe(0);
+    expect(document.querySelectorAll('a[download]').length).toBe(0);
   });
 
   it('leaves the app <head> untouched (no injected document styles)', async () => {
@@ -446,6 +449,6 @@ describe('service boundary — only registered documents can be produced', () =>
     await expect(
       documentService.downloadDocumentPdf('totally_unknown' as never, { settings: readySettings, payload: {} as never }),
     ).rejects.toThrow(/Unsupported document type/);
-    expect(saveRecorder.names).toHaveLength(0);
+    expect(downloadRecorder.names).toHaveLength(0);
   });
 });

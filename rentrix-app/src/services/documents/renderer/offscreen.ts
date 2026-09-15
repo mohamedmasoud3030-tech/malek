@@ -1,16 +1,14 @@
 /**
- * Offscreen DOM helpers for the PDF render path.
+ * Print-popup asset helpers.
  *
- * Contract:
- *  - containers are tagged (`data-document-render-root`) and ALWAYS removed
- *    by callers in `finally`, on success and on failure alike — nothing is
- *    left in the DOM after a failed render;
+ * The raster PDF pipeline (offscreen measurement containers, shell capture)
+ * is gone — the PDF emitter is vector (@react-pdf/renderer) and the print
+ * emitter lets the browser paginate. What remains here is only what the
+ * PRINT popup needs:
  *  - font waits never hang forever (bounded by a timeout; on slow networks
- *    rendering continues with the approved Arabic fallback stack rather
- *    than freezing the action);
+ *    printing continues with the approved Arabic fallback stack);
  *  - a broken logo/image never blocks the rest of the document.
  */
-import { DOCUMENT_PAGE } from '../documentDesignTokens';
 
 /** Max time we wait for web fonts before degrading to the fallback stack. */
 export const FONT_WAIT_TIMEOUT_MS = 8000;
@@ -21,10 +19,6 @@ export const IMAGE_WAIT_TIMEOUT_MS = 8000;
 /** Max time we wait for the print popup to become ready before failing. */
 export const POPUP_READY_TIMEOUT_MS = 10000;
 
-export const RENDER_ROOT_ATTRIBUTE = 'data-document-render-root';
-
-const PAGE_MARGINS_MM = DOCUMENT_PAGE.marginsMm;
-
 const timeout = (ms: number) => new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), ms));
 
 const nextFrame = (): Promise<void> =>
@@ -34,25 +28,20 @@ const nextFrame = (): Promise<void> =>
       : setTimeout(() => resolve(), 0),
   );
 
-export const yieldToEventLoop = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
-
 /**
  * Waits for a document's FontFaceSet to finish loading. A rejection from
  * the Font Loading API surfaces as a thrown error to the caller; a slow
- * load degrades gracefully instead of hanging the print/PDF action.
+ * load degrades gracefully instead of hanging the print action.
  */
 export async function waitForFontsReady(targetDocument: Document | undefined): Promise<'ready' | 'timeout' | 'unavailable'> {
   const fonts = targetDocument?.fonts;
   if (!fonts || typeof fonts.ready?.then !== 'function') return 'unavailable';
-  const result = await Promise.race([fonts.ready.then(() => 'ready' as const), timeout(FONT_WAIT_TIMEOUT_MS)]);
-  return result;
+  return Promise.race([fonts.ready.then(() => 'ready' as const), timeout(FONT_WAIT_TIMEOUT_MS)]);
 }
 
-/**
- * Waits for every `<img>` inside a root to finish loading (or fail),
- * bounded per image so a stalled logo can never hang the print/PDF action
- * forever — after the timeout the document proceeds without those pixels.
- */
+/** Waits for every `<img>` inside a root to finish loading (or fail),
+ * bounded per image so a stalled logo can never hang the print action
+ * forever — after the timeout the document proceeds without those pixels. */
 export async function waitForImages(root: ParentNode): Promise<void> {
   const images = Array.from(root.querySelectorAll('img'));
   await Promise.all(
@@ -78,42 +67,3 @@ export async function waitForImages(root: ParentNode): Promise<void> {
 
 /** Resolves when layout had a chance to settle after fonts/images. */
 export const settleLayout = nextFrame;
-
-/**
- * Creates the offscreen measurement container. Body-fragment HTML only —
- * never a full document with `<style>`/`<link>` tags (those would leak
- * into the live app DOM while rendering).
- *
- * Geometry contract: the container mirrors the A4 PAGE SHELL — same A4
- * width with the page margins applied as padding (border-box) — so every
- * block is measured at EXACTLY the width it will occupy inside a page's
- * content area. Measuring at full A4 width used to under-measure wrapped
- * text/tables, overfilling pages and clipping bottom content.
- */
-export function createOffscreenContainer(bodyFragmentHtml: string, options: { padded?: boolean } = {}): HTMLDivElement {
-  const padded = options.padded !== false;
-  const container = document.createElement('div');
-  container.setAttribute(RENDER_ROOT_ATTRIBUTE, '');
-  container.style.position = 'fixed';
-  container.style.left = '-10000px';
-  container.style.top = '0';
-  container.style.width = '794px'; // A4 width at 96dpi
-  if (padded) {
-    container.style.boxSizing = 'border-box';
-    container.style.padding = `${PAGE_MARGINS_MM.top}mm ${PAGE_MARGINS_MM.right}mm ${PAGE_MARGINS_MM.bottom}mm ${PAGE_MARGINS_MM.left}mm`;
-  }
-  container.style.direction = 'rtl';
-  container.style.background = '#FFFFFF';
-  container.style.fontFamily = '"Cairo", "Segoe UI", Tahoma, sans-serif';
-  container.style.color = '#0F172A';
-  container.style.lineHeight = '1.6';
-  container.style.fontSize = '12px';
-  container.innerHTML = bodyFragmentHtml;
-  document.body.appendChild(container);
-  return container;
-}
-
-/** Removes every leftover render container (defensive cleanup). */
-export function removeAllRenderContainers(): void {
-  document.querySelectorAll(`[${RENDER_ROOT_ATTRIBUTE}]`).forEach((element) => element.remove());
-}

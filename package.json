@@ -64,6 +64,9 @@
       "esbuild",
       "core-js",
       "supabase"
-    ]
+    ],
+    "patchedDependencies": {
+      "pdfkit@0.20.1": "patches/pdfkit@0.20.1.patch"
+    }
   }
 }

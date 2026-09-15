@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>اقتراحات تطوير نظام المستندات — Malek</title>
+<style>
+  :root{
+    --page:#0B1526; --panel:#101F35; --card:#FFFFFF; --ink:#132339; --mut:#5B6B80;
+    --gold:#C9A227; --gold-soft:#F6EFD8; --line:#D8E0EA; --soft:#F2F6FA;
+    --ok:#177245; --warn:#B4690E; --bad:#B3261E;
+    --ff:'Cairo','IBM Plex Sans Arabic','Segoe UI',Tahoma,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--ff);background:var(--soft);color:var(--ink);font-size:15px;line-height:1.8}
+  /* ---------- الغلاف ---------- */
+  .cover{background:linear-gradient(135deg,#0B1526 0%,#12294A 60%,#123A5C 100%);color:#fff;padding:46px 24px 38px;border-bottom:4px solid var(--gold)}
+  .cover .wrap{max-width:1080px;margin:auto}
+  .cover h1{margin:0 0 6px;font-size:30px;font-weight:900}
+  .cover h1 span{color:var(--gold)}
+  .cover p{margin:4px 0;color:#C7D3E2;font-size:14px}
+  .chips{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:3px 14px;font-size:12px;color:#E8EEF6}
+  .chip.gold{border-color:var(--gold);color:var(--gold)}
+  .ack{margin-top:16px;background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.5);border-radius:10px;padding:10px 16px;font-size:13.5px;color:#F3E6BC}
+  nav.toc{max-width:1080px;margin:-18px auto 0;padding:0 24px;position:relative;z-index:2}
+  nav.toc .bar{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(11,21,38,.12);display:flex;gap:4px;flex-wrap:wrap;padding:8px}
+  nav.toc a{color:var(--ink);text-decoration:none;font-size:13px;font-weight:700;padding:7px 14px;border-radius:8px}
+  nav.toc a:hover{background:var(--soft)}
+  main{max-width:1080px;margin:34px auto 60px;padding:0 24px}
+  section{margin-bottom:46px}
+  h2.sec{font-size:22px;font-weight:900;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2.sec::before{content:"";width:6px;height:26px;background:var(--gold);border-radius:3px}
+  .sec-sub{color:var(--mut);font-size:13.5px;margin:0 0 18px}
+  /* ---------- العينة التفاعلية ---------- */
+  .lab{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(11,21,38,.06)}
+  .ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .ctrl .lbl{font-size:12.5px;font-weight:800;color:var(--mut);margin-inline-end:4px}
+  .btn{font-family:var(--ff);border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 16px;font-size:12.5px;font-weight:800;cursor:pointer;color:var(--ink)}
+  .btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.gold[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#241B03}
+  .stage{background:#7C8AA0;border-radius:12px;padding:22px;display:flex;justify-content:center;overflow:auto}
+  /* ========== المستند العينة (يتثيم عبر متغيرات) ========== */
+  .doc{--acc:#1B83C7;--acc-soft:#EAF4FB;--head:#0F172A;--inkD:#0F172A;--mutD:#64748B;--lineD:#CBD5E1;
+       --zebra:#F8FAFC;--tot:#EAF4FB;--rad:10px;--cell:7px 10px;--hband:1;
+       width:640px;min-height:880px;background:#fff;color:var(--inkD);padding:34px 38px;position:relative;
+       font-size:12px;line-height:1.65;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+  .doc[data-density="compact"]{--cell:4px 9px}
+  .doc[data-density="comfort"]{--cell:9px 12px}
+  .doc[data-theme="premium"]{--acc:#B48A18;--acc-soft:#FBF6E7;--head:#0B2545;--zebra:#FAF7EE;--tot:#F6EFD8}
+  .doc[data-theme="modern"]{--acc:#0F766E;--acc-soft:#EDFAF8;--head:#FFFFFF;--zebra:#F6FAF9;--tot:#EDFAF8;--rad:6px}
+  .doc[data-theme="classic"]{--acc:#111111;--acc-soft:#F2F2F2;--head:#FFFFFF;--zebra:#FAFAFA;--tot:#EFEFEA;--rad:0px}
+  .dhead{display:flex;justify-content:space-between;gap:16px;border-bottom:3px double var(--head);padding-bottom:12px;margin-bottom:16px}
+  .doc[data-theme="premium"] .dhead{border-bottom:1px solid var(--head);box-shadow:0 4px 0 -3px var(--acc)}
+  .doc[data-theme="modern"] .dhead{border-bottom:0;box-shadow:0 3px 0 var(--acc)}
+  .doc[data-theme="classic"] .dhead{border-bottom:4px double #111}
+  .logo{width:52px;height:52px;border-radius:12px;background:var(--head);color:#fff;display:grid;place-items:center;font-weight:900;font-size:15px}
+  .doc[data-theme="modern"] .logo{background:var(--acc)}
+  .doc[data-theme="classic"] .logo{background:#111;border-radius:0}
+  .brand{font-size:17px;font-weight:900;color:var(--acc);margin:2px 0}
+  .doc[data-theme="classic"] .brand{color:#111}
+  .sub{color:var(--mutD);font-size:10.5px;margin:1px 0}
+  .tcol{text-align:left}
+  .tbadge{background:var(--head);color:#fff;border-radius:8px;padding:7px 16px;font-weight:900;font-size:14px;display:inline-block}
+  .doc[data-theme="modern"] .tbadge{background:#fff;color:var(--acc);border:2px solid var(--acc)}
+  .doc[data-theme="classic"] .tbadge{background:#fff;color:#111;border:2px solid #111;border-radius:0}
+  .tmeta{font-size:10.5px;color:var(--mutD);margin-top:6px}
+  .tmeta b{color:var(--inkD)}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .kpi{background:var(--acc-soft);border:1px solid var(--lineD);border-radius:var(--rad);padding:8px 12px}
+  .kpi .l{font-size:10px;color:var(--mutD);font-weight:700}
+  .kpi .v{font-size:14px;font-weight:900}
+  .kpi .v small{font-size:10px;font-weight:700;color:var(--mutD)}
+  .delta{display:inline-block;font-size:9.5px;font-weight:800;border-radius:999px;padding:0 8px;margin-inline-start:6px}
+  .delta.up{background:#E5F5EC;color:var(--ok)}
+  .delta.dn{background:#FBEAE9;color:var(--bad)}
+  table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:11px}
+  thead th{background:var(--head);color:#fff;padding:var(--cell);font-weight:800;text-align:right}
+  .doc[data-theme="modern"] thead th{background:var(--acc)}
+  .doc[data-theme="classic"] thead th{background:#fff;color:#111;border-top:2px solid #111;border-bottom:2px solid #111}
+  tbody td{padding:var(--cell);border-bottom:1px solid var(--lineD)}
+  tbody tr:nth-child(even) td{background:var(--zebra)}
+  td.num{text-align:left;font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+  tfoot td{padding:var(--cell);font-weight:900;background:var(--tot);border-top:2px solid var(--acc)}
+  tfoot td.num{color:var(--acc)}
+  .sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+  .sig{border:1px solid var(--lineD);border-radius:var(--rad);padding:8px;text-align:center;min-height:74px}
+  .sig .t{font-size:10.5px;font-weight:800}
+  .sig .ln{border-bottom:1px dashed var(--mutD);width:80%;margin:26px auto 6px}
+  .sig .d{font-size:9px;color:var(--mutD)}
+  .stampbox{border:2px dashed var(--acc);color:var(--acc);border-radius:var(--rad);display:grid;place-items:center;font-size:10.5px;font-weight:800;background:var(--acc-soft)}
+  .stamp{position:absolute;top:38%;left:8%;transform:rotate(-14deg);border:3px solid var(--ok);color:var(--ok);
+         font-size:26px;font-weight:900;padding:4px 26px;border-radius:8px;opacity:.8;letter-spacing:2px;background:rgba(255,255,255,.6)}
+  .dband{position:absolute;bottom:14px;right:38px;left:38px;border-top:1px solid var(--lineD);padding-top:6px;
+         display:flex;justify-content:space-between;font-size:9.5px;color:var(--mutD)}
+  .dband b{color:var(--acc)}
+  /* ---------- بطاقات الاقتراحات ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:0 4px 14px rgba(11,21,38,.05)}
+  .pcard h3{margin:0 0 2px;font-size:15.5px;font-weight:900;display:flex;gap:8px;align-items:center}
+  .tag{font-size:10px;font-weight:800;border-radius:6px;padding:2px 9px}
+  .tag.v{background:var(--gold-soft);color:#7A5B0A}
+  .tag.t{background:#E8F0FE;color:#144EA8}
+  .prob{font-size:12.5px;color:var(--bad);margin:6px 0 2px}
+  .sol{font-size:12.5px;color:var(--ink);margin:2px 0 10px}
+  .prob::before{content:"المشكلة: ";font-weight:900}
+  .sol::before{content:"الاقتراح: ";font-weight:900;color:var(--ok)}
+  .mini{border:1px dashed var(--line);border-radius:10px;padding:10px;background:#FCFDFF}
+  .mini table{margin:0;font-size:10px}
+  .mini thead th,.mini tbody td,.mini tfoot td{padding:4px 8px}
+  .sw{display:flex;gap:6px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;margin-bottom:6px;cursor:pointer;background:#fff}
+  .sw:hover{border-color:var(--ink)}
+  .sw .dot{width:16px;height:16px;border-radius:50%}
+  .sw .nm{font-size:12px;font-weight:800;flex:1}
+  .sw .use{font-size:10px;color:var(--mut)}
+  .hvar{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;background:#fff}
+  .hvar .cap{font-size:10px;color:var(--mut);font-weight:800;margin-bottom:6px}
+  .hv-a{display:flex;justify-content:space-between;background:#0B2545;color:#fff;border-radius:8px;padding:8px 12px;align-items:center}
+  .hv-a .b{color:#C9A227;font-weight:900}
+  .hv-b{text-align:center;border-bottom:3px solid #0F766E;padding-bottom:6px}
+  .hv-b .b{color:#0F766E;font-weight:900}
+  .ty .l1{font-size:17px;font-weight:900}
+  .ty .l2{font-size:13px;font-weight:800;color:#33475E}
+  .ty .l3{font-size:11px;color:var(--mut)}
+  .nums td{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+  .proscons{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .pp{font-size:10.5px;border-radius:999px;padding:2px 10px;font-weight:700}
+  .pp.pro{background:#E5F5EC;color:var(--ok)}
+  .pp.con{background:#FBEAE9;color:var(--bad)}
+  .pp.cost{background:#EEF2F7;color:#33475E}
+  /* ---------- خارطة الطريق ---------- */
+  table.road{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px}
+  table.road th{background:var(--panel);color:#fff;padding:10px 14px;text-align:right;font-size:12.5px}
+  table.road td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.road tr:last-child td{border-bottom:0}
+  .ph{font-weight:900;white-space:nowrap}
+  .ph.p1{color:var(--ok)} .ph.p2{color:var(--warn)} .ph.p3{color:#144EA8}
+  footer{background:var(--panel);color:#9FB0C6;text-align:center;padding:18px;font-size:12px}
+  @media print{ .cover{background:#0B1526!important;-webkit-print-color-adjust:exact;print-color-adjust:exact} .stage{background:#fff} }
+</style>
+</head>
+<body>
+
+<div class="cover"><div class="wrap">
+  <h1>اقتراحات تطوير نظام المستندات <span>— Malek</span></h1>
+  <p>حزمة مقترحات بصرية وتقنية قابلة للنقاش والاختيار، مبنية على ملاحظات الجودة البصرية والتقنية.</p>
+  <p>جميع العينات أدناه مرسومة داخل هذه الصفحة فقط (بدون أي موارد خارجية) وهي للاسترشاد وليست كودًا نهائيًا.</p>
+  <div class="chips">
+    <span class="chip gold">8 مقترحات بصرية</span>
+    <span class="chip gold">7 مقترحات تقنية</span>
+    <span class="chip">عينة تفاعلية بثلاثة اتجاهات تصميم</span>
+    <span class="chip">خارطة طريق على 3 مراحل</span>
+  </div>
+  <div class="ack">✔ تم تسجيل الملاحظة بأن التنفيذ الحالي غير مرضٍ بصريًا وتقنيًا. هذه الوثيقة تحوّل الملاحظة إلى خيارات محددة: ما الذي سنغيّرهُ أولًا، وبأي تكلفة، وبأي أثر.</div>
+</div></div>
+
+<nav class="toc"><div class="bar">
+  <a href="#sample">العينة التفاعلية</a>
+  <a href="#visual">أولًا: المقترحات البصرية</a>
+  <a href="#tech">ثانيًا: المقترحات التقنية</a>
+  <a href="#road">ثالثًا: خارطة الطريق</a>
+</div></nav>
+
+<main>
+
+<!-- ================= العينة ================= -->
+<section id="sample">
+  <h2 class="sec">العينة التفاعلية — ثلاثة اتجاهات تصميم</h2>
+  <p class="sec-sub">مستند واحد (فاتورة إيجار) يتبدل فوره مباشرة. اختر الاتجاه المفضل وسيُبنى عليه التفصيل في القسم البصري.</p>
+  <div class="lab">
+    <div class="ctrl">
+      <span class="lbl">الاتجاه:</span>
+      <button class="btn" data-theme="current" aria-pressed="true">الأزرق المؤسسي (الحالي)</button>
+      <button class="btn" data-theme="premium" aria-pressed="false">كحلي / ذهبي فاخر</button>
+      <button class="btn" data-theme="modern" aria-pressed="false">أخضر حديث بسيط</button>
+      <button class="btn" data-theme="classic" aria-pressed="false">رسمي أبيض/أسود</button>
+      <span class="lbl">الكثافة:</span>
+      <button class="btn" data-density="compact" aria-pressed="false">مضغوطة</button>
+      <button class="btn" data-density="normal" aria-pressed="true">قياسية</button>
+      <button class="btn" data-density="comfort" aria-pressed="false">مريحة</button>
+      <button class="btn gold" id="stampBtn" aria-pressed="true">ختم الحالة</button>
+    </div>
+    <div class="stage">
+      <div class="doc" id="doc" data-theme="current" data-density="normal">
+        <div class="dhead">
+          <div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <div class="logo">الأفق</div>
+              <div>
+                <div class="brand">شركة الأفق لإدارة الأملاك ش.م.م</div>
+                <div class="sub">مسقط، الغبرة الشمالية، مبنى 42 طريق 35</div>
+                <div class="sub">الهاتف: <span dir="ltr">+968 2412 3456</span> · info@afaq-properties.om</div>
+              </div>
+            </div>
+          </div>
+          <div class="tcol">
+            <span class="tbadge">فاتورة إيجار</span>
+            <div class="tmeta">رقم المستند: <b dir="ltr">INV-2026-0118</b></div>
+            <div class="tmeta">تاريخ الإصدار: <b>20 يوليو 2026</b></div>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="l">إجمالي المستحق</div><div class="v">405.000 <small>ر.ع</small><span class="delta up">محصل</span></div></div>
+          <div class="kpi"><div class="l">الوحدة</div><div class="v">A-07 <small>برج الياسمين</small></div></div>
+          <div class="kpi"><div class="l">المستأجر</div><div class="v" style="font-size:12px">أحمد بن سالم الرواحي</div></div>
+        </div>
+
+        <table>
+          <thead><tr><th>البند</th><th>الفترة</th><th style="text-align:left">المبلغ (ر.ع)</th></tr></thead>
+          <tbody>
+            <tr><td>إيجار شهري — الوحدة A-07</td><td>يوليو 2026</td><td class="num">390.000</td></tr>
+            <tr><td>رسوم صيانة دورية</td><td>يوليو 2026</td><td class="num">15.000</td></tr>
+            <tr><td>خصم سداد مبكر</td><td>—</td><td class="num">-10.000</td></tr>
+            <tr><td>رسوم إدارة</td><td>يوليو 2026</td><td class="num">10.000</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="2">الإجمالي المستحق</td><td class="num">405.000</td></tr></tfoot>
+        </table>
+
+        <div class="sigs">
+          <div class="sig"><div class="t">توقيع المستأجر</div><div class="ln"></div><div class="d">التاريخ: ____ / ____ / ____</div></div>
+          <div class="sig"><div class="t">اعتماد المدير العام</div><div class="ln"></div><div class="d">التاريخ: ____ / ____ / ____</div></div>
+          <div class="stampbox">ختم الشركة</div>
+        </div>
+
+        <div class="stamp" id="stamp">مدفوع</div>
+        <div class="dband"><span>شركة الأفق لإدارة الأملاك ش.م.م</span><span dir="ltr">INV-2026-0118</span><span>صفحة <b>1</b> من <b>1</b></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= بصري ================= -->
+<section id="visual">
+  <h2 class="sec">أولًا: المقترحات البصرية</h2>
+  <p class="sec-sub">كل مقترح يذكر المشكلة التي يعالجها، ويقترح حلًا ملموسًا بعينة مصغرة.</p>
+  <div class="grid">
+
+    <div class="pcard"><h3><span class="tag v">بصري 1</span> اتجاهات اللون والهوية</h3>
+      <p class="prob">الأزرق الحالي سليم وظيفيًا لكنه «افتراضي»؛ لا يصنع هوية مميزة ولا يشعر العميل بالفخامة.</p>
+      <p class="sol">ثلاثة اتجاهات جاهزة للتطبيق كمتغيرات تصميم (انقر لتجربتها على العينة أعلاه):</p>
+      <div class="mini">
+        <div class="sw" data-theme="premium"><span class="dot" style="background:#0B2545"></span><span class="dot" style="background:#C9A227"></span><span class="nm">كحلي / ذهبي</span><span class="use">عقود وتقارير الملاك</span></div>
+        <div class="sw" data-theme="modern"><span class="dot" style="background:#0F766E"></span><span class="dot" style="background:#E6FFFA"></span><span class="nm">أخضر حديث</span><span class="use">إيصالات وفواتير</span></div>
+        <div class="sw" data-theme="classic"><span class="dot" style="background:#111"></span><span class="dot" style="background:#fff;border:1px solid #ccc"></span><span class="nm">رسمي حبري</span><span class="use">مستندات قضائية/بلدية</span></div>
+      </div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 2</span> سلّم تايبوغرافي عربي واضح</h3>
+      <p class="prob">الأحجام متقاربة فلا تُقرأ الأولوية؛ والعناوين لا تتميز عن البيانات.</p>
+      <p class="sol">سلّم ثابت: اسم الشركة 17-18 / عنوان المستند 14-15 / عناوين الأقسام 13 / الجسم 12-12.5 / البيانات المساعدة 10-10.5، مع وزن 900 للعناوين و400-600 للنصوص، وارتفاع سطر 1.7 للنصوص العربية.</p>
+      <div class="mini ty"><div class="l1">شركة الأفق لإدارة الأملاك</div><div class="l2">كشف حساب مستأجر — الفترة يناير إلى يونيو 2026</div><div class="l3">رقم المستند: REC-2026-0042 · أُنشئ في 13/9/2026</div></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 3</span> ترويسة المستند: band داكن أو مركزية</h3>
+      <p class="prob">الترويسة الحالية «معلومة بجانب معلومة» بدون شخصية؛ الخط المزدوج وحده لا يكفي.</p>
+      <p class="sol">بديل (أ): شريط داكن بعرض الصفحة والشعار معكوس اللون وخط ذهبي فاصل. بديل (ب): ترويسة مركزية بشعار كبير للمستندات الرسمية. يُعتمد البديل حسب نوع المستند.</p>
+      <div class="mini">
+        <div class="hvar"><div class="cap">أ — شريط داكن (عقود/تقارير)</div>
+          <div class="hv-a"><span class="b">شركة الأفق لإدارة الأملاك ش.م.م</span><span style="font-size:10px">مسقط · +968 2412 3456</span></div></div>
+        <div class="hvar"><div class="cap">ب — مركزية (إقرارات/رسمي)</div>
+          <div class="hv-b"><div class="b" style="font-size:14px">شركة الأفق لإدارة الأملاك ش.م.م</div><div style="font-size:9.5px;color:#5B6B80">مسقط، الغبرة الشمالية · سجل تجاري CR-1234567</div></div></div>
+      </div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 4</span> جداول: zebra + إجمالي مُبرز</h3>
+      <p class="prob">الصفوف المتساوية اللون تُتعِب العين في الكشوف الطويلة؛ صف الإجمالي لا «يختم» الجدول.</p>
+      <p class="sol">تظليل متناوب خفيف جدًا، وحد علوي بلون الهوية فوق صف الإجمالي، وخلفية tinted للإجمالي، مع إبقاء رأس الجدول داكنًا. في الاتجاه «الرسمي» يستبدل التظليل بخطوط أفقية فقط.</p>
+      <div class="mini"><table>
+        <thead><tr><th>البند</th><th style="text-align:left">المبلغ</th></tr></thead>
+        <tbody><tr><td>إيجار يوليو</td><td class="num">390.000</td></tr><tr><td>صيانة</td><td class="num">15.000</td></tr></tbody>
+        <tfoot><tr><td>الإجمالي</td><td class="num">405.000</td></tr></tfoot>
+      </table></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 5</span> أرقام مالية منضبطة</h3>
+      <p class="prob">الأعمدة الرقمية تهتز بصريًا لأن الأرقام ليست tabular ولأن المحاذاة غير موحدة.</p>
+      <p class="sol">كل الأعمدة المالية: <code dir="ltr">direction:ltr; text-align:left; font-variant-numeric:tabular-nums</code> داخل المستند العربي، وفواصل آلاف ثابتة، وعملة موحدة «ر.ع» في رأس العمود فقط.</p>
+      <div class="mini"><table class="nums"><tbody>
+        <tr><td>1,240.000</td></tr><tr><td>390.500</td></tr><tr><td>18,340.250</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 6</span> بطاقات KPI بمؤشرات دلتا</h3>
+      <p class="prob">البطاقات الحالية أرقام مجردة؛ لا تقول «جيد أم سيئ» ولا تُقارن بالفترة السابقة.</p>
+      <p class="sol">إضافة شارة دلتا صغيرة (▲/▼ بالنسبة المئوية) بلون دلالي ثابت (أخضر/أحمر) — والدلتا اختيارية تُمرر من النموذج ولا تُحسب ولا تُخترع في العارض.</p>
+      <div class="mini"><div class="kpis" style="margin:0">
+        <div class="kpi"><div class="l">نسبة الإشغال</div><div class="v">95.8%<span class="delta up">▲ 2.1%</span></div></div>
+        <div class="kpi"><div class="l">متأخرات</div><div class="v">4,820<span class="delta dn">▼ 6.5%</span></div></div>
+      </div></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 7</span> توقيعات وختم بمظهر «ورقي»</h3>
+      <p class="prob">صناديق التوقيع الحالية متساوية الحجم دائمًا فتترك فراغات عندما يقل عدد الموقعين.</p>
+      <p class="sol">شبكة مرنة تتقلص بعدد الموقعين الفعليين، وخط توقيع داخلي بدل الشرطات الطويلة، وختم الشركة بإطار متقطع بلون الهوية؛ ويُضاف ختم حالة مائل (مدفوع/متأخر) للإيصالات والفواتير فقط وبألوان دلالية.</p>
+      <div class="mini" style="display:flex;gap:8px;align-items:center">
+        <div class="sig" style="flex:1"><div class="t">توقيع المحاسب</div><div class="ln"></div><div class="d">التاريخ</div></div>
+        <div class="stampbox" style="width:86px;height:64px">ختم الشركة</div>
+        <div style="border:2px solid var(--ok);color:var(--ok);font-weight:900;transform:rotate(-10deg);padding:2px 12px;border-radius:6px;font-size:13px">مدفوع</div>
+      </div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag v">بصري 8</span> تذييل صفحة يحمل هوية وتحققًا</h3>
+      <p class="prob">التذييل الحالي سطر رمادي باهت؛ ورقم الصفحة صغير ومنعزل.</p>
+      <p class="sol">شريط تذييل ثابت: يمينًا اسم الشركة، وسطًا رقم المستند (LTR)، ويسارًا «صفحة س من ص» بخط أثقل ولون الهوية؛ ويُقترح لاحقًا QR صغير للتحقق من النسخة الإلكترونية (يُولَّد محليًا بدون خدمة خارجية).</p>
+      <div class="mini"><div class="dband" style="position:static;border-top:1px solid var(--line)">
+        <span>شركة الأفق لإدارة الأملاك ش.م.م</span><span dir="ltr">CON-2026-0118</span><span>صفحة <b>2</b> من <b>6</b></span>
+      </div></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= تقني ================= -->
+<section id="tech">
+  <h2 class="sec">ثانيًا: المقترحات التقنية</h2>
+  <p class="sec-sub">مرتبة حسب الأثر/التكلفة، مع المزايا والمخاطر لكل خيار.</p>
+  <div class="grid">
+
+    <div class="pcard"><h3><span class="tag t">تقني 1</span> PDF متجهي بدل raster</h3>
+      <p class="prob">الـ PDF الحالي صور ملتقطة (html2canvas): حجم ملف كبير، نص غير قابل للنسخ/البحث، وحواف باهتة عند التكبير.</p>
+      <p class="sol">خياران: (أ) قصير المدى — رفع دقة الالتقاط إلى scale 3 مع ضغط ذكي؛ (ب) هيكلي — خدمة عرض طرف-خادم (نفس محرك البوابة الذهبية Playwright) تُصدر PDF متجهيًا بخط عربي مضمّن، وتصبح مرجع الجودة للمعاينة والطباعة والتصدير معًا.</p>
+      <div class="proscons"><span class="pp pro">نص قابل للنسخ والبحث</span><span class="pp pro">حجم أصغر 10×</span><span class="pp con">يتطلب خدمة خادم للخيار (ب)</span><span class="pp cost">التكلفة: متوسطة</span></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag t">تقني 2</span> حزمة خطوط عربية مضبوطة</h3>
+      <p class="prob">الاعتماد على Cairo وحده وبأوزان كثيرة يبطئ أول رسم، وأي letter-spacing على العربي يكسر الالتصاق الحرفي.</p>
+      <p class="sol">زوج مدروس: Cairo للعناوين (700/900) + IBM Plex Sans Arabic أو Tajawal للنصوص (400/600)، مع preload و font-display:swap و subsets عربية فقط، وقاعدة صارمة: ممنوع letter-spacing على أي نص عربي (تُفرض بفحص آلي).</p>
+      <div class="proscons"><span class="pp pro">قراءة أطول مريحة</span><span class="pp pro">زمن تحميل أقل</span><span class="pp cost">التكلفة: منخفضة</span></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag t">تقني 3</span> عزل bidi آلي للمعرّفات اللاتينية</h3>
+      <p class="prob">أرقام هواتف وتواريخ ومرجعيات مثل INV-2026-0118 تنعكس أو تتبعثر داخل السطر العربي.</p>
+      <p class="sol">دالة موحدة <code dir="ltr">latinRun(text)</code> تغلف كل مقطع لاتيني/رقمي بـ <code dir="ltr">dir="ltr" + unicode-bidi:isolate</code> عند البناء، مع اختبار ذهبي يلتقط أي انعكاس في لقطات الرأس والتذييل.</p>
+      <div class="proscons"><span class="pp pro">ثبات المظهر في كل المحركات</span><span class="pp cost">التكلفة: منخفضة</span></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag t">تقني 4</span> بوابة بكسل للرجوع البصري</h3>
+      <p class="prob">التحقق الحالي يعدّ الصفحات ويقيس القصّ، لكنه لا يرى «القبح»: انزياح محاذاة، فراغات، ألوان باهتة.</p>
+      <p class="sol">توسيع البوابة الذهبية بلقطات مرجعية محفوظة + مقارنة بكسل (عتبة فرق صغيرة) ضمن CI؛ أي تغيير بصري غير مقصود يفشل البناء قبل أن يراه المستخدم.</p>
+      <div class="proscons"><span class="pp pro">يمنع Regression بصريًا</span><span class="pp con">يحتاج ضبط عتبات للخطوط</span><span class="pp cost">التكلفة: متوسطة</span></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag t">تقني 5</span> أداء توليد الـ PDF</h3>
+      <p class="prob">الالتقاط المتتابع للصفحات يستهلك ذاكرة كبيرة في الكشوف الطويلة ويجمّد الواجهة لحظيًا.</p>
+      <p class="sol">تحرير كل canvas فور إضافة صفحته، ومعالجة دفعات بحد أقصى صفحتين متزامنتين مع شريط تقدم حقيقي، وإيقاف مبكر عند تجاوز حد الصفحات قبل أي رسم.</p>
+      <div class="proscons"><span class="pp pro">ذاكرة مستقرة</span><span class="pp pro">إحساس استجابة أفضل</span><span class="pp cost">التكلفة: منخفضة</span></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag t">تقني 6</span> رماديّ-آمن للطباعة</h3>
+      <p class="prob">بعض الطابعات تهدر الألوان؛ الرأس الداكن قد يتحول كتلة رمادية ثقيلة وتضيع الأولويات.</p>
+      <p class="sol">وضع print يُقيَّم بتدرج رمادي: الرأس الداكن يُستبدل تلقائيًا بإطار علوي سميك بلون الهوية في الطابعات أحادية اللون (استعلام CSS + بيانات)، مع اختبار تباين WCAG AA لكل زوج لون/خلفية في الرموز.</p>
+      <div class="proscons"><span class="pp pro">مستند ورقي نظيف دائمًا</span><span class="pp cost">التكلفة: منخفضة</span></div>
+    </div>
+
+    <div class="pcard"><h3><span class="tag t">تقني 7</span> عقود نموذج صارمة للبيانات</h3>
+      <p class="prob">جودة التصميم تنكسر عندما تمرر الشاشات حقولًا فارغة أو تواريخ غير موحدة أو عملات مخلوطة.</p>
+      <p class="sol">طبقة تحقق عند بناء النموذج: تنسيق تاريخ واحد (Intl بنفسLocale)، عملة موحدة لكل مستند، وإخفاء اختياري (وليس اختراع) للحقول الفارغة — فلا يظهر «—» ميت ولا قيمة مختلقة.</p>
+      <div class="proscons"><span class="pp pro">اتساق عبر 12 نوع مستند</span><span class="pp cost">التكلفة: منخفضة</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= خارطة ================= -->
+<section id="road">
+  <h2 class="sec">ثالثًا: خارطة الطريق المقترحة</h2>
+  <p class="sec-sub">التنفيذ على ثلاث دفعات، كل دفعة تُغلق ببوابة التحقق (اختبارات + لقطة بكسل + مطابقة طباعة/PDF).</p>
+  <table class="road">
+    <thead><tr><th style="width:130px">المرحلة</th><th>المحتوى</th><th style="width:110px">الأثر</th></tr></thead>
+    <tbody>
+      <tr><td class="ph p1">فورية (أيام)</td><td>اعتماد اتجاه لوني (قرار منكم) + السلّم تايبوغرافي + zebra/الإجمالي + أرقام tabular + عزل bidi موحد + ختم الحالة للإيصالات.</td><td>قفزة بصرية ملموسة فورًا</td></tr>
+      <tr><td class="ph p2">قريبة (أسبوعان)</td><td>حزمة الخطوط المضبوطة + الرمادي-آمن للطباعة + أداء التوليد (canvas/tقدم) + عقود البيانات الصارمة.</td><td>جودة تقنية محسوسة</td></tr>
+      <tr><td class="ph p3">هيكلية (شهر)</td><td>PDF متجهي عبر خدمة عرض طرف-خادم + بوابة بكسل CI + QR تحقق محلي.</td><td>منتج بمستوى منافس عالمي</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+<footer>وثيقة اقتراحات داخلية — تُحدَّث بعد اختيار الاتجاه. جميع العينات مرسومة ذاتيًا بدون موارد خارجية.</footer>
+
+<script>
+  const doc = document.getElementById('doc');
+  const setPressed = (group, btn) => group.forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+  const themeBtns = [...document.querySelectorAll('[data-theme][data-theme]')].filter(el => el.tagName === 'BUTTON');
+  themeBtns.forEach(b => b.addEventListener('click', () => { doc.dataset.theme = b.dataset.theme; setPressed(themeBtns, b); }));
+  const densBtns = [...document.querySelectorAll('[data-density]')].filter(el => el.tagName === 'BUTTON');
+  densBtns.forEach(b => b.addEventListener('click', () => {
+    doc.dataset.density = b.dataset.density === 'normal' ? 'normal' : b.dataset.density;
+    if (b.dataset.density === 'normal') doc.removeAttribute('data-density');
+    setPressed(densBtns, b);
+  }));
+  const stampBtn = document.getElementById('stampBtn');
+  stampBtn.addEventListener('click', () => {
+    const on = stampBtn.getAttribute('aria-pressed') === 'true';
+    stampBtn.setAttribute('aria-pressed', on ? 'false' : 'true');
+    document.getElementById('stamp').style.display = on ? 'none' : 'block';
+  });
+  document.querySelectorAll('.sw[data-theme]').forEach(sw => sw.addEventListener('click', () => {
+    doc.dataset.theme = sw.dataset.theme;
+    setPressed(themeBtns, themeBtns.find(b => b.dataset.theme === sw.dataset.theme));
+    document.getElementById('sample').scrollIntoView({behavior:'smooth'});
+  }));
+</script>
+</body>
+</html>

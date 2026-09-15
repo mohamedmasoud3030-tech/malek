@@ -48,7 +48,7 @@ const HAND_BUILT_PRINT_HTML = /@page\s*\{|size:\s*A4|<!doctype html|document\.wr
 const POPUP_DOCUMENT_WRITE = /\.document\s*\.\s*(?:write|open)\s*\(/;
 
 /** Matches a direct import of the PDF toolchain. */
-const PDF_TOOLCHAIN_IMPORT = /from ['"](?:jspdf|html2canvas(?:-pro)?)['"]/;
+const PDF_TOOLCHAIN_IMPORT = /from ['"](?:jspdf|html2canvas(?:-pro)?|@react-pdf\/renderer)['"]/;
 
 /** Matches feature code reaching past the service boundary. */
 const DEEP_PLATFORM_IMPORT = /from '@\/services\/documents\/(?:DocumentEngine|DocumentController|DocumentRenderer)'/;
@@ -121,7 +121,7 @@ export const FEATURE_BOUNDARY_RULES: readonly BoundaryRule[] = [
   },
   {
     id: 'no-pdf-toolchain-import',
-    message: 'must not import jspdf/html2canvas directly',
+    message: 'must not import jspdf/html2canvas/@react-pdf directly',
     violates: (source) => PDF_TOOLCHAIN_IMPORT.test(stripComments(source)),
   },
   {

@@ -33,12 +33,13 @@ describe('OD-12 — self-hosted product fonts contract', () => {
   it('defines Cairo + Sora @font-face rules with font-display: swap', () => {
     const css = read('public/fonts/fonts.css');
     const faces = css.match(/@font-face/g) ?? [];
-    // 6 Cairo weights x 2 subsets + 3 Sora weights.
-    expect(faces.length).toBe(15);
+    // 6 Cairo weights x 2 subsets + 3 Sora weights + 3 Tajawal (documents).
+    expect(faces.length).toBe(18);
     expect(css).toContain("font-family: 'Cairo'");
     expect(css).toContain("font-family: 'Sora'");
+    expect(css).toContain("font-family: 'Tajawal'");
     expect(css).not.toContain('font-family: \'Sora\';\n  font-style: normal;\n  font-display: auto');
-    expect(css.match(/font-display: swap/g)?.length).toBe(15);
+    expect(css.match(/font-display: swap/g)?.length).toBe(18);
     for (const weight of [400, 500, 600, 700, 800, 900]) {
       expect(css, `Cairo ${weight} arabic`).toContain(`./cairo/cairo-arabic-${weight}-normal.woff2`);
       expect(css, `Cairo ${weight} latin`).toContain(`./cairo/cairo-latin-${weight}-normal.woff2`);

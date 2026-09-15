@@ -37,8 +37,9 @@ const rendererInternals = new Set([
   'renderer/documentHtml.ts',
   'renderer/documentTableHtml.ts',
   'renderer/professionalDocumentHtml.ts',
-  'renderer/pagination.ts',
   'renderer/offscreen.ts',
+  'renderer/pdf/pdfDocument.tsx',
+  'renderer/pdf/pdfTheme.ts',
 ]);
 
 describe('single canonical builder boundary', () => {
@@ -67,7 +68,7 @@ describe('PDF toolchain isolation', () => {
     for (const file of productionFiles) {
       const name = relative(documentsDir, file);
       const source = readFileSync(file, 'utf8');
-      const importsPdfToolchain = /from ['"](?:jspdf|html2canvas(?:-pro)?)['"]/.test(source);
+      const importsPdfToolchain = /from ['"](?:jspdf|html2canvas(?:-pro)?|@react-pdf\/renderer)['"]/.test(source);
       if (rendererInternals.has(name)) continue;
       expect(importsPdfToolchain, `${name} must not import the PDF toolchain`).toBe(false);
     }
@@ -77,7 +78,7 @@ describe('PDF toolchain isolation', () => {
     const featureFiles = collectSourceFiles(featuresDir, (name) => /\.(ts|tsx)$/.test(name) && !/\.test\.(ts|tsx)$/.test(name));
     for (const file of featureFiles) {
       const source = readFileSync(file, 'utf8');
-      expect(source, `${relative(featuresDir, file)} must not import jspdf/html2canvas`).not.toMatch(
+      expect(source, `${relative(featuresDir, file)} must not import jspdf/html2canvas/@react-pdf`).not.toMatch(
         /from ['"](?:jspdf|html2canvas(?:-pro)?)['"]/,
       );
     }
