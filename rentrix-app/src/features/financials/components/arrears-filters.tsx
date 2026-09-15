@@ -1,4 +1,5 @@
 import { EntityForm } from '@/components/ui/entity-form';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -11,6 +12,8 @@ type ArrearsFiltersProps = Readonly<{
   onAsOfChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onBucketFilterChange: (value: ArrearsBucketFilter) => void;
+  activeFilters?: readonly ActiveFilterItem[];
+  onClearAllFilters?: () => void;
 }>;
 
 export function ArrearsFilters({
@@ -20,6 +23,8 @@ export function ArrearsFilters({
   onAsOfChange,
   onSearchChange,
   onBucketFilterChange,
+  activeFilters = [],
+  onClearAllFilters,
 }: ArrearsFiltersProps) {
   return (
     <FilterBar
@@ -41,6 +46,8 @@ export function ArrearsFilters({
           </EntityForm.Field>
         </>
       )}
+      activeFilters={activeFilters}
+      onClearAllFilters={onClearAllFilters}
     />
   );
 }

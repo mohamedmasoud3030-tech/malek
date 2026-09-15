@@ -47,6 +47,7 @@ export function ArrearsWorkspaceSection() {
       onBucketFilterChange={setArrearsBucketFilter}
       onSelectInvoice={onViewInvoice}
       onCollectInvoice={canCollectPayments ? onCollectInvoice : undefined}
+      onRetry={() => { void Promise.all([overdueInvoicesReport.refetch(), agedReceivablesReport.refetch(), arrearsSummaryReport.refetch()]); }}
     />
   );
 }

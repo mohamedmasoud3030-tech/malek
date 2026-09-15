@@ -42,13 +42,11 @@ const layers = [
   {
     id: 'client-visibility',
     title: 'Client session, data-visibility, and function contracts',
+    cwd: join(ROOT, 'rentrix-app'),
     cmd: [
-      'pnpm',
+      process.execPath,
       [
-        '--filter',
-        './rentrix-app',
-        'exec',
-        'vitest',
+        join(ROOT, 'rentrix-app/node_modules/vitest/vitest.mjs'),
         'run',
         '--config',
         'vite.config.ts',
@@ -99,7 +97,7 @@ for (const layer of layers) {
   process.stdout.write(`\n${'='.repeat(70)}\n[${layer.id}] ${layer.title}\n${'='.repeat(70)}\n`);
   const started = Date.now();
   const res = spawnSync(layer.cmd[0], layer.cmd[1], {
-    cwd: ROOT,
+    cwd: layer.cwd ?? ROOT,
     encoding: 'utf8',
     env: { ...process.env, VITEST: 'true' },
     maxBuffer: 20 * 1024 * 1024,

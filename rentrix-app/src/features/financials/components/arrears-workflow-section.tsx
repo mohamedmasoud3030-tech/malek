@@ -1,11 +1,15 @@
 import { ErrorState } from '@/components/ui/error-state';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { LoadingState } from '@/components/ui/loading-state';
 import type { AgedReceivablesReport, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ArrearsAgingBuckets } from './arrears-aging-buckets';
 import { ArrearsFilters } from './arrears-filters';
 import { ArrearsSummaryCards } from './arrears-summary-cards';
-import { filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-workflow-helpers';
+import { arrearsBucketOptions, filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-workflow-helpers';
 import { getErrorMessage } from './financials-formatters';
+import { getTodayLocalDateString } from '../financials-date-utils';
+import { defaultCompanySettingsContract } from '@/lib/companySettings';
+import { formatCompanyDate } from '@/lib/companyFormatters';
 import { OverdueInvoicesTable } from './overdue-invoices-table';
 
 type ArrearsWorkflowSectionProps = Readonly<{
@@ -23,6 +27,7 @@ type ArrearsWorkflowSectionProps = Readonly<{
   onBucketFilterChange: (value: ArrearsBucketFilter) => void;
   onSelectInvoice: (invoiceId: string) => void;
   onCollectInvoice?: (invoiceId: string) => void;
+  onRetry?: () => void;
 }>;
 
 export function ArrearsWorkflowSection({
@@ -40,6 +45,7 @@ export function ArrearsWorkflowSection({
   onBucketFilterChange,
   onSelectInvoice,
   onCollectInvoice,
+  onRetry,
 }: ArrearsWorkflowSectionProps) {
   const overdueRows = overdueReport?.rows ?? [];
   const filteredRows = filterOverdueInvoiceRows(overdueRows, search, bucketFilter);
@@ -51,6 +57,32 @@ export function ArrearsWorkflowSection({
   const canShowRows = !isLoading && !isError;
   const hasOverdueRows = overdueRows.length > 0;
   const hasFilteredRows = filteredRows.length > 0;
+  const today = getTodayLocalDateString();
+  const activeFilters: ActiveFilterItem[] = [
+    ...(asOf !== today ? [{
+      key: 'asOf',
+      label: 'حتى تاريخ',
+      value: formatCompanyDate(defaultCompanySettingsContract, asOf),
+      onRemove: () => onAsOfChange(today),
+    }] : []),
+    ...(search.trim() ? [{
+      key: 'search',
+      label: 'بحث',
+      value: search.trim(),
+      onRemove: () => onSearchChange(''),
+    }] : []),
+    ...(bucketFilter !== 'all' ? [{
+      key: 'bucket',
+      label: 'الفئة',
+      value: arrearsBucketOptions.find((option) => option.value === bucketFilter)?.label ?? bucketFilter,
+      onRemove: () => onBucketFilterChange('all'),
+    }] : []),
+  ];
+  const clearFilters = () => {
+    onAsOfChange(today);
+    onSearchChange('');
+    onBucketFilterChange('all');
+  };
 
   // The finance-hub tab strip and the register below carry the context that
   // the old panel header repeated; one workspace, no second title block.
@@ -63,6 +95,8 @@ export function ArrearsWorkflowSection({
           onAsOfChange={onAsOfChange}
           onSearchChange={onSearchChange}
           onBucketFilterChange={onBucketFilterChange}
+          activeFilters={activeFilters}
+          onClearAllFilters={clearFilters}
         />
 
         {isLoading ? (
@@ -72,7 +106,7 @@ export function ArrearsWorkflowSection({
           <ErrorState
             title="تعذر تحميل تقارير المتأخرات"
             description={getErrorMessage(error, 'إعادة المحاولة أو تحديث الصفحة آمن ولن ينفّذ أي عملية دفع.')}
-            onRetry={undefined}
+            onRetry={onRetry}
           />
         ) : null}
 

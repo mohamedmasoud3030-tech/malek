@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { toast } from 'sonner';
 import { defineEntityKeys } from '@/lib/query-keys';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
-import { activateContract, approveContract, createContract, getContract, listAllContracts, listContracts, rejectContract, renewContract, softDeleteContract, submitContractForApproval, terminateContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
+import { activateContract, approveContract, createContract, getContract, listAllContracts, listContracts, rejectContract, renewContract, softDeleteContract, submitContractForApproval, terminateContract, updateContract, type ContractCreateOptions, type ContractListParams, type ContractStatusFilter } from './services/contractService';
 import { extendShortStayContract, reconcileDueShortStaysBeforeRead, type ShortStayExtensionInput } from './services/shortStayLifecycleService';
 
 const contractBase = defineEntityKeys('contracts');
+
+export type ContractCreateMutationInput = Readonly<{ payload: ContractPayload; options?: ContractCreateOptions }>;
 
 export const contractKeys = {
   ...contractBase,
@@ -47,8 +49,14 @@ export function useContract(contractId: string) {
 export function useCreateContract() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: ContractPayload) => createContract(payload),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); toast.success('تم إنشاء العقد بنجاح'); },
+    mutationFn: ({ payload, options }: ContractCreateMutationInput) => createContract(payload, options),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: contractKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['units'] }),
+      ]);
+      toast.success('تم إنشاء العقد بنجاح');
+    },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء العقد'),
   });
 }
@@ -57,7 +65,14 @@ export function useUpdateContract(contractId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ContractPayload) => updateContract(contractId, payload),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) }); toast.success('تم تحديث العقد بنجاح'); },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: contractKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['units'] }),
+      ]);
+      queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) });
+      toast.success('تم تحديث العقد بنجاح');
+    },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث العقد'),
   });
 }

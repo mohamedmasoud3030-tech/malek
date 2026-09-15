@@ -106,6 +106,11 @@ export async function replay(db, { files, stopOnError = true, onProgress } = {})
     }
     if (shims.length) shimmed.push({ file, shims });
 
+    // A pg_dump-style baseline deliberately clears search_path. Supabase applies
+    // each migration as an independent migration unit, so a later migration
+    // must not inherit that dump-session setting during a clean replay.
+    await db.exec('set search_path to public, extensions;');
+
     try {
       await db.exec(sql);
       await db.query(

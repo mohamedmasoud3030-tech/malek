@@ -69,6 +69,7 @@ export function useContractForm({
   const createMutation = useCreateContract();
   const updateMutation = useUpdateContract(contractId ?? '');
   const initialUnitRentApplied = useRef(false);
+  const createRequestRef = useRef<{ fingerprint: string; requestId: string } | null>(null);
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractSchema, undefined, { raw: true }),
@@ -182,6 +183,7 @@ export function useContractForm({
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async (values: ContractFormValues) => {
+    form.clearErrors('root');
     try {
       const payload = contractSchema.parse(values);
       const unitIssue = getContractUnitSelectionIssue({
@@ -207,9 +209,26 @@ export function useContractForm({
       }
       const agreementId = agreementCoverageQuery.data?.id ?? null;
       const finalPayload = { ...payload, agreement_id: agreementId };
-      const savedContract = isEdit && contractId
-        ? await updateMutation.mutateAsync(finalPayload)
-        : await createMutation.mutateAsync(finalPayload);
+      let savedContract: Contract;
+      if (isEdit && contractId) {
+        savedContract = await updateMutation.mutateAsync(finalPayload);
+      } else {
+        // Keep the same key for a retry of the same validated payload. If the
+        // user changes any value after a failure, the fingerprint rotates the
+        // key so the server cannot reject a legitimate new command as a stale
+        // idempotency replay.
+        const fingerprint = JSON.stringify(finalPayload);
+        const current = createRequestRef.current;
+        const request = current?.fingerprint === fingerprint
+          ? current
+          : { fingerprint, requestId: crypto.randomUUID() };
+        createRequestRef.current = request;
+        savedContract = await createMutation.mutateAsync({
+          payload: finalPayload,
+          options: { requestId: request.requestId },
+        });
+      }
+      createRequestRef.current = null;
       if (onSuccess) onSuccess(savedContract);
       else onClose?.();
     } catch (err) {

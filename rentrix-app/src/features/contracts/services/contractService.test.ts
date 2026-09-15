@@ -200,19 +200,21 @@ describe('updateContract', () => {
     attachment_url: null,
   } as const;
 
-  it('calls update_contract_atomic_v2 instead of a raw table update', async () => {
+  it('calls the atomic billing-and-contract update boundary instead of a raw table update', async () => {
     supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1', ...payload }, error: null });
     const { updateContract } = await import('./contractService');
 
     await updateContract('contract-1', payload);
 
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('update_contract_atomic_v2', expect.objectContaining({
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('update_contract_with_billing_atomic', expect.objectContaining({
       p_contract_id: 'contract-1',
       p_property_id: 'prop-1',
       p_unit_id: 'unit-1',
       p_tenant_id: 'tenant-1',
       p_agreement_id: 'agreement-1',
       p_status: 'active',
+      p_billing_day: 1,
+      p_grace_days: 0,
     }));
   });
 
@@ -451,7 +453,7 @@ describe('short stay lease mode RPC wiring', () => {
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { updateContract } = await import('./contractService');
     await updateContract('contract-1', { ...basePayload, status: 'draft' });
-    const updateCall = supabaseMock.rpc.mock.calls.find((call) => call[0] === 'update_contract_atomic_v2');
+    const updateCall = supabaseMock.rpc.mock.calls.find((call) => call[0] === 'update_contract_with_billing_atomic');
     expect(updateCall?.[1]).toMatchObject({
       p_lease_mode: 'short_stay',
       p_daily_reference_rate: 100,

@@ -31,6 +31,7 @@ export type PaginatedContracts = {
   count: number;
 };
 export type AllContractsRead = Readonly<{ rows: ContractListItem[]; truncated: boolean }>;
+export type ContractCreateOptions = Readonly<{ requestId?: string }>;
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 // Shared select clauses - single source of truth for contract relations
@@ -200,7 +201,7 @@ async function assertNoDuplicateDraftForUnitTenant({
   }
 }
 
-export async function createContract(payload: ContractPayload): Promise<Contract> {
+export async function createContract(payload: ContractPayload, options: ContractCreateOptions = {}): Promise<Contract> {
   await assertContractPropertyIsOperational(payload.property_id);
   if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id });
   const { data, error } = await supabase.rpc('create_contract_atomic_v2', {
@@ -221,8 +222,13 @@ export async function createContract(payload: ContractPayload): Promise<Contract
     p_grace_days: payload.grace_days,
     p_lease_mode: payload.lease_mode ?? 'long_term',
     p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
+    // The form keeps this id stable across a network retry. The server
+    // fingerprints the full command and returns the original contract instead
+    // of inserting a second row.
+    p_request_id: options.requestId ?? crypto.randomUUID(),
   });
   if (error) throw error;
+  if (!data) throw new Error('تعذر إنشاء العقد: لم يُرجع الخادم العقد المحفوظ.');
   return data as Contract;
 }
 
@@ -233,18 +239,10 @@ export async function updateContract(contractId: string, payload: ContractPayloa
   // supabase/migrations/20260901000000_canonical_baseline.sql.
   await assertContractPropertyIsOperational(payload.property_id, payload.status);
   if (payload.status === 'draft') await assertNoDuplicateDraftForUnitTenant({ unitId: payload.unit_id, tenantId: payload.tenant_id, excludedContractId: contractId });
-  // R4: billing policy is DRAFT-only editable and lives behind its own
-  // server command; run it BEFORE the general update so a rejected policy
-  // change fails the whole edit atomically from the user's perspective.
-  {
-    const { error: policyError } = await supabase.rpc('update_contract_billing_policy_atomic', {
-      p_contract_id: contractId,
-      p_billing_day: payload.billing_day,
-      p_grace_days: payload.grace_days,
-    });
-    if (policyError) throw policyError;
-  }
-  const { data, error } = await supabase.rpc('update_contract_atomic_v2', {
+  // Billing policy and commercial fields share one server transaction. This
+  // prevents a successful policy update from being left behind when the
+  // general contract edit fails its overlap/lifecycle checks.
+  const { data, error } = await supabase.rpc('update_contract_with_billing_atomic', {
     p_contract_id: contractId,
     p_property_id: payload.property_id,
     p_unit_id: payload.unit_id ?? null,
@@ -259,10 +257,13 @@ export async function updateContract(contractId: string, payload: ContractPayloa
     p_cancellation_reason: payload.cancellation_reason ?? null,
     p_notes: payload.notes ?? null,
     p_attachment_url: payload.attachment_url ?? null,
+    p_billing_day: payload.billing_day,
+    p_grace_days: payload.grace_days,
     p_lease_mode: payload.lease_mode ?? 'long_term',
     p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
   });
   if (error) throw error;
+  if (!data) throw new Error('تعذر تحديث العقد: لم يُرجع الخادم العقد المحفوظ.');
   return data as Contract;
 }
 

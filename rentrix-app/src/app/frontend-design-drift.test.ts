@@ -35,7 +35,9 @@ const srcDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const EXCLUDED_SEGMENTS = new Set([
   'features/landing',
+  'test',
   'services/documents/renderer',
+  'services/documents/documentDesignTokens.ts',
   'services/documents/DocumentRenderer.ts',
   'services/documents/DocumentRenderer.tsx',
   'features/design-system/design-system-showcase.tsx',

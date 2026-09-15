@@ -187,7 +187,7 @@ export function PersonDossierContent({
                       {contract.units?.unit_number
                         ? `وحدة ${contract.units.unit_number}`
                         : 'بدون وحدة'}{' '}
-                      · {contract.start_date} — {contract.end_date}
+                      · {companyFormatters.date(contract.start_date)} — {companyFormatters.date(contract.end_date)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -256,7 +256,7 @@ export function PersonDossierContent({
                   {businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}
                 </span>
                 <span>
-                  الاستحقاق {invoice.due_date} · المتبقي{' '}
+                  الاستحقاق {companyFormatters.date(invoice.due_date)} · المتبقي{' '}
                   {companyFormatters.money(
                     getInvoiceRemainingAmount(invoice),
                   )}
@@ -456,6 +456,8 @@ export function PersonPreviewDialog({
 export function PersonDetailPage({
   personId: personIdProp,
 }: Readonly<{ personId?: string }>) {
+  const { canAccess } = useAuth();
+  const canEdit = canAccess('contracts.edit');
   const params = useParams({ strict: false });
   const personId =
     personIdProp ??
@@ -469,14 +471,14 @@ export function PersonDetailPage({
         subtitle="البيانات والعلاقات والمستندات والنشاط الموثق."
         backTo="/people"
         backLabel="الأشخاص"
-        actions={
+        actions={canEdit ? (
           <Button asChild>
             <Link to="/people/$personId/edit" params={{ personId }}>
               <Edit className="me-2 size-4" />
               تعديل
             </Link>
           </Button>
-        }
+        ) : undefined}
       />
       <SectionTabs
         items={personSections}

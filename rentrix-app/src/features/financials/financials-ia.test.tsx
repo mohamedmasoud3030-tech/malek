@@ -38,7 +38,7 @@ describe('/financials Money workspace IA', () => {
     const source = readFinancePage();
     expect(source).toContain("import('@/features/commissions/commissions-page')");
     expect(source).toContain('<CommissionsWorkspace embedded />');
-    expect(source).toContain("activeView === 'commissions'");
+    expect(source).toContain("displayedView === 'commissions'");
     expect(source).toContain('finance-view-panel-commissions');
   });
 

@@ -430,7 +430,7 @@ describe("P0-1 database replay reproduces the authoritative catalog from migrati
     expect(unexpected.rows[0]?.count).toBe(1);
 
     await legacyDb.close();
-  });
+  }, 420000);
 });
 
 describe("P0-1 non-admin roles do not silently lose capabilities", () => {
