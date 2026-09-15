@@ -27,20 +27,22 @@ export function ActiveFilterBar({ filters, onClearAll, className }: ActiveFilter
     >
       <span className="text-xs font-semibold text-primary">الفلاتر النشطة</span>
       {filters.map((filter) => (
-        <button
+        <Button
           key={filter.key}
           type="button"
+          variant="outline"
+          size="xs"
           onClick={filter.onRemove}
           className={cn(
-            'inline-flex min-h-11 items-center gap-1 rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-bold text-foreground transition hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+            'rounded-full border-border bg-background px-2.5 py-0.5 text-xs font-bold text-foreground hover:border-primary/50 hover:text-primary',
             'align-middle'
           )}
           aria-label={`إزالة فلتر ${filter.label}`}
         >
-          <span className="text-muted-foreground truncate">{filter.label}</span>
+          <span className="truncate text-muted-foreground">{filter.label}</span>
           <span className="truncate">{filter.value}</span>
           <X className="size-2.5 shrink-0" aria-hidden="true" />
-        </button>
+        </Button>
       ))}
       {onClearAll ? (
         <Button variant="ghost" size="xs" className="px-2 text-xs sm:shrink-0" onClick={onClearAll}>

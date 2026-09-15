@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-react';
 import { useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface SearchInputProps {
@@ -38,14 +39,16 @@ export function SearchInput({
         )}
       />
       {value ? (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => { onChange(''); inputRef.current?.focus(); }}
-          className="absolute inset-y-0 end-0 grid w-10 place-items-center rounded-lg text-muted-foreground outline-none transition hover:bg-muted/60 hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/10"
+          className="absolute end-0 top-0 rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-primary/10"
           aria-label="مسح البحث"
         >
           <X className="size-3.5" aria-hidden="true" />
-        </button>
+        </Button>
       ) : null}
     </div>
   );
