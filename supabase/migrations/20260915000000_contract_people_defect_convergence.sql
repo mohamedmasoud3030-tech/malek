@@ -4,6 +4,11 @@
 -- No live business rows are inserted or backfilled here. Duplicate preflight is
 -- intentionally fail-closed; any live cleanup must be separately evidenced and
 -- dependency-safe before this migration is applied.
+--
+-- ALLOW_GOVERNED_DATA_MIGRATION: the contracts INSERT below is inside the
+-- SECURITY DEFINER create_contract_atomic_v2 runtime command, not migration-time
+-- seed/backfill data; canonical capability, company, lifecycle, and unit guards
+-- execute before the write.
 
 begin;
 
