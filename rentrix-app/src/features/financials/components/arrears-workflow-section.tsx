@@ -8,7 +8,7 @@ import { ArrearsSummaryCards } from './arrears-summary-cards';
 import { arrearsBucketOptions, filterOverdueInvoiceRows, type ArrearsBucketFilter } from './arrears-workflow-helpers';
 import { getErrorMessage } from './financials-formatters';
 import { getTodayLocalDateString } from '../financials-date-utils';
-import { defaultCompanySettingsContract } from '@/lib/companySettings';
+import { defaultCompanySettingsContract, type CompanySettingsContract } from '@/lib/companySettings';
 import { formatCompanyDate } from '@/lib/companyFormatters';
 import { OverdueInvoicesTable } from './overdue-invoices-table';
 
@@ -28,6 +28,7 @@ type ArrearsWorkflowSectionProps = Readonly<{
   onSelectInvoice: (invoiceId: string) => void;
   onCollectInvoice?: (invoiceId: string) => void;
   onRetry?: () => void;
+  companySettings?: CompanySettingsContract;
 }>;
 
 export function ArrearsWorkflowSection({
@@ -46,6 +47,7 @@ export function ArrearsWorkflowSection({
   onSelectInvoice,
   onCollectInvoice,
   onRetry,
+  companySettings = defaultCompanySettingsContract,
 }: ArrearsWorkflowSectionProps) {
   const overdueRows = overdueReport?.rows ?? [];
   const filteredRows = filterOverdueInvoiceRows(overdueRows, search, bucketFilter);
@@ -62,7 +64,7 @@ export function ArrearsWorkflowSection({
     ...(asOf !== today ? [{
       key: 'asOf',
       label: 'حتى تاريخ',
-      value: formatCompanyDate(defaultCompanySettingsContract, asOf),
+      value: formatCompanyDate(companySettings, `${asOf}T00:00:00`),
       onRemove: () => onAsOfChange(today),
     }] : []),
     ...(search.trim() ? [{

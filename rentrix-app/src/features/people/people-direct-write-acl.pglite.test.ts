@@ -263,7 +263,7 @@ describe('people direct-write ACL restore (20260912000002)', () => {
       asBrowser<{ id: string }>(
         { userId: ADMIN_A, companyId: COMPANY_A },
         `insert into public.people (full_name, type, phone, email, national_id, address, notes)
-         values ('عبدالله سعيد العلي', 'tenant', '96892001111', null, null, null, null) returning id`,
+         values ('عبدالله سعيد العلي', 'tenant', '00968 9200 1111', null, null, null, null) returning id`,
         [],
       ),
     ).rejects.toThrow(/people_live_name_phone_uidx|duplicate key/i);

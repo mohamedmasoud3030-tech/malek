@@ -160,7 +160,7 @@ describe('renewContract', () => {
     supabaseMock.rpc.mockResolvedValue({ data: { status: 'renewed', old_contract_id: 'contract-1' }, error: null });
     const { renewContract } = await import('./contractService');
 
-    await expect(renewContract('contract-1', { new_start: '2026-07-01', new_end: '2027-06-30', new_amount: 12000 })).rejects.toThrow('missing the new contract id');
+    await expect(renewContract('contract-1', { new_start: '2026-07-01', new_end: '2027-06-30', new_amount: 12000 })).rejects.toThrow('لا تثبت العقد الجديد');
   });
 });
 
@@ -427,7 +427,7 @@ describe('short stay lease mode RPC wiring', () => {
   }
 
   it('sends the short stay mode and reference rate through create_contract_atomic_v2', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1', status: 'draft' }, error: null });
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { createContract } = await import('./contractService');
     await createContract(basePayload);
@@ -438,7 +438,7 @@ describe('short stay lease mode RPC wiring', () => {
   });
 
   it('never sends a reference daily rate for a long-term contract', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1', status: 'draft' }, error: null });
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { createContract } = await import('./contractService');
     await createContract({ ...basePayload, lease_mode: 'long_term', daily_reference_rate: null });
@@ -449,7 +449,7 @@ describe('short stay lease mode RPC wiring', () => {
   });
 
   it('carries the mode through update_contract_atomic_v2', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1' }, error: null });
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'contract-1', status: 'draft' }, error: null });
     supabaseMock.from.mockReturnValueOnce(propertyQueryMock()).mockReturnValueOnce(draftQueryMock());
     const { updateContract } = await import('./contractService');
     await updateContract('contract-1', { ...basePayload, status: 'draft' });
@@ -458,5 +458,22 @@ describe('short stay lease mode RPC wiring', () => {
       p_lease_mode: 'short_stay',
       p_daily_reference_rate: 100,
     });
+  });
+});
+
+describe('contract mutation response validation', () => {
+  it('rejects a successful create response without a lifecycle status', async () => {
+    const { parseContractMutationResponse } = await import('./contractService');
+    expect(() => parseContractMutationResponse({ id: 'contract-1' }, 'create')).toThrow('حالة غير معروفة');
+  });
+
+  it('rejects an update response for a different contract id', async () => {
+    const { parseContractMutationResponse } = await import('./contractService');
+    expect(() => parseContractMutationResponse({ id: 'contract-2', status: 'draft' }, 'update', 'contract-1')).toThrow('عقداً مختلفاً');
+  });
+
+  it('rejects termination responses that do not prove affected invoice ids', async () => {
+    const { parseTerminationResult } = await import('./contractService');
+    expect(() => parseTerminationResult({ status: 'terminated', contract_id: 'contract-1' }, 'contract-1')).toThrow('الفواتير المتأثرة');
   });
 });

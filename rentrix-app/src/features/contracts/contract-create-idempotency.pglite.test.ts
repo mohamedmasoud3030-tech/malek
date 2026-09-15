@@ -14,7 +14,9 @@ const ADMIN = 'c9000000-0000-4000-8000-000000000011';
 const OWNER = 'c9000000-0000-4000-8000-000000000021';
 const PROPERTY = 'c9000000-0000-4000-8000-000000000031';
 const UNIT = 'c9000000-0000-4000-8000-000000000041';
+const LEGACY_UNIT = 'c9000000-0000-4000-8000-000000000042';
 const TENANT = 'c9000000-0000-4000-8000-000000000051';
+const LEGACY_TENANT = 'c9000000-0000-4000-8000-000000000052';
 const AGREEMENT = 'c9000000-0000-4000-8000-000000000061';
 const REQUEST = 'contract-create-retry-001';
 
@@ -28,6 +30,17 @@ async function create(requestId: string, rent = 500) {
        'monthly', null, 'draft', null, 'idempotency journey', null,
        1, 0, 'long_term', null, $6::text) as out`,
     [PROPERTY, UNIT, TENANT, AGREEMENT, rent, requestId],
+  );
+  return rows[0]?.out;
+}
+
+async function createLegacy() {
+  const { rows } = await db.query<{ out: Record<string, unknown> }>(
+    `select public.create_contract_atomic(
+       $1::text, $2::uuid, $3::uuid, $4::uuid,
+       date '2028-01-01', date '2028-12-31', 600,
+       'monthly', null, 'draft', null, 'legacy retry', null, 1, 0) as out`,
+    [PROPERTY, LEGACY_UNIT, LEGACY_TENANT, AGREEMENT],
   );
   return rows[0]?.out;
 }
@@ -64,9 +77,13 @@ beforeAll(async () => {
     insert into public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
       values ('${AGREEMENT}', '${OWNER}', '${PROPERTY}', 'property_management', 'RATE', 5, date '2020-01-01', '${COMPANY}');
     insert into public.units (id, property_id, name, unit_number, status, rent_amount, company_id)
-      values ('${UNIT}', '${PROPERTY}', 'I-1', 'I-1', 'available', 500, '${COMPANY}');
+      values
+        ('${UNIT}', '${PROPERTY}', 'I-1', 'I-1', 'available', 500, '${COMPANY}'),
+        ('${LEGACY_UNIT}', '${PROPERTY}', 'I-2', 'I-2', 'available', 500, '${COMPANY}');
     insert into public.people (id, full_name, type, company_id)
-      values ('${TENANT}', 'مستأجر عقود التكرار', 'tenant', '${COMPANY}');
+      values
+        ('${TENANT}', 'مستأجر عقود التكرار', 'tenant', '${COMPANY}'),
+        ('${LEGACY_TENANT}', 'مستأجر استدعاء قديم', 'tenant', '${COMPANY}');
   `);
   await assumeIdentity(db, ADMIN, COMPANY);
 }, 420_000);
@@ -111,5 +128,15 @@ describe('create_contract_atomic_v2 idempotency and concurrency boundary', () =>
   it('keeps overlap and self-conflict exclusion behind the same unit lock', async () => {
     const error = await errorOf(() => create('contract-create-overlap-002'));
     expect(error).toMatch(/الوحدة محجوزة خلال هذه الفترة|duplicate key/i);
+  });
+
+  it('makes the preserved legacy create signature deterministic and idempotent', async () => {
+    const first = await createLegacy();
+    const retry = await createLegacy();
+
+    expect(first?.id).toBeTruthy();
+    expect(retry?.id).toBe(first?.id);
+    expect(first?.idempotent).toBe(false);
+    expect(retry?.idempotent).toBe(true);
   });
 });

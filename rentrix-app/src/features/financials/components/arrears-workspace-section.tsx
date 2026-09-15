@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useAuth } from '@/hooks/use-auth';
 import type { ArrearsBucketFilter } from './arrears-workflow-helpers';
 import { ArrearsWorkflowSection } from './arrears-workflow-section';
@@ -11,6 +12,7 @@ import { useAgedReceivablesReport, useArrearsSummaryReport, useOverdueInvoicesRe
 export function ArrearsWorkspaceSection() {
   const { authorization } = useAuth();
   const router = useRouter();
+  const companySettings = useCompanySettingsContract();
   const canCollectPayments = canAccess(authorization, financialOperationPermissions.createPayment);
   const onCollectInvoice = (invoiceId: string) => {
     if (!canCollectPayments) return;
@@ -48,6 +50,7 @@ export function ArrearsWorkspaceSection() {
       onSelectInvoice={onViewInvoice}
       onCollectInvoice={canCollectPayments ? onCollectInvoice : undefined}
       onRetry={() => { void Promise.all([overdueInvoicesReport.refetch(), agedReceivablesReport.refetch(), arrearsSummaryReport.refetch()]); }}
+      companySettings={companySettings}
     />
   );
 }

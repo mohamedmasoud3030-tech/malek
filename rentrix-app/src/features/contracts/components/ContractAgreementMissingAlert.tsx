@@ -36,7 +36,7 @@ export function ContractAgreementMissingAlert({
   companySettings = defaultCompanySettingsContract,
 }: ContractAgreementMissingAlertProps) {
   const formatDate = (value: string | null | undefined) => {
-    const dateOnly = value && /^\\d{4}-\\d{2}-\\d{2}$/.test(value) ? `${value}T00:00:00` : value;
+    const dateOnly = value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value;
     return formatCompanyDate(companySettings, dateOnly);
   };
   // Success state — agreement found

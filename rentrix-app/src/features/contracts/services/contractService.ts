@@ -228,8 +228,7 @@ export async function createContract(payload: ContractPayload, options: Contract
     p_request_id: options.requestId ?? crypto.randomUUID(),
   });
   if (error) throw error;
-  if (!data) throw new Error('تعذر إنشاء العقد: لم يُرجع الخادم العقد المحفوظ.');
-  return data as Contract;
+  return parseContractMutationResponse(data, 'create');
 }
 
 export async function updateContract(contractId: string, payload: ContractPayload): Promise<Contract> {
@@ -263,11 +262,59 @@ export async function updateContract(contractId: string, payload: ContractPayloa
     p_daily_reference_rate: payload.lease_mode === 'short_stay' ? payload.daily_reference_rate ?? null : null,
   });
   if (error) throw error;
-  if (!data) throw new Error('تعذر تحديث العقد: لم يُرجع الخادم العقد المحفوظ.');
+  return parseContractMutationResponse(data, 'update', contractId);
+}
+
+const contractMutationStatuses = new Set(['draft', 'active', 'expired', 'terminated', 'ACTIVE', 'DRAFT', 'EXPIRED', 'ENDED']);
+
+type ContractMutationResponse = Pick<Contract, 'id' | 'status'> & {
+  idempotent?: boolean;
+};
+
+/**
+ * RPC generics are not runtime validation. Keep the database response
+ * authoritative by rejecting an HTTP-success response that is not a contract
+ * row (or that identifies a different row than the mutation requested).
+ */
+export function parseContractMutationResponse(
+  data: unknown,
+  action: 'create' | 'update',
+  expectedContractId?: string,
+): Contract {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(`تعذر تأكيد ${action === 'create' ? 'إنشاء' : 'تحديث'} العقد: استجابة الخادم غير صالحة.`);
+  }
+
+  const result = data as Partial<ContractMutationResponse>;
+  if (typeof result.id !== 'string' || result.id.trim() === '') {
+    throw new Error(`تعذر تأكيد ${action === 'create' ? 'إنشاء' : 'تحديث'} العقد: الاستجابة لا تحتوي على معرّف العقد.`);
+  }
+  if (expectedContractId && result.id !== expectedContractId) {
+    throw new Error('تعذر تأكيد تحديث العقد: أعاد الخادم عقداً مختلفاً عن العقد المطلوب.');
+  }
+  if (typeof result.status !== 'string' || !contractMutationStatuses.has(result.status)) {
+    throw new Error('تعذر تأكيد حالة العقد المحفوظة: أعاد الخادم حالة غير معروفة.');
+  }
+  if ('idempotent' in result && typeof result.idempotent !== 'boolean') {
+    throw new Error('تعذر تأكيد نتيجة العقد: حقل idempotent غير صالح.');
+  }
+
   return data as Contract;
 }
 
 export type TerminateContractResult = { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
+
+export function parseTerminationResult(data: unknown, expectedContractId: string): TerminateContractResult {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('تعذر تأكيد إنهاء العقد: استجابة الخادم غير صالحة.');
+  }
+  const result = data as Partial<TerminateContractResult>;
+  if (result.status !== 'terminated' || result.contract_id !== expectedContractId || !Array.isArray(result.cancelled_invoice_ids)
+      || result.cancelled_invoice_ids.some((invoiceId) => typeof invoiceId !== 'string' || invoiceId.trim() === '')) {
+    throw new Error('تعذر تأكيد إنهاء العقد: الاستجابة لا تثبت العقد أو الفواتير المتأثرة.');
+  }
+  return result as TerminateContractResult;
+}
 
 export async function terminateContract(contractId: string, reason: string): Promise<TerminateContractResult> {
   const { data, error } = await supabase.rpc('terminate_contract_atomic', {
@@ -275,7 +322,7 @@ export async function terminateContract(contractId: string, reason: string): Pro
     p_reason: reason,
   });
   if (error) throw error;
-  return data as TerminateContractResult;
+  return parseTerminationResult(data, contractId);
 }
 
 export async function softDeleteContract(contractId: string): Promise<void> {
@@ -283,11 +330,18 @@ export async function softDeleteContract(contractId: string): Promise<void> {
   if (error) throw error;
 }
 
-function parseRenewalResult(data: unknown): RenewalResult {
-  if (!data || typeof data !== 'object') throw new Error('Renewal RPC returned an invalid response');
+export function parseRenewalResult(data: unknown, expectedOldContractId?: string): RenewalResult {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('تعذر تأكيد تجديد العقد: استجابة الخادم غير صالحة.');
+  }
   const result = data as Partial<RenewalResult>;
-  if (result.status !== 'renewed' || !result.old_contract_id || !result.new_contract_id) {
-    throw new Error('Renewal RPC response is missing the new contract id');
+  if (result.status !== 'renewed'
+      || typeof result.old_contract_id !== 'string'
+      || typeof result.new_contract_id !== 'string'
+      || result.old_contract_id.trim() === ''
+      || result.new_contract_id.trim() === ''
+      || (expectedOldContractId && result.old_contract_id !== expectedOldContractId)) {
+    throw new Error('تعذر تأكيد تجديد العقد: الاستجابة لا تثبت العقد الجديد والقديم المطلوبين.');
   }
   return result as RenewalResult;
 }
@@ -303,7 +357,7 @@ export async function renewContract(contractId: string, payload: RenewalPayload)
     },
   });
   if (error) throw error;
-  return parseRenewalResult(data);
+  return parseRenewalResult(data, contractId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
