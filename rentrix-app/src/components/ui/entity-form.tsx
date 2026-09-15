@@ -169,9 +169,9 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
       className,
     )}>
       {/* G3 double-submit guard: a caller-supplied submitDisabled expresses
-          validation state and must never RE-ENABLE the button mid-submit —
-          pending always disables (`||`, not `??`). */}
-      <Button data-entity-form-submit type="submit" variant={submitVariant} disabled={submitDisabled || isSubmitting} className="min-h-11 min-w-0 w-full sm:w-auto">{submitLabel}</Button>
+          validation state while the shared Button loading state keeps the
+          submit control disabled during the pending mutation. */}
+      <Button data-entity-form-submit type="submit" variant={submitVariant} loading={isSubmitting} disabled={submitDisabled} className="min-h-11 min-w-0 w-full sm:w-auto">{submitLabel}</Button>
       {onCancel ? <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting} className="min-h-11 min-w-0 w-full sm:w-auto">{cancelLabel}</Button> : null}
     </div>
   );
