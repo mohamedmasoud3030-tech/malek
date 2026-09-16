@@ -1,0 +1,160 @@
+diff --git a/js/pdfkit.browser.js b/js/pdfkit.browser.js
+index a3ee43a19f8c06df513e5db0ab2505f19d438d33..35b2a6249801cc4e9fb01a71a5ed8ebe778d14c3 100644
+--- a/js/pdfkit.browser.js
++++ b/js/pdfkit.browser.js
+@@ -331,10 +331,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.browser.mjs b/js/pdfkit.browser.mjs
+index 0500ff50844fbb55e0532409a9653163dbc33394..fac23f4788061bb935ff5c77a36f61abb29df17b 100644
+--- a/js/pdfkit.browser.mjs
++++ b/js/pdfkit.browser.mjs
+@@ -326,10 +326,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.browser.old.js b/js/pdfkit.browser.old.js
+index a1ce1adf569c20cfb29c45ce4184014281e1e836..12aed6d7a800b63e9a89999b9ebb73a9d1105246 100644
+--- a/js/pdfkit.browser.old.js
++++ b/js/pdfkit.browser.old.js
+@@ -327,10 +327,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.browser.old.mjs b/js/pdfkit.browser.old.mjs
+index 7971167a8df9f980fb5760f6a5820ba2888742ff..68f25981b672888f5325edbc667c4d07a630679e 100644
+--- a/js/pdfkit.browser.old.mjs
++++ b/js/pdfkit.browser.old.mjs
+@@ -324,10 +324,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.js b/js/pdfkit.js
+index ee380077464b4ab0c4ce7cd5609c587c095304af..1ff64cf357bba76f6642b121d054143df29e7a72 100644
+--- a/js/pdfkit.js
++++ b/js/pdfkit.js
+@@ -219,10 +219,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.node.mjs b/js/pdfkit.node.mjs
+index e852d25eed77cbd9054fd75df94843b87769a611..1afcd637f53ac461f35cde075f02f79ec198ecf2 100644
+--- a/js/pdfkit.node.mjs
++++ b/js/pdfkit.node.mjs
+@@ -214,10 +214,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.old.js b/js/pdfkit.old.js
+index bc6434f7617a81e8f968351683bb720e3f868861..df0a36d44087820f9d533866b20898dc48affdfd 100644
+--- a/js/pdfkit.old.js
++++ b/js/pdfkit.old.js
+@@ -214,10 +214,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 
+diff --git a/js/pdfkit.standalone.js b/js/pdfkit.standalone.js
+index 5b38f83d84e5f646726e45df89c0707f6dddc83b..f0240e5e7801ce8de80c6a36edbe53b5c50da065 100644
+--- a/js/pdfkit.standalone.js
++++ b/js/pdfkit.standalone.js
+@@ -331,10 +331,14 @@ class PDFObject {
+     }
+   }
+   static number(n) {
++    if (!Number.isFinite(n)) {
++      n = 0;
++    }
+     if (n > -1e21 && n < 1e21) {
+       return Math.round(n * 1e6) / 1e6;
+     }
+-    throw new Error(`unsupported number: ${n}`);
++    const clamped = Math.max(-1e21 + 1, Math.min(1e21 - 1, n));
++    return Math.round(clamped * 1e6) / 1e6;
+   }
+ }
+ 

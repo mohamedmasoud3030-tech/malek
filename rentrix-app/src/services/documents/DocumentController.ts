@@ -5,10 +5,10 @@ import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
  * Execution coordinator for document output. It owns no layout logic: the
  * engine builds the unified model, the renderer performs print/PDF output.
  *
- * jsPDF/html2canvas are only needed when a document is actually printed or
- * exported — the renderer is always imported dynamically so that weight
- * stays out of the initial bundle and out of route chunks that merely
- * *might* print.
+ * The output renderer (vector PDF engine + print emitter) is only needed
+ * when a document is actually printed or exported — it is always imported
+ * dynamically so that weight stays out of the initial bundle and out of
+ * route chunks that merely *might* print.
  */
 export const DocumentController = {
   /** Canonical typed path: builds the model from the typed payload, then prints it. */

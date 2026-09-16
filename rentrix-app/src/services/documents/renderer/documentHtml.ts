@@ -1,5 +1,5 @@
 /**
- * Print/PDF HTML assembly — the ONLY place document markup is built.
+ * Print/preview HTML emitter — the ONLY place document markup is built.
  *
  * Two artifacts come out of this module:
  *
@@ -7,26 +7,22 @@
  *    the scoped print popup (carries the print stylesheet, A4 page setup,
  *    and real browser pagination via `thead { display: table-header-group }`).
  *
- *  - `buildDocumentBodyHtml`: a body-only fragment for the offscreen
- *    measurement container used by the PDF path. It deliberately contains
- *    NO `<style>`/`<link>` tags — earlier code injected a whole document
- *    into a `<div>`, which leaked document styles into the live app DOM.
+ *  - `buildDocumentBodyHtml`: a body-only fragment (no `<style>`/`<link>`
+ *    tags — those would leak into the live app DOM) used by in-app preview
+ *    surfaces.
  *
- * Both artifacts share ONE block source and ONE design-token contract
- * (`documentDesignTokens`), so browser print and generated PDF paginate
- * and look identically for every document type and every language.
- *
- * Long tables are chunked into page-sized table blocks up-front so the
- * paginator can break BETWEEN chunks (never mid-row); the paginator
- * additionally splits any chunk that still exceeds a page by measured row
- * heights, repeating the column header on every continuation page.
+ * The PDF peer of this emitter is `renderer/pdf/pdfDocument` (vector, via
+ * @react-pdf/renderer). Both emitters consume the same model and the same
+ * design tokens; neither is built from the other. Long tables are NOT
+ * pre-chunked: the browser repeats `thead` on every printed page natively,
+ * and the PDF engine repeats its fixed header rows natively.
  */
 import type { SignatureRole, UnifiedDocumentModel } from '../types';
 import { formatLatinDate, formatLatinTime } from '@/lib/formatters';
 
 /** Intl bidi embedding marks — stripped so rasterizers keep digit order. */
 const BIDI_MARKS = /[‎‏؜‪-‮⁦-⁩]/g;
-import { DOCUMENT_COLORS, DOCUMENT_PAGE, DOCUMENT_SPACING, DOCUMENT_TABLE, DOCUMENT_TYPE } from '../documentDesignTokens';
+import { DOCUMENT_COLORS, DOCUMENT_PAGE, DOCUMENT_SPACING, DOCUMENT_TYPE } from '../documentDesignTokens';
 import { buildEmptyNoteRow, buildTableFootHtml, buildTableHeadHtml, buildTableRowsHtml } from './documentTableHtml';
 import { buildProfessionalDocumentBlocks, collectProfessionalTextChunks } from './professionalDocumentHtml';
 import { escapeDocumentHtml } from './documentHtmlShared';
@@ -72,38 +68,20 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
   ].filter((v): v is string => Boolean(v));
 };
 
-type TableBlock = { title?: string; html: string };
-
-/**
- * Splits one logical table into page-sized blocks. Each block carries its
- * own `<thead>` so a table spanning pages always shows its column header at
- * the top of the following page; `<tfoot>` totals live only on the last
- * block. The paginator only ever breaks between these blocks — and when a
- * block still exceeds one page (tall wrapping rows) the paginator splits
- * it further by measured row heights.
- */
-export function chunkTableBlocks(table: UnifiedDocumentModel['tables'][number]): TableBlock[] {
-  const chunks: string[][][] = [];
-  for (let i = 0; i < table.rows.length; i += DOCUMENT_TABLE.maxRowsPerChunk) {
-    chunks.push(table.rows.slice(i, i + DOCUMENT_TABLE.maxRowsPerChunk));
-  }
-  if (chunks.length === 0) chunks.push([]);
-
-  return chunks.map((chunkRows, index) => {
-    const isFirst = index === 0;
-    const isLast = index === chunks.length - 1;
-    const bodyRows = chunkRows.length === 0 && table.emptyNote
-      ? buildEmptyNoteRow(table.emptyNote, table.columns.length)
-      : buildTableRowsHtml(chunkRows);
-    const html = `
+/** One whole logical table: title + thead (repeats per printed page) +
+ * tbody + tfoot. Native print fragmentation handles page breaks; rows
+ * never split mid-way (`tr { break-inside: avoid }` in the sheet). */
+const buildTableBlock = (table: UnifiedDocumentModel['tables'][number]): string => {
+  const bodyRows = table.rows.length === 0 && table.emptyNote
+    ? buildEmptyNoteRow(table.emptyNote, table.columns.length)
+    : buildTableRowsHtml(table.rows);
+  return `
       <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
         ${buildTableHeadHtml(table.columns, table.rows)}
         <tbody>${bodyRows}</tbody>
-        ${isLast ? buildTableFootHtml(table.totals) : ''}
+        ${buildTableFootHtml(table.totals)}
       </table>`;
-    return { title: isFirst ? table.title : undefined, html };
-  });
-}
+};
 
 const tableTitleHtml = (title: string) =>
   `<h3 style="${DOCUMENT_TYPE.sectionTitle}; color: ${DOCUMENT_COLORS.ink}; margin: 0 0 ${DOCUMENT_SPACING.titleGapMm * 0.75}px 0; border-right: 3px solid ${DOCUMENT_COLORS.accent}; padding-right: 8px;">${escapeDocumentHtml(title)}</h3>`;
@@ -229,12 +207,9 @@ export function buildDocumentBodyBlocks(model: UnifiedDocumentModel, options: { 
     if (kpiBlock) blocks.push(kpiBlock);
 
     for (const table of model.tables) {
-      const chunked = chunkTableBlocks(table);
-      chunked.forEach((block, index) => {
-        blocks.push(
-          `<section class="document-block" style="margin-bottom: ${index === 0 ? DOCUMENT_SPACING.sectionGapMm : DOCUMENT_SPACING.tableChunkGapMm}px;">${block.title ? tableTitleHtml(block.title) : ''}${block.html}</section>`,
-        );
-      });
+      blocks.push(
+        `<section class="document-block" style="margin-bottom: ${DOCUMENT_SPACING.sectionGapMm}px;">${table.title ? tableTitleHtml(table.title) : ''}${buildTableBlock(table)}</section>`,
+      );
     }
   }
 
@@ -260,6 +235,13 @@ export function buildDocumentBodyHtml(model: UnifiedDocumentModel, options: { wi
  * same printable area the PDF paginator fills, so print and PDF page
  * counts match instead of drifting.
  */
+/** Self-hosted Tajawal faces — the same TTFs the vector PDF emitter embeds. */
+const TAJAWAL_FONT_FACES = [400, 700, 900]
+  .map(
+    (weight) => `@font-face { font-family: 'Tajawal'; font-weight: ${weight}; font-style: normal; font-display: swap; src: url('/fonts/Tajawal-${weight}.ttf') format('truetype'); }`,
+  )
+  .join('\n');
+
 const PRINT_STYLESHEET = `
 @page { size: A4 portrait; margin: ${DOCUMENT_PAGE.marginsMm.top}mm ${DOCUMENT_PAGE.marginsMm.right}mm ${DOCUMENT_PAGE.marginsMm.bottom}mm ${DOCUMENT_PAGE.marginsMm.left}mm; }
 /* Progressive enhancement: engines that implement @page margin boxes
@@ -298,12 +280,13 @@ export function buildPrintableDocumentHtml(model: UnifiedDocumentModel): string 
     ' - ',
     escapeDocumentHtml(model.header.companyName),
     '</title>',
-    // Cairo loads over the same font stylesheet the app shell already uses;
-    // the print never *requires* it — a system Arabic fallback stack keeps
-    // output readable offline (verified by the font-wait timeout path).
-    '<link rel="preconnect" href="https://fonts.googleapis.com">',
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-    '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">',
+    // Tajawal is SELF-HOSTED (same TTFs the vector PDF emitter embeds), so
+    // print and PDF share one typographic identity and work offline; a
+    // system Arabic fallback stack keeps output readable if fonts stall
+    // (verified by the font-wait timeout path).
+    '<style>',
+    TAJAWAL_FONT_FACES,
+    '</style>',
     '<style>',
     PRINT_STYLESHEET,
     '</style>',

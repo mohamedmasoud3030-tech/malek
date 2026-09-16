@@ -1,37 +1,20 @@
 // @vitest-environment happy-dom
 /**
- * Renderer DOM contract tests.
+ * Renderer DOM contract tests (HTML print/preview emitter).
  *
- * Verifies the real generated markup and DOM lifecycle: A4/RTL structure,
- * repeated table headers across page chunks, atomic signature blocks,
- * multi-page splitting between whole blocks, Arabic page numbering as
- * pixels, offscreen-container cleanup on success and failure, popup-blocked
- * handling, broken-logo tolerance, font-failure errors, single-flight
- * double-activation protection, and XSS neutralization.
+ * Verifies the real generated markup and the print popup lifecycle: A4/RTL
+ * standalone sheet, native print fragmentation semantics (repeated table
+ * headers, atomic signatures), whole-table rendering (no pre-chunking),
+ * self-hosted Tajawal faces, popup-blocked handling, single-flight
+ * double-activation protection, bounded image waits, and XSS neutralization.
+ * The vector PDF peer is covered by pdfArtifacts.test.ts and the golden gate.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { UnifiedDocumentModel } from '../types';
 
-const html2canvasMock = vi.hoisted(() =>
-  vi.fn(async (element: HTMLElement) => {
-    const width = element.getBoundingClientRect().width || 794;
-    const height = element.getBoundingClientRect().height || 1122;
-    return {
-      width,
-      height,
-      toDataURL: () =>
-        // Real 1x1 transparent PNG so jsPDF can parse image data.
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-    } as unknown as HTMLCanvasElement;
-  }),
-);
-
-vi.mock('html2canvas-pro', () => ({ default: html2canvasMock }));
-
-import { buildDocumentPdf, DocumentRenderError, DocumentRenderer } from '../DocumentRenderer';
-import { buildDocumentBodyBlocks, buildDocumentBodyHtml, buildPrintableDocumentHtml, chunkTableBlocks } from './documentHtml';
-import { createOffscreenContainer, IMAGE_WAIT_TIMEOUT_MS, removeAllRenderContainers, RENDER_ROOT_ATTRIBUTE, waitForImages } from './offscreen';
-import { createPageFooterBand, measureA4Metrics, paginateBlocks } from './pagination';
+import { DocumentRenderError, DocumentRenderer } from '../DocumentRenderer';
+import { buildDocumentBodyHtml, buildPrintableDocumentHtml } from './documentHtml';
+import { IMAGE_WAIT_TIMEOUT_MS, waitForImages } from './offscreen';
 
 const baseModel: UnifiedDocumentModel = {
   type: 'invoice',
@@ -59,20 +42,12 @@ const baseModel: UnifiedDocumentModel = {
   fileName: 'invoice-INV-100',
 };
 
-const renderRootCount = () => document.querySelectorAll(`[${RENDER_ROOT_ATTRIBUTE}]`).length;
-
-beforeEach(() => {
-  html2canvasMock.mockClear();
-  removeAllRenderContainers();
-});
-
 afterEach(() => {
-  removeAllRenderContainers();
   vi.restoreAllMocks();
 });
 
 describe('RTL A4 document structure', () => {
-  it('the printable document is a standalone RTL Arabic A4 page', () => {
+  it('the printable document is a standalone RTL Arabic A4 page with native print fragmentation', () => {
     const html = buildPrintableDocumentHtml(baseModel);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('lang="ar"');
@@ -82,12 +57,26 @@ describe('RTL A4 document structure', () => {
     expect(html).toContain('شركة الأفق لإدارة الأملاك');
   });
 
+  it('self-hosts Tajawal in the print sheet (same faces the vector PDF embeds)', () => {
+    const html = buildPrintableDocumentHtml(baseModel);
+    expect(html).toContain("/fonts/Tajawal-400.ttf");
+    expect(html).toContain("/fonts/Tajawal-900.ttf");
+    expect(html).not.toContain('fonts.googleapis.com'); // fully offline-capable
+  });
+
+  it('renders each logical table WHOLE — the browser repeats thead natively (no pre-chunking)', () => {
+    const body = buildDocumentBodyHtml(baseModel);
+    expect(body.match(/<table/g)).toHaveLength(1);
+    expect(body.match(/<thead>/g)).toHaveLength(1);
+    expect(body.match(/<tfoot>/g)).toHaveLength(1);
+    expect(body).toContain('12,750.000 ر.ع');
+  });
+
   it('numeric columns stay direction-stable (left) while text columns align right', () => {
-    const container = createOffscreenContainer(buildDocumentBodyHtml(baseModel));
-    const firstRowCells = container.querySelectorAll('tbody tr:first-child td');
-    expect(firstRowCells[0].getAttribute('style')).toContain('text-align: right'); // التاريخ نصي هنا (يحمل شرطات)
-    expect(firstRowCells[2].getAttribute('style')).toContain('text-align: left'); // المبلغ رقمي
-    container.remove();
+    const body = buildDocumentBodyHtml(baseModel);
+    const firstRow = body.slice(body.indexOf('<tbody>'), body.indexOf('</tbody>'));
+    expect(firstRow).toContain('text-align: right'); // date/description cells
+    expect(firstRow).toContain('text-align: left'); // numeric amount cell
   });
 
   it('renders an explicit Arabic empty-state note when a table has no rows', () => {
@@ -99,116 +88,14 @@ describe('RTL A4 document structure', () => {
     expect(html).toContain('لا توجد حركات مالية في الفترة المحددة.');
     expect(html).toContain('colspan="2"');
   });
-});
-
-describe('table chunking and repeated headers', () => {
-  it('splits long tables into page-sized chunks that each repeat the header', () => {
-    const blocks = chunkTableBlocks(baseModel.tables[0]);
-    expect(blocks.length).toBe(3); // 22 + 22 + 6 rows
-    for (const block of blocks) {
-      expect(block.html).toContain('<thead>');
-      expect(block.html).toContain('المبلغ');
-    }
-    // Table title appears only on the first block; totals only on the last.
-    expect(blocks[0].title).toBe('جدول الحركات');
-    expect(blocks[1].title).toBeUndefined();
-    expect(blocks[0].html).not.toContain('توقيع');
-    expect(blocks[0].html).not.toContain('<tfoot>');
-    expect(blocks[2].html).toContain('<tfoot>');
-    expect(blocks[2].html).toContain('12,750.000 ر.ع');
-  });
 
   it('keeps the signature block atomic so it can never be clipped mid-way', () => {
-    const blocks = buildDocumentBodyBlocks(baseModel);
-    const signatureBlocks = blocks.filter((block) => block.includes('التوقيعات والاعتماد'));
-    expect(signatureBlocks).toHaveLength(1);
-    expect(signatureBlocks[0]).toContain('page-break-inside: avoid');
-    expect(signatureBlocks[0]).toContain('ختم الشركة');
-  });
-});
-
-describe('A4 pagination', () => {
-  const stubHeight = (element: HTMLElement, height: number) => {
-    Object.defineProperty(element, 'getBoundingClientRect', {
-      value: () => ({ height, width: 794, top: 0, left: 0, right: 794, bottom: height }),
-      configurable: true,
-    });
-  };
-
-  it('splits blocks across pages without ever splitting a block', () => {
-    const container = createOffscreenContainer('');
-    container.innerHTML = '';
-    const heights = [400, 700, 700, 300, 900];
-    for (const height of heights) {
-      const block = document.createElement('div');
-      block.textContent = `block-${height}`;
-      container.appendChild(block);
-      stubHeight(block, height);
-    }
-
-    const metrics = { pageHeightPx: 1122, contentHeightPx: 1000, pxPerMm: 794 / 210 };
-    const pages = paginateBlocks(container, metrics);
-
-    // 400+700=1100>1000 ⇒ p1:[400], p2:[700], 700+300=1000 ⇒ p3:[700,300], p4:[900]
-    expect(pages.map((page) => page.blockCount)).toEqual([1, 1, 2, 1]);
-    expect(pages[0].blockCount + pages[1].blockCount + pages[2].blockCount + pages[3].blockCount).toBe(5);
-    container.remove();
-  });
-
-  it('measures A4 in millimetres with a content budget after margins', () => {
-    const container = createOffscreenContainer('');
-    Object.defineProperty(container, 'clientWidth', { value: 794, configurable: true });
-    const metrics = measureA4Metrics(container);
-    expect(metrics.pxPerMm).toBeCloseTo(794 / 210, 4);
-    expect(metrics.pageHeightPx).toBe(Math.round(297 * (794 / 210)));
-    expect(metrics.contentHeightPx).toBe(Math.round((297 - 12 - 15) * (794 / 210)));
-    container.remove();
-  });
-
-  it('renders the page footer band with an Arabic pixel page-number label', () => {
-    const band = createPageFooterBand(2, 5, { companyName: 'شركة الأفق', documentRef: 'INV-100' });
-    expect(band.getAttribute('data-document-page-footer')).not.toBeNull();
-    const label = band.querySelector('[data-document-page-number]');
-    expect(label?.textContent).toBe('صفحة 2 من 5');
-    // Company identity and the real reference join the band on every page.
-    expect(band.textContent).toContain('شركة الأفق');
-    expect(band.textContent).toContain('INV-100');
-  });
-});
-
-describe('PDF render lifecycle', () => {
-  it('produces one captured canvas per page and cleans every offscreen container', async () => {
-    const result = await buildDocumentPdf(baseModel);
-    expect(result.pageCount).toBeGreaterThanOrEqual(1);
-    expect(html2canvasMock).toHaveBeenCalledTimes(result.pageCount);
-    expect(renderRootCount()).toBe(0);
-    expect(result.doc.getNumberOfPages()).toBe(result.pageCount);
-  });
-
-  it('injects an Arabic page-number label into every captured page', async () => {
-    await buildDocumentPdf(baseModel);
-    for (const call of html2canvasMock.mock.calls) {
-      const shell = call[0] as HTMLElement;
-      expect(shell.querySelector('[data-document-page-number]')?.textContent).toMatch(/صفحة \d+ من \d+/);
-    }
-  });
-
-  it('cleans up offscreen containers when capture fails', async () => {
-    html2canvasMock.mockRejectedValueOnce(new Error('canvas exploded'));
-    await expect(buildDocumentPdf(baseModel)).rejects.toThrow(DocumentRenderError);
-    expect(renderRootCount()).toBe(0);
-  });
-
-  it('surfaces a clear Arabic error when fonts fail to load', async () => {
-    const fontsDescriptor = Object.getOwnPropertyDescriptor(document, 'fonts');
-    Object.defineProperty(document, 'fonts', {
-      configurable: true,
-      value: { ready: Promise.reject(new Error('font boom')) },
-    });
-    await expect(buildDocumentPdf(baseModel)).rejects.toThrow(/تعذر تحميل الخط المطلوب للطباعة/);
-    expect(renderRootCount()).toBe(0);
-    if (fontsDescriptor) Object.defineProperty(document, 'fonts', fontsDescriptor);
-    else Reflect.deleteProperty(document, 'fonts');
+    const body = buildDocumentBodyHtml(baseModel);
+    const signatureStart = body.indexOf('التوقيعات والاعتماد');
+    expect(signatureStart).toBeGreaterThan(-1);
+    const signatureBlock = body.slice(body.lastIndexOf('<div class="document-block"', signatureStart), body.indexOf('وقت الإنشاء'));
+    expect(signatureBlock).toContain('page-break-inside: avoid');
+    expect(signatureBlock).toContain('ختم الشركة');
   });
 });
 
@@ -265,7 +152,6 @@ describe('print popup lifecycle', () => {
   it('throws the Arabic popup-blocked message when window.open returns null', async () => {
     vi.stubGlobal('open', vi.fn(() => null));
     await expect(DocumentRenderer.printDocument(baseModel)).rejects.toThrow(/تعذر فتح نافذة الطباعة/);
-    expect(renderRootCount()).toBe(0);
   });
 
   it('closes the popup when asset preparation fails', async () => {
@@ -281,38 +167,38 @@ describe('print popup lifecycle', () => {
     expect(popup.close).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   }, 20_000);
+
+  it('surfaces a clear Arabic error when fonts fail to load', async () => {
+    const fontsDescriptor = Object.getOwnPropertyDescriptor(document, 'fonts');
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { ready: Promise.reject(new Error('font boom')) },
+    });
+    vi.stubGlobal('open', vi.fn(() => makePopup()));
+    await expect(DocumentRenderer.printDocument(baseModel)).rejects.toThrow(DocumentRenderError);
+    await expect(DocumentRenderer.printDocument(baseModel)).rejects.toThrow(/تعذر تحميل الخط المطلوب للطباعة/);
+    if (fontsDescriptor) Object.defineProperty(document, 'fonts', fontsDescriptor);
+    else Reflect.deleteProperty(document, 'fonts');
+  });
 });
 
-describe('offscreen isolation from the live app document', () => {
-  it('never injects <style>/<link> or a full document into the app DOM; <head> stays untouched', () => {
+describe('preview fragment isolation', () => {
+  it('never injects <style>/<link> or a full document into the app DOM', () => {
     const fragment = buildDocumentBodyHtml(baseModel);
     expect(fragment).not.toMatch(/<style|<link|<html|<head/i);
     expect(fragment).not.toContain('DOCTYPE');
-
-    const headHtmlBefore = document.head.innerHTML;
-    const headCountBefore = document.head.childElementCount;
-    const styleSheetCountBefore = document.styleSheets.length;
-
-    const container = createOffscreenContainer(fragment);
-    expect(document.head.innerHTML).toBe(headHtmlBefore);
-    expect(document.head.childElementCount).toBe(headCountBefore);
-    expect(document.styleSheets.length).toBe(styleSheetCountBefore);
-
-    container.remove();
-    expect(document.head.innerHTML).toBe(headHtmlBefore);
-    expect(document.styleSheets.length).toBe(styleSheetCountBefore);
   });
 
-  it('carries fully inline-styled blocks so print and offscreen PDF share one layout (no class-dependent rules)', () => {
+  it('carries fully inline-styled blocks so preview and print share one layout (no class-dependent rules)', () => {
     const body = buildDocumentBodyHtml(baseModel);
     const printable = buildPrintableDocumentHtml(baseModel);
     // Header layout is inline — identical in both artifacts.
     for (const markup of [body, printable]) {
       expect(markup).toContain('border-bottom: 3px double #0F172A');
-      expect(markup).toContain('font-size: 20px; font-weight: 900'); // company brand
+      expect(markup).toContain('font-weight: 900'); // company brand
     }
-    // The popup stylesheet keeps ONLY page/body/table rules — the former
-    // class rules were removed so PDF and print can never diverge.
+    // The popup stylesheet keeps ONLY page/body/table rules — no class rules,
+    // so preview and print can never diverge.
     expect(printable).not.toMatch(/\.(header-container|company-brand|company-sub|doc-title-badge|doc-meta|stamp-box|footer-audit)\s*\{/);
   });
 

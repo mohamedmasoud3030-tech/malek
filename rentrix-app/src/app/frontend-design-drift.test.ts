@@ -19,16 +19,14 @@ import { describe, expect, it } from 'vitest';
  * Approved exclusions:
  *   - features/landing/**  — public marketing surface, outside the
  *     authenticated-app closeout
- *   - services/documents/renderer/** — the A4 print engine keeps a fixed
- *     standalone palette so printed financial/legal documents do not drift
- *     when theme tokens change (ADR 0014 print surface)
- *   - services/documents/documentDesignTokens.ts — the single source of
- *     print-document color/type/geometry tokens that renderer/** consumes;
- *     same ADR 0014 fixed standalone palette, one directory level up
+ *   - services/documents/** — the whole document system (model tokens,
+ *     print emitter, vector PDF emitter) keeps a fixed standalone paper
+ *     palette so printed financial/legal documents do not drift when
+ *     theme tokens change (ADR 0014 print surface)
  *   - features/design-system/design-system-showcase.tsx — DEV-only surface
  *     that intentionally displays swatches
- *   - test/documents/** — golden-document test harness/fixtures (hand-typed
- *     SVG demo logo, html2canvas options), not application source
+ *   - test/documents/** — golden-document harness/fixtures (scenario models
+ *     carry the paper palette), not application source
  *   - *.test.*, *.e2e-fixture.* — tests and hermetic fixtures
  *
  * Behavioral contract tests (preferred over class assertions) live with the
@@ -40,10 +38,8 @@ const srcDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const EXCLUDED_SEGMENTS = new Set([
   'features/landing',
-  'services/documents/renderer',
-  'services/documents/DocumentRenderer.ts',
-  'services/documents/DocumentRenderer.tsx',
-  'services/documents/documentDesignTokens.ts',
+  // covers renderer/**, DocumentRenderer.*, documentDesignTokens.ts
+  'services/documents',
   'features/design-system/design-system-showcase.tsx',
   'test/documents',
 ]);
