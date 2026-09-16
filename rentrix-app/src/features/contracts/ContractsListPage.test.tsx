@@ -182,8 +182,8 @@ describe('ContractsListPage load states', () => {
 
     expect(host.querySelector('[data-entity-table-mobile-actions]')).toBeNull();
     const columnsControl = host.querySelector<HTMLElement>('[data-contract-columns-control]');
-    expect(columnsControl?.className).toContain('hidden');
-    expect(columnsControl?.className).toContain('md:flex');
+    expect(columnsControl?.className).toContain('flex');
+    expect(columnsControl?.className).not.toContain('hidden');
     expect(card?.textContent).toContain('معاينة سريعة');
     expect(card?.textContent).toContain('فتح العقد بالكامل');
     expect(card?.querySelector('[data-action-menu]')).toBeTruthy();

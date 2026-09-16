@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from './button';
 import { Skeleton } from './skeleton';
 
 /**
@@ -177,13 +178,15 @@ export function TableError({
       <div className="flex flex-col items-center gap-2" role="alert">
         <p className="text-sm font-semibold">{title}</p>
         {onRetry ? (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onRetry}
             className="text-xs font-bold text-primary underline-offset-2 hover:underline"
           >
             إعادة المحاولة
-          </button>
+          </Button>
         ) : null}
       </div>
     </TableStateRow>

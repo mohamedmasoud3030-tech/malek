@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export type SectionTabItem<TId extends string> = Readonly<{
@@ -7,6 +7,11 @@ export type SectionTabItem<TId extends string> = Readonly<{
   /** Optional: label-only rails (e.g. report product targets) omit icons. */
   icon?: React.ComponentType<{ className?: string }>;
 }>;
+
+function scrollTabIntoView(tab: HTMLButtonElement | null, behavior: ScrollBehavior) {
+  if (!tab || typeof tab.scrollIntoView !== 'function') return;
+  tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior });
+}
 
 type SectionTabsProps<TId extends string> = Readonly<{
   items: ReadonlyArray<SectionTabItem<TId>>;
@@ -43,11 +48,27 @@ export function SectionTabs<TId extends string>({
 }: SectionTabsProps<TId>) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  useEffect(() => {
+    const activeIndex = items.findIndex((item) => item.id === activeId);
+    const activeTab = activeIndex >= 0 ? tabRefs.current[activeIndex] : null;
+    if (!activeTab) return;
+
+    const prefersReducedMotion = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const frame = window.requestAnimationFrame(() => {
+      scrollTabIntoView(activeTab, prefersReducedMotion ? 'auto' : 'smooth');
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeId, items]);
+
   const focusAndSelect = (index: number) => {
     const item = items[index];
     if (!item) return;
     onChange(item.id);
-    tabRefs.current[index]?.focus();
+    const tab = tabRefs.current[index];
+    tab?.focus();
+    scrollTabIntoView(tab, 'auto');
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
@@ -79,7 +100,9 @@ export function SectionTabs<TId extends string>({
     <div className="min-w-0">
       <nav
         aria-label={ariaLabel}
+        aria-orientation="horizontal"
         role="tablist"
+        data-section-tabs
         className="flex min-w-0 gap-0.5 overflow-x-auto overscroll-x-contain border-b border-border/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, index) => {

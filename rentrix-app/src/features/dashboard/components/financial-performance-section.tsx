@@ -1,10 +1,11 @@
 import { memo } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, ChevronDown } from 'lucide-react';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ReportBarChart } from '@/components/ui/report-bar-chart';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { ReportPanel, ReportState } from '@/components/ui/report-section-primitives';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import {
@@ -69,16 +70,14 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
         <div className="p-3 sm:p-4">
           {chartIsLoading ? (
             <LoadingState variant="section" label="جارٍ تحميل الأداء المالي" />
-          ) : null}
-          {!chartIsLoading && chartIsError ? (
+          ) : chartIsError ? (
             <ErrorState
               compact
               title="تعذر تحميل الأداء المالي"
               description="تحقق من الاتصال ثم أعد المحاولة."
               onRetry={onChartRetry}
             />
-          ) : null}
-          {!chartIsLoading && !chartIsError && chartRows.length === 0 ? (
+          ) : chartRows.length === 0 ? (
             <div data-dashboard-performance-empty>
               <ReportState
                 kind="empty"
@@ -101,6 +100,33 @@ export const FinancialPerformanceSection = memo(function FinancialPerformanceSec
                   className="h-44 sm:h-52 lg:h-52"
                 />
               </div>
+              <details data-dashboard-performance-data className="mt-2 border-t border-border/50">
+                <summary className="group flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 py-1.5 text-[11px] font-bold text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden">
+                  <span>عرض الأرقام الشهرية</span>
+                  <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+                </summary>
+                <div className="mobile-scroll-x rounded-xl border border-border/60 bg-background/30">
+                  <Table density="compact" aria-label="الأرقام الشهرية للمحصّل والمصروفات">
+                    <caption className="sr-only">الأرقام المعروضة في مخطط أداء المكتب خلال الفترة المختارة.</caption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>الشهر</TableHead>
+                        <TableHead>المحصّل</TableHead>
+                        <TableHead>المصروفات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {chartRows.map((row) => (
+                        <TableRow key={row.month}>
+                          <TableCell className="font-bold">{row.label}</TableCell>
+                          <TableCell dir="ltr">{money(row.collected)}</TableCell>
+                          <TableCell dir="ltr">{money(row.expenses)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </details>
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2.5 text-[11px] font-bold text-muted-foreground" data-dashboard-performance-summary>
                 <span>إجمالي الفترة</span>
                 <span className="tabular-nums text-foreground/80">مُحصّل {money(totalCollected)} · مصروفات {money(totalExpenses)}</span>

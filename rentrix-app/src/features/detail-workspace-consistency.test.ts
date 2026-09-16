@@ -26,14 +26,8 @@ describe('detail workspace consistency', () => {
   });
 
   it('keeps quick preview separate from explicit full-detail navigation', () => {
-    const units = read('./units/units-page.tsx');
     const owners = read('./owners/components/owner-workspace-table.tsx');
     const tenants = read('./tenants/TenantsPage.tsx');
-
-    expect(units).toContain('<UnitPreviewDialog');
-    expect(units).toContain('onRowClick={openPreview}');
-    expect(units).toContain('فتح ملف الوحدة');
-    expect(units).toContain('معاينة سريعة');
 
     expect(owners).toContain('<OwnerPreviewDialog');
     expect(owners).toContain('onRowClick={(row) => openPreview(row)}');

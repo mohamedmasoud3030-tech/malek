@@ -79,8 +79,42 @@ function renderOwnerSection(
   );
 }
 
+function renderFinancialSectionWithIndependentVatError() {
+  return render(
+    <StatementsSection
+      financialSummary={undefined}
+      vatReturn={{
+        period: { from: '2026-02-01', to: '2026-02-28' },
+        totalSalesAmount: 761.786,
+        totalTaxAmount: 38.089,
+        invoiceCount: 1,
+      }}
+      vatReturnError={new Error('VAT_REPORT_UNCLASSIFIED_POSTING')}
+      tenantStatement={undefined}
+      ownerStatement={undefined}
+      selectedContractId=""
+      selectedOwnerId=""
+      tenantStatementError={undefined}
+      ownerStatementError={undefined}
+      isTenantStatementLoading={false}
+      isOwnerStatementLoading={false}
+      isLoading={true}
+      isVatLoading={false}
+      focus="financial"
+      filters={{ from: '2026-02-01', to: '2026-02-28' }}
+    />,
+  );
+}
+
 describe('StatementsSection owner body boundary', () => {
   afterEach(() => cleanup());
+
+  it('shows a VAT source error even while an unrelated statement query is still loading', () => {
+    renderFinancialSectionWithIndependentVatError();
+
+    expect(screen.getByRole('alert').textContent).toContain('تعذر تحميل ملخص الضريبة');
+    expect(screen.queryByText(/38\.089/)).toBeNull();
+  });
 
   it('renders the authoritative owner statement without a second product-output toolbar', () => {
     renderOwnerSection();

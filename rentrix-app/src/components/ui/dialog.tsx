@@ -187,7 +187,7 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
               className="absolute end-3 top-[calc(0.75rem+env(safe-area-inset-top,0px))] grid size-11 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 sm:end-4 sm:top-[calc(1rem+env(safe-area-inset-top,0px))]"
               aria-label="إغلاق"
             >
-              <X className="size-4" />
+              <X className="size-4" aria-hidden="true" />
               <span className="sr-only">إغلاق</span>
             </DialogPrimitive.Close>
           ) : null}

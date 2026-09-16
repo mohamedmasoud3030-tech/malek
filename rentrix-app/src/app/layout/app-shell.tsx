@@ -450,6 +450,7 @@ export function AppShell() {
               <div className="hidden md:inline-flex">
                 <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} chrome="header" />
               </div>
+              <div data-header-ai-assistant-slot className="hidden md:inline-flex" />
               <HeaderControl
                 label={sharedLabel('toggleTheme')}
                 title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
@@ -498,7 +499,7 @@ export function AppShell() {
         onMenu={handleOpenNav}
         drawerOpen={mobileNavOpen}
       />
-      <AiAssistantGlobalAction showTrigger={false} />
+      <AiAssistantGlobalAction showTrigger={false} showHeaderTrigger />
       <CommandPaletteDialog />
     </div>
   );

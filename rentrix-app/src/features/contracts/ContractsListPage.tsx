@@ -219,7 +219,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         onClearAllFilters={resetFilters}
         toolbarActions={(
           <>
-            <div className="hidden min-w-0 items-center gap-2 md:flex" data-contract-columns-control>
+            <div className="flex min-w-0 items-center gap-2" data-contract-columns-control>
               <DataTableColumnsMenu
                 columns={contractColumnOptions}
                 visibleKeys={visibleColumnKeys}

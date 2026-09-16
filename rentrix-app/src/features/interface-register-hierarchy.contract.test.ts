@@ -17,7 +17,7 @@ type RegisterCase = {
 describe('interface register mobile hierarchy', () => {
   const cases: RegisterCase[] = [
     { file: 'features/properties/properties-list-page.tsx', datum: 'status' },
-    { file: 'features/units/units-page.tsx', datum: 'status' },
+    { file: 'features/units/units-list.tsx', datum: 'status' },
     { file: 'features/tenants/TenantsPage.tsx', datum: 'arrears' },
     { file: 'features/financials/components/invoice-list-section.tsx', datum: 'remaining' },
     { file: 'features/financials/receipts/receipts-page.tsx', datum: 'amount' },

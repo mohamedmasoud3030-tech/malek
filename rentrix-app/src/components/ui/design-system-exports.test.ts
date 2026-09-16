@@ -17,7 +17,7 @@ describe('shared design system barrel', () => {
     const required = [
       'Button', 'Card', 'Badge', 'StatusBadge', 'DataTable', 'EntityTable', 'EntityCard',
       'SearchInput', 'FilterBar', 'Dialog', 'BottomSheet', 'ConfirmDialog', 'EmptyState',
-      'LoadingState', 'ErrorState', 'ActionMenu', 'KpiCard', 'SectionHeader',
+      'LoadingState', 'ErrorState', 'FloatingPanel', 'ActionMenu', 'KpiCard', 'SectionHeader',
       'ResponsiveCardGrid',
     ] as const;
 

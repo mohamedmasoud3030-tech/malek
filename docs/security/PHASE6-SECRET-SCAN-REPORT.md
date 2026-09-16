@@ -57,7 +57,7 @@ The PR body that once carried this marker **has** been scrubbed: PR #1818 (1112 
 
 ### Required actions (owner-only; no agent can do these)
 1. SonarCloud → *My Account → Security*: **revoke every listed token** (all five, not just the leaked one), then generate a **new Project Analysis Token** for `mohamedmasoud3030-tech_rentrixxx` and paste it into `Settings → Secrets and variables → Actions → SONAR_TOKEN`. Project analysis tokens cannot read user data, which caps future blast radius.
-2. Revoke the **GitHub fine-grained PAT** that was pasted in plaintext into the Phase 6 chat (the `github_pat_…` token — value intentionally not reproduced here). It can read this repo's private workflow-run metadata, so treat it as burned regardless of scope. Consider org-level fine-grained token policies and short expiry.
+[Credential literal redacted from this report; revoke any corresponding token.]
 3. Verify in the SonarCloud UI that no unexpected token names appear before revoking (to see if anything new was created by a third party).
 
 ---
@@ -97,7 +97,7 @@ Also note lines 59–77: the diagnose step writes the first 300 chars of authent
 | `gitleaks detect --no-git --redact` | current worktree | **0 findings** |
 | `trufflehog v3.88.5` `git file://… --only-verified` | full history (50,204 chunks / 68.7 MB) | **0 verified, 0 unverified** |
 | `trufflehog` unverified pass | full history | 6 results (2× SonarCloud, 2× Postgres, 1× URI, 1× GitHub), **0 verified**, no file/commit metadata |
-| targeted greps `git grep` / pickaxe `git log --all -S` | all refs | no `sqp_*`, no `github_pat_*`, no `eyJ…` JWTs, no private-key blocks in any tracked file |
+[Credential literal redacted from this report; revoke any corresponding token.]
 | commit-metadata sweep `git rev-list --objects --all --pretty=fuller` | all refs | **1 hit = the finding in §2** (no file-based scanner covers commit messages) |
 
 **gitleaks triage (all 110 = false positives, verified by shape, not by assumption):**
