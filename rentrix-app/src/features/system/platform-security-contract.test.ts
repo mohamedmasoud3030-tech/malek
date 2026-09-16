@@ -9,7 +9,12 @@ describe('platform security and PWA boundaries', () => {
     const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
     const lock = readFileSync(resolve(root, 'pnpm-lock.yaml'), 'utf8');
     expect(pkg.pnpm.overrides.dompurify).toBe('>=3.4.13');
-    expect(lock).toContain('dompurify@3.4.13');
+    // dompurify left the dependency tree with the raster PDF stack
+    // (html2canvas-pro). The override stays armed: should any dompurify
+    // resolution ever reappear in the lockfile, it must be the patched line.
+    for (const entry of lock.match(/dompurify@[^\s:'"]+/g) ?? []) {
+      expect(entry).toBe('dompurify@3.4.13');
+    }
   });
 
   it('does not permit eval and blocks plugin objects, foreign base tags and form exfiltration', () => {
