@@ -69,10 +69,6 @@ export const ACTIVE_REGISTER_INVENTORY = [
     routes: ['/properties/$propertyId/units'],
   },
   {
-    component: 'features/units/units-page.tsx',
-    routes: ['/units'],
-  },
-  {
     component: 'features/properties/properties-list-page.tsx',
     routes: ['/properties', '/properties/$propertyId'],
   },

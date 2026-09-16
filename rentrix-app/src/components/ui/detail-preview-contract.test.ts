@@ -6,7 +6,7 @@ const contractResults = readFileSync(new URL('../../features/contracts/component
 const invoiceWorkspace = readFileSync(new URL('../../features/financials/components/invoice-workspace-section.tsx', import.meta.url), 'utf8');
 const receiptsPage = readFileSync(new URL('../../features/financials/receipts/receipts-page.tsx', import.meta.url), 'utf8');
 const propertyController = readFileSync(new URL('../../features/properties/use-property-list-controller.ts', import.meta.url), 'utf8');
-const unitController = readFileSync(new URL('../../features/units/use-units-list-controller.ts', import.meta.url), 'utf8');
+const unitList = readFileSync(new URL('../../features/units/units-list.tsx', import.meta.url), 'utf8');
 const ownerWorkspace = readFileSync(new URL('../../features/owners/components/owner-workspace-table.tsx', import.meta.url), 'utf8');
 const maintenanceWorkspace = readFileSync(new URL('../../features/maintenance/components/maintenance-workspace.tsx', import.meta.url), 'utf8');
 const maintenanceOverlay = readFileSync(new URL('../../features/maintenance/components/maintenance-detail-resolve-overlays.tsx', import.meta.url), 'utf8');
@@ -70,11 +70,11 @@ describe('unified detail preview contract', () => {
     expect(receiptsPage).toContain('receiptId');
   });
 
-  it('routes full property/unit workspaces via explicit actions only, not row navigation', () => {
+  it('keeps property/unit full workspaces on canonical routes without the legacy event bus', () => {
     expect(propertyController).toContain("to: '/properties/$propertyId'");
     expect(propertyController).not.toContain("openEntityPreview");
-    expect(unitController).toContain("to: '/properties/$propertyId/units/$unitId'");
-    expect(unitController).not.toContain("openEntityPreview");
+    expect(unitList).toContain('to: "/properties/$propertyId/units/$unitId"');
+    expect(unitList).not.toContain("openEntityPreview");
   });
 
   it('keeps owner and maintenance details on the same shared EntityPreviewDialog primitive', () => {

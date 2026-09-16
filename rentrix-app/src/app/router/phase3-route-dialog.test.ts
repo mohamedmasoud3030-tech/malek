@@ -12,7 +12,7 @@ const unitDetail = readFileSync(new URL('../../features/properties/units/propert
 const peopleNew = readFileSync(new URL('../../features/people/person-new-route.tsx', import.meta.url), 'utf8');
 const peopleEdit = readFileSync(new URL('../../features/people/person-edit-route.tsx', import.meta.url), 'utf8');
 const propertyController = readFileSync(new URL('../../features/properties/use-property-list-controller.ts', import.meta.url), 'utf8');
-const unitController = readFileSync(new URL('../../features/units/use-units-list-controller.ts', import.meta.url), 'utf8');
+const unitList = readFileSync(new URL('../../features/units/units-list.tsx', import.meta.url), 'utf8');
 const backgroundProvider = readFileSync(new URL('./background-location.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
 
@@ -54,11 +54,11 @@ describe('Route-native entity presentation', () => {
     expect(routeTree).toContain("path: '/units/$unitId'");
   });
 
-  it('list controllers use canonical route navigation instead of the legacy event bus', () => {
+  it('list surfaces use canonical route navigation instead of the legacy event bus', () => {
     expect(propertyController).toContain("to: '/properties/$propertyId'");
-    expect(unitController).toContain("to: '/properties/$propertyId/units/$unitId'");
+    expect(unitList).toContain('to: "/properties/$propertyId/units/$unitId"');
     expect(propertyController).not.toContain('openEntityPreview');
-    expect(unitController).not.toContain('openEntityPreview');
+    expect(unitList).not.toContain('openEntityPreview');
   });
 
   it('background-location infrastructure remains for modal create/edit and lightweight preview workflows', () => {
