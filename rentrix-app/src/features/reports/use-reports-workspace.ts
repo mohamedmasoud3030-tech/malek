@@ -878,6 +878,7 @@ export function useReportsWorkspace(
         tenantStatementError: tenantStatementQuery.error,
         ownerStatementError: ownerStatementQuery.error,
         ownerReportPayloadError: ownerReportPayloadQuery.error,
+        isVatLoading: vatReturnQuery.isLoading,
         isTenantStatementLoading: tenantStatementQuery.isLoading,
         isOwnerStatementLoading: ownerStatementQuery.isLoading,
         isOwnerReportPayloadLoading: ownerReportPayloadQuery.isLoading,

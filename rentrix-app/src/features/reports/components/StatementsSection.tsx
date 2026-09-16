@@ -35,6 +35,7 @@ export function StatementsSection({
   isOwnerStatementLoading,
   isOwnerReportPayloadLoading = false,
   isLoading,
+  isVatLoading = isLoading,
   filters,
   focus = 'all',
 }: Readonly<{
@@ -56,7 +57,9 @@ export function StatementsSection({
   isTenantStatementLoading: boolean;
   isOwnerStatementLoading: boolean;
   isOwnerReportPayloadLoading?: boolean;
+  /** Overall statement loading is broader than the VAT source; keep the tax panel independent. */
   isLoading: boolean;
+  isVatLoading?: boolean;
   filters?: { from: string; to: string; propertyId?: string; ownerId?: string };
   focus?: StatementProductFocus;
 }>) {
@@ -118,7 +121,7 @@ export function StatementsSection({
             isCashFlowLoading={glCashFlowQuery.isLoading}
             vatReturn={vatReturn}
             vatReturnError={vatReturnError}
-            isLoading={isLoading}
+            isLoading={isVatLoading}
           />
         </>
       ) : null}
