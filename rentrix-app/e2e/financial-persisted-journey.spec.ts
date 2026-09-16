@@ -1,5 +1,11 @@
-import { expect, test } from '@playwright/test';
+import { expect as baseExpect, test } from '@playwright/test';
 import { COMPANY, MAKER, CONTRACT, createOfficeCreditorFixture } from '../src/test/office-creditor-fixture';
+
+// CompanyProvider intentionally fails closed after 12 seconds when the
+// auth/company boundary stalls. Keep this persisted journey's assertions just
+// beyond that boundary so a slow mobile bootstrap is observed as the product's
+// recovery state rather than a premature test timeout.
+const expect = baseExpect.configure({ timeout: 15_000 });
 import { createFixedFeeAgreementFixture } from '../src/test/fixed-fee-fixture';
 import { createSqlReadBridge } from '../src/test/sql-read-bridge';
 import { assumeIdentity } from '../src/p1/replay-bootstrap';
