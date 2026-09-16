@@ -13,7 +13,6 @@
  * Nothing here asserts authorization behavior — permission semantics remain
  * owned by the security track.
  */
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

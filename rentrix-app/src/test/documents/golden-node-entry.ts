@@ -8,7 +8,7 @@
  *    driver feeds to headless Chromium to produce the BROWSER-print PDF.
  * Both artifacts are real files the driver compares (pages, text, parity).
  */
-import { createElement as h } from 'react';
+import { createElement as h, type ReactElement } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { goldenScenarios } from './golden-document-scenarios';
 import type { UnifiedDocumentModel } from '@/services/documents/types';
@@ -36,7 +36,9 @@ const countPages = (text: string): number => {
 };
 
 export async function pdfForModel(model: UnifiedDocumentModel): Promise<{ base64: string; pageCount: number; sizeBytes: number }> {
-  const stream = await pdf(h(ModelPdfDocument, { model })).toBuffer();
+  // ModelPdfDocument renders <Document>; pdf() wants the element typed as
+  // DocumentProps, so bridge the function-component element here.
+  const stream = await pdf(h(ModelPdfDocument, { model }) as unknown as ReactElement<Parameters<typeof pdf>[0] extends ReactElement<infer P, any> ? P : never>).toBuffer();
   const chunks: Buffer[] = [];
   for await (const chunk of stream) chunks.push(chunk as Buffer);
   const buffer = Buffer.concat(chunks);
