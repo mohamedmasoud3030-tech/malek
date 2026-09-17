@@ -10,8 +10,12 @@ deployment, and the live sandbox network — not read from a previous report.
 
 ## Release Candidate
 
-**SHA:** `a7ddc3f9e9712951d15c84961dbcc61d692065e7` (branch tip;
-parent `100b4662`, based on `main` @ `e7943a5e4e91afc730ae80992b44984b8788fcf2`)
+**SHA (release candidate — code revision):** `828ac232f93d7d4461c596c49833b987669da5e1`
+All 25 executable gates in this report were run from exactly this tree.
+Commits after it on this branch add documentation only; they do not change the
+validated code. At the time of writing the branch tip was `7e2cf92a`
+(containing `828ac232` + this report).
+
 **Branch:** `arena/01a0ad8e-malek` (pushed to `origin`)
 **Deployment:** `https://malek-plus.vercel.app` — serves
 `{"sha":"e7943a5e4e91afc730ae80992b44984b8788fcf2"}`, i.e. **`main` HEAD, not the
@@ -228,7 +232,7 @@ this report does not claim otherwise.
 
 | Link in the chain | Value |
 |---|---|
-| Git SHA (branch tip) | `a7ddc3f9e9712951d15c84961dbcc61d692065e7` |
+| Git SHA (release candidate, code revision) | `828ac232f93d7d4461c596c49833b987669da5e1` |
 | CI SHA | **none** — no workflow has ever executed for this SHA |
 | Build SHA | `local` — the local build correctly stamps `local` when no CI/Vercel SHA is present |
 | Deployment SHA | `e7943a5e4e91afc730ae80992b44984b8788fcf2` (`main` HEAD) |
