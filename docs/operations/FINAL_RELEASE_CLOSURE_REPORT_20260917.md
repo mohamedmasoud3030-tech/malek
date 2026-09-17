@@ -10,7 +10,7 @@ deployment, and the live sandbox network — not read from a previous report.
 
 ## Release Candidate
 
-**SHA:** `828ac232f93d7d4461c596c49833b987669da5e1` (branch tip;
+**SHA:** `a7ddc3f9e9712951d15c84961dbcc61d692065e7` (branch tip;
 parent `100b4662`, based on `main` @ `e7943a5e4e91afc730ae80992b44984b8788fcf2`)
 **Branch:** `arena/01a0ad8e-malek` (pushed to `origin`)
 **Deployment:** `https://malek-plus.vercel.app` — serves
@@ -228,7 +228,7 @@ this report does not claim otherwise.
 
 | Link in the chain | Value |
 |---|---|
-| Git SHA (branch tip) | `828ac232f93d7d4461c596c49833b987669da5e1` |
+| Git SHA (branch tip) | `a7ddc3f9e9712951d15c84961dbcc61d692065e7` |
 | CI SHA | **none** — no workflow has ever executed for this SHA |
 | Build SHA | `local` — the local build correctly stamps `local` when no CI/Vercel SHA is present |
 | Deployment SHA | `e7943a5e4e91afc730ae80992b44984b8788fcf2` (`main` HEAD) |
@@ -245,7 +245,7 @@ stamp, a missing field, or any SHA mismatch outright.
 
 ## Final Validation
 
-Run from `828ac232` with **exit codes captured directly** — no pipe through
+Run from the `828ac232` tree (this report adds only documentation on top, in `a7ddc3f9`) with **exit codes captured directly** — no pipe through
 `tail` or `grep` that could mask a failure. (An earlier run in this session made
 exactly that mistake and hid a real test failure; that is why this table is
 built this way.)
