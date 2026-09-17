@@ -64,7 +64,7 @@ function parseJobs(text) {
     if (/^\S/.test(line) && line.trim() !== '') break; // left the jobs block
     const jobMatch = /^ {2}([A-Za-z0-9_-]+):\s*$/.exec(line);
     if (jobMatch) {
-      current = { name: jobMatch[1], ifExpression: null, steps: [] };
+      current = { name: jobMatch[1], ifExpression: null, needs: [], steps: [] };
       jobs.push(current);
       continue;
     }
@@ -72,6 +72,29 @@ function parseJobs(text) {
 
     const jobIf = /^ {4}if:\s*(.+)$/.exec(line);
     if (jobIf) current.ifExpression = jobIf[1].trim();
+
+    // `needs:` may be a scalar, a flow list, or a block list.
+    const jobNeeds = /^ {4}needs:\s*(.*)$/.exec(line);
+    if (jobNeeds) {
+      const inline = jobNeeds[1].trim();
+      if (inline.startsWith('[')) {
+        current.needs = inline
+          .replace(/^\[|\]$/g, '')
+          .split(',')
+          .map((entry) => entry.trim().replace(/^['"]|['"]$/g, ''))
+          .filter(Boolean);
+      } else if (inline) {
+        current.needs = [inline.replace(/^['"]|['"]$/g, '')];
+      } else {
+        // Block list: subsequent `  - name` entries at 6-space indent.
+        let k = index + 1;
+        while (k < lines.length && /^\s{6}-\s+\S/.test(lines[k])) {
+          current.needs.push(lines[k].replace(/^\s{6}-\s+/, '').trim().replace(/^['"]|['"]$/g, ''));
+          k += 1;
+        }
+      }
+      continue;
+    }
 
     const stepName = /^\s{6,}-\s+name:\s*(.+)$/.exec(line);
     if (stepName) {
@@ -134,6 +157,24 @@ for (const file of listWorkflows()) {
     // A job guarded to be unreachable is not a gate.
     if (job.ifExpression && /\bfalse\b/i.test(job.ifExpression) && !/inputs\.|github\.|env\./.test(job.ifExpression)) {
       notes.push(`${display}: job "${job.name}" has a constant-false condition.`);
+    }
+  }
+
+  // Release-verdict coverage.
+  //
+  // A verdict job is only meaningful if it actually waits on every other gate
+  // in its workflow. If it omits one, that gate can fail while the verdict
+  // reports success — the same "green while nothing ran" failure this file
+  // exists to prevent, one level up.
+  const verdictJobs = jobs.filter((job) => /verdict/i.test(job.name));
+  for (const verdict of verdictJobs) {
+    const others = jobs.filter((job) => job.name !== verdict.name).map((job) => job.name);
+    const missing = others.filter((name) => !verdict.needs.includes(name));
+    if (missing.length > 0) {
+      violations.push(
+        `${display}: verdict job "${verdict.name}" does not require ${missing.map((n) => `"${n}"`).join(', ')}. `
+        + 'A verdict must cover every other job, or a failing gate can pass unnoticed.',
+      );
     }
   }
 }

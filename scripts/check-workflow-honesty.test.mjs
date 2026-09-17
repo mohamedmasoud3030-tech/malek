@@ -108,4 +108,67 @@ withFixture({
   assert.equal(result.code, 0, `a workflow of real jobs must pass:\n${result.stdout}`);
 });
 
-console.log('Workflow honesty guard tests: 4 passed, 0 failed');
+// 5. A verdict job that omits a gate must be rejected: otherwise that gate can
+//    fail while the verdict reports success.
+withFixture({
+  'verdict.yml': [
+    'name: Verdict',
+    'on:',
+    '  workflow_dispatch:',
+    'jobs:',
+    '  unit-tests:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - name: Test',
+    '        run: pnpm test',
+    '  security-scan:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - name: Scan',
+    '        run: pnpm audit --prod',
+    '  release-verdict:',
+    '    needs: [unit-tests]',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - name: Verdict',
+    '        run: exit 1',
+    '',
+  ].join('\n'),
+}, (dir) => {
+  const result = runGuard(dir);
+  assert.equal(result.code, 1, 'an incomplete verdict must fail the guard');
+  assert.match(result.stdout, /security-scan/, 'the violation must name the uncovered gate');
+  assert.match(result.stdout, /release-verdict/, 'the violation must name the verdict job');
+});
+
+// 6. A verdict job that covers every other job must pass.
+withFixture({
+  'verdict-ok.yml': [
+    'name: Verdict OK',
+    'on:',
+    '  workflow_dispatch:',
+    'jobs:',
+    '  unit-tests:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - name: Test',
+    '        run: pnpm test',
+    '  security-scan:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - name: Scan',
+    '        run: pnpm audit --prod',
+    '  release-verdict:',
+    '    needs: [unit-tests, security-scan]',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - name: Verdict',
+    '        run: exit 1',
+    '',
+  ].join('\n'),
+}, (dir) => {
+  const result = runGuard(dir);
+  assert.equal(result.code, 0, `a complete verdict must pass:\n${result.stdout}`);
+});
+
+console.log('Workflow honesty guard tests: 6 passed, 0 failed');
