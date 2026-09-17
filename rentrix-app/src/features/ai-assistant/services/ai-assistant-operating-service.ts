@@ -12,7 +12,8 @@ function currentMonthStart(asOf: string): string | null {
 type OwnerFinancialPosition = Readonly<{
   currentPeriodNet: number;
   remainingPayable: number;
-  heldFunds: number;
+  /** `null` when the funds register carries no evidence — never asserted as 0. */
+  heldFunds: number | null;
   approvedSettlements: number;
 }>;
 
@@ -76,7 +77,11 @@ export async function requestAiOperatingResponse(
   const collectionLine = entity.outstandingAmount > 0
     ? `المتأخر على فواتير عقاراته ${formatAssistantOmr(entity.outstandingAmount)}`
     : 'لا توجد متأخرات ظاهرة على فواتير عقاراته';
-  const financialLine = `الموقف المالي المعتمد من ${from} حتى ${response.context.asOf}: صافي مستحق الفترة ${formatAssistantOmr(position.currentPeriodNet)}، والمتبقي المستحق للمالك ${formatAssistantOmr(position.remainingPayable)}، والأموال المحتجزة ${formatAssistantOmr(position.heldFunds)}، مع ${position.approvedSettlements} تسوية معتمدة ضمن دورة التسويات.`;
+  // Held funds are spoken as a figure only when the register proves one.
+  const heldFundsPhrase = position.heldFunds === null
+    ? 'والأموال المحتجزة غير مثبتة لعدم وجود سجلات في دفتر أموال المالك'
+    : `والأموال المحتجزة ${formatAssistantOmr(position.heldFunds)}`;
+  const financialLine = `الموقف المالي المعتمد من ${from} حتى ${response.context.asOf}: صافي مستحق الفترة ${formatAssistantOmr(position.currentPeriodNet)}، والمتبقي المستحق للمالك ${formatAssistantOmr(position.remainingPayable)}، ${heldFundsPhrase}، مع ${position.approvedSettlements} تسوية معتمدة ضمن دورة التسويات.`;
 
   const reply = request.action === 'explain_owner_financial_position'
     ? [
@@ -99,7 +104,9 @@ export async function requestAiOperatingResponse(
         ...entity,
         ownerCurrentPeriodNetPayable: position.currentPeriodNet,
         ownerRemainingPayable: position.remainingPayable,
-        ownerHeldFunds: position.heldFunds,
+        // Absent rather than 0: the consumer types this as an optional number,
+        // and an unproven balance must not be delivered as a figure.
+        ownerHeldFunds: position.heldFunds ?? undefined,
         ownerApprovedSettlements: position.approvedSettlements,
       },
     },

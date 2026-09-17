@@ -33,6 +33,8 @@ jobs:
           node scripts/check-manual-migration-workflow.mjs
           node scripts/check-migration-rollback-hygiene.test.mjs
           node scripts/check-no-new-legacy-journal-writes.test.mjs
+          node scripts/check-workflow-honesty.test.mjs
+          node rentrix-app/scripts/verify-deployment-identity.test.mjs
           git fetch --no-tags origin main
           node scripts/check-migration-rollback-hygiene.mjs --base origin/main
           node scripts/check-no-new-legacy-journal-writes.mjs --base origin/main

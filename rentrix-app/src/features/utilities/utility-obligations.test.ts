@@ -6,6 +6,7 @@ import {
   deriveUtilityObligations,
   summarizeUtilityObligations,
   utilityBillRemaining,
+  billSettlementStatus,
   UTILITY_DUE_SOON_WINDOW_DAYS,
 } from './utility-obligations';
 
@@ -40,6 +41,24 @@ describe('utility obligation derivation (P3)', () => {
     expect(utilityBillRemaining({ amount: 0.3, paid_amount: 0.1 })).toBe(0.2);
   });
 
+  it('always reports settled exactly when the remaining balance is zero', () => {
+    // The invariant that ties the status to the balance: they are two
+    // renderings of one fact, so no input can make them disagree.
+    const cases: Array<[number, number]> = [
+      [100, 0], [100, 100], [100, 130], [0.3, 0.1], [0.3, 0.2], [0.3, 0.30000000000000004], [0, 0],
+    ];
+    for (const [amount, paid_amount] of cases) {
+      const settled = billSettlementStatus({ amount, paid_amount }) === 'paid';
+      const nothingLeft = utilityBillRemaining({ amount, paid_amount }) === 0;
+      expect(settled, `amount=${amount} paid=${paid_amount}`).toBe(nothingLeft);
+    }
+  });
+
+  it('distinguishes a partial payment from no payment at all', () => {
+    expect(billSettlementStatus({ amount: 100, paid_amount: 40 })).toBe('partially_paid');
+    expect(billSettlementStatus({ amount: 100, paid_amount: 0 })).toBe('unpaid');
+  });
+
   it('marks a past due date with a still-open balance as overdue', () => {
     const obligation = deriveUtilityObligation(bill({ due_date: '2026-08-20', paid_amount: 40 }), TODAY);
     expect(obligation.urgency).toBe('overdue');
@@ -63,10 +82,25 @@ describe('utility obligation derivation (P3)', () => {
   });
 
   it('never escalates a settled bill even when its due date passed', () => {
-    const paidStatus = deriveUtilityObligation(bill({ due_date: '2026-01-01', status: 'paid' }), TODAY);
+    // A settled bill is one whose recorded payment covers its amount. The
+    // register flag must agree with those amounts, so the fixture carries a
+    // consistent pair; settlement is never inferred from a lone flag.
+    const paidStatus = deriveUtilityObligation(
+      bill({ due_date: '2026-01-01', status: 'paid', paid_amount: 100 }),
+      TODAY,
+    );
     const fullyPaid = deriveUtilityObligation(bill({ due_date: '2026-01-01', paid_amount: 100 }), TODAY);
     expect(paidStatus.urgency).toBe('settled');
     expect(fullyPaid.urgency).toBe('settled');
+  });
+
+  it('treats a paid flag the amounts do not support as unsettled', () => {
+    // The register contradicting itself used to decide settlement on its own:
+    // a bill flagged paid was reported settled while still owing its full
+    // amount. The balance now decides, so the two can never disagree.
+    const contradictory = bill({ due_date: '2026-01-01', status: 'paid', amount: 100, paid_amount: 0 });
+    expect(billSettlementStatus(contradictory)).toBe('unpaid');
+    expect(deriveUtilityObligation(contradictory, TODAY).urgency).toBe('overdue');
   });
 
   it('stays stable when the due date is unusable instead of inventing lateness', () => {
@@ -117,7 +151,7 @@ describe('utility obligation derivation (P3)', () => {
         bill({ id: 'late-small', due_date: '2026-08-25', amount: 10 }),
         bill({ id: 'late-old', due_date: '2026-06-01' }),
         bill({ id: 'soon', due_date: '2026-08-30' }),
-        bill({ id: 'settled', due_date: '2026-01-01', status: 'paid' }),
+        bill({ id: 'settled', due_date: '2026-01-01', status: 'paid', paid_amount: 100 }),
       ],
       TODAY,
     )

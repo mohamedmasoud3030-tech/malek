@@ -1,5 +1,52 @@
 # Live production ledger vs repository canonical migrations — crosswalk
 
+> ## ⚠️ STATUS 2026-09-17 — HISTORICAL SNAPSHOT, NOT CURRENT STATE. TWO FINDINGS CORRECTED.
+>
+> This file is a point-in-time measurement from **2026-09-11**. It is preserved
+> unaltered below as a historical record, but it must not be cited as the
+> current production state. Three things have changed since, and one finding in
+> this file was wrong when written.
+>
+> **1. The snapshot is stale.** Seven repository migrations were added after
+> this measurement (`20260912000001`, `20260912000002`, `20260912000003`,
+> `20260913000001`, `20260913030547`, `20260915000000`, `20260915000001`). At
+> least `20260913030547_fix_authenticated_acl_delete_and_spc_grants.sql` was
+> subsequently applied to production by hand: that file records its own live
+> ledger version (`20260913030547`) in its header. The counts below (100 repo
+> files, 109 ledger rows) describe 2026-09-11 only. The repository now carries
+> **111** migration files (`ls supabase/migrations/*.sql | wc -l`, measured 2026-09-17).
+>
+> **2. "Net functional gap: exactly ONE" is WRONG — it is zero, and the cited
+> signature never existed as a guard.** This file claims production runs the
+> bank-reconciliation matching RPCs without "the repo-hardened
+> `v_existing_match_id` dedupe guard", citing that signature as absent live.
+> `v_existing_match_id` is a **declared-but-never-used local variable**:
+>
+> ```
+> $ grep -rn 'v_existing_match_id' --include='*.sql' .
+> ./supabase/migrations/20260901000026_fix_bank_reconciliation_rpc_validation.sql:23:  v_existing_match_id uuid;
+> ```
+>
+> One occurrence in the entire repository — the declaration. It is never
+> assigned, never read, and therefore produces no guard in the repository either.
+> A probe for it could not have found anything live, and its absence is not
+> evidence of drift. The dedupe behaviour that actually matters is implemented
+> by the `if exists (select 1 from public.bank_reconciliation_matches …)`
+> checks, which the later forward-carry migration `20260910000002` re-applies in
+> full. This paragraph is the source of the "5 diverged migrations" framing that
+> later documentation repeated; the divergence was real for **formatting and
+> transient one-shot checks**, not for a missing security guard.
+>
+> **3. The "9 hotfixes never committed" list is now obsolete.** All 27 archived
+> production statements are preserved in `ledger-only-statements/`, and the
+> repository has since absorbed this class of change through the re-stamped
+> `202609010000XX` series. The remaining reconciliation work is a *ledger* bookkeeping
+> problem (versions applied under old timestamps), not missing schema.
+>
+> **Do not use this file to plan a `db push`.** Use the live measurement instead:
+> `bash scripts/verify-migration-ledger-parity.sh` (read-only), which now runs as
+> a hard-failing gate in `release-blocker-gate.yml` before any release verdict.
+
 Measured **read-only** on 2026-09-11 (13:20–13:40 UTC) against Supabase project
 `nnggcnpcuomwfuupupwg` ("Malek-Plus (live)", ap-southeast-1) via the Supabase
 Management API `database/query` endpoint (SELECT-only statements) — the first

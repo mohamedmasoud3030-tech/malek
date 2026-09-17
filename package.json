@@ -47,7 +47,10 @@
     "e2e": "pnpm --filter @workspace/rentrix run e2e",
     "e2e:install": "pnpm --filter @workspace/rentrix exec playwright install --with-deps chromium",
     "supabase:live-readiness": "bash scripts/verify-supabase-live-readiness.sh",
-    "test": "pnpm --filter @workspace/rentrix run test"
+    "test": "pnpm --filter @workspace/rentrix run test",
+    "test:workflow-honesty": "node scripts/check-workflow-honesty.test.mjs",
+    "check:workflow-honesty": "node scripts/check-workflow-honesty.mjs",
+    "test:deployment-identity": "node rentrix-app/scripts/verify-deployment-identity.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

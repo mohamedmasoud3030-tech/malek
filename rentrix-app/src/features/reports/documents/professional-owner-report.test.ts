@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildOwnerReportPayload, loadOwnerReportContext, type OwnerReportContext } from './professional-owner-report';
+import type { ReportCellFormat } from './report-cells';
 import { getOwnerFinancialAuthority, type OwnerFinancialPosition } from '@/features/owners/services/owner-financial-service';
 import type { OwnerStatementReport } from '@/features/financials/reports/financialReportsService';
 import { listOwnerSettlements, type OwnerSettlementRecord } from '@/features/owners/services/owner-settlements-service';
@@ -56,7 +57,7 @@ const position: OwnerFinancialPosition = {
     paid_count: 3,
     cancelled_count: 1,
   },
-  owner_funds: { held: 0 },
+  owner_funds: { held: 0, held_proven_total: 0, held_evidence_missing_count: 0 },
 };
 
 const statement: OwnerStatementReport = {
@@ -287,6 +288,62 @@ describe('professional-owner-report adapter', () => {
     expect(utilityTable!.table.rows).toHaveLength(1);
     expect(utilityTable!.table.rows[0][6]).toEqual({ kind: 'text', value: 'المستأجر' });
     expect(utilityTable!.table.rows[0][7]).toEqual({ kind: 'text', value: 'مسددة بالكامل' });
+  });
+
+  it('never prints a remaining balance that contradicts the printed status', () => {
+    // The reported defect: a row showed due 360, paid 360 and unpaid 360 at
+    // once, beside an "unsettled" status. Status and remaining are two
+    // renderings of one fact, so no row may claim both.
+    const contradictory: UtilityBill = {
+      ...utilityBills[0],
+      id: 'ub-contradiction',
+      amount: 360,
+      paid_amount: 360,
+      status: 'unpaid',
+    };
+    const payload = buildOwnerReportPayload({
+      ...baseContext,
+      statement,
+      utilityBills: [contradictory],
+    });
+
+    const utilityTable = findTable(payload, 'الخدمات والمرافق');
+    const row = utilityTable!.table.rows[0];
+    expect(row[3], 'invoice total').toEqual({ kind: 'amount', value: 360 });
+    expect(row[4], 'recorded payment').toEqual({ kind: 'amount', value: 360 });
+    expect(row[5], 'remaining is max(due − collected, 0)').toEqual({ kind: 'amount', value: 0 });
+    expect(row[7], 'status agrees with the balance').toEqual({ kind: 'text', value: 'مسددة بالكامل' });
+  });
+
+  it('never prints a negative remaining for an overpaid bill', () => {
+    const overpaid: UtilityBill = { ...utilityBills[0], id: 'ub-overpaid', amount: 100, paid_amount: 130 };
+    const payload = buildOwnerReportPayload({ ...baseContext, statement, utilityBills: [overpaid] });
+
+    const utilityTable = findTable(payload, 'الخدمات والمرافق');
+    expect(utilityTable!.table.rows[0][5]).toEqual({ kind: 'amount', value: 0 });
+    // The totals row obeys the same rule, so the column can never sum negative.
+    expect(utilityTable!.table.totals![5]).toEqual({ kind: 'amount', value: 0 });
+  });
+
+  it('reports held funds as unavailable when the register carries no evidence', () => {
+    const unproven: OwnerFinancialPosition = {
+      ...position,
+      owner_funds: { held: null, held_proven_total: 0, held_evidence_missing_count: 1 },
+    };
+    const payload = buildOwnerReportPayload({
+      ...baseContext,
+      statement,
+      utilityBills: [],
+      position: unproven,
+    });
+
+    const kpis = allBlocks(payload).flatMap((block) =>
+      (block as { kpis?: Array<{ label: string; value: ReportCellFormat }> }).kpis ?? [],
+    );
+    const held = kpis.find((kpi) => kpi.label === 'أموال مالك محتجزة لدى المكتب');
+    expect(held, 'the held-funds line must still be present').toBeDefined();
+    // A sum of zero over an empty register is not a proven zero balance.
+    expect(held!.value).toEqual({ kind: 'text', value: 'غير متاح — لا توجد سلطة بيانات' });
   });
 
   it('shows maintenance cost as operational info, NOT as automatic owner deduction', () => {

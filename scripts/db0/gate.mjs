@@ -17,8 +17,13 @@ const ROOT = join(HERE, '..', '..');
 const GATES = [
   {
     id: 'regressions',
-    title: 'WP-DB0 parser, generator and isolation regression tests',
-    cmd: ['node', ['--test', join(HERE, 'db0-regressions.test.mjs')]],
+    title: 'WP-DB0 parser, generator, isolation, ACL and settlement-status regression tests',
+    cmd: ['node', ['--test',
+      join(HERE, 'db0-regressions.test.mjs'),
+      join(HERE, 'acl-convergence.test.mjs'),
+      join(HERE, 'utility-settlement-status.test.mjs'),
+      join(HERE, 'owner-funds-authority.test.mjs'),
+    ]],
   },
   {
     id: 'migration-chain',

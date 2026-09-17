@@ -37,6 +37,33 @@ async function asService() {
   await db.exec(`reset role; select set_config('request.jwt.claims', '{}', false);`);
 }
 
+/**
+ * Executes a statement that must never take effect, accepting a refusal from
+ * EITHER authorization layer:
+ *
+ *   * the outer PostgreSQL privilege gate — `permission denied for table …`
+ *     (`20260917000001_converge_authenticated_delete_privileges.sql` revokes
+ *     DELETE/TRUNCATE from browser roles, so this is the expected outcome for
+ *     audit_log deletes), or
+ *   * the inner RLS policy gate — the statement runs and affects zero rows.
+ *
+ * A refusal is not a licence to ignore errors: anything that is NOT an
+ * authorization refusal (syntax error, missing table, connection failure) is
+ * re-thrown so a broken test can never masquerade as a hardened one.
+ */
+async function expectRefusedOrNoEffect(run: () => Promise<unknown>, what: string): Promise<void> {
+  try {
+    await run();
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    const message = error instanceof Error ? error.message : String(error);
+    const isAuthorizationRefusal = code === '42501' || /permission denied|row-level security/i.test(message);
+    if (!isAuthorizationRefusal) {
+      throw new Error(`${what} failed for a non-authorization reason: ${message}`);
+    }
+  }
+}
+
 beforeAll(async () => {
   const replay = await createFullReplayedDatabase();
   db = replay.db;
@@ -224,8 +251,18 @@ describe('tables without company_id — cross-company reachability', () => {
     );
 
     await assume(ADMIN_A, COMPANY_A);
-    await db.query(`update public.audit_log set note = 'مُحرَّف' where id = $1`, [seed[0].id]);
-    await db.query('delete from public.audit_log where id = $1', [seed[0].id]);
+    // Both mutations must be refused. Since the ACL convergence migration the
+    // delete is blocked at the privilege gate before RLS is even consulted, so
+    // the attempt is expected to raise rather than silently match zero rows;
+    // the assertions below still prove the history is intact either way.
+    await expectRefusedOrNoEffect(
+      () => db.query(`update public.audit_log set note = 'مُحرَّف' where id = $1`, [seed[0].id]),
+      'browser update of audit log history',
+    );
+    await expectRefusedOrNoEffect(
+      () => db.query('delete from public.audit_log where id = $1', [seed[0].id]),
+      'browser delete of audit log history',
+    );
 
     await asService();
     const { rows } = await db.query<{ note: string }>(
@@ -234,6 +271,17 @@ describe('tables without company_id — cross-company reachability', () => {
     );
     expect(rows, 'the row must survive a client delete attempt').toHaveLength(1);
     expect(rows[0].note, 'the row must survive a client update attempt').toBe('ثابت');
+
+    // Stronger and more precise than the survival check above: the browser role
+    // must not even hold the DELETE privilege on an audit trail, so the refusal
+    // does not depend on an RLS policy continuing to omit a DELETE clause.
+    // A future permissive `FOR ALL` policy must not be able to reopen this.
+    const { rows: privilege } = await db.query<{ can_delete: boolean; can_truncate: boolean }>(
+      `select has_table_privilege('authenticated', 'public.audit_log', 'DELETE')   as can_delete,
+              has_table_privilege('authenticated', 'public.audit_log', 'TRUNCATE') as can_truncate`,
+    );
+    expect(privilege[0].can_delete, 'authenticated must not hold DELETE on the audit trail').toBe(false);
+    expect(privilege[0].can_truncate, 'authenticated must not hold TRUNCATE on the audit trail').toBe(false);
   });
 
   it('automation_jobs / catalogs: readable but carry no company-owned data', async () => {

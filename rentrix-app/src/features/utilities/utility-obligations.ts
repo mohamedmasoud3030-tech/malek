@@ -12,7 +12,7 @@
  * Remaining is presentation arithmetic on those two persisted values, not a
  * competing ledger.
  */
-import type { ResponsibleParty, UtilityBill } from './utilities-service';
+import type { ResponsibleParty, UtilityBill, UtilityBillStatus } from './utilities-service';
 import type { SemanticTone } from '@/components/ui/status-badge';
 
 /** Near window used by the operational surfaces to mean "due very soon". */
@@ -85,6 +85,32 @@ export function utilityBillRemaining(bill: Pick<UtilityBill, 'amount' | 'paid_am
   return remaining > 0 ? remaining : 0;
 }
 
+/**
+ * Settlement status that is guaranteed to agree with `utilityBillRemaining`.
+ *
+ * A bill's settlement status and its remaining balance are two renderings of
+ * the same fact, so they must never contradict each other. Deriving both from
+ * the same two persisted values (`amount`, `paid_amount`) on the same
+ * three-decimal OMR grid makes the agreement structural rather than a
+ * coincidence that has to be re-established whenever either value is edited:
+ *
+ *   remaining === 0  ⟺  status === 'paid'
+ *   remaining  > 0  ⟺  status === 'partially_paid' (some cash recorded)
+ *                        or 'unpaid'             (no cash recorded)
+ *
+ * The persisted register flag is deliberately NOT consulted here. It is only
+ * ever written from these same amounts (see `createUtilityBill`), so agreeing
+ * with the amounts by construction and reading the amounts back keeps the
+ * read path honest even for rows that were edited directly in the database
+ * without the companion column being updated.
+ */
+export function billSettlementStatus(
+  bill: Pick<UtilityBill, 'amount' | 'paid_amount'>,
+): UtilityBillStatus {
+  if (utilityBillRemaining(bill) <= 0) return 'paid';
+  return (Number(bill.paid_amount) || 0) > 0 ? 'partially_paid' : 'unpaid';
+}
+
 export function deriveUtilityObligation(bill: UtilityBill, today: string): UtilityObligation {
   const remainingAmount = utilityBillRemaining(bill);
   const dueDay = toDayNumber(bill.due_date);
@@ -92,7 +118,7 @@ export function deriveUtilityObligation(bill: UtilityBill, today: string): Utili
   const daysUntilDue = dueDay === null || todayDay === null ? 0 : dueDay - todayDay;
 
   let urgency: UtilityObligationUrgency = 'scheduled';
-  if (bill.status === 'paid' || remainingAmount <= 0) {
+  if (billSettlementStatus(bill) === 'paid' || remainingAmount <= 0) {
     urgency = 'settled';
   } else if (daysUntilDue < 0) {
     urgency = 'overdue';
