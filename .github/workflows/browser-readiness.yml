@@ -25,15 +25,14 @@ env:
   PLAYWRIGHT_VERSION: '1.61.1'
 
 jobs:
-  browser-smoke:
-    name: browser-smoke
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Defer expensive browser matrix on ordinary PRs
-        run: echo "Ordinary PRs keep the browser matrix deferred; release/rc-closeout-* PRs, main pushes, and workflow_dispatch run the full device matrix."
-
+  # The former `browser-smoke` job lived here and, on ordinary pull requests,
+  # only echoed a sentence and exited zero — producing a green "browser-smoke"
+  # check for a browser matrix that had not run. It has been removed rather than
+  # restyled: on ordinary PRs there is now no browser check at all, which is the
+  # truth. The full device matrix runs below on main pushes, on release branches
+  # and on dispatch, and release verification is owned by
+  # `release-blocker-gate.yml`. `scripts/check-workflow-honesty.mjs` prevents an
+  # inert placeholder job from being reintroduced here.
   browser-smoke-shard:
     name: browser-smoke-${{ matrix.project }}
     if: ${{ github.event_name != 'pull_request' || startsWith(github.head_ref, 'release/rc-closeout-') }}

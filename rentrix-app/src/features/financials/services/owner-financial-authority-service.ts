@@ -27,13 +27,26 @@ export type OwnerFinancialLifecycle = Readonly<{
   cancelled_count: number;
 }>;
 
+/**
+ * Owner funds held, with the same evidence contract the settlement-cash block
+ * already uses: `held` is present only when the append-only funds register
+ * carries evidence for this owner. `null` means unproven, NOT zero — a sum of
+ * zero over an empty register and a genuinely empty register are different
+ * facts, and the report must not present the first as the second.
+ */
+export type OwnerFundsHeld = Readonly<{
+  held: number | null;
+  held_proven_total: number;
+  held_evidence_missing_count: number;
+}>;
+
 export type OwnerFinancialPosition = Readonly<{
   owner_id: string;
   basis?: string | null;
   operating_model?: string | null;
   period: OwnerFinancialPeriod;
   lifecycle_all_time: OwnerFinancialLifecycle;
-  owner_funds: Readonly<{ held: number }>;
+  owner_funds: OwnerFundsHeld;
 }>;
 
 export type OwnerStatementSummary = Readonly<{
@@ -156,10 +169,44 @@ function parsePosition(value: unknown): OwnerFinancialPosition {
       paid_count: requiredNumber(lifecycle.paid_count, 'عدد التسويات المدفوعة'),
       cancelled_count: requiredNumber(lifecycle.cancelled_count, 'عدد التسويات الملغاة'),
     },
-    owner_funds: {
-      held: requiredNumber(ownerFunds.held, 'أموال المالك المحتجزة'),
-    },
+    owner_funds: parseOwnerFunds(ownerFunds),
   };
+}
+
+/**
+ * Validates the held-funds block against its own evidence contract.
+ *
+ * The three fields must tell one consistent story, so an internally
+ * contradictory response is rejected rather than rendered:
+ *   * `held_evidence_missing_count` is 0 or 1 (one owner, one register);
+ *   * `held` is non-null exactly when evidence exists, and equals the proven
+ *     total when it is.
+ *
+ * A server that has not yet been migrated emits only `held` as a number. That
+ * shape is still accepted, and is reported as *proven* because that legacy
+ * field was only ever produced from the same register sum — never fabricated.
+ */
+function parseOwnerFunds(ownerFunds: Record<string, unknown>): OwnerFundsHeld {
+  const hasEvidenceContract = ownerFunds.held_proven_total !== undefined
+    || ownerFunds.held_evidence_missing_count !== undefined;
+
+  if (!hasEvidenceContract) {
+    const legacyHeld = requiredNumber(ownerFunds.held, 'أموال المالك المحتجزة');
+    return { held: legacyHeld, held_proven_total: legacyHeld, held_evidence_missing_count: 0 };
+  }
+
+  const missing = requiredNumber(ownerFunds.held_evidence_missing_count, 'عدد سجلات أموال المالك غير المثبتة');
+  const provenTotal = requiredNumber(ownerFunds.held_proven_total, 'إجمالي أموال المالك المثبت');
+  const held = ownerFunds.held === null ? null : requiredNumber(ownerFunds.held, 'أموال المالك المحتجزة');
+
+  if (!Number.isInteger(missing) || (missing !== 0 && missing !== 1)
+    || provenTotal < 0
+    || (missing === 0) !== (held !== null)
+    || (held !== null && held !== provenTotal)) {
+    throw new Error('استجابة أموال المالك غير متسقة؛ لا يمكن عرض رصيد غير مثبت.');
+  }
+
+  return { held, held_proven_total: provenTotal, held_evidence_missing_count: missing };
 }
 
 function parseStatement(value: unknown): OwnerStatementSummary {

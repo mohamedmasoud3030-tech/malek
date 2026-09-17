@@ -142,7 +142,7 @@ export function OwnerFinancialAuthoritySection({
             />
             <KpiCard
               label="أموال المالك المحتجزة"
-              value={formatCompanyMoney(companySettings, position.owner_funds.held)}
+              value={position.owner_funds.held === null ? 'غير متاح — لا توجد سلطة بيانات' : formatCompanyMoney(companySettings, position.owner_funds.held)}
               icon={Vault}
               accent="amber"
             />
@@ -168,7 +168,7 @@ export function OwnerFinancialAuthoritySection({
               <FinancialValue label="استحقاقات التسويات المسوّاة" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_net)} />
               <FinancialValue label="النقد المصروف المثبت — كل الفترات" value={position.lifecycle_all_time.paid_cash === null ? 'غير مكتمل الإثبات' : formatCompanyMoney(companySettings, position.lifecycle_all_time.paid_cash)} />
               <FinancialValue label="صافي تسويات معلقة" value={formatCompanyMoney(companySettings, position.lifecycle_all_time.settled_pending_net)} />
-              <FinancialValue label="أموال المالك المحتجزة" value={formatCompanyMoney(companySettings, position.owner_funds.held)} />
+              <FinancialValue label="أموال المالك المحتجزة" value={position.owner_funds.held === null ? 'غير متاح — لا توجد سلطة بيانات' : formatCompanyMoney(companySettings, position.owner_funds.held)} />
             </div>
             {position.lifecycle_all_time.paid_cash_evidence_missing_count > 0 ? (
               <p role="alert" className="rounded-xl border border-border/70 bg-muted/30 p-3 text-sm text-foreground">

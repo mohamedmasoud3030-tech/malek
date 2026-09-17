@@ -1,41 +1,219 @@
 name: Release Blocker Gate
 
-on:
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+# HONESTY CONTRACT
+# ---------------
+# This workflow previously exposed three jobs that echoed a sentence and exited
+# zero on every pull request. A check named "Release Blocker Gate" therefore
+# reported green on every PR while validating nothing, and merged code carried
+# a release check that had never run. That is worse than no check at all.
+#
+# It is now dispatch-only plus release-branch pushes, so a green "Release
+# Blocker Gate" context can only ever appear when the real gate executed:
+#   * there is deliberately NO pull_request trigger, so ordinary PRs cannot
+#     acquire a misleading green release context;
+#   * every job below performs the actual validation it is named after;
+#   * every missing input is a hard failure — no job may pass by skipping.
+#
+# `scripts/check-workflow-honesty.mjs` (run in ci.yml) fails the build if an
+# echo-only job is ever reintroduced into any workflow.
 
-concurrency:
-  group: release-blocker-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact 40-character main SHA being released
+        required: true
+        type: string
+      base_url:
+        description: Deployed origin to verify (for example https://malek-plus.vercel.app)
+        required: true
+        type: string
+      qa_base_url:
+        description: Isolated QA/staging origin with a real Supabase project, used for the mutating journey
+        required: false
+        type: string
+  push:
+    branches:
+      - 'release/**'
 
 permissions:
   contents: read
 
+concurrency:
+  group: release-blocker-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  PLAYWRIGHT_VERSION: '1.61.1'
 
 jobs:
-  release-blocker-code:
-    name: release-blocker-code
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Defer release gate on pull requests
-        if: ${{ github.event_name == 'pull_request' }}
-        run: echo "Full release validation is manual during active development."
-      - name: Manual release validation
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: echo "Manual release validation continues in the dedicated jobs below."
-
   release-validation:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    name: release-validation
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 60
     env:
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: test-anon-key
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+      - name: Resolve the revision under release
+        id: sha
+        env:
+          INPUT_SHA: ${{ inputs.release_sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${INPUT_SHA:-}" ]]; then
+            TARGET="$INPUT_SHA"
+          else
+            TARGET="$(git rev-parse HEAD)"
+          fi
+          [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]] || { echo "release SHA must be 40 lowercase hex chars" >&2; exit 1; }
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+      - name: Require the released revision to be canonical main
+        env:
+          TARGET: ${{ steps.sha.outputs.target }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$TARGET" origin/main
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Rebuild approved native toolchain package
+        run: pnpm rebuild esbuild
+      - name: Release-tooling self-tests
+        run: |
+          node scripts/check-workflow-honesty.test.mjs
+          node rentrix-app/scripts/verify-deployment-identity.test.mjs
+      - name: Governance guards
+        run: |
+          bash scripts/check-production-mutation-guard.sh
+          node scripts/check-manual-migration-workflow.mjs
+          node scripts/check-migration-rollback-hygiene.test.mjs
+          node scripts/check-no-new-legacy-journal-writes.test.mjs
+          node scripts/check-10-stage-execution-plan.mjs
+          node scripts/check-canonical-business-rules.mjs
+          node scripts/check-doc-links.mjs
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test typecheck
+        run: pnpm --filter ./rentrix-app run typecheck:test
+      - name: Lint
+        run: pnpm lint
+      - name: Architecture check
+        run: pnpm --filter ./rentrix-app run check:architecture
+      - name: Full application test gate
+        run: pnpm --filter ./rentrix-app test
+      - name: Shared primitive accessibility gate
+        run: pnpm --filter ./rentrix-app run test:a11y-primitives
+      - name: Financial safety suite
+        run: pnpm --filter ./rentrix-app run test:financials
+      - name: Frontend and backend runtime contract suite
+        run: pnpm --filter ./rentrix-app run test:frontend-backend-runtime-contract
+      - name: Migration and generated type parity
+        run: pnpm db0:check-types
+      - name: Canonical database integrity gates
+        run: pnpm db0:gate
+      - name: Six-role RLS compatibility matrix
+        run: pnpm test:supabase:rls
+      - name: Frontend and database contract gate
+        run: pnpm --filter ./rentrix-app run check:frontend-db-contract
+      - name: Build production bundle
+        run: pnpm build
+      - name: Record the built schema manifest
+        id: manifest
+        run: |
+          set -euo pipefail
+          node -e "const p=require('./rentrix-app/dist/public/build-proof.json'); console.log('schemaDigest='+p.schemaDigest); console.log('migrationCount='+p.migrationCount)" | tee manifest.txt
+          echo "schema_digest=$(sed -n 's/^schemaDigest=//p' manifest.txt)" >> "$GITHUB_OUTPUT"
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-validation-${{ steps.sha.outputs.target }}
+          path: manifest.txt
+          if-no-files-found: warn
+          retention-days: 90
+    outputs:
+      target: ${{ steps.sha.outputs.target }}
+      schema_digest: ${{ steps.manifest.outputs.schema_digest }}
+
+  migration-ledger-parity:
+    name: migration-ledger-parity
+    needs: release-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Require the read-only production credential
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_READONLY_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${SUPABASE_DB_URL:-}" ]]; then
+            echo "::error title=ledger-parity::SUPABASE_READONLY_DB_URL is not configured. A release cannot be validated without proving the deployed database matches the repository ledger."
+            exit 1
+          fi
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Compare the live migration ledger against the repository manifest
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_READONLY_DB_URL }}
+        run: bash scripts/verify-migration-ledger-parity.sh
+      - name: Prove the deployed schema matches the reviewed ledger
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_READONLY_DB_URL }}
+        run: bash scripts/verify-supabase-live-readiness.sh
+
+  deployment-identity:
+    name: deployment-identity
+    needs: release-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Require a deployed origin to verify
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${BASE_URL:-}" ]]; then
+            echo "::error title=deployment-identity::base_url was not supplied. A release cannot be verified without a deployed origin."
+            exit 1
+          fi
+      - name: Prove deployed SHA equals built SHA equals reviewed SHA
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          TARGET: ${{ needs.release-validation.outputs.target }}
+          SCHEMA_DIGEST: ${{ needs.release-validation.outputs.schema_digest }}
+        run: |
+          set -euo pipefail
+          node rentrix-app/scripts/verify-deployment-identity.mjs \
+            --base-url "$BASE_URL" \
+            --expected-sha "$TARGET" \
+            --expected-schema-digest "$SCHEMA_DIGEST"
+
+  production-smoke:
+    name: production-smoke
+    needs: [release-validation, deployment-identity]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+      E2E_ENVIRONMENT_KIND: production-readonly
+      E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
@@ -45,31 +223,106 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm rebuild esbuild
-      - name: Typecheck application and tests
+      - name: Require read-only production credentials
         run: |
-          pnpm --filter ./rentrix-app run typecheck
-          pnpm --filter ./rentrix-app run typecheck:test
-      - name: Full application tests
-        run: pnpm --filter ./rentrix-app run test
-      - name: Financial safety tests
-        run: pnpm --filter ./rentrix-app run test:financials
-      - name: Build browser application
-        run: pnpm --filter ./rentrix-app run build
-      - name: Canonical database and lifecycle gate
-        run: bash scripts/ci/run-supabase-database-gate.sh
+          set -euo pipefail
+          missing=()
+          for name in E2E_BASE_URL E2E_TEST_EMAIL E2E_TEST_PASSWORD VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (( ${#missing[@]} )); then
+            echo "::error title=production-smoke::missing required values: ${missing[*]}. Production verification must fail, never skip."
+            exit 1
+          fi
+      - name: Install Chromium
+        run: pnpm --filter ./rentrix-app exec playwright install --with-deps chromium
+      - name: Run the read-only production smoke suite
+        run: pnpm --filter ./rentrix-app run e2e:production-smoke
+      - name: Upload smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-smoke-${{ github.run_id }}
+          path: rentrix-app/playwright-report
+          if-no-files-found: ignore
+          retention-days: 30
 
-  release-blocker-database:
-    name: release-blocker-database
-    if: ${{ github.event_name == 'pull_request' }}
+  real-stack-journey:
+    name: real-stack-journey
+    needs: release-validation
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 40
+    env:
+      E2E_BASE_URL: ${{ inputs.qa_base_url }}
+      E2E_ENVIRONMENT_KIND: qa
+      E2E_TEST_EMAIL: ${{ secrets.QA_E2E_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.QA_E2E_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.QA_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.QA_SUPABASE_ANON_KEY }}
     steps:
-      - run: echo "Database release gate is manual unless database-sensitive changes are intentionally being released."
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm rebuild esbuild
+      - name: Require an isolated QA target
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in E2E_BASE_URL E2E_TEST_EMAIL E2E_TEST_PASSWORD VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (( ${#missing[@]} )); then
+            echo "::error title=real-stack-journey::no isolated QA target configured (missing: ${missing[*]}). The release cannot be verified end to end without a disposable environment; refusing to report this job as satisfied."
+            exit 1
+          fi
+      - name: Install Chromium
+        run: pnpm --filter ./rentrix-app exec playwright install --with-deps chromium
+      - name: Run the real-backend release journey
+        run: pnpm --filter ./rentrix-app run e2e:release
+      - name: Upload journey diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: real-stack-journey-${{ github.run_id }}
+          path: rentrix-app/playwright-report
+          if-no-files-found: ignore
+          retention-days: 30
 
-  release-blocker-authenticated-staging:
-    name: release-blocker-authenticated-staging
-    if: ${{ github.event_name == 'pull_request' }}
+  release-verdict:
+    name: release-verdict
+    needs: [release-validation, migration-ledger-parity, deployment-identity, production-smoke, real-stack-journey]
+    if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
-      - run: echo "Authenticated staging validation is manual during active development."
+      - name: Fail unless every required release gate succeeded
+        env:
+          VALIDATION: ${{ needs.release-validation.result }}
+          LEDGER: ${{ needs.migration-ledger-parity.result }}
+          IDENTITY: ${{ needs.deployment-identity.result }}
+          SMOKE: ${{ needs.production-smoke.result }}
+          JOURNEY: ${{ needs.real-stack-journey.result }}
+        run: |
+          set -euo pipefail
+          printf 'release-validation       : %s\n' "$VALIDATION"
+          printf 'migration-ledger-parity  : %s\n' "$LEDGER"
+          printf 'deployment-identity      : %s\n' "$IDENTITY"
+          printf 'production-smoke         : %s\n' "$SMOKE"
+          printf 'real-stack-journey       : %s\n' "$JOURNEY"
+          failed=0
+          for pair in "release-validation=$VALIDATION" "migration-ledger-parity=$LEDGER" "deployment-identity=$IDENTITY" "production-smoke=$SMOKE" "real-stack-journey=$JOURNEY"; do
+            name="${pair%%=*}"; result="${pair#*=}"
+            if [[ "$result" != "success" ]]; then
+              echo "::error title=release-verdict::required release gate '$name' did not succeed (result: $result)."
+              failed=1
+            fi
+          done
+          if (( failed )); then
+            echo "RELEASE VERDICT: BLOCKED"
+            exit 1
+          fi
+          echo "RELEASE VERDICT: all required release gates executed and passed."

@@ -13,6 +13,7 @@ import {
   type UtilityBillFormValues,
   type UtilityType,
 } from './utility-schema';
+import { billSettlementStatus } from './utility-obligations';
 
 // The utility vocabulary (enum tuples + types) is owned by the schema; this
 // module is the single home for its Arabic labels and the RPC-backed loaders.
@@ -112,16 +113,7 @@ function mapResponsibleToChargedTo(party: ResponsibleParty): 'TENANT' | 'OWNER' 
   return 'TENANT';
 }
 
-function deriveBillStatus(paidAmount: number, amount: number): UtilityBillStatus {
-  if (amount > 0 && paidAmount >= amount) return 'paid';
-  if (paidAmount > 0) return 'partially_paid';
-  return 'unpaid';
-}
 
-function mapStatusToBillStatus(dbStatus: string | null, paidAmount: number, amount: number): UtilityBillStatus {
-  if ((dbStatus || '').toUpperCase() === 'PAID') return 'paid';
-  return deriveBillStatus(paidAmount, amount);
-}
 
 function mapBillStatusToDb(status: UtilityBillStatus): 'UNPAID' | 'PAID' {
   return status === 'paid' ? 'PAID' : 'UNPAID';
@@ -160,7 +152,7 @@ function mapBill(row: any): UtilityBill {
     amount,
     paid_amount: paidAmount,
     due_date: row.due_date,
-    status: mapStatusToBillStatus(row.status, paidAmount, amount),
+    status: billSettlementStatus({ amount, paid_amount: paidAmount }),
     responsible_party: mapChargedToToResponsible(row.charged_to),
     actual_payer: row.actual_payer as ResponsibleParty | null ?? null,
     attachment_url: row.attachment_url ?? null,
@@ -298,7 +290,7 @@ export async function listUtilityBills(filter?: { propertyId?: string; status?: 
 
 export async function createUtilityBill(values: UtilityBillFormValues): Promise<UtilityBill> {
   const payload = toBillPayload(values);
-  const status = deriveBillStatus(payload.paid_amount ?? 0, payload.amount);
+  const status = billSettlementStatus({ amount: payload.amount, paid_amount: payload.paid_amount ?? 0 });
   const { data, error } = await ((supabase as any)
     .from('utility_bills')
     .insert({

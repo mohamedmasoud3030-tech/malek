@@ -36,6 +36,7 @@ import {
   utilityBillStatusLabels,
   type UtilityBill,
 } from '@/features/utilities/utilities-service';
+import { billSettlementStatus, utilityBillRemaining } from '@/features/utilities/utility-obligations';
 import { getDocumentTemplateEntry, truthfulStatusLabel } from '@/services/documents/documentRegistry';
 import type { OwnerReportPayload, ProfessionalReportGroup, ReportCellFormat } from '@/services/documents/documentPayloads';
 import { getTodayLocalDateString } from '../reports-page.helpers';
@@ -103,7 +104,9 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       { label: 'تسويات معتمدة/معلقة غير مدفوعة', value: amount(position.lifecycle_all_time.settled_pending_net) },
       { label: 'استحقاقات التسويات المسوّاة — كل الفترات', value: amount(position.lifecycle_all_time.paid_net) },
       { label: 'النقد المصروف المثبت — كل الفترات', value: position.lifecycle_all_time.paid_cash === null ? text('غير مكتمل الإثبات') : amount(position.lifecycle_all_time.paid_cash) },
-      { label: 'أموال مالك محتجزة لدى المكتب', value: amount(position.owner_funds.held) },
+      // Unproven is shown as unproven. The register carries no evidence for
+      // this owner, so a confident figure would be invented.
+      { label: 'أموال مالك محتجزة لدى المكتب', value: position.owner_funds.held === null ? text('غير متاح — لا توجد سلطة بيانات') : amount(position.owner_funds.held) },
     );
     summaryAuthority = 'الملخص من الموقف المالي المعتمد للفترة (rpt_owner_financial_position) ودورة تسويات المالك.';
   } else if (statement) {
@@ -230,17 +233,23 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
           text(bill.billing_period_start && bill.billing_period_end ? `${bill.billing_period_start.slice(0, 10)} → ${bill.billing_period_end.slice(0, 10)}` : dateLabel(bill.due_date)),
           amount(bill.amount),
           amount(bill.paid_amount),
-          amount(bill.amount - bill.paid_amount),
+          // Canonical clamped remainder (`max(amount − paid, 0)` on the OMR
+          // grid). An unclamped subtraction would print a negative "remaining"
+          // for an overpaid bill and would drift from the same figure in the
+          // services report, which has always used this helper.
+          amount(utilityBillRemaining(bill)),
           text(responsiblePartyLabels[bill.responsible_party] ?? bill.responsible_party),
-          text(utilityBillStatusLabels[bill.status] ?? bill.status),
+          // Status and balance are two renderings of one fact; the shared
+          // derivation keeps them from contradicting each other on the page.
+          text(utilityBillStatusLabels[billSettlementStatus(bill)]),
         ]),
         totals: [
           text('إجمالي فواتير المرافق'),
           text(''),
           text(''),
-          amount(utilities.reduce((sum, bill) => sum + bill.amount, 0)),
-          amount(utilities.reduce((sum, bill) => sum + bill.paid_amount, 0)),
-          amount(utilities.reduce((sum, bill) => sum + (bill.amount - bill.paid_amount), 0)),
+          amount(utilities.reduce((sum, bill) => sum + (Number(bill.amount) || 0), 0)),
+          amount(utilities.reduce((sum, bill) => sum + (Number(bill.paid_amount) || 0), 0)),
+          amount(utilities.reduce((sum, bill) => sum + utilityBillRemaining(bill), 0)),
           text(''),
           text(''),
         ],
