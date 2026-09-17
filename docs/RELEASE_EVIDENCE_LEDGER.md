@@ -15,6 +15,23 @@ This ledger is the evidence checklist for any future Rentrix 99.9% readiness cla
 
 ## Mandatory evidence before a 99.9% claim
 
+> **STATUS 2026-09-17 — THE ROWS BELOW ARE HISTORICAL.** The CI and deployment
+> rows in this table cite runs at commit `7dde0036` / `4c354f34` dated
+> **2026-07-27**. They were accurate when written and remain accurate as a record
+> of that commit. They are **not** evidence for the current `main`.
+>
+> As of 2026-09-17 the current `main` revision is `e7943a5e` (also the deployed
+> revision, per `/build-proof.json`). GitHub Actions on this repository is not
+> currently executing — every check on `e7943a5e` failed with zero steps run and
+> the annotation *"The job was not started because recent account payments have
+> failed or your spending limit needs to be increased."* Release evidence for the
+> current revision therefore **does not exist yet**; it is produced by
+> `.github/workflows/release-blocker-gate.yml`, which now refuses to report
+> success unless the ledger parity, deployment identity, production smoke and
+> real-backend journey gates all actually executed.
+>
+> Read every row below with that date in mind. Do not quote this table as current.
+
 | Evidence item | Required state | Current branch status | Artifact to archive |
 | --- | --- | --- | --- |
 | Install/typecheck/lint/build/test suite | CI pass | CI pass: run `30227200374` on `7dde0036`, squash-merged to application release `4c354f34` | CI run URL and commit SHA |

@@ -30,6 +30,11 @@ function resolveCiWorkers(): number {
 
 export default defineConfig({
   testDir: './e2e',
+  // The `e2e/release/**` suites run against REAL backends and are driven by
+  // playwright.release.config.ts. They are excluded here so the hermetic
+  // regression suite can never pick them up (and so its own env-conditional
+  // skips can never be mistaken for release coverage).
+  testIgnore: ['release/**'],
   timeout: 30_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
