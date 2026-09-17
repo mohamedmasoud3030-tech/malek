@@ -249,7 +249,8 @@ stamp, a missing field, or any SHA mismatch outright.
 
 ## Final Validation
 
-Run from the `828ac232` tree (this report adds only documentation on top, in `a7ddc3f9`) with **exit codes captured directly** — no pipe through
+Run from the `828ac232` tree (only documentation commits follow it on this
+branch) with **exit codes captured directly** — no pipe through
 `tail` or `grep` that could mask a failure. (An earlier run in this session made
 exactly that mistake and hid a real test failure; that is why this table is
 built this way.)
