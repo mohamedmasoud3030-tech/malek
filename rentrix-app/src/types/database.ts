@@ -8518,6 +8518,17 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_company_for_existing_user: {
+        Args: {
+          p_name: string | null;
+          p_slug: string | null;
+          p_user_id: string | null;
+          p_currency?: string | null;
+          p_locale?: string | null;
+          p_timezone?: string | null;
+        };
+        Returns: Json;
+      };
       create_contract_atomic: {
         Args: {
           p_property_id: string | null;
