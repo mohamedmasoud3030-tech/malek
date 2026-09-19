@@ -133,16 +133,16 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Persisted localStorage key rentrix-landing-lang — renaming would reset the visitor language choice.',
   ],
   [
-    'src/components/error-boundary.tsx',
-    'Internal CatchBoundary reset key rentrix-root; never rendered to users.',
-  ],
-  [
     'src/features/landing/landing-performance-contract.test.ts',
     'Asserts that the landing chrome no longer references the legacy icon-rentrix assets.',
   ],
   [
     'src/store/ui-store.ts',
     'Persisted theme key rentrix-theme, also read by the inline theme script in index.html.',
+  ],
+  [
+    'index.html',
+    'Persisted theme key rentrix-theme read by the inline first-paint script; renaming would reset user theme preference.',
   ],
   [
     'src/features/landing/constants.ts',
