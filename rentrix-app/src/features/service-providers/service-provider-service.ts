@@ -70,8 +70,13 @@ export type ServiceProviderOption = Readonly<{
 
 type ProviderRelationRow = ServiceProvider & {
   service_provider_category_links?: Array<{ category?: ServiceProviderCategory | null }> | null;
-  maintenance_records?: Array<{ id: string; status: string | null }> | null;
 };
+
+type MaintenanceProviderRow = Readonly<{
+  id: string;
+  service_provider_id: string | null;
+  status: string | null;
+}>;
 
 const nullableProviderFields = [
   'legal_name',
@@ -107,13 +112,12 @@ function mapProviderRow(row: ProviderRelationRow): ServiceProviderListItem {
     .map((link) => link.category ?? null)
     .filter((category): category is ServiceProviderCategory => Boolean(category))
     .sort((left, right) => left.name.localeCompare(right.name, 'ar'));
-  const maintenanceJobs = row.maintenance_records ?? [];
-  const { service_provider_category_links: _links, maintenance_records: _jobs, ...provider } = row;
+  const { service_provider_category_links: _links, ...provider } = row;
   return {
     ...provider,
     categories,
-    maintenance_jobs_count: maintenanceJobs.length,
-    open_jobs_count: maintenanceJobs.filter((job) => job.status === 'open' || job.status === 'in_progress').length,
+    maintenance_jobs_count: 0,
+    open_jobs_count: 0,
   };
 }
 
@@ -121,9 +125,28 @@ const providerListSelect = `
   *,
   service_provider_category_links(
     category:service_provider_categories(*)
-  ),
-  maintenance_records(id,status)
+  )
 `;
+
+async function maintenanceJobsForProviders(providerIds: readonly string[]): Promise<Map<string, MaintenanceProviderRow[]>> {
+  const byProvider = new Map<string, MaintenanceProviderRow[]>();
+  if (providerIds.length === 0) return byProvider;
+
+  const { rows } = await fetchAllRows<MaintenanceProviderRow>(() => (supabase as any)
+    .from('maintenance_records')
+    .select('id,service_provider_id,status')
+    .is('deleted_at', null)
+    .in('service_provider_id', [...providerIds])
+    .order('id', { ascending: true }));
+
+  for (const row of rows) {
+    if (!row.service_provider_id) continue;
+    const bucket = byProvider.get(row.service_provider_id) ?? [];
+    bucket.push(row);
+    byProvider.set(row.service_provider_id, bucket);
+  }
+  return byProvider;
+}
 
 async function providerIdsForCategory(categoryId: string): Promise<string[]> {
   if (!categoryId) return [];
@@ -161,10 +184,18 @@ export async function listServiceProviders(params: ServiceProviderListParams): P
 
     const { data, count, error } = await query;
     if (error) handleSupabaseError(error, 'تعذر تحميل مزودي الخدمات');
-    return {
-      rows: ((data ?? []) as ProviderRelationRow[]).map(mapProviderRow),
-      count: count ?? 0,
-    };
+    const providerRows = ((data ?? []) as ProviderRelationRow[]).map(mapProviderRow);
+    const maintenanceByProvider = await maintenanceJobsForProviders(providerRows.map((provider) => provider.id));
+    const rows = providerRows.map((provider) => {
+      const jobs = maintenanceByProvider.get(provider.id) ?? [];
+      return {
+        ...provider,
+        maintenance_jobs_count: jobs.length,
+        open_jobs_count: jobs.filter((job) => job.status === 'open' || job.status === 'in_progress').length,
+      };
+    });
+
+    return { rows, count: count ?? 0 };
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('تعذر تحميل مزودي الخدمات')) throw error;
     handleSupabaseError(error, 'تعذر تحميل مزودي الخدمات');
