@@ -16,7 +16,7 @@ const basePath = process.env.BASE_PATH ?? "/";
 
 function productionEnvGuardPlugin() {
   return {
-    name: "rentrix-production-env-guard",
+    name: "malek-production-env-guard",
     configResolved(config: any) {
       const isTest =
         process.env.VITEST === "true" ||
@@ -56,7 +56,7 @@ function productionEnvGuardPlugin() {
           }
 
           console.warn(
-            `\n[rentrix-env-guard] تحذير: بناء الإنتاج يستخدم قيم Supabase وهمية: ${check.reason}\n` +
+            `\n[malek-env-guard] تحذير: بناء الإنتاج يستخدم قيم Supabase وهمية: ${check.reason}\n` +
               `هذا مسموح في CI/التطوير المحلي لكن سيفشل في Vercel production. اضبط متغيرات حقيقية قبل الإطلاق.\n`,
           );
         }
@@ -131,7 +131,7 @@ export default defineConfig({
               request.destination === "font",
             handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "rentrix-assets",
+              cacheName: "malek-assets",
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 60 * 60 * 24 * 7,

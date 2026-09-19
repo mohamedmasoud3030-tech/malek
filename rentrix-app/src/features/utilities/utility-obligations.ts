@@ -12,7 +12,8 @@
  * Remaining is presentation arithmetic on those two persisted values, not a
  * competing ledger.
  */
-import type { ResponsibleParty, UtilityBill, UtilityBillStatus } from './utilities-service';
+import type { UtilityBill } from './utility-types';
+import type { ResponsibleParty, UtilityBillStatus } from './utility-schema';
 import type { SemanticTone } from '@/components/ui/status-badge';
 
 /** Near window used by the operational surfaces to mean "due very soon". */

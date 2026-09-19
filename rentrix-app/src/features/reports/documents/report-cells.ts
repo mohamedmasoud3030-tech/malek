@@ -1,5 +1,7 @@
 import type { ReportCellFormat } from '@/services/documents/documentPayloads';
 
+export type { ReportCellFormat };
+
 /**
  * Canonical cell helpers shared by every professional report payload builder
  * (property, owner, premium owner). One rule set for how a report cell renders

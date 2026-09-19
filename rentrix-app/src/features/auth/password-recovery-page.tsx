@@ -4,7 +4,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { APP_BRAND_LOCKUP_ASSET, APP_BRAND_NAME } from '@/lib/brand';
+import { MalikBrand } from '@/components/brand/malik-brand';
 import { supabase } from '@/lib/supabase';
 import { updateCurrentUserPassword } from './change-password-service';
 import { validateChangePasswordForm } from './change-password-page';
@@ -14,8 +14,14 @@ function AuthCard({ title, description, children }: Readonly<{ title: string; de
   return (
     <main className="min-h-screen min-h-dvh w-full min-w-0 overflow-x-hidden bg-background px-4 py-8 sm:px-6" dir="rtl">
       <section className="safe-top-app safe-bottom-overlay mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-[25rem] flex-col justify-center">
-        <header className="mb-7 text-center">
-          <img src={APP_BRAND_LOCKUP_ASSET} alt={APP_BRAND_NAME} className="mx-auto size-16 object-contain" />
+        <header className="mb-7 flex flex-col items-center text-center">
+          <MalikBrand
+            layout="vertical"
+            className="gap-2.5"
+            markClassName="size-14"
+            wordmarkClassName="text-[1.75rem]"
+            wordmarkVariant="brand-gradient"
+          />
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{title}</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
         </header>

@@ -445,7 +445,7 @@ describe('Golden Owner fixture — full integration', () => {
       paid_count: 4,
       cancelled_count: 1,
     },
-    owner_funds: { held: 1042.75 },
+    owner_funds: { held: 1042.75, held_proven_total: 1042.75, held_evidence_missing_count: 0 },
   };
 
   const goldenMaintenance: Maintenance[] = [
