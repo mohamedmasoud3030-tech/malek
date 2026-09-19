@@ -13,6 +13,7 @@ import {
   type UtilityBillFormValues,
   type UtilityType,
 } from './utility-schema';
+import type { UtilityBill } from './utility-types';
 import { billSettlementStatus } from './utility-obligations';
 
 // The utility vocabulary (enum tuples + types) is owned by the schema; this
@@ -39,27 +40,7 @@ export type UtilityMeter = {
   created_at: string;
 };
 
-export type UtilityBill = {
-  id: string;
-  meter_id: string | null;
-  property_id: string;
-  unit_id?: string | null;
-  bill_number?: string | null;
-  billing_period_start: string | null;
-  billing_period_end: string | null;
-  previous_reading?: number | null;
-  current_reading?: number | null;
-  consumption_units?: number | null;
-  amount: number;
-  paid_amount: number;
-  due_date: string;
-  status: UtilityBillStatus;
-  responsible_party: ResponsibleParty;
-  actual_payer?: ResponsibleParty | null;
-  attachment_url?: string | null;
-  notes?: string | null;
-  created_at: string;
-};
+export type { UtilityBill } from './utility-types';
 
 export const utilityTypeLabels: Record<UtilityType, string> = {
   electricity: 'كهرباء',
