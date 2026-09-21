@@ -31,7 +31,7 @@ export function TrialBalancePanel({
         <div className="p-4"><ReportState message="لا توجد حسابات لعرض ميزان المراجعة لهذا التاريخ." /></div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 border-b border-border/60 bg-muted/20 p-4 text-sm">
+          <div className="grid grid-cols-1 gap-3 border-b border-border/60 bg-muted/20 p-4 text-sm sm:grid-cols-2">
             <div><p className="text-xs text-muted-foreground">إجمالي المدين</p><p className="mt-1 font-bold" dir="ltr">{formatMoney(report.totalDebits)}</p></div>
             <div><p className="text-xs text-muted-foreground">إجمالي الدائن</p><p className="mt-1 font-bold" dir="ltr">{formatMoney(report.totalCredits)}</p></div>
           </div>
