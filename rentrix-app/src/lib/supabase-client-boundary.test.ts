@@ -19,6 +19,15 @@ describe('browser Supabase client boundary', () => {
     expect(source).toContain('autoRefreshToken: true');
   });
 
+  it('refreshes a restored session before protected queries can run', () => {
+    const source = read('services/auth-service.ts');
+    expect(source).toContain('if (!data.session) return null;');
+    expect(source).toContain('await supabase.auth.refreshSession()');
+    expect(source).toContain('if (refreshError || !refreshed.session)');
+    expect(source).toContain('clearStoredSession();');
+    expect(source).toContain('return refreshed.session;');
+  });
+
   it('keeps env.ts on the public Vite variables and placeholders only', () => {
     const source = read('lib/env.ts');
     expect(source).toContain('VITE_SUPABASE_URL');
