@@ -34,7 +34,7 @@ function renderCell(cell: ReportCellFormat): ReactNode {
 function ReportGroupKpis({ kpis }: Readonly<{ kpis: Extract<ProfessionalReportBlock, { kind: 'kpis' }>['kpis'] }>) {
   if (kpis.length === 0) return null;
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
       {kpis.map((kpi) => (
         <div key={kpi.label} className="rounded-xl border border-border/60 bg-muted/20 p-3">
           <p className="text-[11px] font-bold leading-4 text-muted-foreground">{kpi.label}</p>
