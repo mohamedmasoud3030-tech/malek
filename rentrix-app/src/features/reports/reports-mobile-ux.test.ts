@@ -8,7 +8,8 @@ const read = (file: string) => readFileSync(resolve(root, file), 'utf8');
 describe('Reports mobile UX contract', () => {
   it('keeps analytical report headers from squeezing Arabic titles beside actions', () => {
     const source = read('premium/report-product-page.tsx');
-    expect(source).toContain('flex min-w-0 flex-col gap-2.5 sm:flex-row');
+    expect(source).toContain('flex min-w-0 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between');
+    expect(source).toContain('w-full min-w-0 sm:w-auto sm:max-w-full');
     expect(source).toContain('data-report-product-actions');
   });
 
