@@ -19,7 +19,7 @@ describe('browser Supabase client boundary', () => {
     expect(source).toContain('autoRefreshToken: true');
   });
 
-  it('refreshes a restored session before protected queries can run', () => {
+  it('does not end auth bootstrap loading from INITIAL_SESSION/TOKEN_REFRESHED events', () => {\n    const source = read('hooks/use-auth.tsx');\n    expect(source).toContain('const bootstrapPendingRef = useRef(true);');\n    expect(source).toContain('bootstrapPendingRef.current = true;');\n    expect(source).toContain('bootstrapPendingRef.current = false;');\n    expect(source).toContain('if (!bootstrapPendingRef.current) setIsLoading(false);');\n  });\n\n  it('refreshes a restored session before protected queries can run', () => {
     const source = read('services/auth-service.ts');
     expect(source).toContain('if (!data.session) return null;');
     expect(source).toContain('await supabase.auth.refreshSession()');
