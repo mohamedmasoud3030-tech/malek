@@ -71,7 +71,7 @@ export function StatementProductHeader({
           </div>
         </div>
 
-        <div className="shrink-0" data-statement-product-actions>
+        <div className="w-full min-w-0 sm:w-auto sm:max-w-full" data-statement-product-actions>
           {actions}
         </div>
       </div>
