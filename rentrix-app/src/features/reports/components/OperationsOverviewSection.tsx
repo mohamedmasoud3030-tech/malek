@@ -364,7 +364,7 @@ export function OperationsOverviewSection({
         icon={CalendarClock}
         isLoading={isLoading}
       >
-        <div className="flex items-center justify-between gap-3 p-4 sm:p-5">
+        <div className="flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <p className="text-sm font-semibold text-muted-foreground">
             اختر عقارًا من نطاق التقرير لعرض فواتير الخدمات والمرافق وإثباتات
             الدفع.
