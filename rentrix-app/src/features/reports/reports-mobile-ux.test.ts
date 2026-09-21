@@ -47,4 +47,12 @@ describe('Reports mobile UX contract', () => {
     const source = read('components/DeferredRevenueReportSection.tsx');
     expect(source).toContain('grid grid-cols-1 gap-2 sm:grid-cols-2');
   });
+
+  it('stacks balance-sheet group totals and services drill-down controls on phones', () => {
+    const balance = read('components/accounting/balance-sheet-panel.tsx');
+    const operations = read('components/OperationsOverviewSection.tsx');
+    expect(balance).toContain('flex min-w-0 flex-col gap-1 border-b border-border/60');
+    expect(balance).toContain('sm:flex-row sm:items-center sm:justify-between');
+    expect(operations).toContain('flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between');
+  });
 });
