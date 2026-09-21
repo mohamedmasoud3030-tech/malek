@@ -229,7 +229,7 @@ export function DeferredRevenueReportSection({
                 helper={`${formatLatinNumber(audit.linkedReceiptsCount, 'ar')} من ${formatLatinNumber(audit.postedReceiptsCount, 'ar')} إيصالات منشورة`}
                 tone={higherIsBetterTone(linkCoverage, 90, 70)}
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <SourceMetric label="إيصالات مرتبطة" value={audit.linkedReceiptsCount} amount={audit.linkedReceiptsAmount} />
                 <SourceMetric label="غير مرتبطة" value={audit.unlinkedReceiptsCount} amount={audit.unlinkedReceiptsAmount} />
                 <SourceMetric label="إيصالات مقدمة" value={audit.candidateReceiptsCount} amount={schedule.totalUpfrontCollections} />
