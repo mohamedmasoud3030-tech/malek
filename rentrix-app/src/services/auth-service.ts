@@ -16,7 +16,21 @@ export async function getCurrentSession(): Promise<Session | null> {
       clearStoredSession();
       return null;
     }
-    return data.session;
+    if (!data.session) return null;
+
+    // getSession() restores the locally persisted session but does not prove
+    // that the access token is still accepted by the Auth service/PostgREST.
+    // A stale access token can therefore unlock the app shell and produce a
+    // cascade of 401s on every data request. Refresh once during bootstrap so
+    // a valid refresh token repairs the session before protected queries run.
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !refreshed.session) {
+      console.warn('Session refresh failed during bootstrap; clearing stored session.', refreshError?.message);
+      clearStoredSession();
+      return null;
+    }
+
+    return refreshed.session;
   } catch (err) {
     console.warn('getCurrentSession exception, treating as no session:', err);
     clearStoredSession();
