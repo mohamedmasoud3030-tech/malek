@@ -42,4 +42,9 @@ describe('Reports mobile UX contract', () => {
     const source = read('components/report-payload-groups.tsx');
     expect(source).toContain('grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4');
   });
+
+  it('stacks deferred-revenue source metrics on phones before using two columns', () => {
+    const source = read('components/DeferredRevenueReportSection.tsx');
+    expect(source).toContain('grid grid-cols-1 gap-2 sm:grid-cols-2');
+  });
 });
