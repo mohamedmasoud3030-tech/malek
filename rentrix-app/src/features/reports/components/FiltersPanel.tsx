@@ -38,6 +38,8 @@ export function FiltersPanel({
   visibleFields,
   contentKind = 'report',
   showPeriodReset = true,
+  activeFilters,
+  onClearAllFilters,
   onChange,
   onResetCurrentMonth,
 }: Readonly<{
