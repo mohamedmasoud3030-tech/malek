@@ -48,7 +48,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [effectivePermissionsResolved, setEffectivePermissionsResolved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const hadSessionRef = useRef(false);
-  const explicitLogoutRef = useRef(false);
+  const explicitLogoutRef = useRef(false);\n  const bootstrapPendingRef = useRef(true);
 
   const refreshPermissions = useCallback(async () => {
     const userId = session?.user.id;
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           hadSessionRef.current = Boolean(restoredSession);
         }
       })
-      .finally(stopLoadingIfMounted);
+      .finally(() => {\n        bootstrapPendingRef.current = false;\n        stopLoadingIfMounted();\n      });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
