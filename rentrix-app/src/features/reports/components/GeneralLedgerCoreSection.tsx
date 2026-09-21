@@ -125,7 +125,7 @@ export function GeneralLedgerCoreSection() {
       {activeWorkspace === 'accounts' ? (
         <Card id="ledger-workspace-accounts" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
           <CardHeader className="border-b border-border/60 bg-muted/20 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <BookOpenCheck className="size-4.5" aria-hidden="true" />
@@ -156,7 +156,7 @@ export function GeneralLedgerCoreSection() {
       {activeWorkspace === 'periods' ? (
         <Card id="ledger-workspace-periods" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
           <CardHeader className="border-b border-border/60 bg-muted/20 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <CalendarClock className="size-4.5" aria-hidden="true" />
@@ -187,7 +187,7 @@ export function GeneralLedgerCoreSection() {
       {activeWorkspace === 'batches' ? (
         <Card id="ledger-workspace-batches" role="tabpanel" className="overflow-hidden rounded-2xl border border-border/70 shadow-card">
           <CardHeader className="border-b border-border/60 bg-muted/20 p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <ListChecks className="size-4.5" aria-hidden="true" />

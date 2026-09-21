@@ -5,6 +5,8 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import type { ReportFilterFieldId, ReportsFilterState } from '../reports-workspace-filters';
+import { getInitialReportsFilters } from '../reports-workspace-filters';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { buildReportFilterSummary } from '../reports-filter-summary';
 import { describeReportFilterSelections, getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
@@ -46,13 +48,38 @@ export function ReportsFilterSurface({
   const labels = describeReportFilterSelections(
     getSelectedFilterEntities(filters, costCenterRows, ownerRows, contractRows),
   );
+  const defaults = useMemo(() => getInitialReportsFilters(), []);
   const summary = useMemo(
-    () => buildReportFilterSummary(filters, filters, {
+    () => buildReportFilterSummary(filters, defaults, {
       ...labels,
       status: filters.status && filters.status !== 'all' ? (invoiceStatusLabels[filters.status] ?? filters.status) : undefined,
     }),
-    [filters, labels],
+    [defaults, filters, labels],
   );
+  const activeFilters = useMemo<ActiveFilterItem[]>(
+    () => summary.chips
+      .filter((chip) => chip.isActive && (visibleFields?.includes(chip.key) ?? true))
+      .map((chip) => ({
+        key: `report-${chip.key}`,
+        label: chip.label,
+        value: chip.value,
+        onRemove: () => {
+          if (chip.key === 'period') onChange({ ...filters, from: defaults.from, to: defaults.to });
+          else if (chip.key === 'asOf') onChange({ ...filters, asOf: defaults.asOf });
+          else if (chip.key === 'property') onChange({ ...filters, propertyId: '', unitId: '', tenantId: '', contractId: '' });
+          else if (chip.key === 'unit') onChange({ ...filters, unitId: '', tenantId: '', contractId: '' });
+          else if (chip.key === 'tenant') onChange({ ...filters, tenantId: '', contractId: '' });
+          else if (chip.key === 'costCenter') onChange({ ...filters, costCenterId: '' });
+          else if (chip.key === 'owner') onChange({ ...filters, ownerId: '' });
+          else if (chip.key === 'contract') onChange({ ...filters, contractId: '' });
+          else if (chip.key === 'status') onChange({ ...filters, status: 'all' });
+        },
+      })),
+    [defaults, filters, onChange, summary.chips, visibleFields],
+  );
+  const clearAllFilters = () => {
+    onChange({ ...defaults, propertyId: '', unitId: '', tenantId: '', costCenterId: '', ownerId: '', contractId: '', status: 'all' });
+  };
   const isStatement = contentKind === 'statement';
   const scopeLabel =
     summary.activeCount === 0
@@ -88,6 +115,8 @@ export function ReportsFilterSurface({
         visibleFields={visibleFields}
         contentKind={contentKind}
         showPeriodReset={supportsPeriodReset}
+        activeFilters={activeFilters}
+        onClearAllFilters={activeFilters.length > 0 ? clearAllFilters : undefined}
         onChange={onChange}
         onResetCurrentMonth={onResetCurrentMonth}
       />

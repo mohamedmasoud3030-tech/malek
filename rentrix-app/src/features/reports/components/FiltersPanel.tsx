@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { RefreshCcw } from 'lucide-react';
+import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -37,6 +38,8 @@ export function FiltersPanel({
   visibleFields,
   contentKind = 'report',
   showPeriodReset = true,
+  activeFilters,
+  onClearAllFilters,
   onChange,
   onResetCurrentMonth,
 }: Readonly<{
@@ -47,6 +50,8 @@ export function FiltersPanel({
   visibleFields?: readonly ReportFilterFieldId[];
   contentKind?: 'report' | 'statement';
   showPeriodReset?: boolean;
+  activeFilters?: readonly ActiveFilterItem[];
+  onClearAllFilters?: () => void;
   onChange: (filters: ReportsFilterState) => void;
   onResetCurrentMonth: () => void;
 }>) {
@@ -171,9 +176,11 @@ export function FiltersPanel({
           ) : null}
         </>
       )}
+      activeFilters={activeFilters}
+      onClearAllFilters={onClearAllFilters}
       actions={
         showPeriodReset ? (
-          <Button onClick={onResetCurrentMonth} variant="secondary">
+          <Button type="button" onClick={onResetCurrentMonth} variant="secondary" className="min-h-11">
             <RefreshCcw className="me-2 size-4" aria-hidden="true" />
             الشهر الحالي
           </Button>

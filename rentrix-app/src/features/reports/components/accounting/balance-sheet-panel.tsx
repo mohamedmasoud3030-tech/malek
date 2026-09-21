@@ -50,7 +50,7 @@ function BalanceGroup({
 }>) {
   return (
     <section className="border-b border-border/60 last:border-b-0 lg:border-b-0 lg:border-s lg:first:border-s-0">
-      <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/20 px-4 py-2.5 text-xs">
+      <div className="flex min-w-0 flex-col gap-1 border-b border-border/60 bg-muted/20 px-4 py-2.5 text-xs sm:flex-row sm:items-center sm:justify-between">
         <span className="font-bold text-muted-foreground">{title}</span>
         <span className="font-bold" dir="ltr">{formatMoney(total)}</span>
       </div>

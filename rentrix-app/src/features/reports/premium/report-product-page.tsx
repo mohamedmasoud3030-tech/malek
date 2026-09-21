@@ -438,7 +438,7 @@ function OpenReportProduct({
               </div>
             </div>
 
-            <div className="shrink-0" data-report-product-actions>
+            <div className="w-full min-w-0 sm:w-auto sm:max-w-full" data-report-product-actions>
               {analyticalDocumentActions}
             </div>
           </div>
