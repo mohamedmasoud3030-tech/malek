@@ -32,4 +32,15 @@ describe('Reports mobile UX contract', () => {
     expect(source).toContain('shrink-0');
     expect(source).toContain('min-h-11');
   });
+  it('stacks general-ledger workspace headers on phones so status badges do not squeeze titles', () => {
+    const source = read('components/GeneralLedgerCoreSection.tsx');
+    expect(source).toContain('flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between');
+    expect(source).not.toContain('flex items-center justify-between gap-3');
+  });
+
+  it('uses a single-column payload KPI layout on phones before expanding on larger screens', () => {
+    const source = read('components/report-payload-groups.tsx');
+    expect(source).toContain('grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4');
+  });
+
 });
