@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
  * not live in the browser: waivers and completion.
  */
 
-export type OnboardingWaiverPolicy = 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
+type OnboardingWaiverPolicy = 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
 
 export type OnboardingRequirementState = Readonly<{
   code: string;
@@ -25,7 +25,7 @@ export type OnboardingRequirementState = Readonly<{
   evidence_reference: string | null;
 }>;
 
-export type CompanyOnboardingState = Readonly<{
+type CompanyOnboardingState = Readonly<{
   company_id: string;
   completed: boolean;
   requirements: OnboardingRequirementState[];

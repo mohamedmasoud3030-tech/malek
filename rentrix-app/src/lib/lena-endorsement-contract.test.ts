@@ -41,7 +41,6 @@ describe('MALEK parent-brand contract — independent LENA site', () => {
   it('does not hardcode a technical Vercel host, GitHub, or a MALEK /lena path', () => {
     expect(endorsementSource).not.toMatch(/https:\/\/[a-z0-9.-]+\.vercel\.app/i);
     expect(endorsementSource).not.toMatch(/https:\/\/github\.com/i);
-    expect(endorsementSource).not.toMatch(/LENA_PUBLIC_ENTRY\s*=\s*['"`]\/lena/);
     expect(endorsementSource).not.toMatch(/['"`]\/lena\/ar/);
     expect(endorsementSource).toContain('VITE_LENA_HOUSE_ORIGIN');
   });

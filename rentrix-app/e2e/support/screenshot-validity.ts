@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 
-export type ScreenshotValidity =
+type ScreenshotValidity =
   | 'VALID'
   | 'INVALID — wrong route'
   | 'INVALID — wrong page identity'
@@ -17,7 +17,7 @@ export type ScreenshotValidityTarget = Readonly<{
   disallowMarkers?: readonly string[];
 }>;
 
-export type ScreenshotValidityResult = Readonly<{
+type ScreenshotValidityResult = Readonly<{
   status: ScreenshotValidity;
   reason: string;
   url: string;

@@ -1,7 +1,6 @@
 import {
   PreviewCommunicationAdapter,
   communicationTemplates,
-  prepareCommunicationPreview,
   type CommunicationEventType,
   type CommunicationLocale,
   type CommunicationPreviewResult,
@@ -17,7 +16,7 @@ import {
  */
 export type OutboundChannel = "whatsapp" | "email" | "sms";
 
-export type OutboundMessageRequest = Readonly<{
+type OutboundMessageRequest = Readonly<{
   channel: OutboundChannel;
   to: string;
   subject?: string;
@@ -42,31 +41,9 @@ export type OutboundMessageResult = Readonly<{
   message: string;
 }>;
 
-export const outboundProviderCapabilities = [
-  {
-    channel: "whatsapp",
-    provider: "local-preview",
-    mode: "preview",
-    configured: true,
-    live: false,
-  },
-  {
-    channel: "email",
-    provider: "local-preview",
-    mode: "preview",
-    configured: true,
-    live: false,
-  },
-  {
-    channel: "sms",
-    provider: "none",
-    mode: "disabled",
-    configured: false,
-    live: false,
-  },
-] as const;
 
-export type NotificationTemplate = Readonly<{
+
+type NotificationTemplate = Readonly<{
   id: string;
   name: string;
   channel: OutboundChannel | "in_app";
@@ -105,7 +82,7 @@ const compatibilityTemplates = [
   },
 ] as const;
 
-export const notificationTemplates: readonly NotificationTemplate[] =
+const notificationTemplates: readonly NotificationTemplate[] =
   compatibilityTemplates.flatMap((entry) =>
     (["ar", "en"] as const).map((locale) => {
       const canonical = communicationTemplates.find(
@@ -228,4 +205,4 @@ export function listNotificationTemplates(
 }
 
 // Exported for focused contract tests without invoking an adapter.
-export { prepareCommunicationPreview };
+;

@@ -11,7 +11,7 @@ import { formatDate, formatMoney, formatShortId, getErrorMessage } from './finan
 import { QuickPaymentForm } from './quick-payment-form';
 import { formatPaymentMethodLabel, formatReceiptContext, getPaymentReceiptBinding } from './receipt-formatters';
 
-export type CollectionSuccess = {
+type CollectionSuccess = {
   receiptId: string;
   receiptNumber: string | null;
   amount: number;

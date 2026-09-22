@@ -139,7 +139,7 @@ export interface BalanceSheetDocumentData {
   totalEquity: number;
 }
 
-export interface CompanyInfo {
+interface CompanyInfo {
   name: string;
   legalName?: string;
   taxNumber?: string;

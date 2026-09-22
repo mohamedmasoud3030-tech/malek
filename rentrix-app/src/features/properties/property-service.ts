@@ -60,7 +60,7 @@ type PropertyWithWorkflowRelations = Property & PropertyWorkflowRelations;
  * the same readiness state from one pure authority
  * (`derivePropertyWorkflowHealth`).
  */
-export type PropertyWorkflowRelations = Readonly<{
+type PropertyWorkflowRelations = Readonly<{
   property_owners?: readonly PropertyWorkflowOwnerLink[] | null;
   owner_agreements?: readonly PropertyWorkflowAgreement[] | null;
   units?: readonly PropertyListUnit[] | null;

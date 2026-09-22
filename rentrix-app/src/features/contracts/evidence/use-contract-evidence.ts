@@ -9,7 +9,7 @@ import {
   submitContractRegistration,
 } from './contract-evidence-service';
 
-export const contractEvidenceKeys = {
+const contractEvidenceKeys = {
   state: (contractId: string) => ['contracts', contractId, 'evidence-state'] as const,
   documents: (contractId: string) => ['contracts', contractId, 'evidence-documents'] as const,
 };

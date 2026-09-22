@@ -79,7 +79,7 @@ export const ownerPayloadSchema = z.object({
   is_active: z.boolean(),
 });
 
-export type OwnerPayload = z.output<typeof ownerPayloadSchema>;
+type OwnerPayload = z.output<typeof ownerPayloadSchema>;
 
 /** Update-only schema (all fields optional except the id). */
 export const ownerUpdateSchema = z.object({
@@ -116,7 +116,7 @@ export const ownerUpdateSchema = z.object({
 });
 
 export type OwnerUpdateInput = z.input<typeof ownerUpdateSchema>;
-export type OwnerUpdateValues = z.output<typeof ownerUpdateSchema>;
+type OwnerUpdateValues = z.output<typeof ownerUpdateSchema>;
 
 /** Coerce a form submission into a service payload. */
 export function coerceOwnerFormToPayload(values: OwnerFormValues): OwnerPayload {

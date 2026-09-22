@@ -61,7 +61,7 @@ export function parseMoneyInput(
   return roundMoney(normalizeMoneyInput(value, normalization), currency);
 }
 
-export type MoneyValidationResult =
+type MoneyValidationResult =
   | { ok: true; value: number }
   | { ok: false; reason: 'invalid' | 'below_min' | 'above_max' | 'precision' };
 

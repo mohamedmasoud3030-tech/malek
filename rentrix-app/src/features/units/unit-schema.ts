@@ -16,7 +16,7 @@ const optionalDailyReferenceRate = z.preprocess(
 
 export const unitStatusValues = ['available', 'occupied', 'maintenance', 'reserved'] as const;
 export const unitManualStatusValues = ['available', 'reserved'] as const;
-export type UnitStatus = (typeof unitStatusValues)[number];
+type UnitStatus = (typeof unitStatusValues)[number];
 
 export const unitStatusLabels: Record<UnitStatus, string> = {
   available: 'متاحة',
@@ -43,7 +43,7 @@ export const unitStatusTones = {
   reserved: 'neutral',
 } as const satisfies Record<UnitStatus, string>;
 
-export type UnitStatusTone = (typeof unitStatusTones)[UnitStatus];
+type UnitStatusTone = (typeof unitStatusTones)[UnitStatus];
 
 /** Tolerant label lookup for raw DB status strings; falls back to the raw value. */
 export function unitStatusLabelFor(status: string): string {

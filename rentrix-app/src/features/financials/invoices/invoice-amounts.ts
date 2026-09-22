@@ -4,7 +4,7 @@
  */
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 
-export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid: number; totalRemaining: number; count: number };
+type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid: number; totalRemaining: number; count: number };
 
 export type InvoiceRemainingInput = InvoiceGrossInput & { paid_amount: number | null | undefined; credited_amount?: number | null };
 
@@ -17,7 +17,7 @@ export function getInvoiceRemainingAmount(invoice: InvoiceRemainingInput): numbe
   ).toFixed(3));
 }
 
-export type InvoiceGrossInput = { amount: number | null | undefined; tax_amount?: number | null };
+type InvoiceGrossInput = { amount: number | null | undefined; tax_amount?: number | null };
 
 export function getInvoiceGrossAmount(invoice: InvoiceGrossInput): number {
   return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);

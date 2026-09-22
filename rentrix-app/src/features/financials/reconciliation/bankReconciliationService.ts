@@ -42,9 +42,9 @@ const matchEntityTypes = [
   'owner_expense',
 ] as const;
 
-export type CanonicalBankStatementLineStatus = 'unmatched' | 'matched' | 'ignored';
+type CanonicalBankStatementLineStatus = 'unmatched' | 'matched' | 'ignored';
 
-export function normalizeBankStatementLineStatus(status: unknown): CanonicalBankStatementLineStatus {
+function normalizeBankStatementLineStatus(status: unknown): CanonicalBankStatementLineStatus {
   switch (String(status ?? '').trim().toLowerCase()) {
     case 'matched':
       return 'matched';

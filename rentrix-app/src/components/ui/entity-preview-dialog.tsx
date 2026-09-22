@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
  * responsive sizing differs. Use the `lg` variant only when content genuinely
  * needs it (e.g. an operational form inside the preview).
  */
-export type EntityPreviewSize = 'md' | 'lg';
+type EntityPreviewSize = 'md' | 'lg';
 
 const previewSizeClasses: Record<EntityPreviewSize, string> = {
   // Medium modal range: never viewport-width, never page-height.

@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { AccountingPeriod, AccountingPeriodInput, AccountingPeriodStatus, AccountingPeriodStatusInput } from './accountingDomain';
 
-type JsonRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): Record<string, unknown> {
   return (value ?? {}) as Record<string, unknown>;
@@ -53,7 +52,7 @@ export async function listAccountingPeriods(): Promise<AccountingPeriod[]> {
   }
 }
 
-export type CreateAccountingPeriodResult = Readonly<{
+type CreateAccountingPeriodResult = Readonly<{
   success: boolean;
   id: string;
   name: string;
@@ -81,7 +80,7 @@ export async function createAccountingPeriod(input: AccountingPeriodInput): Prom
   }
 }
 
-export type UpdateAccountingPeriodStatusResult = Readonly<{
+type UpdateAccountingPeriodStatusResult = Readonly<{
   success: boolean;
   id: string;
   status: AccountingPeriodStatus;
@@ -107,4 +106,3 @@ export async function updateAccountingPeriodStatus(input: AccountingPeriodStatus
   }
 }
 
-export type { JsonRecord };

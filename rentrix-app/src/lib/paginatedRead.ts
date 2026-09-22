@@ -17,9 +17,9 @@ export type RangeQueryable<Row> = Readonly<{
   range: (from: number, to: number) => PromiseLike<{ data: readonly Row[] | null; error: unknown }>;
 }>;
 
-export type PagedReadResult<Row> = Readonly<{ rows: Row[]; truncated: boolean }>;
+type PagedReadResult<Row> = Readonly<{ rows: Row[]; truncated: boolean }>;
 
-export type PagedReadOptions = Readonly<{
+type PagedReadOptions = Readonly<{
   pageSize?: number;
   maxPages?: number;
   allowTruncated?: boolean;
@@ -27,9 +27,9 @@ export type PagedReadOptions = Readonly<{
 
 export const PAGED_READ_PAGE_SIZE = 1000;
 /** Safety ceiling: 20 pages × 1000 rows = 20k rows max per read. */
-export const PAGED_READ_MAX_PAGES = 20;
+const PAGED_READ_MAX_PAGES = 20;
 /** Keep PostgREST `.in(...)` filters below practical URL and parser limits. */
-export const IN_FILTER_BATCH_SIZE = 250;
+const IN_FILTER_BATCH_SIZE = 250;
 
 export class PagedReadTruncationError extends Error {
   constructor(maxRows: number) {

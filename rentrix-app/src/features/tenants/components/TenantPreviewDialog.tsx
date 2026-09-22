@@ -45,7 +45,7 @@ const tenantSections = [
   { id: 'records', label: 'السجل', icon: Activity },
 ] as const;
 
-export function TenantDossierContent({
+function TenantDossierContent({
   tenantId,
   section,
 }: Readonly<{ tenantId: string; section?: TenantSection }>) {

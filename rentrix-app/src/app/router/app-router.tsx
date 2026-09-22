@@ -1,7 +1,7 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { routeTree } from '@/app/router/route-tree';
 
-export const router = createRouter({
+const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
   defaultPendingMinMs: 250,

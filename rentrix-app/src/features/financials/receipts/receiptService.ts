@@ -175,9 +175,9 @@ export async function getReceiptDetail(receiptOrPaymentId: string): Promise<Rece
   return receipt;
 }
 
-export type ReceiptVoidRequestStatus = 'PENDING' | 'EXECUTED' | 'REJECTED' | 'CANCELLED';
+type ReceiptVoidRequestStatus = 'PENDING' | 'EXECUTED' | 'REJECTED' | 'CANCELLED';
 
-export type ReceiptVoidRequestRecord = {
+type ReceiptVoidRequestRecord = {
   id: string;
   company_id: string;
   receipt_id: string;
@@ -192,13 +192,13 @@ export type ReceiptVoidRequestRecord = {
   reversal_batch_id: string | null;
 };
 
-export type RequestReceiptVoidPayload = {
+type RequestReceiptVoidPayload = {
   receipt_id: string;
   reason: string;
   request_id: string;
 };
 
-export type RequestReceiptVoidResult = {
+type RequestReceiptVoidResult = {
   success: true;
   idempotent: boolean;
   void_request_id: string;
@@ -210,12 +210,12 @@ export type RequestReceiptVoidResult = {
   requested_at: string;
 };
 
-export type ApproveReceiptVoidPayload = {
+type ApproveReceiptVoidPayload = {
   void_request_id: string;
   request_id: string;
 };
 
-export type ApproveReceiptVoidResult = {
+type ApproveReceiptVoidResult = {
   success: true;
   idempotent: boolean;
   request_id: string;

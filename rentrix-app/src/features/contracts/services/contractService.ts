@@ -26,18 +26,18 @@ export type ContractListParams = {
   page: number;
   pageSize: number;
 };
-export type PaginatedContracts = {
+type PaginatedContracts = {
   rows: ContractListItem[];
   count: number;
 };
-export type AllContractsRead = Readonly<{ rows: ContractListItem[]; truncated: boolean }>;
+type AllContractsRead = Readonly<{ rows: ContractListItem[]; truncated: boolean }>;
 export type ContractCreateOptions = Readonly<{ requestId?: string }>;
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 // Shared select clauses - single source of truth for contract relations
-export const CONTRACT_BASE_SELECT =
+const CONTRACT_BASE_SELECT =
   '*, properties:properties!contracts_property_id_fkey(id,title,address), units:units!contracts_unit_id_fkey(id,unit_number,floor,status,rent_amount), people:people!contracts_tenant_id_fkey(id,full_name,phone,email,national_id)';
-export const CONTRACT_DETAIL_SELECT =
+const CONTRACT_DETAIL_SELECT =
   CONTRACT_BASE_SELECT + ', renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 
 export async function listContracts(params: ContractListParams): Promise<PaginatedContracts> {
@@ -302,7 +302,7 @@ export function parseContractMutationResponse(
   return data as Contract;
 }
 
-export type TerminateContractResult = { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
+type TerminateContractResult = { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
 
 export function parseTerminationResult(data: unknown, expectedContractId: string): TerminateContractResult {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -330,7 +330,7 @@ export async function softDeleteContract(contractId: string): Promise<void> {
   if (error) throw error;
 }
 
-export function parseRenewalResult(data: unknown, expectedOldContractId?: string): RenewalResult {
+function parseRenewalResult(data: unknown, expectedOldContractId?: string): RenewalResult {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('تعذر تأكيد تجديد العقد: استجابة الخادم غير صالحة.');
   }

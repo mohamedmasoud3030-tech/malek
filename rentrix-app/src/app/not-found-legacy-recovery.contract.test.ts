@@ -12,24 +12,13 @@ import {
 // workspace) WITHOUT registering redirect stubs in the route tree, per
 // the route contract's one-canonical-route-per-capability invariant.
 describe("legacy path recovery at the not-found boundary", () => {
-  it("maps every retired path to its verified canonical workspace", () => {
-    expect(resolveLegacyRedirect("/units")).toEqual({
-      to: "/properties",
-      search: { section: "units" },
-    });
+  it("maps every retired path to its verified canonical route", () => {
+    expect(resolveLegacyRedirect("/units")).toEqual({ to: "/properties" });
     expect(resolveLegacyRedirect("/accounting")).toEqual({ to: "/reports" });
-    expect(resolveLegacyRedirect("/documents-vault")).toEqual({
-      to: "/maintenance",
-      search: { section: "documents_vault" },
-    });
-    expect(resolveLegacyRedirect("/automation")).toEqual({
-      to: "/settings",
-      search: { section: "automation" },
-    });
-    expect(resolveLegacyRedirect("/audit-log")).toEqual({
-      to: "/settings",
-      search: { section: "audit-log" },
-    });
+    expect(resolveLegacyRedirect("/automation")).toEqual({ to: "/settings/automation" });
+    expect(resolveLegacyRedirect("/audit-log")).toEqual({ to: "/settings/audit-log" });
+    // /documents-vault is a live canonical route; it never reaches not-found.
+    expect(resolveLegacyRedirect("/documents-vault")).toBeNull();
   });
 
   it("keeps unknown paths on the generic not-found card", () => {
@@ -43,7 +32,7 @@ describe("legacy path recovery at the not-found boundary", () => {
 
   it("keeps the map exact and free of near-duplicate prefixes", () => {
     const paths = Object.keys(LEGACY_ROUTE_REDIRECTS);
-    expect(paths).toHaveLength(5);
+    expect(paths).toHaveLength(4);
     for (const path of paths) {
       expect(path.startsWith("/")).toBe(true);
       expect(path.endsWith("/")).toBe(false);

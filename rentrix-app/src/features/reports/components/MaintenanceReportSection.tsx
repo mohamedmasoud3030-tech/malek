@@ -70,7 +70,7 @@ function maintenanceAttentionFlagScore(
   return (attention.hasMissedSchedule ? 2 : 0) + (attention.isStalled ? 1 : 0);
 }
 
-export type MaintenanceReportProps = Readonly<{
+type MaintenanceReportProps = Readonly<{
   rows: Maintenance[];
   summary: MaintenanceSummary;
   canExportReports: boolean;

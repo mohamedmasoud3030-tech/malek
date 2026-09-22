@@ -2,7 +2,7 @@ import type { Lang } from './messages';
 
 export type LegalSlug = 'privacy' | 'terms';
 
-export type LegalContent = {
+type LegalContent = {
   title: string;
   effective: string;
   intro: string;

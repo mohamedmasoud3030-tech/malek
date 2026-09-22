@@ -1,6 +1,6 @@
 import { registerSW } from 'virtual:pwa-register';
 
-export type PwaUpdateHandler = (applyUpdate: () => Promise<void>) => Promise<void> | void;
+type PwaUpdateHandler = (applyUpdate: () => Promise<void>) => Promise<void> | void;
 
 let registrationStarted = false;
 

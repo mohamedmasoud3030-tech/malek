@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getContractPaymentsSnapshot } from './services/contractPaymentService';
 
-export const contractPaymentKeys = {
+const contractPaymentKeys = {
   all: ['contract-payments'] as const,
   detail: (contractId: string) =>
     [...contractPaymentKeys.all, contractId] as const,

@@ -41,7 +41,7 @@ import {
 } from './lifecycle/contractLifecycleRules';
 import type { ContractListItem } from './services/contractService';
 
-export type ContractAttentionFlag =
+type ContractAttentionFlag =
   | 'expired'
   | 'expiring_soon'
   | 'overdue_invoice'
@@ -52,7 +52,7 @@ export type ContractAttentionFlag =
 
 export type ContractAttentionSeverity = 'danger' | 'warning' | 'info';
 
-export type ContractAttentionReason = Readonly<{
+type ContractAttentionReason = Readonly<{
   flag: ContractAttentionFlag;
   /** Short, card-safe wording. */
   label: string;
@@ -116,7 +116,7 @@ export const EMPTY_CONTRACT_ATTENTION_SUMMARY: ContractAttentionSummary = {
   outstandingAmount: 0,
 };
 
-export const contractAttentionLabels: Record<ContractAttentionFlag, string> = {
+const contractAttentionLabels: Record<ContractAttentionFlag, string> = {
   expired: 'العقد منتهي',
   expiring_soon: 'ينتهي قريبًا',
   overdue_invoice: 'فواتير متأخرة',
@@ -147,9 +147,9 @@ const flagRank: readonly ContractAttentionFlag[] = [
   'approved_pending_activation',
 ];
 
-export const paymentAttentionFlags: readonly ContractAttentionFlag[] = ['overdue_invoice', 'outstanding_balance'];
-export const expiryAttentionFlags: readonly ContractAttentionFlag[] = ['expired', 'expiring_soon'];
-export const lifecycleAttentionFlags: readonly ContractAttentionFlag[] = [
+const paymentAttentionFlags: readonly ContractAttentionFlag[] = ['overdue_invoice', 'outstanding_balance'];
+const expiryAttentionFlags: readonly ContractAttentionFlag[] = ['expired', 'expiring_soon'];
+const lifecycleAttentionFlags: readonly ContractAttentionFlag[] = [
   'approval_rejected',
   'approval_pending',
   'approved_pending_activation',

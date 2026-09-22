@@ -49,7 +49,7 @@ export function propertyOwnershipLinkFormToPayload(values: PropertyOwnershipLink
   };
 }
 
-export type OwnerSummary = {
+type OwnerSummary = {
   totalOwners: number;
   activeOwners: number;
   linkedPropertiesCount: number;

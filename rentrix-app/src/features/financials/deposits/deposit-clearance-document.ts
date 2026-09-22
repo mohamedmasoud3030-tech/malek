@@ -6,7 +6,7 @@ import { getTodayLocalDateString } from '@/features/financials/financials-date-u
 import { formatDepositContractReference } from './deposit-contract-options';
 import type { DepositRecord } from './deposit-service';
 
-export function buildDepositClearanceDocument(
+function buildDepositClearanceDocument(
   deposit: DepositRecord,
   currencyCode: string,
   currencyLabel: string,

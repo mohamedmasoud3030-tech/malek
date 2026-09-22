@@ -3,7 +3,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/ui/state-surfaces';
 
-export type AsyncContentStatus = 'loading' | 'error' | 'empty' | 'ready';
+type AsyncContentStatus = 'loading' | 'error' | 'empty' | 'ready';
 
 /**
  * Single source of truth for the loading → error → empty → ready order.

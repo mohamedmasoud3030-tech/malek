@@ -6,7 +6,7 @@ import { getUnitSelectionIssueForContractPeriod, isUnitSelectableForContractPeri
 export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'> & {
   daily_reference_rate?: number | null;
 };
-export type ContractUnitOptionProperty = Pick<Property, 'title' | 'address'> | null | undefined;
+type ContractUnitOptionProperty = Pick<Property, 'title' | 'address'> | null | undefined;
 
 type ContractUnitOptionLabelParams = Readonly<{
   unit: ContractUnitOptionUnit;

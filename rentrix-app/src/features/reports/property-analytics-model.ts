@@ -36,7 +36,7 @@ export type PropertyExpenseRow = Readonly<{
 /** A metric that may legitimately have no value. `null` means UNAVAILABLE, never zero. */
 export type MetricValue = number | null;
 
-export type PropertyAnalyticsScope = Readonly<{
+type PropertyAnalyticsScope = Readonly<{
   /** Managed properties inside the current filter scope. */
   properties: number;
   units: number;
@@ -47,7 +47,7 @@ export type PropertyAnalyticsScope = Readonly<{
   occupancyRate: MetricValue;
 }>;
 
-export type PropertyAnalyticsExecutive = Readonly<{
+type PropertyAnalyticsExecutive = Readonly<{
   scope: PropertyAnalyticsScope;
   /** Period collections from the authoritative period summary (null when unavailable). */
   collected: MetricValue;
@@ -72,7 +72,7 @@ export type PropertyAnalyticsExecutive = Readonly<{
   vacancyReferenceRent: MetricValue;
 }>;
 
-export type ComparisonKind = 'amount' | 'count' | 'rate';
+type ComparisonKind = 'amount' | 'count' | 'rate';
 
 export type PropertyAnalyticsComparisonRow = Readonly<{
   key: string;
@@ -102,7 +102,7 @@ export type PropertyAnalyticsInsight = Readonly<{
   tone: 'good' | 'warning' | 'critical' | 'neutral';
 }>;
 
-export type PropertyAnalyticsPreviousPeriod = Readonly<{
+type PropertyAnalyticsPreviousPeriod = Readonly<{
   from: string;
   to: string;
   occupancyRate: MetricValue;

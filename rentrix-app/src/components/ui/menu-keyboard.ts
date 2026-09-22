@@ -10,9 +10,9 @@ import { useEffect, useRef, type RefObject } from 'react';
  */
 
 /** Enabled items of a rendered menu, in DOM order. */
-export const MENU_ITEM_SELECTOR = '[role="menuitem"]:not([disabled]):not([aria-disabled="true"])';
+const MENU_ITEM_SELECTOR = '[role="menuitem"]:not([disabled]):not([aria-disabled="true"])';
 
-export type MenuFocusTarget = 'first' | 'last' | 'next' | 'previous';
+type MenuFocusTarget = 'first' | 'last' | 'next' | 'previous';
 
 /**
  * Focuses one of the menu's enabled items, wrapping at both ends.

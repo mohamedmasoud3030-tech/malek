@@ -3,8 +3,8 @@ import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
 export type NavItem = readonly [to: string, labelKey: string, description: string, Icon: LucideIcon, permission?: AppPermission, search?: Readonly<Record<string, string>>];
-export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission, search?: Readonly<Record<string, string>>];
-export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
+type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission, search?: Readonly<Record<string, string>>];
+type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
 export const navGroups: readonly NavGroup[] = [
   ['العمل', [

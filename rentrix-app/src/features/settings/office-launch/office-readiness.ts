@@ -1,13 +1,13 @@
-import type { CompanySettingsDraft } from '@/features/settings/settingsForm';
+import type { CompanySettingsDraft } from '@/features/settings/form/sectionDrafts';
 
-export type OfficeReadinessItem = Readonly<{
+type OfficeReadinessItem = Readonly<{
   id: 'office-identity' | 'contact' | 'localization' | 'documents';
   label: string;
   ready: boolean;
   helper: string;
 }>;
 
-export type OfficeReadiness = Readonly<{
+type OfficeReadiness = Readonly<{
   items: readonly OfficeReadinessItem[];
   completed: number;
   total: number;

@@ -7,9 +7,9 @@ import { extendShortStayContract, reconcileDueShortStaysBeforeRead, type ShortSt
 
 const contractBase = defineEntityKeys('contracts');
 
-export type ContractCreateMutationInput = Readonly<{ payload: ContractPayload; options?: ContractCreateOptions }>;
+type ContractCreateMutationInput = Readonly<{ payload: ContractPayload; options?: ContractCreateOptions }>;
 
-export const contractKeys = {
+const contractKeys = {
   ...contractBase,
   allPages: (status: ContractStatusFilter) => [...contractBase.lists(), 'all-pages', status] as const,
 } as const;

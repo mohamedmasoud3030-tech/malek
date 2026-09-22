@@ -27,7 +27,7 @@ export type JournalBatch = Database['public']['Tables']['journal_batches']['Row'
 export type JournalBatchStatus = JournalBatch['status'];
 export type JournalLine = Database['public']['Tables']['journal_lines']['Row'];
 
-export type AccountClassification = Readonly<{
+type AccountClassification = Readonly<{
   accountType: AccountType;
   normalBalance: NormalBalance;
 }>;

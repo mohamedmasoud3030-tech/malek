@@ -6,7 +6,7 @@ import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 
-export type ContextualDocument = Readonly<{
+type ContextualDocument = Readonly<{
   id: string;
   title: string;
   typeLabel?: string | null;
@@ -24,7 +24,7 @@ export type ContextualDocument = Readonly<{
   url?: string | null;
 }>;
 
-export type ContextualDocumentsPanelProps = Readonly<{
+type ContextualDocumentsPanelProps = Readonly<{
   entityLabel: string;
   documents: readonly ContextualDocument[];
   isLoading?: boolean;

@@ -7,9 +7,9 @@
  * invoice issue/due dates (billing_day + grace_days); `sampleDates` below are
  * cycle-boundary previews only, not invoice due dates.
  */
-export type PaymentCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual' | string;
+type PaymentCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual' | string;
 
-export interface ContractSchedulePreviewResult {
+interface ContractSchedulePreviewResult {
   installmentCount: number;
   amountPerInstallment: number;
   sampleDates: string[];

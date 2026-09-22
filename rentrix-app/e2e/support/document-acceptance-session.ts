@@ -10,7 +10,7 @@ import { IDS } from './fake-supabase-backend';
  * permissions, guards) without a live GoTrue server.
  */
 
-export const AUTH_STORAGE_KEY = 'rentrix-auth-session';
+const AUTH_STORAGE_KEY = 'rentrix-auth-session';
 
 /** URL-safe base64 without padding, as used by JWT segments. */
 function base64Url(value: string): string {
@@ -58,7 +58,7 @@ export function buildAcceptanceAccessToken(userId: string, companyId: string, ex
 
 /** Seeded identity constants shared by the session and the fake backend. */
 export const ACCEPTANCE_EMAIL = 'acceptance@malek.test';
-export const ACCEPTANCE_FULL_NAME = 'اختبار القبول';
+const ACCEPTANCE_FULL_NAME = 'اختبار القبول';
 
 export function buildAcceptanceSession(nowMs: number = Date.now()): Record<string, unknown> {
   const expiresInSeconds = 12 * 60 * 60;
@@ -96,7 +96,7 @@ export function buildAcceptanceSession(nowMs: number = Date.now()): Record<strin
   };
 }
 
-export type AcceptanceBrowserOptions = Readonly<{
+type AcceptanceBrowserOptions = Readonly<{
   /** Replace `window.print` with a counter so the scoped print popup can be asserted deterministically. */
   interceptPrint?: boolean;
   /** Force `window.open` to return null to exercise the popup-blocked error path. */

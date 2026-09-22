@@ -185,5 +185,3 @@ export const landFilterSchema = z.object({
   status: z.enum(['all', ...LAND_STATUS_VALUES]).default('all'),
 });
 
-export type LandFilterInput = z.input<typeof landFilterSchema>;
-export type LandFilterValues = z.output<typeof landFilterSchema>;

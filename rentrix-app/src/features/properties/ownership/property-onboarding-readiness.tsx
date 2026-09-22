@@ -26,13 +26,13 @@ import {
   type PropertyOnboardingStepId,
 } from './property-onboarding-workflow';
 
-export type PropertyOnboardingReadiness =
+type PropertyOnboardingReadiness =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'incomplete'; health: PropertyOnboardingGap; ownerName: string | null }>
   | Readonly<{ status: 'ready' }>;
 
 /** Operational gaps that keep a property from being ready to run. */
-export type PropertyOnboardingGap = Exclude<PropertyWorkflowHealth, 'ready'>;
+type PropertyOnboardingGap = Exclude<PropertyWorkflowHealth, 'ready'>;
 
 /**
  * Property onboarding readiness derived from the same pure authority as the

@@ -8,7 +8,7 @@ const uuid = z.string().uuid('المعرف غير صالح');
 const isoDate = z.string().refine(isValidDateInput, 'التاريخ غير صالح');
 const positiveAmount = z.coerce.number().finite().positive('المبلغ يجب أن يكون أكبر من صفر');
 
-export const depositFormSchema = z.object({
+const depositFormSchema = z.object({
   contract_id: uuid,
   tenant_id: uuid.nullish(),
   property_id: uuid.nullish(),

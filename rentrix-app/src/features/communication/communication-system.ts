@@ -1,11 +1,11 @@
-export type CommunicationChannel =
+type CommunicationChannel =
   | "in_app"
   | "email"
   | "whatsapp"
   | "sms"
   | "push";
 export type CommunicationLocale = "ar" | "en";
-export type CommunicationPriority = "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+type CommunicationPriority = "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
 export type CommunicationEventType =
   | "ACCESS_DECISION"
   | "SUPPORT_STATUS_CHANGED"
@@ -17,7 +17,7 @@ export type CommunicationEventType =
   | "MAINTENANCE_URGENT"
   | "OWNER_STATEMENT_READY";
 
-export type CommunicationEventPolicy = Readonly<{
+type CommunicationEventPolicy = Readonly<{
   eventType: CommunicationEventType;
   classification: "TRANSACTIONAL" | "OPTIONAL_OPERATIONAL";
   priority: CommunicationPriority;
@@ -151,7 +151,7 @@ export const communicationEventPolicies: readonly CommunicationEventPolicy[] = [
   },
 ] as const;
 
-export type CommunicationTemplate = Readonly<{
+type CommunicationTemplate = Readonly<{
   key: string;
   version: number;
   eventType: CommunicationEventType;
@@ -267,7 +267,7 @@ export type CommunicationPreference = Readonly<{
   quietHoursEnd: number;
 }>;
 
-export type CommunicationPreviewRequest = Readonly<{
+type CommunicationPreviewRequest = Readonly<{
   eventType: CommunicationEventType;
   channel: CommunicationChannel;
   locale: CommunicationLocale;
@@ -319,7 +319,7 @@ function isValidRecipient(
   return false;
 }
 
-export function isWithinQuietHours(
+function isWithinQuietHours(
   now: Date,
   preference: CommunicationPreference,
 ): boolean {
@@ -388,7 +388,7 @@ export function prepareCommunicationPreview(
   };
 }
 
-export type ProviderFailureClass =
+type ProviderFailureClass =
   | "NETWORK"
   | "RATE_LIMIT"
   | "SERVER"

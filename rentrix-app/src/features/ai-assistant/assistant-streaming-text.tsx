@@ -17,7 +17,7 @@ const PENDING_STAGES = ['بقرأ بياناتك...', 'بحلل الوضع...', 
 const PENDING_STAGE_MS = 2000;
 
 /** Hard cap on the whole word-by-word reveal, in milliseconds. */
-export const MAX_REVEAL_MS = 800;
+const MAX_REVEAL_MS = 800;
 
 /**
  * Splits reply text into reveal tokens while preserving the original
@@ -60,7 +60,7 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-export type AssistantStreamingTextProps = Readonly<{
+type AssistantStreamingTextProps = Readonly<{
   content: string;
   /** Renders the progressive waiting indicator instead of the reveal. */
   isPending?: boolean;

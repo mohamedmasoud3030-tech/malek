@@ -26,7 +26,7 @@ import {
   normalizeApprovalStatus,
 } from './contractLifecycleRules';
 
-export type ContractApprovalMode = 'submit' | 'approve' | 'reject' | 'activate';
+type ContractApprovalMode = 'submit' | 'approve' | 'reject' | 'activate';
 
 const approvalStatusLabels: Record<'PENDING' | 'APPROVED' | 'REJECTED', string> = {
   PENDING: 'قيد الاعتماد',

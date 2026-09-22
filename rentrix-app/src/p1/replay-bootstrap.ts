@@ -23,7 +23,7 @@ import {
 
 export const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
-export type ReplayResult = {
+type ReplayResult = {
   db: PGlite;
   applied: string[];
   failed: { file: string; error: string }[];

@@ -25,7 +25,7 @@ import {
   type ReportProductShareTarget,
 } from '../report-share';
 
-export type ReportDocumentShareInput = Readonly<{
+type ReportDocumentShareInput = Readonly<{
   /** Canonical deep link back into the same report (authenticated route). */
   url: string;
   /** Prepared business-language message for share sheets that take text. */
@@ -77,7 +77,7 @@ const WHATSAPP_MESSAGES = {
 } as const;
 
 /** True when the browser can attach files to the OS share sheet. */
-export function canSharePdfFile(file: File): boolean {
+function canSharePdfFile(file: File): boolean {
   const navigatorRef = typeof navigator !== 'undefined' ? navigator : undefined;
   return (
     typeof navigatorRef?.share === 'function' &&

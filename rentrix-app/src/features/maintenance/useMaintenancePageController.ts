@@ -31,7 +31,7 @@ import {
 } from './maintenance-attention';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 
-export const maintenanceRequestSchema = z.object({
+const maintenanceRequestSchema = z.object({
   // Historical production properties use text identifiers; the relationship
   // contract requires a selected property, not a UUID-shaped string.
   property_id: z.string().trim().min(1, 'اختر العقار'),
@@ -48,7 +48,7 @@ export const maintenanceRequestSchema = z.object({
 
 export type MaintenanceFormValues = z.infer<typeof maintenanceRequestSchema>;
 
-export const maintenanceResolveSchema = z.object({
+const maintenanceResolveSchema = z.object({
   ownerAllocations: z.array(z.object({owner_id:z.string(),amount:z.coerce.number(),owner_agreement_id:z.string().optional()})).optional(),
   allocationEvidence:z.string().optional(),
   cost: z.coerce.number({ invalid_type_error: 'أدخل تكلفة صحيحة' }).min(0, 'التكلفة لا يمكن أن تكون سالبة'),
@@ -92,7 +92,7 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
   return [];
 }
 
-export type MaintenanceStatusActionPermission = 'maintenance.edit' | 'maintenance.approve' | 'maintenance.cancel';
+type MaintenanceStatusActionPermission = 'maintenance.edit' | 'maintenance.approve' | 'maintenance.cancel';
 
 /**
  * Permission required to run each canonical transition.

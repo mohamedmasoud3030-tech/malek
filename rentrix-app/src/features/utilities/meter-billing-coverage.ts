@@ -21,7 +21,7 @@ import type { UtilityBill, UtilityMeter } from './utilities-service';
  */
 export const METER_BILLING_STALE_AFTER_DAYS = 60;
 
-export type MeterBillingState = 'never_billed' | 'stale' | 'current';
+type MeterBillingState = 'never_billed' | 'stale' | 'current';
 
 export type MeterBillingFilter = MeterBillingState | 'all';
 
@@ -47,7 +47,7 @@ export type MeterBillingCoverage = {
   state: MeterBillingState;
 };
 
-export type MeterBillingSummary = {
+type MeterBillingSummary = {
   totalMeters: number;
   neverBilled: number;
   stale: number;
@@ -56,7 +56,7 @@ export type MeterBillingSummary = {
   needingAttention: number;
 };
 
-export const EMPTY_METER_BILLING_SUMMARY: MeterBillingSummary = {
+const EMPTY_METER_BILLING_SUMMARY: MeterBillingSummary = {
   totalMeters: 0,
   neverBilled: 0,
   stale: 0,

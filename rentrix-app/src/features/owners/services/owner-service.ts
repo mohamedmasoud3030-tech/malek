@@ -16,17 +16,17 @@ import type { Database } from '@/types/database';
 import type { Contract, Invoice, Property, Unit } from '@/types/domain';
 
 export type Owner = Database['public']['Tables']['owners']['Row'];
-export type OperationalOwner = Pick<Owner, 'id' | 'full_name' | 'display_name'> & {
+type OperationalOwner = Pick<Owner, 'id' | 'full_name' | 'display_name'> & {
   name: string;
 };
-export type OwnerInsert = Database['public']['Tables']['owners']['Insert'];
-export type OwnerUpdate = Database['public']['Tables']['owners']['Update'];
+type OwnerInsert = Database['public']['Tables']['owners']['Insert'];
+type OwnerUpdate = Database['public']['Tables']['owners']['Update'];
 type OwnerInsertWithCompatibility = OwnerInsert & { name: string };
 type OwnerUpdateWithCompatibility = OwnerUpdate & { name?: string };
 export type PropertyOwner = Database['public']['Tables']['property_owners']['Row'];
-export type PropertyOwnerInsert = Database['public']['Tables']['property_owners']['Insert'];
-export type PropertyOwnerUpdate = Database['public']['Tables']['property_owners']['Update'];
-export type OwnerActiveContract = Pick<Contract, 'id' | 'property_id'>;
+type PropertyOwnerInsert = Database['public']['Tables']['property_owners']['Insert'];
+type PropertyOwnerUpdate = Database['public']['Tables']['property_owners']['Update'];
+type OwnerActiveContract = Pick<Contract, 'id' | 'property_id'>;
 
 export type OwnerPayload = Pick<OwnerInsert, 'full_name'> & Partial<Pick<OwnerInsert,
   | 'display_name'
@@ -68,15 +68,15 @@ export type PropertyWithOwners = Property & {
   property_owners: PropertyOwnerWithOwner[];
 };
 
-export type OwnerProperty = Property & {
+type OwnerProperty = Property & {
   property_owners: PropertyOwner[];
 };
 
 export type OwnerUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'floor' | 'status' | 'rent_amount' | 'created_at'>;
-export type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status' | 'reference'>;
-export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at' | 'reference' | 'due_date' | 'created_at'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
+type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status' | 'reference'>;
+type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at' | 'reference' | 'due_date' | 'created_at'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
 
-export type OwnerFinancialSummary = Readonly<{
+type OwnerFinancialSummary = Readonly<{
   outstandingBalance: number;
   outstandingInvoicesCount: number;
 }>;
@@ -187,7 +187,7 @@ export function normalizePropertyOwnerPayload(payload: PropertyOwnerPayload): Pr
   };
 }
 
-export function normalizePropertyOwnerUpdatePayload(payload: PropertyOwnerUpdatePayload): PropertyOwnerUpdate {
+function normalizePropertyOwnerUpdatePayload(payload: PropertyOwnerUpdatePayload): PropertyOwnerUpdate {
   const normalized: PropertyOwnerUpdate = {};
 
   if ('ownership_percentage' in payload) {
@@ -459,7 +459,7 @@ export async function listUnitsForProperties(propertyIds: readonly string[]): Pr
   return rows;
 }
 
-export async function listContractsForProperties(propertyIds: readonly string[]): Promise<OwnerContract[]> {
+async function listContractsForProperties(propertyIds: readonly string[]): Promise<OwnerContract[]> {
   if (propertyIds.length === 0) return [];
 
   const { rows } = await fetchAllRowsInBatches<OwnerContract, string>(propertyIds, (propertyIdBatch) => supabase
@@ -473,7 +473,7 @@ export async function listContractsForProperties(propertyIds: readonly string[])
   return rows;
 }
 
-export async function listInvoicesForContracts(contractIds: readonly string[]): Promise<OwnerInvoice[]> {
+async function listInvoicesForContracts(contractIds: readonly string[]): Promise<OwnerInvoice[]> {
   if (contractIds.length === 0) return [];
 
   const { rows } = await fetchAllRowsInBatches<OwnerInvoice, string>(contractIds, (contractIdBatch) => supabase

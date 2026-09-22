@@ -3,7 +3,7 @@ import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import type { ReportsFilterState } from './reports-workspace-filters';
 
-export type SelectedFilterEntities = Readonly<{
+type SelectedFilterEntities = Readonly<{
   selectedCostCenter?: string;
   selectedOwner?: Owner;
   selectedContract?: ContractListItem;
@@ -47,7 +47,7 @@ export function getSelectedFilterEntities(
 }
 
 /** Human-readable label for each active filter dimension, or `undefined` when unset. */
-export type ReportFilterLabels = Readonly<{
+type ReportFilterLabels = Readonly<{
   property?: string;
   unit?: string;
   tenant?: string;

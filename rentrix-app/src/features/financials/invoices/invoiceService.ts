@@ -6,7 +6,7 @@ import { getInvoiceStatusVariants } from '../components/invoice-status-labels';
 
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
 
-export type InvoiceContractContext = {
+type InvoiceContractContext = {
   id: string;
   property_id: string;
   tenant_id: string;
@@ -153,7 +153,7 @@ export type InvoicePaginationParams = {
   pageSize: number;
 };
 
-export type InvoicePage = {
+type InvoicePage = {
   rows: InvoiceListItem[];
   total: number;
   page: number;

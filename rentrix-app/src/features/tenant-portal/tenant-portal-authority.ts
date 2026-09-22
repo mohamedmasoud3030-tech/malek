@@ -1,6 +1,6 @@
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export type TenantPortalAuthorization =
+type TenantPortalAuthorization =
   | Readonly<{ authorized: true; token: string }>
   | Readonly<{ authorized: false; reason: 'TENANT_LINK_MISSING' | 'TENANT_LINK_INVALID' }>;
 

@@ -3,7 +3,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { OfficeLaunchPanel } from '../office-launch/OfficeLaunchPanel';
 import { APP_BRAND_NAME } from '@/lib/brand';
 import { supportedCountries } from '@/lib/companySettings';
-import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../settingsForm';
+import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../form/sectionDrafts';
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SettingsFormField, SettingsSelectField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
@@ -11,7 +11,7 @@ import type { SettingsSectionId } from '../registry/sectionRegistry';
 
 const countryOptions = supportedCountries;
 
-export type OfficeSectionProps = Readonly<{
+type OfficeSectionProps = Readonly<{
   activeSection: SettingsSectionId;
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;

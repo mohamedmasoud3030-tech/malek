@@ -36,7 +36,7 @@ export type OccupancyChartRow = {
    */
   nonRentable: number;
 };
-export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
+type PaymentsTrendRow = { month: string; collections: number; overdue: number };
 
 export type PropertyPerformanceRow = Readonly<{
   propertyId: string;
@@ -268,7 +268,7 @@ export type RentRollReportRow = {
 };
 
 export const latestReceiptLimit = 100;
-export const expiringContractWindowDays = 60;
+const expiringContractWindowDays = 60;
 function monthKey(date: string) {
   return date.slice(0, 7);
 }

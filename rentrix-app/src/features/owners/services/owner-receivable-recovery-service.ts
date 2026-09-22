@@ -16,10 +16,7 @@
  *  - idempotent by request_id, fingerprinted over (id, amount, cash account, date)
  */
 import { supabase } from '@/lib/supabase';
-import {
-  OwnerReceivableEvidenceError,
-  type OwnerReceivable,
-} from './owner-receivable-offset-service';
+import { OwnerReceivableEvidenceError } from './owner-receivable-offset-service';
 
 const OMR_EXACT = 1000;
 
@@ -37,16 +34,11 @@ export const recoveryCashAccountLabels: Record<RecoveryCashAccount, string> = {
 };
 
 /** Statuses the receivable can reach through recovery. */
-export const recoveryResultStatuses = ['RECOVERED', 'PARTIALLY_RECOVERED'] as const;
-export type RecoveryResultStatus = (typeof recoveryResultStatuses)[number];
-
-export const recoveryResultStatusLabels: Record<RecoveryResultStatus, string> = {
-  RECOVERED: 'محصَّلة بالكامل',
-  PARTIALLY_RECOVERED: 'محصَّلة جزئياً',
-};
+const recoveryResultStatuses = ['RECOVERED', 'PARTIALLY_RECOVERED'] as const;
+type RecoveryResultStatus = (typeof recoveryResultStatuses)[number];
 
 /** One posted cash recovery against a receivable. */
-export type OwnerReceivableRecovery = {
+type OwnerReceivableRecovery = {
   id: string;
   dueFromOwnerId: string;
   ownerId: string;
@@ -149,7 +141,7 @@ export function createOwnerRecoveryRequestId(prefix = 'recovery'): string {
   return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
-export type RecoverOwnerReceivableInput = {
+type RecoverOwnerReceivableInput = {
   dueFromOwnerId: string;
   amount: number;
   effectiveDate: string;
@@ -214,7 +206,7 @@ export function buildRecoverOwnerReceivablePayload(input: RecoverOwnerReceivable
  * AFTER the recovery — the effect on the original source — and
  * `journalBatchId` is the GL proof.
  */
-export type RecoverOwnerReceivableResult = {
+type RecoverOwnerReceivableResult = {
   success: true;
   idempotent: boolean;
   dueFromOwnerId: string;
@@ -316,9 +308,4 @@ export async function recoverOwnerReceivable(
   });
   if (error) throw error;
   return parseRecoverOwnerReceivableResult(data);
-}
-
-/** Convenience: the recoverable remainder of a receivable, straight from the row. */
-export function recoverableRemainder(receivable: OwnerReceivable): number {
-  return receivable.outstanding;
 }

@@ -28,7 +28,7 @@ export { PropertyOverview } from './overview/property-overview-page';
 export { PropertyUnitsPage } from './units/property-units-page';
 export { PropertyUnitDetailPage } from './units/property-unit-detail-page';
 
-export type PropertyDetailSearch = {
+type PropertyDetailSearch = {
   tab?: 'overview' | 'contracts' | 'financials' | 'maintenance' | 'ownership' | 'documents' | 'activity';
 };
 

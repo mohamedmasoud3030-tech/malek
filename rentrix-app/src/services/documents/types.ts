@@ -15,7 +15,7 @@ export type DocumentHeader = {
   currency?: string;
 };
 
-export type DocumentKpi = { label: string; value: string };
+type DocumentKpi = { label: string; value: string };
 
 /* ------------------------------------------------------------------ */
 /* Professional report primitives (owner_report / property_report)     */

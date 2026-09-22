@@ -88,7 +88,7 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
   return rows.map(normalizeUnitRecord);
 }
 
-export type UnitDetail = Unit & {
+type UnitDetail = Unit & {
   property: { id: string; title: string | null; address: string | null } | null;
 };
 

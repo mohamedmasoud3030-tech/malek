@@ -2,7 +2,7 @@ import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 
-export type OwnerOption = Readonly<{
+type OwnerOption = Readonly<{
   id: string;
   full_name: string;
   display_name: string | null;

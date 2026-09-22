@@ -8,14 +8,14 @@ import {
   subscribeAssistantVoiceInputState,
 } from './assistant-voice-input';
 
-export type AssistantVoiceInputHandlers = Readonly<{
+type AssistantVoiceInputHandlers = Readonly<{
   /** Live dictation: the merged transcript lands in the compose box as it forms. */
   onTranscript?: (transcript: string) => void;
   /** Fired once when the current speech session is committed. */
   onFinal?: (transcript: string) => void;
 }>;
 
-export type AssistantVoiceInputUi = Readonly<{
+type AssistantVoiceInputUi = Readonly<{
   /** The platform exposes Web Speech Recognition — the mic button renders only when true. */
   supported: boolean;
   listening: boolean;

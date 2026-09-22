@@ -6,7 +6,7 @@ import {
   type ReconciliationRow,
 } from '@/features/accounting/reports/accountingReportsFacade';
 
-export const REQUIRED_RECONCILIATION_ACCOUNT_NOS = ['1201', '1300', '2000', '2200', '2300'] as const;
+const REQUIRED_RECONCILIATION_ACCOUNT_NOS = ['1201', '1300', '2000', '2200', '2300'] as const;
 
 export type ReconciliationReadiness = Readonly<{
   state: 'PASS' | 'FAIL' | 'NO_EVIDENCE';

@@ -10,7 +10,7 @@ import {
   YAxis,
 } from 'recharts';
 
-export type ReportBarSeries = Readonly<{
+type ReportBarSeries = Readonly<{
   dataKey: string;
   name: string;
   /** Maps to a design token colour; `negative` is the destructive token. */

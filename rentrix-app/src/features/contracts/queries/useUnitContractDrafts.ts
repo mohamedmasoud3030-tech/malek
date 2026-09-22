@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listUnitDraftContracts } from '../services/unitAvailabilityService';
 
-export const unitContractDraftKeys = {
+const unitContractDraftKeys = {
   all: ['contracts', 'unit-drafts'] as const,
   list: (propertyId: string, excludedContractId?: string | null) =>
     [...unitContractDraftKeys.all, { propertyId, excludedContractId: excludedContractId ?? null }] as const,

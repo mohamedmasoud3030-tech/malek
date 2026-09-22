@@ -26,7 +26,7 @@ export type MaskedUserInvestigation = Readonly<{
   lastLogin: string | null;
 }>;
 
-export type SupportAuditPreview = Readonly<{
+type SupportAuditPreview = Readonly<{
   id: string;
   actorMasked: string;
   capability: string;
@@ -36,7 +36,7 @@ export type SupportAuditPreview = Readonly<{
   createdAt: string;
 }>;
 
-export type SupportOperationsSnapshot = Readonly<{
+type SupportOperationsSnapshot = Readonly<{
   capabilities: { view: boolean; triage: boolean; userLookup: boolean };
   summary: {
     openRequests: number;

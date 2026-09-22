@@ -13,7 +13,7 @@
 import { toDateOnlyISO } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 
-export type DashboardPeriod = {
+type DashboardPeriod = {
   dateFrom: string;
   dateTo: string;
   asOf: string;
@@ -21,45 +21,45 @@ export type DashboardPeriod = {
   year: number;
 };
 
-export type DashboardAgingBucketKey = 'current' | 'days_1_30' | 'days_31_60' | 'days_61_90' | 'days_90_plus';
+type DashboardAgingBucketKey = 'current' | 'days_1_30' | 'days_31_60' | 'days_61_90' | 'days_90_plus';
 
-export type DashboardAgingBucket = {
+type DashboardAgingBucket = {
   total: number;
   count: number;
 };
 
-export type DashboardPortfolio = {
+type DashboardPortfolio = {
   properties: number;
   units: number;
 };
 
-export type DashboardOccupancy = {
+type DashboardOccupancy = {
   occupiedUnits: number;
   vacantUnits: number;
   occupancyRate: number;
 };
 
-export type DashboardContracts = {
+type DashboardContracts = {
   active: number;
 };
 
-export type DashboardBilling = {
+type DashboardBilling = {
   invoicedAmount: number;
   /** All-time active invoice count — onboarding progress truth, not a period KPI. */
   invoicesTotalCount: number;
 };
 
-export type DashboardCollections = {
+type DashboardCollections = {
   collectedAmount: number;
   outstandingAmount: number;
   collectionRate: number;
 };
 
-export type DashboardExpenses = {
+type DashboardExpenses = {
   totalAmount: number;
 };
 
-export type DashboardArrears = {
+type DashboardArrears = {
   totalOverdue: number;
   overdueCount: number;
   averageDaysOverdue: number;
@@ -67,20 +67,20 @@ export type DashboardArrears = {
   buckets: Record<DashboardAgingBucketKey, DashboardAgingBucket>;
 };
 
-export type DashboardOwnerFunds = {
+type DashboardOwnerFunds = {
   settlementsDraft: number;
   settlementsApproved: number;
 };
 
-export type DashboardMaintenance = {
+type DashboardMaintenance = {
   urgentOpen: number;
 };
 
-export type DashboardExceptions = {
+type DashboardExceptions = {
   unmatchedBankLines: number;
 };
 
-export type DashboardQueueContractRow = {
+type DashboardQueueContractRow = {
   id: string;
   reference: string | null;
   endDate: string;
@@ -90,7 +90,7 @@ export type DashboardQueueContractRow = {
   unitNumber: string | null;
 };
 
-export type DashboardQueueInvoiceRow = {
+type DashboardQueueInvoiceRow = {
   invoiceId: string;
   reference: string | null;
   dueDate: string;
@@ -101,7 +101,7 @@ export type DashboardQueueInvoiceRow = {
   unitNumber: string | null;
 };
 
-export type DashboardQueues = {
+type DashboardQueues = {
   expiringContracts: DashboardQueueContractRow[];
   overdueInvoices: DashboardQueueInvoiceRow[];
 };
@@ -145,7 +145,7 @@ function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-export function getTodayLocalDateString(date = new Date()): string {
+function getTodayLocalDateString(date = new Date()): string {
   return toDateOnlyISO(date);
 }
 

@@ -16,7 +16,7 @@ import {
 } from './service-provider-service';
 import type { ServiceProviderCategoryValues, ServiceProviderFormValues } from './service-provider-schema';
 
-export const serviceProviderKeys = {
+const serviceProviderKeys = {
   all: ['service-providers'] as const,
   lists: () => [...serviceProviderKeys.all, 'list'] as const,
   list: (params: ServiceProviderListParams) => [...serviceProviderKeys.lists(), params] as const,

@@ -11,7 +11,7 @@
  * LENA; the two products keep separate deployments.
  */
 
-export type LenaLocale = 'ar' | 'en';
+type LenaLocale = 'ar' | 'en';
 
 import { trimTrailingSlashes } from '@/lib/trailing-slashes';
 
@@ -76,5 +76,4 @@ export function lenaHousePublicEntry(
   return url.toString();
 }
 
-/** Login endorsement target. Empty when `VITE_LENA_HOUSE_ORIGIN` is unset. */
-export const LENA_PUBLIC_ENTRY = lenaHousePublicEntry();
+

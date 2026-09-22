@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { announceEffectivePermissionsChanged } from './effective-permissions';
 import type { AppPermission } from './permissions';
 
-export type PermissionRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+type PermissionRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type PermissionRequest = Readonly<{
   id: string;
   requester_user_id: string;
@@ -20,7 +20,7 @@ export type PermissionRequest = Readonly<{
   grant_active?: boolean;
 }>;
 
-export type EmployeeEffectivePermission = Readonly<{
+type EmployeeEffectivePermission = Readonly<{
   user_id: string;
   permission: AppPermission;
   allowed: boolean;

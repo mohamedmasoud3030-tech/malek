@@ -16,7 +16,7 @@ import {
 
 export type ReadinessState = 'READY' | 'MISSING' | 'BLOCKED' | 'DRAFT_NEEDS_APPROVAL';
 
-export type TaxReadiness = {
+type TaxReadiness = {
   state: ReadinessState;
   activeProfile: {
     id: string;
@@ -38,7 +38,7 @@ export type TaxReadiness = {
   errorCode: string | null;
 };
 
-export type FeeTaxReadiness = {
+type FeeTaxReadiness = {
   feeKind: TaxAuthorityFeeScope;
   state: ReadinessState;
   activeTreatment: {

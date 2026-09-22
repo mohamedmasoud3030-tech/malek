@@ -8,7 +8,7 @@ import {
 type DateRange = Readonly<{ dateFrom: string; dateTo: string }>;
 type QueryOptions = Readonly<{ enabled?: boolean }>;
 
-export const accountingReportKeys = {
+const accountingReportKeys = {
   all: ['accountingReports'] as const,
   trialBalance: (asOf: string) => [...accountingReportKeys.all, 'trialBalance', asOf] as const,
   incomeStatement: (filters: DateRange) => [...accountingReportKeys.all, 'incomeStatement', filters] as const,

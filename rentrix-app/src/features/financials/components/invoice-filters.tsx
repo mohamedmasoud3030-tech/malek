@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/select';
 import type { ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import type { InvoiceStatusFilter } from '../invoices/invoiceService';
 
-export const invoiceStatusFilters: { value: InvoiceStatusFilter; label: string }[] = [
+const invoiceStatusFilters: { value: InvoiceStatusFilter; label: string }[] = [
   { value: 'unpaid', label: 'غير مدفوعة' },
   { value: 'overdue', label: 'متأخرة' },
   { value: 'partial', label: 'مدفوعة جزئياً' },

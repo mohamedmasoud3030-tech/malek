@@ -48,7 +48,7 @@ export async function listLands(filters: LandFilters) {
   }
 }
 
-export type LandDossier = Readonly<{
+type LandDossier = Readonly<{
   land: LandRecord;
   owner: { id: string; full_name: string | null; display_name: string | null; phone: string | null; email: string | null } | null;
   commissions: Array<{ id: string; amount: number; status: string; staff_name: string | null }>;

@@ -5,19 +5,19 @@
  * portal is never an accounting authority and never writes office records.
  */
 
-export type TenantPortalIdentity = Readonly<{
+type TenantPortalIdentity = Readonly<{
   fullName: string;
   phone?: string | null;
   email?: string | null;
 }>;
 
-export type TenantPortalUnit = Readonly<{
+type TenantPortalUnit = Readonly<{
   title: string;
   unitNumber: string;
   status: string;
 }>;
 
-export type TenantPortalContract = Readonly<{
+type TenantPortalContract = Readonly<{
   reference: string;
   status: string;
   startDate: string;
@@ -26,7 +26,7 @@ export type TenantPortalContract = Readonly<{
   currency: string;
 }>;
 
-export type TenantPortalDueScheduleItem = Readonly<{
+type TenantPortalDueScheduleItem = Readonly<{
   label: string;
   dueDate: string;
   amount: number;
@@ -34,7 +34,7 @@ export type TenantPortalDueScheduleItem = Readonly<{
   status: 'paid' | 'open' | 'overdue';
 }>;
 
-export type TenantPortalPaidPosition = Readonly<{
+type TenantPortalPaidPosition = Readonly<{
   invoiced: number;
   paid: number;
   remaining: number;
@@ -42,7 +42,7 @@ export type TenantPortalPaidPosition = Readonly<{
   currency: string;
 }>;
 
-export type TenantPortalServiceItem = Readonly<{
+type TenantPortalServiceItem = Readonly<{
   label: string;
   periodStart?: string | null;
   periodEnd?: string | null;
@@ -54,7 +54,7 @@ export type TenantPortalServiceItem = Readonly<{
   status: 'paid' | 'open' | 'overdue';
 }>;
 
-export type TenantPortalReceipt = Readonly<{
+type TenantPortalReceipt = Readonly<{
   reference: string;
   date: string;
   amount: number;
@@ -62,14 +62,14 @@ export type TenantPortalReceipt = Readonly<{
   status: 'posted' | 'void';
 }>;
 
-export type TenantPortalDocument = Readonly<{
+type TenantPortalDocument = Readonly<{
   title: string;
   type: string;
   createdAt: string;
   reference?: string | null;
 }>;
 
-export type TenantPortalMaintenanceRecord = Readonly<{
+type TenantPortalMaintenanceRecord = Readonly<{
   label: string;
   status: string;
   createdAt: string;
@@ -122,7 +122,7 @@ export const TENANT_PORTAL_V1_SECTIONS = [
   'maintenance',
 ] as const;
 
-export type TenantPortalSectionId = (typeof TENANT_PORTAL_V1_SECTIONS)[number];
+type TenantPortalSectionId = (typeof TENANT_PORTAL_V1_SECTIONS)[number];
 
 export function isTenantPortalSectionId(value: string): value is TenantPortalSectionId {
   return (TENANT_PORTAL_V1_SECTIONS as readonly string[]).includes(value);

@@ -85,4 +85,3 @@ export function useReviewedMoveOutInspections(contractId?: string | null) {
   });
 }
 
-export type { InvoiceOption, ReviewedMoveOutInspection };

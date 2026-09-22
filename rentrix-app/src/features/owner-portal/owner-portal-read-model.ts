@@ -1,10 +1,10 @@
-export type OwnerPortalIdentity = Readonly<{
+type OwnerPortalIdentity = Readonly<{
   fullName: string;
   phone?: string | null;
   email?: string | null;
 }>;
 
-export type OwnerPortalSummary = Readonly<{
+type OwnerPortalSummary = Readonly<{
   properties: number;
   units: number;
   occupiedUnits: number;
@@ -54,7 +54,7 @@ export type OwnerPortalSettlement = Readonly<{
   currency: string;
 }>;
 
-export type OwnerPortalMaintenance = Readonly<{
+type OwnerPortalMaintenance = Readonly<{
   id: string;
   propertyTitle: string;
   unitNumber?: string | null;
@@ -64,7 +64,7 @@ export type OwnerPortalMaintenance = Readonly<{
   createdAt: string;
 }>;
 
-export type OwnerPortalDocument = Readonly<{
+type OwnerPortalDocument = Readonly<{
   id: string;
   title: string;
   mime?: string | null;

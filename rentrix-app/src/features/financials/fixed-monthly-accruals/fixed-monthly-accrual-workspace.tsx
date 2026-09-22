@@ -40,7 +40,7 @@ function statusPresentation(row: FixedMonthlyAccrualRow) {
   return { label: 'يحتاج مراجعة', variant: 'danger' as const };
 }
 
-export type FixedMonthlyAccrualWorkspaceProps = Readonly<{
+type FixedMonthlyAccrualWorkspaceProps = Readonly<{
   /**
    * embedded: rendered inside the finance hub, which already supplies the page
    * shell — the workspace body renders without a second layout or header.
@@ -382,4 +382,3 @@ export function FixedMonthlyAccrualWorkspace({ embedded = false }: FixedMonthlyA
   );
 }
 
-export default FixedMonthlyAccrualWorkspace;

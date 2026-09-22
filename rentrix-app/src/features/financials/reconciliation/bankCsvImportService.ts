@@ -5,7 +5,7 @@ import type { Json } from '@/types/database';
 
 export type { BankCsvParseResult } from '@/lib/bankCsvParser';
 
-export const MAX_SYNCHRONOUS_BANK_IMPORT_ROWS = 5_000;
+const MAX_SYNCHRONOUS_BANK_IMPORT_ROWS = 5_000;
 
 export interface BankImportPreview extends BankCsvParseResult {
   fileFingerprint: string;
@@ -22,7 +22,7 @@ export async function previewBankCsvFile(file: File): Promise<BankImportPreview>
   return { ...parsed, fileFingerprint: fingerprint };
 }
 
-export interface BankImportPayloadRow {
+interface BankImportPayloadRow {
   transaction_date: string;
   amount: number;
   description: string;
@@ -31,7 +31,7 @@ export interface BankImportPayloadRow {
   currency?: string;
 }
 
-export interface BankImportRequest {
+interface BankImportRequest {
   bank_account_id: string;
   file_name: string;
   file_fingerprint: string;

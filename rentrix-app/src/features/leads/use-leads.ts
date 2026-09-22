@@ -5,7 +5,7 @@ import { archiveLead, createLead, listLeads, updateLead } from './services/leads
 import type { LeadFilters, LeadFormValues } from './types';
 
 const leadKeyBase = defineEntityKeys('leads');
-export const leadKeys = { ...leadKeyBase } as const;
+const leadKeys = { ...leadKeyBase } as const;
 
 export function useLeads(filters: LeadFilters) {
   return useQuery({ queryKey: leadKeys.list(filters), queryFn: () => listLeads(filters) });

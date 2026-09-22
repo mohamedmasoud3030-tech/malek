@@ -38,7 +38,7 @@ export const maintenanceColumnOptions = [
 
 export const defaultMaintenanceColumns = maintenanceColumnOptions.map((column) => column.key);
 
-export type MaintenanceListProps = Readonly<{
+type MaintenanceListProps = Readonly<{
   rows: Maintenance[];
   properties: Property[];
   allUnits: Unit[];

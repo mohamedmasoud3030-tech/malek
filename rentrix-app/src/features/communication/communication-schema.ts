@@ -76,7 +76,6 @@ export const communicationFormSchema = z.object({
   related_entity_id: optionalUuid,
 });
 
-export type CommunicationFormInput = z.input<typeof communicationFormSchema>;
 export type CommunicationFormValues = z.output<typeof communicationFormSchema>;
 
 /**
@@ -97,7 +96,7 @@ export const communicationPayloadSchema = z.object({
   related_entity_id: z.string().uuid().nullable(),
 });
 
-export type CommunicationPayload = z.output<typeof communicationPayloadSchema>;
+type CommunicationPayload = z.output<typeof communicationPayloadSchema>;
 
 /**
  * Coerce a form submission into a service payload. Combines the

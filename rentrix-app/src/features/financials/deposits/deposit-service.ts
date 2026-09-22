@@ -37,8 +37,8 @@ export type DepositRecord = {
 };
 
 /** GAP-009 governed deposit claim (evidence-backed, maker-checker approved). */
-export type DepositClaimKind = 'INVOICE_ARREARS' | 'DAMAGE';
-export type DepositClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'REVERSED';
+type DepositClaimKind = 'INVOICE_ARREARS' | 'DAMAGE';
+type DepositClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'REVERSED';
 
 export type DepositClaimRecord = {
   id: string;

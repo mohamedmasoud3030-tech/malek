@@ -445,7 +445,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
   );
 }
 
-export type ReceiptsWorkspaceProps = Readonly<{
+type ReceiptsWorkspaceProps = Readonly<{
   /**
    * embedded: rendered inside the finance hub, which already supplies the page
    * shell — the workspace body renders without a second layout or header.

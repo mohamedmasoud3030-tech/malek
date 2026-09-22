@@ -276,4 +276,3 @@ export function TenantsPage() {
   return <TenantsWorkspace />;
 }
 
-export default TenantsPage;

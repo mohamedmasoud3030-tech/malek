@@ -11,7 +11,7 @@ import { toFinancialNumber } from '../financialMath';
  * stays gross-based (net + VAT − paid) for consistency with the list, the
  * summary cards and the payment validation rules.
  */
-export type QuickCollectInvoiceInput = Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
+type QuickCollectInvoiceInput = Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount' | 'credited_amount'>>;
 
 export const QUICK_PAYMENT_FORM_ID = 'quick-payment-form';
 export const QUICK_PAYMENT_AMOUNT_INPUT_ID = 'quick-payment-amount';

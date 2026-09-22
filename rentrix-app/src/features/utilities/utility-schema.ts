@@ -11,7 +11,7 @@ import { z, type RefinementCtx } from 'zod';
 
 export const UTILITY_TYPE_VALUES = ['electricity', 'water', 'sanitation', 'internet', 'gas', 'other'] as const;
 export const RESPONSIBLE_PARTY_VALUES = ['tenant', 'landlord', 'company'] as const;
-export const UTILITY_BILL_STATUS_VALUES = ['unpaid', 'partially_paid', 'paid'] as const;
+const UTILITY_BILL_STATUS_VALUES = ['unpaid', 'partially_paid', 'paid'] as const;
 
 export type UtilityType = (typeof UTILITY_TYPE_VALUES)[number];
 export type ResponsibleParty = (typeof RESPONSIBLE_PARTY_VALUES)[number];
@@ -65,7 +65,6 @@ export const utilityMeterFormSchema = z.object({
   notes: z.string().trim().max(2000).optional().or(z.literal('')),
 });
 
-export type UtilityMeterFormInput = z.input<typeof utilityMeterFormSchema>;
 export type UtilityMeterFormValues = z.output<typeof utilityMeterFormSchema>;
 
 /**
@@ -84,7 +83,6 @@ export const utilityMeterPayloadSchema = z.object({
   notes: z.string().max(2000).nullable().optional(),
 });
 
-export type UtilityMeterPayload = z.output<typeof utilityMeterPayloadSchema>;
 
 // ── Bill schemas ────────────────────────────────────────────────────────────
 
@@ -149,7 +147,6 @@ export const utilityBillFormSchema = z
   })
   .superRefine(validateUtilityBillRelationships);
 
-export type UtilityBillFormInput = z.input<typeof utilityBillFormSchema>;
 export type UtilityBillFormValues = z.output<typeof utilityBillFormSchema>;
 
 /** Service-layer bill payload. */
@@ -174,4 +171,3 @@ export const utilityBillPayloadSchema = z
   })
   .superRefine(validateUtilityBillRelationships);
 
-export type UtilityBillPayload = z.output<typeof utilityBillPayloadSchema>;

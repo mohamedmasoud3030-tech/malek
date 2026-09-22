@@ -7,7 +7,7 @@ import {
 } from '@/features/financials/reports/deferred-revenue-service';
 import { formatLatinNumber } from '@/lib/formatters';
 
-export type ReportHealthInsight = Readonly<{
+type ReportHealthInsight = Readonly<{
   label: string;
   value: number;
   formattedValue: string;

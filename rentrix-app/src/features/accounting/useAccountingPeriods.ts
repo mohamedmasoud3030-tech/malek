@@ -14,7 +14,7 @@ import type { AccountingPeriodInput, AccountingPeriodStatusInput } from './accou
  * already existed; these hooks add the react-query wiring the Settings
  * Finance Readiness surface needs. No new RPC, no new business rule.
  */
-export const accountingPeriodKeys = {
+const accountingPeriodKeys = {
   all: ['accountingPeriods'] as const,
   list: () => [...accountingPeriodKeys.all, 'list'] as const,
 };

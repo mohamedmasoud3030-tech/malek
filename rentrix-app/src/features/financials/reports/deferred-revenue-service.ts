@@ -1,4 +1,4 @@
-export type DeferredRevenueScheduleRow = {
+type DeferredRevenueScheduleRow = {
   contractId: string;
   tenantName: string;
   propertyTitle: string;

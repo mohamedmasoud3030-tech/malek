@@ -6,7 +6,7 @@ import {
 import type { DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
 
-export type InvoiceDocumentContext = {
+type InvoiceDocumentContext = {
   settings: DocumentCompanySettings;
   contracts: Contract[];
   tenants: Person[];

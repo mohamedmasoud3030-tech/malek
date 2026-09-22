@@ -9,7 +9,7 @@ import type { Property, Unit } from '@/types/domain';
 import type { ServiceProviderCategory, ServiceProviderOption } from '@/features/service-providers/service-provider-service';
 import type { MaintenanceFormValues } from '../useMaintenancePageController';
 
-export type MaintenanceRequestFormProps = Readonly<{
+type MaintenanceRequestFormProps = Readonly<{
   open: boolean;
   isEditing: boolean;
   isEditingResolvedRequest: boolean;

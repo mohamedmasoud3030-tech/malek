@@ -46,7 +46,7 @@ import {
 } from '../property-analytics-model';
 
 /** Unavailable is rendered as an em dash — it is never published as `0`. */
-export const UNAVAILABLE = '—';
+const UNAVAILABLE = '—';
 
 function metricCount(value: MetricValue): string {
   return value == null ? UNAVAILABLE : formatLatinNumber(value, 'ar');
@@ -89,7 +89,7 @@ function metricValue(
   return metricMoney(value);
 }
 
-export type PropertyAnalyticsProps = Readonly<{
+type PropertyAnalyticsProps = Readonly<{
   occupancyRows: OccupancyChartRow[];
   expenseRows: PropertyExpenseRow[];
   performanceRows: readonly PropertyPerformanceRow[];

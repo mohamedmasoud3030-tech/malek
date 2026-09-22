@@ -5,7 +5,7 @@ import type { CompanySettingsContract } from '@/lib/companySettings';
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-export type CompanyFormatters = CompanySettingsContract & {
+type CompanyFormatters = CompanySettingsContract & {
   money: (value: number | null | undefined) => string;
   date: (value: string | null | undefined) => string;
   number: (value: number | null | undefined) => string;

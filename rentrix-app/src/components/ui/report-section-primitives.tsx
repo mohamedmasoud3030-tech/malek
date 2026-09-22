@@ -7,7 +7,7 @@ import type { SemanticTone } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 
 /** Semantic tint for the panel's icon tile. `primary` is the report default. */
-export type ReportPanelTone = Exclude<SemanticTone, 'secondary'>;
+type ReportPanelTone = Exclude<SemanticTone, 'secondary'>;
 
 const panelIconTone: Record<ReportPanelTone, string> = {
   primary: 'border border-primary/15 bg-primary/10 text-primary shadow-sm',
@@ -18,7 +18,7 @@ const panelIconTone: Record<ReportPanelTone, string> = {
   danger: 'bg-danger-bg text-danger-text ring-1 ring-current/10',
 };
 
-export type ReportPanelProps = Readonly<{
+type ReportPanelProps = Readonly<{
   title: string;
   description?: string;
   icon?: LucideIcon;
@@ -151,7 +151,7 @@ export function ReportState({ kind = 'empty', title, message, className, isLoadi
   return <div className={cn('flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-5 text-center text-sm sm:min-h-32', kind === 'error' ? 'border-destructive/40 bg-destructive/10 text-destructive' : 'border-border/70 bg-muted/20 text-muted-foreground', className)} role={kind === 'error' ? 'alert' : 'status'}><span className={cn('grid size-10 place-items-center rounded-xl', kind === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-background text-muted-foreground shadow-sm')}><Icon className="size-5" aria-hidden="true" /></span><div className="max-w-xl">{title ? <p className="font-bold text-foreground">{title}</p> : null}<p className={cn('leading-6', title && 'mt-1')}>{message}</p></div></div>;
 }
 
-export type ReportDrillActionProps = Readonly<{
+type ReportDrillActionProps = Readonly<{
   /** Business-language destination, e.g. "المتأخرات والأعمار". */
   label: string;
   onClick: () => void;
@@ -194,7 +194,7 @@ export function ReportDrillAction({ label, onClick, variant = 'outline', ariaLab
   );
 }
 
-export type ReportSegmentedTabItem<TId extends string> = Readonly<{
+type ReportSegmentedTabItem<TId extends string> = Readonly<{
   id: TId;
   label: string;
   /** Optional quiet second line (e.g. "12 حساب"). */
@@ -291,7 +291,7 @@ export function ReportList({
 }
 
 /** Semantic tint rendered as a leading (RTL: start) stripe on a row. */
-export type ReportRowTone = Exclude<SemanticTone, 'primary' | 'secondary'>;
+type ReportRowTone = Exclude<SemanticTone, 'primary' | 'secondary'>;
 
 const rowToneStripe: Record<ReportRowTone, string> = {
   neutral: 'border-s-transparent',

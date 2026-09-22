@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, FileUp } from '
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { downloadBlob } from '@/lib/tabular-export';
-import type { CompanySettingsDraft } from '@/features/settings/settingsForm';
+import type { CompanySettingsDraft } from '@/features/settings/form/sectionDrafts';
 import { deriveOfficeReadiness } from './office-readiness';
 import {
   officeImportSpecs,

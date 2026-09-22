@@ -82,7 +82,7 @@ export const appPermissions = [
 
 export type AppPermission = (typeof appPermissions)[number];
 
-export const permissionLabelsAr: Readonly<Record<AppPermission, string>> = {
+const permissionLabelsAr: Readonly<Record<AppPermission, string>> = {
   'app.dashboard.view': 'عرض لوحة التحكم',
   'audit.view': 'عرض سجل التدقيق',
   'integrity.view': 'عرض سلامة البيانات',
@@ -285,7 +285,7 @@ export function normalizeRole(role: unknown): AuthorizationRole | null {
   return knownRoles.has(normalizedRole) ? (normalizedRole as AuthorizationRole) : null;
 }
 
-export function getRoleFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationRole | null {
+function getRoleFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationRole | null {
   return normalizeRole(user?.app_metadata?.user_role ?? user?.app_metadata?.role);
 }
 
@@ -314,11 +314,11 @@ export function getRoleFromAccessToken(accessToken: string | null | undefined): 
   }
 }
 
-export function getRoleFromSession(session: AuthorizationSessionLike | null | undefined): AuthorizationRole | null {
+function getRoleFromSession(session: AuthorizationSessionLike | null | undefined): AuthorizationRole | null {
   return getRoleFromAccessToken(session?.access_token) ?? getRoleFromUser(session?.user);
 }
 
-export function getAuthorizationDiagnosticsFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationDiagnostics {
+function getAuthorizationDiagnosticsFromUser(user: AuthorizationUserLike | null | undefined): AuthorizationDiagnostics {
   const userRole = user?.app_metadata?.user_role;
   const role = user?.app_metadata?.role;
   const resolvedRole = getRoleFromUser(user);
@@ -376,7 +376,7 @@ export function canAccessRoute(context: AuthorizationContext | null | undefined,
 
 export type WriteAccessState = 'full' | 'read-only' | 'unconfigured';
 
-export const writeAccessPermissions = [
+const writeAccessPermissions = [
   'documents.write', 'service_providers.write',
   'properties.create', 'properties.edit', 'properties.archive',
   'contracts.create', 'contracts.edit', 'contracts.approve', 'contracts.cancel',

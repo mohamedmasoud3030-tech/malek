@@ -11,9 +11,9 @@ export type DepositContractOption = Pick<Contract, 'id' | 'tenant_id' | 'propert
   units: { id: string; unit_number: string | null } | null;
 };
 
-export const MISSING_TENANT_LABEL = 'مستأجر غير محدد';
-export const MISSING_UNIT_LABEL = 'وحدة غير محددة';
-export const MISSING_PROPERTY_LABEL = 'عقار غير محدد';
+const MISSING_TENANT_LABEL = 'مستأجر غير محدد';
+const MISSING_UNIT_LABEL = 'وحدة غير محددة';
+const MISSING_PROPERTY_LABEL = 'عقار غير محدد';
 
 function tenantName(contract: DepositContractOption): string {
   const name = contract.people?.full_name?.trim();

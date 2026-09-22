@@ -42,7 +42,7 @@ const personSections = [
   { id: 'records', label: 'السجل', icon: Activity },
 ] as const;
 
-export function PersonDossierContent({
+function PersonDossierContent({
   personId,
   section,
 }: Readonly<{ personId: string; section?: PersonSection }>) {

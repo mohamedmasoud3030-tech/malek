@@ -38,7 +38,7 @@ export type DocumentCompanySettings = {
  * Structural mirror of the `company_settings` row. Declared here (not
  * imported from features/) so the document platform stays a leaf service.
  */
-export type CompanySettingsRecordLike = Readonly<{
+type CompanySettingsRecordLike = Readonly<{
   company_name?: string | null;
   legal_name?: string | null;
   registration_number?: string | null;

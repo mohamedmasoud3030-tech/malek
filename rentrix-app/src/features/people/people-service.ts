@@ -24,7 +24,6 @@ type PersonInsert = Database['public']['Tables']['people']['Insert'];
 type PersonUpdate = Database['public']['Tables']['people']['Update'];
 
 // Re-export so existing imports keep working.
-export type { PersonFormValues, PersonPayload };
 
 const nullablePersonStringFields = ['phone', 'email', 'national_id', 'address', 'notes'] as const;
 
@@ -102,7 +101,7 @@ export async function getPerson(personId: string): Promise<Person> {
   return requirePersonData(data, 'تعذر تحميل بيانات الشخص');
 }
 
-export type PersonDossierContract = Readonly<{
+type PersonDossierContract = Readonly<{
   id: string;
   reference: string | null;
   status: string;
@@ -114,7 +113,7 @@ export type PersonDossierContract = Readonly<{
   units: { id: string; unit_number: string | null } | null;
 }>;
 
-export type PersonDossierInvoice = Readonly<{
+type PersonDossierInvoice = Readonly<{
   id: string;
   reference: string | null;
   contract_id: string;
@@ -126,7 +125,7 @@ export type PersonDossierInvoice = Readonly<{
   status: string;
 }>;
 
-export type PersonDossierActivity = Readonly<{
+type PersonDossierActivity = Readonly<{
   id: string;
   subject: string | null;
   body: string;
@@ -134,7 +133,7 @@ export type PersonDossierActivity = Readonly<{
   created_at: string;
 }>;
 
-export type PersonDossier = Readonly<{
+type PersonDossier = Readonly<{
   person: Person;
   contracts: PersonDossierContract[];
   invoices: PersonDossierInvoice[];

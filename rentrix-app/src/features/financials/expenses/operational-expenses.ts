@@ -61,7 +61,7 @@ export type OperationalExpenseFilterValues = {
   to: string;
 };
 
-export type OperationalExpensesSummary = {
+type OperationalExpensesSummary = {
   visibleCount: number;
   visibleAmount: number;
   byPropertyCount: number;

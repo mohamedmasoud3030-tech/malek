@@ -4,14 +4,14 @@ import { fetchAllRows } from '@/lib/paginatedRead';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { buildTenantVaultPath, requireActiveCompanyIdForStorage } from '@/lib/tenant-storage-path';
 
-export const documentEntityTypes = [
+const documentEntityTypes = [
   'property', 'unit', 'land', 'person', 'tenant', 'owner', 'contract',
   'invoice', 'payment', 'receipt', 'expense', 'maintenance', 'utility_bill',
   'service_provider',
 ] as const;
 export type DocumentEntityType = (typeof documentEntityTypes)[number];
-export type DocumentCategory = 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';
-export type DocumentTypedMetadata = Readonly<{
+type DocumentCategory = 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';
+type DocumentTypedMetadata = Readonly<{
   originalFileName?: string;
   contentType?: string;
   sizeBytes?: number;
@@ -86,7 +86,7 @@ export async function listContextualDocuments(relatedEntityType: DocumentEntityT
   return rows;
 }
 
-export function validateContextualDocumentFile(file: Pick<File, 'size' | 'type'>) {
+function validateContextualDocumentFile(file: Pick<File, 'size' | 'type'>) {
   if (file.size <= 0 || file.size > ATTACHMENTS_MAX_FILE_SIZE) throw new Error('حجم الملف غير صالح (الحد الأقصى 5 ميغابايت).');
   if (!ATTACHMENTS_ALLOWED_MIME_TYPES.has(file.type)) throw new Error('نوع الملف غير مدعوم. المسموح: PDF، JPG، PNG، WEBP.');
 }

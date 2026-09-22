@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
 export const ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS = 12_000;
-export const ACTIVE_COMPANY_BOOTSTRAP_FALLBACK_DELAY_MS = 300;
+const ACTIVE_COMPANY_BOOTSTRAP_FALLBACK_DELAY_MS = 300;
 
 /**
  * A company claim is a security boundary, but the UI must not remain in a
@@ -33,7 +33,7 @@ export function withCompanyResolutionTimeout<T>(
   });
 }
 
-export type Company = {
+type Company = {
   id: string;
   name: string;
   slug: string;
@@ -41,9 +41,9 @@ export type Company = {
   locale: string;
 };
 
-export type CompanyMemberRole = 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
+type CompanyMemberRole = 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
 
-export type CompanyContextValue = {
+type CompanyContextValue = {
   companies: Company[];
   activeCompany: Company | null;
   isLoading: boolean;

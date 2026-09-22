@@ -43,7 +43,7 @@ function depositMutationError(error: unknown, fallback: string) {
   return getActionableSupabaseErrorMessage(error, fallback);
 }
 
-export type DepositActionType = 'claim' | 'refund' | 'rejectClaim' | 'reverseClaim' | 'reverseRefund' | 'create' | null;
+type DepositActionType = 'claim' | 'refund' | 'rejectClaim' | 'reverseClaim' | 'reverseRefund' | 'create' | null;
 
 export function useDepositWorkspaceController() {
   const queryClient = useQueryClient();

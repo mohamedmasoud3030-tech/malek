@@ -22,5 +22,3 @@ export const SUPPORT_CONTACTS = {
     { label: 'البريد الإلكتروني', address: 'MohamedMs.oud@outlook.com' },
   ],
 } as const;
-
-export type SupportContact = typeof SUPPORT_CONTACTS;

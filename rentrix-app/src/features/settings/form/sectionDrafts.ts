@@ -88,10 +88,8 @@ export type CompanySettingsNotificationsDraft = {
   notification_sms_enabled: string;
 };
 
-export type CompanySettingsOfficeDraftField = keyof CompanySettingsOfficeDraft;
-export type CompanySettingsIdentityDraftField = keyof CompanySettingsIdentityDraft;
-export type CompanySettingsDocumentsDraftField = keyof CompanySettingsDocumentsDraft;
-export type CompanySettingsNotificationsDraftField = keyof CompanySettingsNotificationsDraft;
+type CompanySettingsIdentityDraftField = keyof CompanySettingsIdentityDraft;
+type CompanySettingsDocumentsDraftField = keyof CompanySettingsDocumentsDraft;
 
 /**
  * Sections that own a company-settings draft slice. The registry maps these

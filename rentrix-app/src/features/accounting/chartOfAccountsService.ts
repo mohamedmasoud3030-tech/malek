@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { ChartAccount, ProvisionResult } from './accountingDomain';
 
-type JsonRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): Record<string, unknown> {
   return (value ?? {}) as Record<string, unknown>;
@@ -87,4 +86,3 @@ export async function ensureRequiredAccounts(): Promise<ProvisionResult | null> 
   }
 }
 
-export type { JsonRecord };

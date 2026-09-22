@@ -2,7 +2,7 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 import { isContractStatus } from '@/lib/contractStatus';
 import type { Unit } from '@/types/domain';
 
-export type VacancyAnalyticsUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount' | 'created_at'>;
+type VacancyAnalyticsUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount' | 'created_at'>;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const VACANCY_RISK_WINDOW_DAYS = 60;
@@ -12,7 +12,7 @@ export const VACANCY_RISK_WINDOW_DAYS = 60;
  * derivation above. The days-vacant number of each row stays authoritative —
  * bucketing only decides which presentation lane a row sits in.
  */
-export type VacancyAgingBucketKey = 'days_0_15' | 'days_16_30' | 'days_31_60' | 'days_61_plus';
+type VacancyAgingBucketKey = 'days_0_15' | 'days_16_30' | 'days_31_60' | 'days_61_plus';
 
 export const vacancyAgingBucketOrder: readonly VacancyAgingBucketKey[] = [
   'days_0_15',
@@ -50,7 +50,7 @@ export function buildVacancyAgingBuckets(
   return buckets;
 }
 
-export type VacancySinceSource = 'contract_end' | 'unit_created';
+type VacancySinceSource = 'contract_end' | 'unit_created';
 
 export type VacantUnitAnalyticsRow = Readonly<{
   unitId: string;
@@ -64,7 +64,7 @@ export type VacantUnitAnalyticsRow = Readonly<{
   daysVacant: number;
 }>;
 
-export type VacancyRiskContractRow = Readonly<{
+type VacancyRiskContractRow = Readonly<{
   contractId: string;
   unitId: string;
   tenantName: string;

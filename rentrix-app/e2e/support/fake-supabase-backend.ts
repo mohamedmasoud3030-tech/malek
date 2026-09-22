@@ -32,13 +32,13 @@ export const IDS = {
 
 /** The real company identity stored in `company_settings` for this suite. */
 export const COMPANY_NAME = 'شركة الأفق لإدارة الأملاك';
-export const COMPANY_TAX_NUMBER = 'OM1102345678';
+const COMPANY_TAX_NUMBER = 'OM1102345678';
 /** The server-generated business reference carried by the seeded receipt. */
 export const RECEIPT_REFERENCE = 'REC-2026-0001';
 export const TENANT_NAME = 'أحمد بن سعيد الحارثي';
-export const PROPERTY_TITLE = 'برج الواحة — صحار';
-export const UNIT_NUMBER = '301';
-export const OWNER_NAME = 'سالم بن راشد البلوشي';
+const PROPERTY_TITLE = 'برج الواحة — صحار';
+const UNIT_NUMBER = '301';
+const OWNER_NAME = 'سالم بن راشد البلوشي';
 
 /**
  * - `complete`: a real company identity row exists in `company_settings`.
@@ -47,9 +47,9 @@ export const OWNER_NAME = 'سالم بن راشد البلوشي';
  *   canonical adapter never falls back to a brand default while the record
  *   is missing, so `isReady` stays false and actions stay disabled.
  */
-export type CompanySettingsMode = 'complete' | 'settings-unavailable';
+type CompanySettingsMode = 'complete' | 'settings-unavailable';
 
-export type AcceptanceSeed = Readonly<{
+type AcceptanceSeed = Readonly<{
   failCompanySettings: boolean;
   tables: Record<string, ReadonlyArray<Record<string, unknown>>>;
   rpcs: Record<string, (args: Record<string, unknown>) => unknown>;

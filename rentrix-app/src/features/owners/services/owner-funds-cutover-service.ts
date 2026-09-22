@@ -32,8 +32,8 @@ import { parseS08ReviewListEnvelope } from '@/features/financials/services/s09-c
  * surfaced as a gap — never coerced to `0`, never presented as a full total.
  */
 
-export const ownerFundsCutoverStatuses = ['DRAFT', 'APPROVED', 'REJECTED'] as const;
-export type OwnerFundsCutoverStatus = (typeof ownerFundsCutoverStatuses)[number];
+const ownerFundsCutoverStatuses = ['DRAFT', 'APPROVED', 'REJECTED'] as const;
+type OwnerFundsCutoverStatus = (typeof ownerFundsCutoverStatuses)[number];
 
 export const ownerFundsCutoverStatusLabels: Record<OwnerFundsCutoverStatus, string> = {
   DRAFT: 'مسودة — بانتظار اعتماد طرف آخر',
@@ -46,7 +46,7 @@ export const OWNER_FUNDS_GL_ACCOUNT = '2000';
 
 const OMR_EXACT = 1000;
 
-export class OwnerFundsCutoverEvidenceError extends Error {
+class OwnerFundsCutoverEvidenceError extends Error {
   readonly code: string;
   constructor(code: string, messageAr: string) {
     super(messageAr);
@@ -55,7 +55,7 @@ export class OwnerFundsCutoverEvidenceError extends Error {
   }
 }
 
-export type OwnerFundsCutoverEvidence = {
+type OwnerFundsCutoverEvidence = {
   /** Governed effective date of the adopted baseline. */
   cutoverDate: string;
   /** DERIVED server-side from GL 2000 at `cutoverDate`. Never entered by a user. */
@@ -73,7 +73,7 @@ export type OwnerFundsCutoverEvidence = {
   approvedAt: string | null;
 };
 
-export type OwnerFundsCutoverReadState =
+type OwnerFundsCutoverReadState =
   | {
       /** No baseline exists yet: every pre-cutover position must fail closed. */
       adopted: false;
@@ -81,7 +81,7 @@ export type OwnerFundsCutoverReadState =
     }
   | { adopted: true; evidence: OwnerFundsCutoverEvidence };
 
-export type ApprovedS08ReviewOption = {
+type ApprovedS08ReviewOption = {
   id: string;
   datasetLineage: string;
   reviewedAt: string | null;
@@ -245,7 +245,7 @@ export function createOwnerFundsCutoverRequestId(prefix = 'cutover'): string {
   return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
-export type CreateOwnerFundsCutoverDraftInput = {
+type CreateOwnerFundsCutoverDraftInput = {
   cutoverDate: string;
   s08ReviewId: string;
   reason: string;
@@ -262,7 +262,7 @@ export function buildCreateOwnerFundsCutoverPayload(input: CreateOwnerFundsCutov
   };
 }
 
-export type OwnerFundsCutoverMutationResult = {
+type OwnerFundsCutoverMutationResult = {
   idempotent: boolean;
   status: OwnerFundsCutoverStatus;
   cutoverDate: string | null;
@@ -408,7 +408,7 @@ export function ownerFundsCutoverStatusTone(
   return 'danger';
 }
 
-export type OwnerFundsCutoverDisclosure = {
+type OwnerFundsCutoverDisclosure = {
   sourceLabel: string;
   balanceCaption: string;
   /** True when the adopted baseline is derived from zero GL lines. */

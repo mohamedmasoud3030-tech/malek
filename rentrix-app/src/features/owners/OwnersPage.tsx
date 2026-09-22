@@ -14,7 +14,7 @@ import {
 import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPageController';
 import { formatCount } from '@/lib/formatters';
 
-export type OwnersWorkspaceProps = Readonly<{
+type OwnersWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 

@@ -56,7 +56,7 @@ export type CreateMaintenanceInput = {
   attachment_url?: string | null;
 };
 
-export type CreateMaintenanceAtomicResult = {
+type CreateMaintenanceAtomicResult = {
   maintenance: Maintenance;
   idempotent: boolean;
 };
@@ -149,7 +149,7 @@ export type CloseMaintenanceInput = {
   evidenceUrl: string | null;
   confirmed: boolean;
 };
-export type CloseMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };
+type CloseMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };
 
 const closureAcknowledgement = z.object({
   maintenance: z.object({id:z.string(),status:z.literal('closed'),cost:z.number(),charged_to:z.string(),expense_id:z.string().nullable()}).passthrough(),

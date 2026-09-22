@@ -12,7 +12,7 @@
  */
 import { buildAssistantSpeechText } from './assistant-speech-text';
 
-export type AssistantSpeechStatus = 'idle' | 'playing' | 'paused';
+type AssistantSpeechStatus = 'idle' | 'playing' | 'paused';
 
 export type AssistantSpeechState = Readonly<{
   status: AssistantSpeechStatus;

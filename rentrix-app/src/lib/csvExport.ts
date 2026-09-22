@@ -2,7 +2,7 @@ export type CsvValue = string | number | boolean | null | undefined;
 export type CsvRow = Record<string, CsvValue>;
 export const CSV_UTF8_BOM = '\uFEFF';
 
-export type CsvEncodingOptions = Readonly<{
+type CsvEncodingOptions = Readonly<{
   /** Preserve compact historical register CSVs; reports quote all text by default. */
   quoteText?: boolean;
   /** Disable ONLY for trusted static import templates, never user-controlled exports. */

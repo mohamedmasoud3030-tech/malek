@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import type { CompanySettingsDraft } from '../settingsForm';
+import type { CompanySettingsDraft } from '../form/sectionDrafts';
 import { OfficeLaunchPanel } from './OfficeLaunchPanel';
 import { parseOfficeImportFile } from './import/office-import';
 

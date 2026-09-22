@@ -1,4 +1,4 @@
-export type OwnerPortalAuthorization =
+type OwnerPortalAuthorization =
   | Readonly<{ authorized: true; token: string }>
   | Readonly<{ authorized: false; reason: 'OWNER_LINK_MISSING' | 'OWNER_LINK_MALFORMED' }>;
 

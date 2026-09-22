@@ -24,7 +24,7 @@ export function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1 ');
 }
 
-export type BoundaryRule = Readonly<{
+type BoundaryRule = Readonly<{
   id: string;
   /** Operator-facing explanation used as the assertion message. */
   message: string;
@@ -71,7 +71,7 @@ const RAW_DOCUMENT_ERROR_PASSTHROUGH =
  * whether a module is a Print/PDF CALL SITE that must appear in the
  * reviewed inventory.
  */
-export const DOCUMENT_OUTPUT_INVOCATION =
+const DOCUMENT_OUTPUT_INVOCATION =
   /documentService\s*\.\s*(printDocument|downloadDocumentPdf|buildDocumentPdfFile)\b|\b(printInvoiceDocument|exportInvoiceDocument|printExpenseVoucher|exportExpenseVoucher)\s*\(/;
 
 /** True when the module produces a document (and so must be inventoried). */

@@ -29,7 +29,7 @@ function getClaimTone(status: DepositClaimRecord['status']): SemanticTone {
   return 'info';
 }
 
-export type DepositTableActions = {
+type DepositTableActions = {
   handlePrint: (deposit: DepositRecord) => void;
   handleDownloadPdf: (deposit: DepositRecord) => void;
   handlePrintReceivedVoucher: (deposit: DepositRecord) => void;
@@ -140,7 +140,7 @@ export function createDepositColumns(
   ];
 }
 
-export type ClaimTableActions = {
+type ClaimTableActions = {
   onApprove: (claim: DepositClaimRecord) => void;
   onOpenReject: (claim: DepositClaimRecord) => void;
   onApply: (claim: DepositClaimRecord) => void;
@@ -233,7 +233,7 @@ export function createClaimColumns(
   ];
 }
 
-export type RefundTableActions = {
+type RefundTableActions = {
   onOpenReverseRefund: (event: DepositRefundEventRecord) => void;
   /**
    * Returned voucher for THIS refund event only. Exposed exclusively for a

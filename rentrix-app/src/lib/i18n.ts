@@ -6,21 +6,15 @@ import {
   type SupportedLanguage,
   type TextDirection,
 } from './companySettings';
-import { APP_BRAND_NAME } from './brand';
 
 const I18N_NAMESPACE = 'common';
 
 type SharedTranslationResources = Readonly<Record<string, string>>;
 type SharedTranslationEntry = readonly [key: string, arabicLabel: string, englishLabel: string];
 
-const sharedTranslationEntries = [
-  ['appName', APP_BRAND_NAME, APP_BRAND_NAME],
-  ['realEstateManagement', 'إدارة عقارية بوضوح وسرعة', 'Real estate operations with clarity'],
-  ['home', 'الرئيسية', 'Home'],
+const sharedTranslationEntries = [  ['home', 'الرئيسية', 'Home'],
   ['loading', 'جارٍ التحميل...', 'Loading...'],
-  ['error', 'حدث خطأ غير متوقع', 'An unexpected error occurred'],
-  ['logout', 'تسجيل الخروج', 'Log out'],
-  ['logoutSuccess', 'تم تسجيل الخروج بنجاح', 'Logged out successfully'],
+  ['error', 'حدث خطأ غير متوقع', 'An unexpected error occurred'],  ['logoutSuccess', 'تم تسجيل الخروج بنجاح', 'Logged out successfully'],
   ['pageLoadErrorTitle', 'تعذر تحميل هذه الصفحة', 'This page could not be loaded'],
   [
     'pageLoadErrorDescription',
@@ -44,58 +38,20 @@ const sharedTranslationEntries = [
   ['communication', 'التواصل', 'Communication'],
   ['automation', 'الأتمتة', 'Automation'],
   ['contracts', 'العقود', 'Contracts'],
-  ['financials', 'المالية', 'Financials'],
-  ['financialOverview', 'الملخص المالي', 'Financial overview'],
-  ['deposits', 'التأمينات', 'Deposits'],
+  ['financials', 'المالية', 'Financials'],  ['deposits', 'التأمينات', 'Deposits'],
   ['ownerSettlements', 'تسويات الملاك', 'Owner settlements'],
   ['invoices', 'الفواتير', 'Invoices'],
-  ['receipts', 'الإيصالات', 'Receipts'],
-  ['collectionsReceipts', 'التحصيلات والإيصالات', 'Collections & receipts'],
-  ['expenses', 'المصروفات', 'Expenses'],
+  ['receipts', 'الإيصالات', 'Receipts'],  ['expenses', 'المصروفات', 'Expenses'],
   ['arrears', 'المتأخرات', 'Arrears'],
   ['accounting', 'المحاسبة', 'Accounting'],
   ['reports', 'التقارير', 'Reports'],
-  ['statements', 'كشوف الحساب', 'Statements'],
-  ['aiAssistant', 'المساعد الذكي', 'AI assistant'],
-  ['maintenance', 'الصيانة', 'Maintenance'],
+  ['statements', 'كشوف الحساب', 'Statements'],  ['maintenance', 'الصيانة', 'Maintenance'],
   ['serviceProviders', 'مزودو الخدمات', 'Service providers'],
-  ['system', 'النظام', 'System'],
-  ['supportOperations', 'عمليات الدعم', 'Support operations'],
-  ['auditLog', 'سجل التدقيق', 'Audit log'],
-  ['dataIntegrity', 'سلامة البيانات', 'Data integrity'],
-  ['changePassword', 'تغيير كلمة المرور', 'Change password'],
-  ['settings', 'الإعدادات', 'Settings'],
-  ['collapseMenu', 'طي القائمة', 'Collapse menu'],
-  ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
-  ['notifications', 'الإشعارات', 'Notifications'],
-  ['notificationsNone', 'لا توجد إشعارات حالياً', 'No notifications right now'],
-  ['notifOverdueInvoices', 'فواتير متأخرة', 'Overdue invoices'],
-  ['notifExpiringContracts', 'عقود تنتهي خلال 30 يومًا', 'Contracts expiring within 30 days'],
-  ['notifUrgentMaintenance', 'طلبات صيانة عاجلة', 'Urgent maintenance requests'],
-  ['notificationsHint', 'ستظهر هنا الأحداث المسجلة مثل الدفعات وتحديثات العقود والصيانة.', 'Recorded events such as payments, contract updates, and maintenance updates will appear here.'],
-  ['configureAiAssistant', 'ضبط إعدادات الذكاء الاصطناعي', 'Configure AI assistant'],
+  ['system', 'النظام', 'System'],  ['auditLog', 'سجل التدقيق', 'Audit log'],  ['settings', 'الإعدادات', 'Settings'],  ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
+  ['notifications', 'الإشعارات', 'Notifications'],  ['configureAiAssistant', 'ضبط إعدادات الذكاء الاصطناعي', 'Configure AI assistant'],
   ['unsavedChanges', 'تغييرات غير محفوظة', 'Unsaved changes'],
-  ['newContract', 'عقد جديد', 'New contract'],
-  ['newProperty', 'عقار جديد', 'New property'],
-  ['newPerson', 'شخص جديد', 'New person'],
-  ['quickAdd', 'إنشاء سريع', 'Quick create'],
-  ['exportCsv', 'تصدير CSV', 'Export CSV'],
-  ['noResultsHint', 'لا توجد نتائج مطابقة — جرّب كلمات أخرى أو امسح الفلاتر.', 'No matching results — try different words or clear filters.'],
-  ['clearFilters', 'مسح الفلاتر', 'Clear filters'],
-  ['aiUnavailable', 'المساعد غير مهيأ — راجع الإعدادات', 'Assistant not configured — review settings'],
-  ['adminGroup', 'إدارة النظام', 'System administration'],
-  ['navUpgradeTitle', 'أقسام حسب الصلاحية', 'Role-based sections'],
-  [
-    'navUpgradeHint',
-    'بعض الأقسام لا تظهر لأن دورك الحالي لا يملك صلاحية الوصول إليها.',
-    'Some sections are hidden because your current role cannot access them.',
-  ],
-  ['ariaCurrentPage', 'الصفحة الحالية', 'Current page'],
-  ['skipToContent', 'تخطي إلى المحتوى الرئيسي', 'Skip to main content'],
-  ['openMenu', 'فتح القائمة', 'Open menu'],
-  ['closeMenu', 'إغلاق القائمة', 'Close menu'],
-  ['confirm', 'تأكيد', 'Confirm'],
-  ['cancel', 'إلغاء', 'Cancel'],
+  ['newContract', 'عقد جديد', 'New contract'],  ['exportCsv', 'تصدير CSV', 'Export CSV'],
+  ['noResultsHint', 'لا توجد نتائج مطابقة — جرّب كلمات أخرى أو امسح الفلاتر.', 'No matching results — try different words or clear filters.'],  ['aiUnavailable', 'المساعد غير مهيأ — راجع الإعدادات', 'Assistant not configured — review settings'],  ['skipToContent', 'تخطي إلى المحتوى الرئيسي', 'Skip to main content'],  ['cancel', 'إلغاء', 'Cancel'],
   // ===== Financial routes UX clarity (ADR-0008) =====
   // Descriptions shown in the PageHeader of /financials and /reports to make
   // the purpose of each page unambiguous and to remove the previous UX overlap
@@ -123,7 +79,7 @@ export const i18nResources = {
 
 export type SharedLabel = (key: string) => string;
 
-export type AppLanguageState = Readonly<{
+type AppLanguageState = Readonly<{
   language: SupportedLanguage;
   locale: string;
   direction: TextDirection;

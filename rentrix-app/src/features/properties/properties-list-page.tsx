@@ -94,7 +94,7 @@ function downloadPropertyFile(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
-export type PropertiesListPageProps = Readonly<{
+type PropertiesListPageProps = Readonly<{
   embedded?: boolean;
 }>;
 
@@ -445,8 +445,4 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
       />
     </>
   );
-}
-
-export function PropertiesWorkspace({ embedded = true }: PropertiesListPageProps) {
-  return <PropertiesListPage embedded={embedded} />;
 }

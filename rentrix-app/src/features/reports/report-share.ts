@@ -4,7 +4,7 @@ import type { ReportsFilterState } from './reports-workspace-filters';
 
 export const REPORT_SHARE_TEXT_MAX_LENGTH = 1_200;
 
-export type ReportShareTextInput = Readonly<{
+type ReportShareTextInput = Readonly<{
   reportLabel: string;
   summaryText?: string;
   url: string;
@@ -63,7 +63,7 @@ export function buildReportProductShareUrl(
   return `${trimTrailingSlashes(origin)}/reports/${encodeURIComponent(target.reportId)}${query ? `?${query}` : ''}`;
 }
 
-export type ReportSharePayload = Readonly<{
+type ReportSharePayload = Readonly<{
   shareText: string;
   url: string;
 }>;

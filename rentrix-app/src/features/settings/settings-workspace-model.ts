@@ -1,4 +1,5 @@
-import type { CompanySettingsDraft, CompanySettingsPreviewModel } from './settingsForm';
+import type { CompanySettingsDraft } from './form/sectionDrafts';
+import type { CompanySettingsPreviewModel } from './settingsForm';
 import type { SettingsSectionId } from './registry/sectionRegistry';
 import type { SemanticTone } from '@/components/ui/status-badge';
 

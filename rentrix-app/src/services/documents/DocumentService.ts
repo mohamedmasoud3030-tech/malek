@@ -6,9 +6,9 @@ import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
  * Supported document outputs for the current local template engine.
  * Provider/storage integration is intentionally not part of this boundary.
  */
-export type DocumentType = DocumentTypeId;
+type DocumentType = DocumentTypeId;
 
-export type DocumentCapability = Readonly<{
+type DocumentCapability = Readonly<{
   type: DocumentType;
   templateAvailable: boolean;
   externalProviderRequired: boolean;

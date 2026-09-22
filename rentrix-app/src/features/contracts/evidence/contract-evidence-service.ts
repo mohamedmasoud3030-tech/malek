@@ -1,16 +1,16 @@
 import { supabase } from '@/lib/supabase';
 import type { Database, Json } from '@/types/database';
 
-export type RegistrationProfile = Database['public']['Tables']['contract_registration_requirement_profiles']['Row'];
-export type RegistrationRecord = Database['public']['Tables']['contract_registration_records']['Row'];
-export type InspectionTemplate = Database['public']['Tables']['contract_inspection_templates']['Row'];
+type RegistrationProfile = Database['public']['Tables']['contract_registration_requirement_profiles']['Row'];
+type RegistrationRecord = Database['public']['Tables']['contract_registration_records']['Row'];
+type InspectionTemplate = Database['public']['Tables']['contract_inspection_templates']['Row'];
 export type ContractInspection = Database['public']['Tables']['contract_inspections']['Row'];
-export type ContractEvidenceDocument = Pick<Database['public']['Tables']['vault_documents']['Row'], 'id' | 'title' | 'document_type' | 'created_at'>;
+type ContractEvidenceDocument = Pick<Database['public']['Tables']['vault_documents']['Row'], 'id' | 'title' | 'document_type' | 'created_at'>;
 
-export type ChecklistDefinitionItem = Readonly<{ code: string; label_ar: string; required: boolean }>;
+type ChecklistDefinitionItem = Readonly<{ code: string; label_ar: string; required: boolean }>;
 export type ChecklistResponseItem = Readonly<{ code: string; condition: 'GOOD' | 'FAIR' | 'DAMAGED' | 'NOT_APPLICABLE' | ''; note: string }>;
 
-export type ContractEvidenceState = Readonly<{
+type ContractEvidenceState = Readonly<{
   registration_configuration_status: 'NOT_CONFIGURED' | 'CONFIGURED';
   registration_profile: RegistrationProfile | null;
   registration: RegistrationRecord | null;

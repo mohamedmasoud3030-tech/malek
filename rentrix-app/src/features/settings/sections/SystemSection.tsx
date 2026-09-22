@@ -5,7 +5,7 @@ import type { CompanySettingsPreviewModel } from '../settingsForm';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 import { SectionCard } from '../components/settings-section-card';
 
-export type SystemSectionProps = Readonly<{
+type SystemSectionProps = Readonly<{
   activeSection: SettingsSectionId;
   preview: CompanySettingsPreviewModel;
   theme: string;

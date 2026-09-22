@@ -1,7 +1,7 @@
 import type { SemanticTone } from '@/components/ui/status-badge';
 
-export type CanonicalMaintenanceStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled';
-export type CanonicalMaintenancePriority = 'low' | 'medium' | 'high' | 'urgent';
+type CanonicalMaintenanceStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled';
+type CanonicalMaintenancePriority = 'low' | 'medium' | 'high' | 'urgent';
 
 /** Canonical maintenance lifecycle vocabulary — one label/tone per status for lists, dossiers, and reports. */
 export const maintenanceStatusLabels: Record<CanonicalMaintenanceStatus, string> = {

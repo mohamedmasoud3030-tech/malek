@@ -2,9 +2,9 @@ import type { ChangeEvent } from 'react';
 import type {
   CompanySettingsDraft,
   CompanySettingsDraftField,
-  CompanySettingsPreviewModel,
   CompanySettingsValidationErrors,
-} from '../settingsForm';
+} from '../form/sectionDrafts';
+import type { CompanySettingsPreviewModel } from '../settingsForm';
 import { OfficeSection } from '../sections/OfficeSection';
 import { IdentitySection } from '../sections/IdentitySection';
 import { DocumentsSection } from '../sections/DocumentsSection';

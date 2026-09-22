@@ -21,7 +21,7 @@ export type AiAssistantAction =
   | 'draft_owner_summary'
   | 'draft_internal_note';
 
-export type AiAssistantMessageRole = 'user' | 'assistant';
+type AiAssistantMessageRole = 'user' | 'assistant';
 
 export type AiAssistantMessage = {
   id: string;
@@ -33,7 +33,7 @@ export type AiAssistantMessage = {
 
 export type AiAssistantHistoryMessage = Pick<AiAssistantMessage, 'role' | 'content'>;
 
-export type AiAssistantOverdueInvoice = {
+type AiAssistantOverdueInvoice = {
   invoiceId: string;
   contractId: string;
   dueDate: string;
@@ -44,7 +44,7 @@ export type AiAssistantOverdueInvoice = {
   daysOverdue: number;
 };
 
-export type AiAssistantContractRenewal = {
+type AiAssistantContractRenewal = {
   contractId: string;
   propertyId: string;
   tenantId: string;

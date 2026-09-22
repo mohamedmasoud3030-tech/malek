@@ -2,9 +2,9 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { env } from '@/lib/env';
 
-export type AutomationRuleType = 'contract_expiry' | 'overdue_invoice' | 'maintenance_overdue' | 'payment_reminder' | 'large_payment_alert' | 'unit_status' | 'custom';
+type AutomationRuleType = 'contract_expiry' | 'overdue_invoice' | 'maintenance_overdue' | 'payment_reminder' | 'large_payment_alert' | 'unit_status' | 'custom';
 
-export type AutomationRuleRecord = {
+type AutomationRuleRecord = {
   id: string;
   name: string;
   description: string | null;
@@ -20,7 +20,7 @@ export type AutomationRuleRecord = {
   updated_at: string;
 };
 
-export type AutomationRun = {
+type AutomationRun = {
   id: string;
   rule_id: string | null;
   job_name: string;
@@ -34,7 +34,7 @@ export type AutomationRun = {
   retry_count: number;
 };
 
-export type AutomationNotification = {
+type AutomationNotification = {
   id: string;
   rule_id: string | null;
   job_id?: string | null;
@@ -87,7 +87,7 @@ export async function listAutomationNotifications(limit = 50, unreadOnly = false
   return (data ?? []) as AutomationNotification[];
 }
 
-export type BackgroundJobStatus = Readonly<{
+type BackgroundJobStatus = Readonly<{
   id: string;
   job_type: string;
   status: 'QUEUED' | 'RUNNING' | 'RETRY_WAIT' | 'SUCCEEDED' | 'DEAD' | 'CANCELLED';
@@ -116,8 +116,8 @@ export async function cancelAutomationJob(jobId: string, reason: string, idempot
 }
 
 // Legacy gateway compatibility for old tests
-export type AutomationCommand = Readonly<{ ruleId: string; status: 'active' | 'paused' | 'draft'; requestedBy?: string }>;
-export type AutomationCommandResult = Readonly<{ accepted: boolean; provider: 'local-preview' | 'automation-worker'; message: string }>;
+type AutomationCommand = Readonly<{ ruleId: string; status: 'active' | 'paused' | 'draft'; requestedBy?: string }>;
+type AutomationCommandResult = Readonly<{ accepted: boolean; provider: 'local-preview' | 'automation-worker'; message: string }>;
 
 export const localAutomationGateway = {
   async updateRule(command: AutomationCommand): Promise<AutomationCommandResult> {

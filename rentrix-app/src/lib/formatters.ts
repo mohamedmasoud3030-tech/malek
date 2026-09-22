@@ -4,7 +4,7 @@ export const supportedCurrencies = ['OMR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'U
 
 export type SupportedCurrency = (typeof supportedCurrencies)[number];
 
-export type CurrencyMetadata = Readonly<{
+type CurrencyMetadata = Readonly<{
   code: SupportedCurrency;
   label: string;
   minorUnit: number;
@@ -22,16 +22,16 @@ export const currencyMetadata = {
 } as const satisfies Record<SupportedCurrency, CurrencyMetadata>;
 
 export const DEFAULT_CURRENCY: SupportedCurrency = 'OMR';
-export const DEFAULT_LOCALE = 'ar';
+const DEFAULT_LOCALE = 'ar';
 
-export type MoneyFormatOptions = {
+type MoneyFormatOptions = {
   amount: number | null | undefined;
   currency?: SupportedCurrency | null;
   locale?: string;
   currencyDisplay?: 'symbol' | 'code' | 'name';
 };
 
-export function isSupportedCurrency(value: unknown): value is SupportedCurrency {
+function isSupportedCurrency(value: unknown): value is SupportedCurrency {
   return typeof value === 'string' && supportedCurrencies.includes(value as SupportedCurrency);
 }
 
@@ -88,7 +88,7 @@ export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFA
   }).format(safeAmount);
 }
 
-export type NumberFormatOptions = {
+type NumberFormatOptions = {
   value: number | null | undefined;
   locale?: string | string[];
   maximumFractionDigits?: number;
@@ -124,7 +124,7 @@ export function formatCount(value: number | null | undefined, locale?: string): 
 }
 
 
-export type DateFormatOptions = {
+type DateFormatOptions = {
   value: string | number | Date | null | undefined;
   locale?: string | string[];
   timeZone?: string;
@@ -151,7 +151,7 @@ export function formatDate({ value, locale = DEFAULT_LOCALE, timeZone, dateStyle
   return new Intl.DateTimeFormat(targetLocale as string, { dateStyle, timeZone }).format(date);
 }
 
-export type DateTimeFormatOptions = DateFormatOptions & {
+type DateTimeFormatOptions = DateFormatOptions & {
   timeStyle?: Intl.DateTimeFormatOptions['timeStyle'];
 };
 
@@ -232,7 +232,7 @@ const FILE_SIZE_BASE = 1024;
 const FILE_SIZE_LATIN_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
 const FILE_SIZE_ARABIC_UNITS = ['بايت', 'كيلوبايت', 'ميغابايت', 'جيجابايت', 'تيرابايت'] as const;
 
-export type FileSizeFormatOptions = {
+type FileSizeFormatOptions = {
   /** Unit vocabulary: Latin for data surfaces, Arabic words for prose. */
   unitLabels?: 'latin' | 'arabic';
   locale?: string | string[];
