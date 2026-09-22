@@ -2,9 +2,9 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { AutomationCenterView } from './automation-center-view';
 
-export type AutomationWorkspaceMode = 'standalone' | 'embedded';
+type AutomationWorkspaceMode = 'standalone' | 'embedded';
 
-export type AutomationWorkspaceProps = Readonly<{
+type AutomationWorkspaceProps = Readonly<{
   /**
    * standalone: renders the full page shell (PageLayout + PageHeader) —
    * used by the legacy /automation route when visited directly.

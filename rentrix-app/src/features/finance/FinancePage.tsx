@@ -244,5 +244,3 @@ export function FinancePage() {
     </PageLayout>
   );
 }
-
-export default FinancePage;

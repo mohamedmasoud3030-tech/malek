@@ -38,9 +38,9 @@ import {
 } from '../useMaintenancePageController';
 import { formatCount } from '@/lib/formatters';
 
-export type MaintenanceWorkspaceMode = 'standalone' | 'embedded';
+type MaintenanceWorkspaceMode = 'standalone' | 'embedded';
 
-export type MaintenanceWorkspaceProps = Readonly<{
+type MaintenanceWorkspaceProps = Readonly<{
   mode?: MaintenanceWorkspaceMode;
 }>;
 

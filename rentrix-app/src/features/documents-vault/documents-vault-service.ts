@@ -35,7 +35,7 @@ export const vaultCategoryLabels: Record<VaultCategory, string> = {
   other: 'أخرى',
 };
 
-export type VaultListParams = {
+type VaultListParams = {
   category?: VaultCategory;
   search?: string;
   relatedEntityType?: DocumentEntityType;
@@ -113,7 +113,7 @@ export async function listVaultDocuments(params: VaultListParams = {}): Promise<
   }));
 }
 
-export type UploadVaultDocumentParams = {
+type UploadVaultDocumentParams = {
   file: File;
   title: string;
   category: VaultCategory;

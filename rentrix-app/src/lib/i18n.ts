@@ -22,7 +22,6 @@ const sharedTranslationEntries = [  ['home', 'الرئيسية', 'Home'],
     'An unexpected error occurred. Retry or review settings, then try again.',
   ],
   ['retry', 'إعادة المحاولة', 'Retry'],
-  ['routeLoadingAria', 'جار التحميل', 'Loading'],
   ['dashboard', 'لوحة التحكم', 'Dashboard'],
   ['properties', 'العقارات', 'Properties'],
   ['units', 'الوحدات', 'Units'],
@@ -53,13 +52,11 @@ const sharedTranslationEntries = [  ['home', 'الرئيسية', 'Home'],
   ['newContract', 'عقد جديد', 'New contract'],  ['exportCsv', 'تصدير CSV', 'Export CSV'],
   ['noResultsHint', 'لا توجد نتائج مطابقة — جرّب كلمات أخرى أو امسح الفلاتر.', 'No matching results — try different words or clear filters.'],  ['aiUnavailable', 'المساعد غير مهيأ — راجع الإعدادات', 'Assistant not configured — review settings'],  ['skipToContent', 'تخطي إلى المحتوى الرئيسي', 'Skip to main content'],  ['cancel', 'إلغاء', 'Cancel'],
   // ===== Financial routes UX clarity (ADR-0008) =====
-  // Descriptions shown in the PageHeader of /financials and /reports to make
-  // the purpose of each page unambiguous and to remove the previous UX overlap
-  // between "financials", "financialOverview", and "reports" labels.
-  ['financialsPageDescription', 'فهرس العمليات المالية اليومية: الفواتير، التحصيل، المصروفات، التسويات، والمطابقة.', 'Day-to-day financial operations: invoices, collections, expenses, settlements, and reconciliation.'],
-  ['financialsPageHint', 'كل عملية لها صفحتها المستقلة بصلاحياتها الخاصة.', 'Each workflow has its own page with its own permissions.'],
+  // Description shown in the PageHeader of /reports to make the page's
+  // analytical purpose unambiguous (ADR-0008). The former /financials
+  // description/hint/summary keys were removed with the dense-register
+  // redesign (#1545), which dropped that page's description block.
   ['reportsPageDescription', 'تقارير تحليلية وتشغيلية لفهم الأداء والمتابعة واتخاذ القرار حسب الفترة والعقار.', 'Analytical and operational reports for performance, follow-up, and decisions by period and property.'],
-  ['financialsSectionSummary', 'الملخص السريع', 'Quick summary'],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
 
 function getEntryLabel(entry: SharedTranslationEntry, language: SupportedLanguage): string {

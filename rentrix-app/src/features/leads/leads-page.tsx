@@ -20,11 +20,11 @@ function formFromLead(lead: LeadRecord): LeadFormValues {
   };
 }
 
-export type LeadsWorkspaceProps = Readonly<{
+type LeadsWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 
-export function LeadsWorkspace({ embedded = false }: LeadsWorkspaceProps) {
+function LeadsWorkspace({ embedded = false }: LeadsWorkspaceProps) {
   const [filters, setFilters] = useState<LeadFilters>({ query: '', status: 'all', source: 'all' });
   const formState = useCrudFormState<LeadRecord, LeadFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLead });
   const leadsQuery = useLeads(filters);

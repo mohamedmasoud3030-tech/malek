@@ -21,7 +21,7 @@ function formFromCommission(commission: CommissionRecord): CommissionFormValues 
   };
 }
 
-export type CommissionsWorkspaceProps = Readonly<{
+type CommissionsWorkspaceProps = Readonly<{
   /** Embedded finance tabs and standalone routes share one canonical shell. */
   embedded?: boolean;
 }>;

@@ -4,7 +4,7 @@ import { useSettingsSection } from '../form/useSettingsSection';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 
-export type NotificationsSectionProps = Readonly<{
+type NotificationsSectionProps = Readonly<{
   activeSection: SettingsSectionId;
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;

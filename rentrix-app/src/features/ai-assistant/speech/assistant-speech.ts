@@ -14,7 +14,7 @@ import { buildAssistantSpeechText } from './assistant-speech-text';
 
 type AssistantSpeechStatus = 'idle' | 'playing' | 'paused';
 
-export type AssistantSpeechState = Readonly<{
+type AssistantSpeechState = Readonly<{
   status: AssistantSpeechStatus;
   messageId: string | null;
   supported: boolean;

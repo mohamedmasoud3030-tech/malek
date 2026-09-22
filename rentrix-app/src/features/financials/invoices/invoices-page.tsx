@@ -1,7 +1,7 @@
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { InvoiceWorkspaceSection } from '../components/invoice-workspace-section';
 
-export type InvoicesWorkspaceProps = Readonly<{
+type InvoicesWorkspaceProps = Readonly<{
   /**
    * embedded: rendered inside the finance hub, which already supplies the page
    * shell — the workspace body renders without a second layout or header.

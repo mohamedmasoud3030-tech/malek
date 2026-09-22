@@ -4,7 +4,7 @@ import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { ArrearsWorkspaceSection } from '../components/arrears-workspace-section';
 
-export type ArrearsWorkspaceProps = Readonly<{
+type ArrearsWorkspaceProps = Readonly<{
   /**
    * embedded: rendered inside the finance hub, which already supplies the page
    * shell — the workspace body renders without a second layout or header.

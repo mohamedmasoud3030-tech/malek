@@ -2,7 +2,7 @@ import { PaymentTermsSettingsSection } from '../payment-terms-settings-section';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 
-export type PaymentTermsSectionProps = Readonly<{
+type PaymentTermsSectionProps = Readonly<{
   activeSection: SettingsSectionId;
 }>;
 

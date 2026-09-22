@@ -32,7 +32,7 @@ const governancePrinciples = [
   { label: 'إعدادات النظام', value: 'محمية', description: 'التغييرات الحساسة محدودة بالصلاحيات' },
 ] as const;
 
-export type SystemWorkspaceVariant = 'standalone' | 'embedded';
+type SystemWorkspaceVariant = 'standalone' | 'embedded';
 
 type SystemWorkspaceProps = Readonly<{
   /**

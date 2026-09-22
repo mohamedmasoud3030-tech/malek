@@ -53,7 +53,7 @@ function statusTone(status: BankStatementLine['status']): 'success' | 'neutral' 
   return 'warning';
 }
 
-export type BankReconciliationWorkspaceProps = Readonly<{
+type BankReconciliationWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 

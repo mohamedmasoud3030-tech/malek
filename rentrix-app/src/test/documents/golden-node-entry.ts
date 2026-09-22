@@ -35,7 +35,7 @@ const countPages = (text: string): number => {
   return tree ? Number(tree[1]) : 0;
 };
 
-export async function pdfForModel(model: UnifiedDocumentModel): Promise<{ base64: string; pageCount: number; sizeBytes: number }> {
+async function pdfForModel(model: UnifiedDocumentModel): Promise<{ base64: string; pageCount: number; sizeBytes: number }> {
   // ModelPdfDocument renders <Document>; pdf() wants the element typed as
   // DocumentProps, so bridge the function-component element here.
   const stream = await pdf(h(ModelPdfDocument, { model }) as unknown as ReactElement<Parameters<typeof pdf>[0] extends ReactElement<infer P, any> ? P : never>).toBuffer();
