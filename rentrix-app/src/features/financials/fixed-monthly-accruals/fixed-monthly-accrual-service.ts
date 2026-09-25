@@ -3,7 +3,7 @@ import { reportCountSchema, reportMoneySchema, reportNumberSchema } from '@/lib/
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 
-export type FixedMonthlyAccrualStatus = 'POSTED' | 'REVERSED' | 'ZERO_AMOUNT' | 'SOURCE_ERROR';
+type FixedMonthlyAccrualStatus = 'POSTED' | 'REVERSED' | 'ZERO_AMOUNT' | 'SOURCE_ERROR';
 
 export type FixedMonthlyAccrualRow = Readonly<{
   id: string;
@@ -45,7 +45,7 @@ export type FixedMonthlyAccrualList = Readonly<{
   accruals: FixedMonthlyAccrualRow[];
 }>;
 
-export type FixedMonthlyRunResult = Readonly<{
+type FixedMonthlyRunResult = Readonly<{
   dateFrom: string;
   dateTo: string;
   attemptedDays: number;
@@ -58,7 +58,7 @@ export type FixedMonthlyRunResult = Readonly<{
   grossAmount: number;
 }>;
 
-export type FixedMonthlyReverseResult = Readonly<{
+type FixedMonthlyReverseResult = Readonly<{
   accrualId: string;
   reversalId: string;
   originalBatchId: string | null;

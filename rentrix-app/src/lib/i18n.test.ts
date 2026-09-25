@@ -22,7 +22,6 @@ const ENGLISH_HOME_LABEL = 'Home';
 const sharedCoreLabelCases = [
   { key: 'retry', arabicLabel: 'إعادة المحاولة', englishLabel: 'Retry' },
   { key: 'dashboard', arabicLabel: 'لوحة التحكم', englishLabel: 'Dashboard' },
-  { key: 'routeLoadingAria', arabicLabel: 'جار التحميل', englishLabel: 'Loading' },
 ] as const;
 
 const ARABIC_LANGUAGE_STATE = { language: ARABIC_LANGUAGE, locale: ARABIC_LANGUAGE, direction: RTL_DIRECTION };
@@ -87,18 +86,15 @@ describe('lightweight i18n and direction foundation', () => {
   });
 });
 
-// Contract test introduced with ADR-0008. Locks the bilingual descriptions and
-// titles added for the /financials and /reports UX clarity work. If a future
-// change drops or renames any of these keys, the page header on one of the two
-// routes will silently fall back to the raw key string — this test fails first
-// so the regression is caught at CI time, not in production.
-describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
-  const uxClarityKeys = [
-    'financialsSectionSummary',
-    'financialsPageDescription',
-    'reportsPageDescription',
-    'financialsPageHint',
-  ] as const;
+// Contract test introduced with ADR-0008. Locks the bilingual description for
+// /reports. If a future change drops or renames this key, the page header will
+// silently fall back to the raw key string — this test fails first so the
+// regression is caught at CI time, not in production. The former /financials
+// description/hint/summary keys were removed with the dense-register redesign
+// (#1545), which dropped that page's description block; only the live
+// /reports key remains.
+describe('ADR-0008 — /reports UX-clarity i18n keys', () => {
+  const uxClarityKeys = ['reportsPageDescription'] as const;
 
   it.each(uxClarityKeys)('"%s" has a non-empty Arabic translation', (key) => {
     const value = i18nResources.ar.common[key];
@@ -112,11 +108,8 @@ describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
     expect(value?.trim().length ?? 0).toBeGreaterThan(0);
   });
 
-  it('"financialsPageDescription" and "reportsPageDescription" describe different jobs', () => {
-    const financialsDescription = translateSharedLabel('financialsPageDescription');
+  it('"reportsPageDescription" is a substantive analytical description', () => {
     const reportsDescription = translateSharedLabel('reportsPageDescription');
-    expect(financialsDescription).not.toBe(reportsDescription);
-    expect(financialsDescription.length).toBeGreaterThan(20);
     expect(reportsDescription.length).toBeGreaterThan(20);
   });
 });
@@ -133,14 +126,9 @@ describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
 
   const sourceRoot = resolve(__dirname, '..');
   // Consumer mapping synced with the dense-register redesign (#1545): the
-  // /financials page now presents sections via SectionTabs without the
-  // description/hint block, so financialsPageDescription/financialsPageHint/
-  // financialsSectionSummary have no route consumer anymore (their translations
-  // stay valid and are still covered by the translation checks above). The
-  // The /reports page now carries its analytical description above its report
-  // catalog. `reportsPageHint` was deleted outright: its only consumer was the
-  // retired WorkspaceHint, and its copy promised a summary/table/filters landing
-  // that the catalog deliberately does not have.
+  // /financials page presents sections via SectionTabs without a
+  // description/hint block. The /reports page carries its analytical
+  // description above its report catalog.
   const uxClarityConsumerCases = [
     ['reportsPageDescription', 'features/reports/reports-page.tsx'],
   ] as const;

@@ -5,10 +5,10 @@
  * ambiguous/missing mappings and invalid rows are surfaced before any import call.
  */
 
-export type BankCsvDelimiter = ',' | ';';
-export type BankCsvEncoding = 'UTF-8' | 'UTF-8 BOM';
+type BankCsvDelimiter = ',' | ';';
+type BankCsvEncoding = 'UTF-8' | 'UTF-8 BOM';
 
-export type CanonicalBankField =
+type CanonicalBankField =
   | 'transaction_date'
   | 'amount'
   | 'debit'
@@ -18,13 +18,13 @@ export type CanonicalBankField =
   | 'balance'
   | 'currency';
 
-export interface BankCsvColumnMapping {
+interface BankCsvColumnMapping {
   field: CanonicalBankField;
   header: string;
   index: number;
 }
 
-export interface ParsedBankRow {
+interface ParsedBankRow {
   rawIndex: number;
   raw: string[];
   transaction_date?: string;
@@ -36,7 +36,7 @@ export interface ParsedBankRow {
   fingerprint?: string;
 }
 
-export interface RejectedBankRow {
+interface RejectedBankRow {
   rawIndex: number;
   rowNumber: number;
   raw: string[];

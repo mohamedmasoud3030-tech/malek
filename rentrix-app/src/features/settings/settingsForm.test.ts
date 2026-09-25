@@ -5,9 +5,8 @@ import {
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
   getCompanySettingsPreviewModel,
-  validateCompanySettingsDraft,
-  type CompanySettingsDraft,
 } from './settingsForm';
+import { validateCompanySettingsDraft, type CompanySettingsDraft } from './form/sectionDrafts';
 import { APP_BRAND_NAME } from '@/lib/brand';
 
 const validRecord = {

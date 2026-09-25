@@ -5,8 +5,6 @@
  * Any client helper must be proven bit-for-bit equivalent via PGlite tests.
  */
 
-export type PaymentCycle = 'monthly' | 'quarterly' | 'semi_annual' | 'annual' | string;
-
 export function getBillingPeriodForCycle(paymentCycle: string, refDate: Date): { start: Date; end: Date } {
   const year = refDate.getFullYear();
   const month = refDate.getMonth();
@@ -59,7 +57,7 @@ export function getDueDate(periodEnd: Date, graceDays: number): Date {
 
 export type BillingStatus = 'NOT_DUE' | 'DUE' | 'GENERATED' | 'BLOCKED' | 'CHECK_FAILED';
 
-export type BillingStatusInput = {
+type BillingStatusInput = {
   periodStart: Date;
   issueDate: Date;
   today: Date;

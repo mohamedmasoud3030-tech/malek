@@ -53,7 +53,7 @@ export function formatReceiptNumber(paymentId: string) {
   return paymentId ? 'إيصال بلا مرجع تجاري' : '—';
 }
 
-export type PaymentReceiptBinding = {
+type PaymentReceiptBinding = {
   /** Deep link into the receipt print view (opened in a new tab). */
   printHref: string;
   receiptNumber: string;

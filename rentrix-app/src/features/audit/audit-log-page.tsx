@@ -18,7 +18,7 @@ export function getAuditLogViewState(query: { isPending: boolean; isError: boole
   return { status: 'error', error: new Error('AUDIT_LOG_RESULT_MISSING') } as const;
 }
 
-export type AuditLogWorkspaceVariant = 'standalone' | 'embedded';
+type AuditLogWorkspaceVariant = 'standalone' | 'embedded';
 
 type AuditLogWorkspaceProps = Readonly<{
   /**

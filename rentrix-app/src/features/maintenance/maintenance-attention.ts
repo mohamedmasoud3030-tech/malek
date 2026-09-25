@@ -39,7 +39,7 @@ export type MaintenanceAttention = Readonly<{
   flags: readonly MaintenanceAttentionFlag[];
 }>;
 
-export type MaintenanceAttentionSummary = Readonly<{
+type MaintenanceAttentionSummary = Readonly<{
   stalled: number;
   awaitingClosure: number;
   scheduleMissed: number;

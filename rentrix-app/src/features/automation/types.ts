@@ -1,8 +1,8 @@
 import type { CommunicationEventType } from '@/features/communication/communication-system';
 
 export type AutomationChannel = 'whatsapp' | 'email' | 'in_app' | 'sms';
-export type AutomationStatus = 'active' | 'paused' | 'draft';
-export type AutomationFrequency = 'daily' | 'weekly' | 'monthly' | 'on_event';
+type AutomationStatus = 'active' | 'paused' | 'draft';
+type AutomationFrequency = 'daily' | 'weekly' | 'monthly' | 'on_event';
 
 export type AutomationRule = Readonly<{
   id: string;
@@ -47,20 +47,20 @@ export type AutomationTemplatePreview = Readonly<{
 //   represented truthfully as a communication intent (OWNER_STATEMENT_READY)
 //   until the worker gains a dedicated rule type.
 
-export type AutomationIntentKind =
+type AutomationIntentKind =
   | 'contract_expiry'
   | 'rent_reminder'
   | 'overdue_escalation'
   | 'owner_monthly_statement';
 
 /** Identifier-only recipient reference; the worker resolves contact details server-side. */
-export type AutomationRecipientRef = Readonly<{
+type AutomationRecipientRef = Readonly<{
   type: 'tenant' | 'owner' | 'user';
   id: string;
 }>;
 
 /** Reference to a document produced by the canonical document platform. */
-export type AutomationAttachmentRef = Readonly<{
+type AutomationAttachmentRef = Readonly<{
   kind: 'invoice' | 'owner_statement';
   refId: string;
 }>;

@@ -22,7 +22,7 @@ import type { CanonicalDocumentPayloadMap, DocumentTypeId } from '@/services/doc
 import type { UnifiedDocumentModel } from '@/services/documents/types';
 
 /** A complete, real-looking company identity (never the brand fallback). */
-export const goldenCompanySettings: DocumentCompanySettings = {
+const goldenCompanySettings: DocumentCompanySettings = {
   companyName: 'شركة الأفق لإدارة الأملاك',
   legalName: 'شركة الأفق لإدارة الأملاك ش.م.م',
   registrationNumber: 'CR-1234567',
@@ -40,7 +40,7 @@ export const goldenCompanySettings: DocumentCompanySettings = {
   documentPrefixes: { invoice: 'INV', contract: 'CON', receipt: 'REC' },
 };
 
-export type GoldenExpectation = Readonly<{
+type GoldenExpectation = Readonly<{
   /** Exactly one page in BOTH browser print and the generated PDF. */
   onePage?: boolean;
   /** Must paginate across several pages (long tables/reports). */
@@ -49,7 +49,7 @@ export type GoldenExpectation = Readonly<{
   longTable?: boolean;
 }>;
 
-export type GoldenScenario = Readonly<{
+type GoldenScenario = Readonly<{
   id: string;
   name: string;
   model: UnifiedDocumentModel;

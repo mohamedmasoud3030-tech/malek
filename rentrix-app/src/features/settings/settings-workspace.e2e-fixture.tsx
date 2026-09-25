@@ -4,11 +4,8 @@ import { OverviewRow, SettingsHero } from './components/settings-hero';
 import { SystemSection } from './sections/SystemSection';
 import { SettingsSaveBar } from './components/settings-save-bar';
 import { SettingsWorkspaceNav } from './components/settings-workspace-nav';
-import {
-  getCompanySettingsPreviewModel,
-  type CompanySettingsDraft,
-  type CompanySettingsDraftField,
-} from './settingsForm';
+import { getCompanySettingsPreviewModel } from './settingsForm';
+import type { CompanySettingsDraft, CompanySettingsDraftField } from './form/sectionDrafts';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
 import type { SettingsSectionId } from './registry/sectionRegistry';
 

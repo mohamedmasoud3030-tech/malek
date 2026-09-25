@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getOwnerFinancialAuthority } from './services/owner-financial-service';
 
-export const ownerFinancialAuthorityKeys = {
+const ownerFinancialAuthorityKeys = {
   all: ['owner-financial-authority'] as const,
   period: (ownerId: string, from: string, to: string) => [...ownerFinancialAuthorityKeys.all, ownerId, from, to] as const,
 };

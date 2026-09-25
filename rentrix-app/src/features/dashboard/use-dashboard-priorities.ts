@@ -12,7 +12,7 @@ import { buildMaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 import { buildUtilityObligationsSignal } from './utility-obligations-signal';
 import { toDateInputValue } from './dashboard-utils';
 
-export type DashboardPriorities = Readonly<{
+type DashboardPriorities = Readonly<{
   signal: NeedsAttentionSignal;
   isLoading: boolean;
   /** The dashboard snapshot failed entirely (priorities cannot be built). */

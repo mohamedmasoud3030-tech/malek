@@ -16,9 +16,9 @@ export const PROPERTY_ONBOARDING_EVIDENCE_TITLES = {
   HANDOVER: 'محضر تسليم العقار والمفاتيح',
 } as const satisfies Partial<Record<PropertyOnboardingStepId, string>>;
 
-export type PropertyOnboardingDocument = Readonly<{ title: string }>;
+type PropertyOnboardingDocument = Readonly<{ title: string }>;
 
-export type PropertyOnboardingWorkflowInput = Readonly<{
+type PropertyOnboardingWorkflowInput = Readonly<{
   property: Readonly<{
     title?: string | null;
     type?: string | null;
@@ -29,7 +29,7 @@ export type PropertyOnboardingWorkflowInput = Readonly<{
   documents: readonly PropertyOnboardingDocument[];
 }>;
 
-export type PropertyOnboardingWorkflowStep = Readonly<{
+type PropertyOnboardingWorkflowStep = Readonly<{
   id: PropertyOnboardingStepId;
   label: string;
   description: string;

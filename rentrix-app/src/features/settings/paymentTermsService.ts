@@ -24,7 +24,7 @@ export type PaymentTermsFormValues = Readonly<{
   is_active: boolean;
 }>;
 
-export function paymentTermsPayload(values: PaymentTermsFormValues): PaymentTermsInsert {
+function paymentTermsPayload(values: PaymentTermsFormValues): PaymentTermsInsert {
   return {
     name: values.name.trim(),
     installments: Math.max(1, Math.trunc(Number(values.installments) || 1)),

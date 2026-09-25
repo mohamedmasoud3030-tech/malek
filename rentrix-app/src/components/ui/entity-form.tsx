@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-export type EntityFormVisualVariant = 'operational';
+type EntityFormVisualVariant = 'operational';
 
 const invalidFieldSelector = [
   '[aria-invalid="true"]:not([disabled])',

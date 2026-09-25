@@ -15,8 +15,8 @@
  */
 import type { TenantStatementReport } from './statements-reports-service';
 
-export type TenantStatementLineType = 'invoice' | 'receipt' | 'invoice_credit' | 'invoice_credit_reversal' | 'deposit_application' | 'deposit_application_reversal';
-export type OwnerStatementTransactionType = 'payment' | 'expense' | 'settlement';
+type TenantStatementLineType = 'invoice' | 'receipt' | 'invoice_credit' | 'invoice_credit_reversal' | 'deposit_application' | 'deposit_application_reversal';
+type OwnerStatementTransactionType = 'payment' | 'expense' | 'settlement';
 
 export const tenantStatementLineTypeLabels: Readonly<Record<TenantStatementLineType, string>> = {
   invoice: 'فاتورة / استحقاق',

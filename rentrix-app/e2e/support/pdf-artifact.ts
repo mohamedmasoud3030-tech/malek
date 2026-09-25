@@ -7,7 +7,7 @@
  * geometry) rather than text extraction.
  */
 
-export type PdfArtifactSummary = Readonly<{
+type PdfArtifactSummary = Readonly<{
   bytes: number;
   hasPdfMagic: boolean;
   hasEofMarker: boolean;
@@ -77,7 +77,7 @@ const UNSAFE_FILENAME_PATTERN = /[<>:"/\\|?*\u0000-\u001f]/;
 /** An 8+ char lowercase-hex run is the shortened-UUID anti-pattern in file names. */
 const UUID_FRAGMENT_PATTERN = /[0-9a-f]{8}/i;
 
-export type FileNameAudit = Readonly<{
+type FileNameAudit = Readonly<{
   fileName: string;
   safeCharacters: boolean;
   noUuidFragment: boolean;

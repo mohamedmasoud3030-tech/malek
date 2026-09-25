@@ -22,7 +22,7 @@
 
 import type { AppPermission } from '@/features/auth/permissions';
 
-export type SidebarRoot =
+type SidebarRoot =
   | '/dashboard'
   | '/properties'
   | '/contracts'
@@ -31,7 +31,7 @@ export type SidebarRoot =
   | '/reports'
   | '/settings';
 
-export interface RouteContractEntry {
+interface RouteContractEntry {
   canonical: string;
   titleAr: string;
   sidebarRoot: SidebarRoot;

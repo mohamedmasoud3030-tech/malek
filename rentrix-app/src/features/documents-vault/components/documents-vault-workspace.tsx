@@ -57,9 +57,9 @@ function useSignedUrls(documents: VaultDocumentItem[]) {
 
 const EMPTY_VAULT_DOCUMENTS: VaultDocumentItem[] = [];
 
-export type DocumentsVaultWorkspaceMode = 'standalone' | 'embedded';
+type DocumentsVaultWorkspaceMode = 'standalone' | 'embedded';
 
-export type DocumentsVaultWorkspaceProps = Readonly<{
+type DocumentsVaultWorkspaceProps = Readonly<{
   mode?: DocumentsVaultWorkspaceMode;
 }>;
 

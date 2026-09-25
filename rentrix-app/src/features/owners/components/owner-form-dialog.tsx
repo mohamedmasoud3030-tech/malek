@@ -16,7 +16,7 @@ import {
 import type { OwnerFormInput } from '../owner-schema';
 import { Checkbox } from '@/components/ui/checkbox';
 
-export type OwnerFormDialogProps = Readonly<{ owner: Owner | null; open: boolean; onOpenChange: (open: boolean) => void }>;
+type OwnerFormDialogProps = Readonly<{ owner: Owner | null; open: boolean; onOpenChange: (open: boolean) => void }>;
 
 export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
   const [values, setValues] = useState<OwnerFormInput>(emptyOwnerFormValues);

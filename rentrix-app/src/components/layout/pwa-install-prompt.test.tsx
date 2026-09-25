@@ -14,7 +14,6 @@ const pwaInstallMock = vi.hoisted(() => ({
   isInstallDismissed: vi.fn(() => false),
   dismissInstallPrompt: vi.fn(),
   requestNativeInstall: vi.fn(async () => 'accepted' as const),
-  PWA_REASK_AFTER_DAYS: 30,
 }));
 
 vi.mock('@/lib/pwa-install', () => pwaInstallMock);

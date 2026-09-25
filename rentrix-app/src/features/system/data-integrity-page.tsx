@@ -22,7 +22,7 @@ export function getDataIntegrityViewState(query: { isPending: boolean; isError: 
   return { status: 'error', error: new Error('DATA_INTEGRITY_RESULT_MISSING') } as const;
 }
 
-export type DataIntegrityWorkspaceVariant = 'standalone' | 'embedded';
+type DataIntegrityWorkspaceVariant = 'standalone' | 'embedded';
 
 type DataIntegrityWorkspaceProps = Readonly<{
   /**

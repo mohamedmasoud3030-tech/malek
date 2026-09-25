@@ -1,7 +1,7 @@
 import { formatCompanyDate, formatCompanyDateTime, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 
-export const CONTRACT_DAY_IN_MS = 86_400_000;
+const CONTRACT_DAY_IN_MS = 86_400_000;
 
 export function parseContractDisplayDate(value: string): Date | null {
   const parsed = new Date(`${value}T00:00:00`);

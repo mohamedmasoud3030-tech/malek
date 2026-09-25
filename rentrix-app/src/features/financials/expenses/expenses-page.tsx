@@ -39,7 +39,7 @@ export function toLocalDateInputValue(date: Date = new Date()) {
   return getTodayLocalDateString(date);
 }
 
-export type ExpensesWorkspaceProps = Readonly<{
+type ExpensesWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 

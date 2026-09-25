@@ -26,7 +26,7 @@ export function preventSettingsUnload(event: BeforeUnloadEvent) {
 }
 
 export { settingsSections };
-export type SettingsWorkspaceVariant = 'standalone' | 'embedded';
+type SettingsWorkspaceVariant = 'standalone' | 'embedded';
 type SettingsWorkspaceProps = Readonly<{
   variant?: SettingsWorkspaceVariant;
   activeSection?: SettingsSectionId;

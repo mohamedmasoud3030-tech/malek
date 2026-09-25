@@ -2,7 +2,7 @@ import type { Unit } from '@/types/domain';
 
 export type PropertyUnitSummaryInput = Pick<Unit, 'rent_amount' | 'status'>;
 
-export type PropertyUnitSummary = {
+type PropertyUnitSummary = {
   totalUnits: number;
   availableUnits: number;
   occupiedUnits: number;

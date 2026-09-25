@@ -9,16 +9,18 @@ import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettings';
 import {
   areCompanySettingsDraftsEqual,
-  companySettingsDraftFields,
   companySettingsDraftToLocalSettings,
   companySettingsDraftToPayload,
   companySettingsRecordToDraft,
+} from './settingsForm';
+import {
+  companySettingsDraftFields,
   hasCompanySettingsValidationErrors,
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
   type CompanySettingsDraftField,
   type CompanySettingsValidationErrors,
-} from './settingsForm';
+} from './form/sectionDrafts';
 
 /**
  * Owns company-settings business state only: draft lifecycle, validation,

@@ -17,7 +17,7 @@ import {
   type PropertyActivityRecord,
 } from '../use-property-workspace-tabs';
 
-export interface PropertyTabProps {
+interface PropertyTabProps {
   propertyId: string;
 }
 

@@ -18,11 +18,11 @@ export type ReportLocation = Readonly<{
 }>;
 
 /** Legacy URL keys are read only at the route boundary and never written. */
-export const LEGACY_REPORTS_SECTION_SEARCH_KEY = 'section';
-export const LEGACY_REPORTS_WORKSPACE_SEARCH_KEY = 'workspace';
+const LEGACY_REPORTS_SECTION_SEARCH_KEY = 'section';
+const LEGACY_REPORTS_WORKSPACE_SEARCH_KEY = 'workspace';
 
 /** Filter keys shared by the report filter surface, drill-through and share URLs. */
-export const REPORT_FILTER_SEARCH_KEYS = [
+const REPORT_FILTER_SEARCH_KEYS = [
   'from',
   'to',
   'asOf',
@@ -35,9 +35,9 @@ export const REPORT_FILTER_SEARCH_KEYS = [
   'status',
 ] as const;
 
-export type ReportFilterSearchKey = (typeof REPORT_FILTER_SEARCH_KEYS)[number];
+type ReportFilterSearchKey = (typeof REPORT_FILTER_SEARCH_KEYS)[number];
 
-export type ReportFilterPatch = {
+type ReportFilterPatch = {
   from?: string;
   to?: string;
   asOf?: string;

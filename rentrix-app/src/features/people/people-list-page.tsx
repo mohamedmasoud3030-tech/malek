@@ -37,7 +37,7 @@ const peopleColumnOptions = [
 
 const defaultPeopleColumns = peopleColumnOptions.map((column) => column.key);
 
-export type PeopleListPageProps = Readonly<{
+type PeopleListPageProps = Readonly<{
   embedded?: boolean;
 }>;
 

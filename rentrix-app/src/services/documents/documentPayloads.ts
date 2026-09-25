@@ -109,7 +109,7 @@ export type ExpenseVoucherPayload = {
   propertyTitle?: string | null;
 };
 
-export type StatementTransaction = {
+type StatementTransaction = {
   date: string;
   type: string;
   description: string;
@@ -130,7 +130,7 @@ export type OwnerStatementPayload = {
   transactions: StatementTransaction[];
 };
 
-export type TenantStatementLine = {
+type TenantStatementLine = {
   date: string;
   type: string;
   description: string;
@@ -152,7 +152,7 @@ export type TenantStatementPayload = {
   lines: TenantStatementLine[];
 };
 
-export type TrialBalanceLine = {
+type TrialBalanceLine = {
   no: string;
   name: string;
   debit: number;
@@ -190,7 +190,7 @@ export type BalanceSheetReportPayload = {
   totalEquity: number;
 };
 
-export type GenericReportSection = {
+type GenericReportSection = {
   title?: string;
   columns?: string[];
   rows: string[][];
@@ -228,14 +228,14 @@ export type ReportCellFormat =
   | { kind: 'percent'; value: number }
   | { kind: 'text'; value: string };
 
-export type ReportKpiValue = {
+type ReportKpiValue = {
   label: string;
   value: ReportCellFormat;
   /** Signed change vs the comparable previous period; absent when not comparable. */
   comparison?: ReportCellFormat | null;
 };
 
-export type ReportChartSeries = { name: string; values: number[] };
+type ReportChartSeries = { name: string; values: number[] };
 
 export type ReportChartData = {
   chartType: 'bars' | 'hbar' | 'stacked-bars';
@@ -246,7 +246,7 @@ export type ReportChartData = {
   note?: string | null;
 };
 
-export type ReportTableData = {
+type ReportTableData = {
   title?: string | null;
   columns: string[];
   rows: ReportCellFormat[][];
@@ -270,7 +270,7 @@ export type ProfessionalReportGroup = {
   blocks: ProfessionalReportBlock[];
 };
 
-export type ProfessionalReportPayload = {
+type ProfessionalReportPayload = {
   reportTitle: string;
   reportType?: string | null;
   periodFrom?: string | null;
@@ -303,7 +303,7 @@ export type PropertyReportPayload = ProfessionalReportPayload & {
 // ═══════════════════════════════════════════════════════════════════
 
 /** D2 — #2 Move-In / Move-Out Snagging (unit_inspection) */
-export type InspectionConditionRow = {
+type InspectionConditionRow = {
   areaOrItem: string;
   condition: string;
   note?: string | null;
@@ -369,7 +369,7 @@ export type DepositVoucherPayload = {
 };
 
 /** D8 — #8 Debt Rescheduling Agreement (debt_rescheduling) — DATA_AUTHORITY_MISSING; payload defined for type safety */
-export type ReschedulingInstallmentRow = {
+type ReschedulingInstallmentRow = {
   dueDate: string;
   amount: number;
   description?: string | null;
@@ -422,7 +422,7 @@ export type TenantClearancePayload = {
 };
 
 /** D11 — #11 Owner Settlement Statement (owner_settlement) */
-export type OwnerSettlementLineRow = {
+type OwnerSettlementLineRow = {
   description: string;
   amount: number;
   type: 'credit' | 'debit';
@@ -456,7 +456,7 @@ export type OwnerSettlementPayload = {
 };
 
 /** D13 — #13 Management Exit Clearance (management_exit) */
-export type ManagementExitHandoverItem = {
+type ManagementExitHandoverItem = {
   item: string;
   quantity?: number | null;
   note?: string | null;
@@ -481,7 +481,7 @@ export type ManagementExitPayload = {
 };
 
 /** D15 — #15 Unit Lifecycle Passport (unit_passport) */
-export type UnitPassportLeaseRow = {
+type UnitPassportLeaseRow = {
   tenantName: string;
   startDate: string;
   endDate?: string | null;
@@ -489,7 +489,7 @@ export type UnitPassportLeaseRow = {
   rentAmount?: number | null;
 };
 
-export type UnitPassportMaintenanceRow = {
+type UnitPassportMaintenanceRow = {
   date: string;
   title: string;
   status: string;
@@ -569,7 +569,7 @@ export type MaintenanceCompletionPayload = {
 };
 
 /** D24 — #24 Eviction / Rental Dispute Legal Dossier (legal_dossier) */
-export type LegalDossierTimelineEvent = {
+type LegalDossierTimelineEvent = {
   date: string;
   eventType: string;
   description: string;

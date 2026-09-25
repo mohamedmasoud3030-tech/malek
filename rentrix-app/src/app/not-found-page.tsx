@@ -12,27 +12,24 @@ import { APP_BRAND_NAME } from '@/lib/brand';
  * stubs are not registered) left a handful of well-known pre-unification
  * URLs landing on the generic not-found card. Stale bookmarks, shared
  * links and external notes deserve better: this map sends them to the
- * workspace that owns the capability today — without registering any
- * route-tree stub, keeping the route contract intact.
+ * canonical route that owns the capability today — without registering
+ * any route-tree stub, keeping the route contract intact.
  *
- * Destinations are verified canonical workspaces:
- *   /units           → /properties?section=units
- *   /accounting      → /reports           (accounting reports authority)
- *   /documents-vault → /maintenance?section=documents_vault
- *   /automation      → /settings?section=automation
- *   /audit-log       → /settings?section=audit-log
+ * Destinations are verified canonical routes:
+ *   /units      → /properties   (units are disclosed per property)
+ *   /accounting → /reports      (accounting reports authority)
+ *   /automation → /settings/automation
+ *   /audit-log  → /settings/audit-log
  */
-export interface LegacyRedirectTarget {
+interface LegacyRedirectTarget {
   to: string;
-  search?: Record<string, string>;
 }
 
 export const LEGACY_ROUTE_REDIRECTS: Readonly<Record<string, LegacyRedirectTarget>> = {
-  '/units': { to: '/properties', search: { section: 'units' } },
+  '/units': { to: '/properties' },
   '/accounting': { to: '/reports' },
-  '/documents-vault': { to: '/maintenance', search: { section: 'documents_vault' } },
-  '/automation': { to: '/settings', search: { section: 'automation' } },
-  '/audit-log': { to: '/settings', search: { section: 'audit-log' } },
+  '/automation': { to: '/settings/automation' },
+  '/audit-log': { to: '/settings/audit-log' },
 };
 
 export function resolveLegacyRedirect(pathname: string): LegacyRedirectTarget | null {
@@ -46,14 +43,7 @@ export function NotFoundPage() {
 
   useEffect(() => {
     if (!legacyTarget) return;
-    void navigate({
-      to: legacyTarget.to,
-      search: (previous: Record<string, unknown>) => ({
-        ...previous,
-        ...(legacyTarget.search ?? {}),
-      }),
-      replace: true,
-    });
+    void navigate({ to: legacyTarget.to, search: {}, replace: true });
   }, [legacyTarget, navigate]);
 
   return (

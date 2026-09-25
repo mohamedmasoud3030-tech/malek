@@ -1,10 +1,10 @@
 /** Shared build/runtime public configuration policy. Pure: no SDK or Vite globals. */
 export const SUPABASE_FALLBACK_URL = 'https://invalid.supabase.local';
-export const SUPABASE_FALLBACK_KEY = 'invalid-anon-key';
+const SUPABASE_FALLBACK_KEY = 'invalid-anon-key';
 const PLACEHOLDER_HOSTS = ['example.supabase.co', 'invalid.supabase.local'];
 const PLACEHOLDER_KEYS = new Set(['test-anon-key', SUPABASE_FALLBACK_KEY]);
 
-export type PublicSupabaseConfig = Readonly<{
+type PublicSupabaseConfig = Readonly<{
   supabaseUrl: string;
   supabaseAnonKey: string;
   isConfigured: boolean;

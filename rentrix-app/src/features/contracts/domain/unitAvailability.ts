@@ -1,6 +1,6 @@
 import type { Contract, Unit } from '@/types/domain';
 
-export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'>;
+type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'>;
 export type ContractUnitConflict = Readonly<{
   id: string;
   unit_id: string | null;
@@ -11,9 +11,9 @@ export type ContractUnitConflict = Readonly<{
 
 export type UnitAvailabilityConflictMap = ReadonlyMap<string, ContractUnitConflict>;
 
-export const operationallyBlockedUnitStatuses = new Set(['maintenance', 'reserved']);
+const operationallyBlockedUnitStatuses = new Set(['maintenance', 'reserved']);
 
-export function getUnitTemporalConflict(
+function getUnitTemporalConflict(
   conflictsByUnitId: UnitAvailabilityConflictMap | undefined,
   unitId: string,
 ): ContractUnitConflict | null {

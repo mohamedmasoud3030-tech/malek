@@ -6,7 +6,7 @@ export { normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/
 export type MaintenancePriorityFilter = Maintenance['priority'] | 'all';
 export type MaintenanceStatusFilter = Maintenance['status'] | 'all';
 
-export type MaintenanceFilters = Readonly<{
+type MaintenanceFilters = Readonly<{
   status: MaintenanceStatusFilter;
   priority: MaintenancePriorityFilter;
   propertyId: string;

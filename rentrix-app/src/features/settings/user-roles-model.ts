@@ -1,7 +1,7 @@
 import type { AuthorizationRole as UserRole } from '@/features/auth/permissions';
 
-export const governedUserRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'] as const satisfies readonly UserRole[];
-export type OfficePersona = 'OWNER' | 'EMPLOYEE';
+const governedUserRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'] as const satisfies readonly UserRole[];
+type OfficePersona = 'OWNER' | 'EMPLOYEE';
 export function getOfficePersona(role: UserRole | null): OfficePersona | null {
   if (!role || !governedUserRoles.includes(role)) return null;
   return role === 'ADMIN' ? 'OWNER' : 'EMPLOYEE';

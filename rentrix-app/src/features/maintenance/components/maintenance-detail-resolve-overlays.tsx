@@ -24,15 +24,15 @@ import {
   maintenanceStatusTone,
 } from '@/lib/maintenanceStatus';
 
-export type ChargeTarget = 'landlord' | 'tenant' | 'office';
+type ChargeTarget = 'landlord' | 'tenant' | 'office';
 
-export const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc: string }> = {
+const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc: string }> = {
   landlord: { title: 'المالك (ذمة مدينة)', desc: 'يسجل على المالك؛ لا يخصم من مستحقاته دون مقاصة معتمدة' },
   tenant: { title: 'المستأجر (مطالبة)', desc: 'إصدار فاتورة مطالبة بسبب سوء الاستخدام' },
   office: { title: 'شركة الإدارة (تشغيلي)', desc: 'مصروف تشغيلي عام على المكتب' },
 };
 
-export type MaintenanceDetailsOverlayProps = Readonly<{
+type MaintenanceDetailsOverlayProps = Readonly<{
   request: Maintenance | null;
   providerOptions: ServiceProviderOption[];
   providerCategories: ServiceProviderCategory[];
@@ -202,7 +202,7 @@ export function MaintenanceDetailsOverlay({
   );
 }
 
-export type MaintenanceResolveOverlayProps = Readonly<{
+type MaintenanceResolveOverlayProps = Readonly<{
   target: Maintenance | null;
   form: UseFormReturn<MaintenanceResolveFormValues>;
   isSubmitting: boolean;

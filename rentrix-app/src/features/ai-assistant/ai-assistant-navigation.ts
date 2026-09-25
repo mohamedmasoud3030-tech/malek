@@ -19,7 +19,7 @@ export type AiNavigationTarget = Readonly<{
   search?: Readonly<Record<string, string>>;
 }>;
 
-export type AiNavigationContext = Readonly<{
+type AiNavigationContext = Readonly<{
   /** True for free-form questions without a declared action. */
   freeform: boolean;
   /** Sanitized route/entity descriptor derived by the canonical surface seam. */
@@ -250,7 +250,7 @@ export function buildAiNavigationTargets(
   );
 }
 
-export const FORBIDDEN_NAVIGATION_PATTERNS = [
+const FORBIDDEN_NAVIGATION_PATTERNS = [
   /^https?:/i,
   /\.(insert|update|delete|upsert)\(/i,
   /mailto:/i,

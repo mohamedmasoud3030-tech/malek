@@ -21,9 +21,9 @@ import type { MaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
 import type { UtilityObligationsSignal } from './utility-obligations-signal';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
 
-export type NeedsAttentionSeverity = 'danger' | 'warning' | 'info';
+type NeedsAttentionSeverity = 'danger' | 'warning' | 'info';
 
-export type NeedsAttentionItem = Readonly<{
+type NeedsAttentionItem = Readonly<{
   /** Stable render key. */
   key: string;
   severity: NeedsAttentionSeverity;

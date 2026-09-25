@@ -2,10 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { Unit } from '@/types/domain';
 import type { UnitPayload } from './unit-schema';
-import { createUnit, getUnitDetail, listUnits, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
+import { createUnit, listUnits, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
 import { reconcileDueShortStaysBeforeRead } from '@/features/contracts/services/shortStayLifecycleService';
 
-export const unitKeys = {
+const unitKeys = {
   all: ['units'] as const,
   list: () => [...unitKeys.all, 'list'] as const,
   property: (propertyId: string) => [...unitKeys.all, 'property', propertyId] as const,
@@ -24,14 +24,6 @@ export function useAllUnits(options?: Readonly<{ enabled?: boolean }>) {
     queryKey: unitKeys.list(),
     queryFn: () => withShortStayReconciliation(listUnits),
     enabled: options?.enabled ?? true,
-  });
-}
-
-export function useUnitDetail(unitId: string) {
-  return useQuery({
-    queryKey: unitKeys.detail(unitId),
-    queryFn: () => withShortStayReconciliation(() => getUnitDetail(unitId)),
-    enabled: Boolean(unitId),
   });
 }
 

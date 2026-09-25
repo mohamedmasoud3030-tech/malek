@@ -12,13 +12,13 @@
  *   doesn't nag on every visit, but still re-offers eventually.
  */
 
-export interface BeforeInstallPromptEvent extends Event {
+interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
 const PWA_INSTALL_DISMISS_KEY = 'rentrix.pwa-install-dismissed-at';
-export const PWA_REASK_AFTER_DAYS = 30;
+const PWA_REASK_AFTER_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
@@ -97,7 +97,7 @@ export function isIosManualInstall(): boolean {
   return !/crios|fxios|edgios|instagram|fbav|fban|line\//i.test(userAgent);
 }
 
-export function readInstallDismissedAt(): number | null {
+function readInstallDismissedAt(): number | null {
   try {
     const raw = window.localStorage.getItem(PWA_INSTALL_DISMISS_KEY);
     if (!raw) return null;

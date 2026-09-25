@@ -344,4 +344,3 @@ export function useCommandSearch(query: string) {
     error: entitySearchQuery.error,
   };
 }
-export default useCommandSearch;

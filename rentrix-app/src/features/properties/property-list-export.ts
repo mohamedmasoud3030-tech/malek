@@ -19,7 +19,7 @@ const EXPORT_HEADERS = [
 ] as const;
 
 
-export function buildPropertiesCsv(properties: Property[]) {
+function buildPropertiesCsv(properties: Property[]) {
   const rows = properties.map((property) => [
     property.title ?? '',
     property.type ?? '',

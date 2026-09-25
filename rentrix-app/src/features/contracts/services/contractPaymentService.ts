@@ -9,7 +9,7 @@ import {
 import { loadInvoicePayments, loadReceiptReferences } from '@/features/financials/receipts/receipt-relationships';
 import { formatReceiptNumber } from '@/features/financials/components/receipt-formatters';
 
-export type ContractInvoicePaymentRow = Readonly<{
+type ContractInvoicePaymentRow = Readonly<{
   id: string;
   invoice_id: string;
   invoice_status: Invoice['status'];
@@ -23,7 +23,7 @@ export type ContractInvoicePaymentRow = Readonly<{
   invoice_reference: string | null;
 }>;
 
-export type ContractInvoiceRow = Readonly<{
+type ContractInvoiceRow = Readonly<{
   id: string;
   issue_date: string;
   due_date: string;
@@ -36,7 +36,7 @@ export type ContractInvoiceRow = Readonly<{
   payments: ContractInvoicePaymentRow[];
 }>;
 
-export type ContractPaymentsSummary = Readonly<{
+type ContractPaymentsSummary = Readonly<{
   invoiceCount: number;
   paymentCount: number;
   totalInvoiced: number;

@@ -3,7 +3,7 @@ import { toFinancialNumber } from '../financialMath';
 import { supabase } from '@/lib/supabase';
 import { fetchAllRowsInBatches } from '@/lib/paginatedRead';
 
-export type ReceiptInvoiceAllocation = { id: string; receipt_id: string; invoice_id: string | null; amount: number };
+type ReceiptInvoiceAllocation = { id: string; receipt_id: string; invoice_id: string | null; amount: number };
 
 /** Allocations, not the optional payments.invoice_id, are the governed link.
  * A receipt can settle several invoices; never attribute its whole cash amount

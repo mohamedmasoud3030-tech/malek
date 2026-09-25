@@ -6,11 +6,11 @@ import type { Owner, PropertyOwnerWithOwner } from './services/owner-service';
 
 export type OwnerAgreement = Database['public']['Tables']['owner_agreements']['Row'];
 export type OwnerAgreementVersion = Database['public']['Tables']['owner_agreement_versions']['Row'];
-export type OwnerAgreementInsert = Database['public']['Tables']['owner_agreements']['Insert'];
-export type AgreementType = 'property_management' | 'master_lease';
+type OwnerAgreementInsert = Database['public']['Tables']['owner_agreements']['Insert'];
+type AgreementType = 'property_management' | 'master_lease';
 export type CommissionType = 'FIXED_MONTHLY' | 'RATE';
-export type CollectionRole = 'OWNER_IS_CREDITOR' | 'OFFICE_IS_CREDITOR';
-export type DepositParty = 'OWNER' | 'OFFICE';
+type CollectionRole = 'OWNER_IS_CREDITOR' | 'OFFICE_IS_CREDITOR';
+type DepositParty = 'OWNER' | 'OFFICE';
 
 export type OwnerAgreementVersionTerms = Pick<OwnerAgreementVersion,
   'collection_role' | 'commission_type' | 'commission_value' | 'effective_from'
@@ -33,7 +33,7 @@ export type OwnerAgreementFormPayload = Pick<OwnerAgreementInsert,
  * payload. Mirrors the canonical property_owners row semantics consumed by the
  * atomic creation RPC (`create_property_with_ownership_atomic`).
  */
-export type PropertyOwnershipShare = Readonly<{
+type PropertyOwnershipShare = Readonly<{
   owner_id: string;
   ownership_percentage: number;
   is_primary: boolean;
@@ -51,7 +51,7 @@ export interface CreatePropertyWithAgreementPayload {
    */
   ownership?: readonly PropertyOwnershipShare[];
 }
-export interface CreatePropertyWithAgreementResult { property_id: string; agreement_id: string; }
+interface CreatePropertyWithAgreementResult { property_id: string; agreement_id: string; }
 
 /**
  * Normalizes the client-side ownership payload into the explicit share list
@@ -203,7 +203,7 @@ export async function listOwnerAgreementsForProperty(propertyId: string): Promis
   return rows;
 }
 
-export type OwnerAgreementWithProperty = OwnerAgreement & Readonly<{
+type OwnerAgreementWithProperty = OwnerAgreement & Readonly<{
   property: { id: string; title: string | null } | null;
 }>;
 

@@ -17,7 +17,7 @@ const addYear = (date: Date) => { const nextDate = new Date(date); nextDate.setF
  * existing detail-workspace callers still typecheck unchanged, and register
  * rows now reuse the canonical rules instead of re-deriving them.
  */
-export type ContractLifecycleSubject = Pick<
+type ContractLifecycleSubject = Pick<
   ContractListItem,
   'status' | 'approval_status' | 'lease_mode' | 'end_date' | 'rent_amount' | 'agreement_id'
 >;
@@ -42,14 +42,14 @@ export const getRenewalDefaults = (contract: ContractLifecycleSubject): RenewalP
 // Approval is a sub-state of `draft`: activation is the only path to 'active'.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ContractApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+type ContractApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export function normalizeApprovalStatus(approvalStatus: string | null | undefined): ContractApprovalStatus | null {
   const value = (approvalStatus ?? '').trim().toUpperCase();
   return value === 'PENDING' || value === 'APPROVED' || value === 'REJECTED' ? value : null;
 }
 
-export const isDraftContract = (contract: ContractLifecycleSubject) => isContractStatus(contract.status, 'draft');
+const isDraftContract = (contract: ContractLifecycleSubject) => isContractStatus(contract.status, 'draft');
 export const isContractApprovalPending = (contract: ContractLifecycleSubject) => isDraftContract(contract) && normalizeApprovalStatus(contract.approval_status) === 'PENDING';
 export const isContractApproved = (contract: ContractLifecycleSubject) => isDraftContract(contract) && normalizeApprovalStatus(contract.approval_status) === 'APPROVED';
 export const isContractRejected = (contract: ContractLifecycleSubject) => isDraftContract(contract) && normalizeApprovalStatus(contract.approval_status) === 'REJECTED';

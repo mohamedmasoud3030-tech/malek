@@ -15,7 +15,7 @@ export interface ActionMenuItem {
   onSelect: () => void;
 }
 
-export interface ActionItem {
+interface ActionItem {
   id: string;
   label: string;
   icon?: ComponentType<{ className?: string }>;
@@ -28,7 +28,7 @@ export interface ActionItem {
 
 type ActionMenuEntry = ActionMenuItem | ActionItem;
 
-export interface ActionMenuProps {
+interface ActionMenuProps {
   items: ActionMenuEntry[];
   label?: string;
   align?: 'start' | 'center' | 'end';
@@ -64,7 +64,7 @@ function isDestructive(item: ActionMenuEntry): boolean {
 const MENU_TRIGGER_GAP = 4;
 const MENU_VIEWPORT_MARGIN = 8;
 
-export interface ActionMenuPlacementInput {
+interface ActionMenuPlacementInput {
   /** Trigger rect in viewport coordinates. */
   trigger: { top: number; bottom: number; left: number; right: number };
   menu: { width: number; height: number };

@@ -25,11 +25,11 @@ export const WHATSAPP_TEXT_MAX_LENGTH = 2_000;
 export const WHATSAPP_PHONE_MIN_DIGITS = 8;
 export const WHATSAPP_PHONE_MAX_DIGITS = 15;
 
-export type WhatsAppShareResult =
+type WhatsAppShareResult =
   | Readonly<{ ok: true; url: string; mode: 'phone' | 'message-only' }>
   | Readonly<{ ok: false; reason: 'TEXT_REQUIRED' | 'TEXT_TOO_LONG' | 'PHONE_INVALID' }>;
 
-export type WhatsAppComposerRequest = Readonly<{
+type WhatsAppComposerRequest = Readonly<{
   /** Optional recipient. When absent the composer opens message-only. */
   phone?: string;
   /** Message body, prepared by a human-reviewed template or report share text. */
@@ -95,13 +95,13 @@ export function buildWhatsAppComposerUrl(
   return { ok: true, url, mode: phone ? 'phone' : 'message-only' };
 }
 
-export type WhatsAppOpenResult = Readonly<{
+type WhatsAppOpenResult = Readonly<{
   opened: boolean;
   result: WhatsAppShareResult;
 }>;
 
 /** Opener abstraction so the boundary stays testable outside a browser. */
-export type WhatsAppOpener = (url: string) => unknown;
+type WhatsAppOpener = (url: string) => unknown;
 
 const defaultOpener: WhatsAppOpener = (url) => {
   if (typeof window === 'undefined' || typeof window.open !== 'function') {

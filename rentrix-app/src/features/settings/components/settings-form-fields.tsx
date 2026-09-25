@@ -6,7 +6,7 @@ import type {
   CompanySettingsDraft,
   CompanySettingsDraftField,
   CompanySettingsValidationErrors,
-} from '../settingsForm';
+} from '../form/sectionDrafts';
 
 /**
  * Settings field adapters (WP-D `form/` machinery).

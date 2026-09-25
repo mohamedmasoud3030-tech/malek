@@ -1,6 +1,6 @@
 // Public contact channels for the landing site — same domain as the app.
 
-export const WHATSAPP_NUMBER = '96891928186';
+const WHATSAPP_NUMBER = '96891928186';
 
 export const CONTACT_EMAIL = 'Mohamedms.oud@outlook.com';
 

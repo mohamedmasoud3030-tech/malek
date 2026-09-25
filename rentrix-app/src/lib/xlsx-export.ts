@@ -1,6 +1,6 @@
-export type XlsxCellValue = string | number | boolean | null | undefined;
+type XlsxCellValue = string | number | boolean | null | undefined;
 
-export type XlsxSheetInput = Readonly<{
+type XlsxSheetInput = Readonly<{
   name: string;
   headers: readonly string[];
   rows: readonly (readonly XlsxCellValue[])[];

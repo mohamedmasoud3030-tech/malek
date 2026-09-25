@@ -4,7 +4,7 @@ import { PageHeader } from './page-header';
 import { PageHeaderActions } from './page-header-actions';
 import { PageLayout } from './page-layout';
 
-export type EmbeddableWorkspaceProps = Readonly<{
+type EmbeddableWorkspaceProps = Readonly<{
   embedded?: boolean;
   title: string;
   description?: string;

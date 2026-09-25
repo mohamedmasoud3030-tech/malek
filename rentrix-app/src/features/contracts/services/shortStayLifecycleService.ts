@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type ShortStayReconciliationResult = Readonly<{
+type ShortStayReconciliationResult = Readonly<{
   status: 'reconciled';
   expired_contracts: number;
   released_units: number;
@@ -13,7 +13,7 @@ export type ShortStayExtensionInput = Readonly<{
   requestId?: string;
 }>;
 
-export type ShortStayExtensionResult = Readonly<{
+type ShortStayExtensionResult = Readonly<{
   status: 'extended';
   contract_id: string;
   old_end_date: string;
@@ -35,7 +35,7 @@ function isJsonObject(value: unknown): value is Record<string, unknown> {
  * which contracts are due, and which occupied units are safe to release. The
  * browser supplies no company, contract, unit, date, status or amount.
  */
-export async function reconcileDueShortStays(): Promise<ShortStayReconciliationResult> {
+async function reconcileDueShortStays(): Promise<ShortStayReconciliationResult> {
   const { data, error } = await supabase.rpc('reconcile_due_short_stays_atomic');
   if (error) throw error;
   if (!isJsonObject(data) || data.status !== 'reconciled') {

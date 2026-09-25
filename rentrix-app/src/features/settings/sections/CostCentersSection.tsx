@@ -2,7 +2,7 @@ import { CostCentersSettingsSection } from '../cost-centers-settings-section';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 
-export type CostCentersSectionProps = Readonly<{
+type CostCentersSectionProps = Readonly<{
   activeSection: SettingsSectionId;
 }>;
 

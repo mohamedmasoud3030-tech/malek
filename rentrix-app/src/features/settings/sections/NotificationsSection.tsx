@@ -1,9 +1,10 @@
-import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsPreviewModel, CompanySettingsValidationErrors } from '../settingsForm';
+import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../form/sectionDrafts';
+import type { CompanySettingsPreviewModel } from '../settingsForm';
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 
-export type NotificationsSectionProps = Readonly<{
+type NotificationsSectionProps = Readonly<{
   activeSection: SettingsSectionId;
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;

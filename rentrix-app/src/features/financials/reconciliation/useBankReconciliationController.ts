@@ -41,7 +41,7 @@ export const entityLabels = {
   owner_expense: 'مصروف مالك',
 } as const;
 
-export const emptyLineDraft: BankStatementLineFormValues = {
+const emptyLineDraft: BankStatementLineFormValues = {
   bank_account_id: '',
   transaction_date: getTodayLocalDateString(),
   description: '',
@@ -57,7 +57,7 @@ export const emptyMatchDraft: BankReconciliationMatchValues = {
   notes: '',
 };
 
-export const emptyImportDraft: BankStatementImportValues = {
+const emptyImportDraft: BankStatementImportValues = {
   bank_account_id: '',
   statement_name: '',
   csv: '',

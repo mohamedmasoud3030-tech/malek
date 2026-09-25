@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import type { SemanticTone } from '@/components/ui/status-badge';
 
@@ -235,31 +234,4 @@ export const DistributionStrip = memo(function DistributionStrip({
   );
 });
 
-/**
- * Small labelled stat used in dense metric columns — number first, context
- * below, optional trailing node (trend delta).
- */
-export const MetricStat = memo(function MetricStat({
-  label,
-  value,
-  hint,
-  trailing,
-  className,
-}: Readonly<{
-  label: string;
-  value: ReactNode;
-  hint?: ReactNode;
-  trailing?: ReactNode;
-  className?: string;
-}>) {
-  return (
-    <div className={cn('flex min-w-0 items-center justify-between gap-3 py-2', className)} data-dashboard-metric-stat>
-      <div className="min-w-0">
-        <p className="truncate text-[11px] font-bold text-muted-foreground">{label}</p>
-        <p className="mt-0.5 truncate text-base font-black tabular-nums leading-6 text-foreground">{value}</p>
-        {hint ? <p className="mt-0.5 truncate text-[11px] font-medium text-muted-foreground">{hint}</p> : null}
-      </div>
-      {trailing ? <div className="shrink-0">{trailing}</div> : null}
-    </div>
-  );
-});
+

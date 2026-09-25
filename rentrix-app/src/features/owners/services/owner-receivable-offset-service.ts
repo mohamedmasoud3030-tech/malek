@@ -29,8 +29,8 @@ const OMR_EXACT = 1000;
 /** Server-owned fields the RPC explicitly forbids in the payload. */
 const SERVER_OWNED_FIELDS = ['company_id', 'amount_override', 'target_account'] as const;
 
-export const ownerReceivableStatuses = ['OPEN', 'OFFSET', 'RECOVERED', 'CLOSED', 'REVERSED'] as const;
-export type OwnerReceivableStatus = (typeof ownerReceivableStatuses)[number];
+const ownerReceivableStatuses = ['OPEN', 'OFFSET', 'RECOVERED', 'CLOSED', 'REVERSED'] as const;
+type OwnerReceivableStatus = (typeof ownerReceivableStatuses)[number];
 
 export const ownerReceivableStatusLabels: Record<OwnerReceivableStatus, string> = {
   OPEN: 'قائم',
@@ -53,7 +53,7 @@ export class OwnerReceivableEvidenceError extends Error {
  * A receivable owed BY an owner, as stored. Every money field is authoritative
  * server state — never recomputed here.
  */
-export type OwnerReceivable = {
+type OwnerReceivable = {
   id: string;
   ownerId: string;
   propertyId: string | null;
@@ -74,7 +74,7 @@ export type OwnerReceivable = {
 };
 
 /** One posted offset movement against a receivable. */
-export type OwnerReceivableOffset = {
+type OwnerReceivableOffset = {
   id: string;
   dueFromOwnerId: string;
   ownerSettlementId: string;
@@ -255,7 +255,7 @@ export function createOwnerOffsetRequestId(prefix = 'offset'): string {
   return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
-export type ApplyOwnerOffsetInput = {
+type ApplyOwnerOffsetInput = {
   dueFromOwnerId: string;
   ownerSettlementId: string;
   amount: number;
@@ -330,7 +330,7 @@ export function buildApplyOwnerOffsetPayload(input: ApplyOwnerOffsetInput) {
  * the receivable's remainder AFTER the offset — i.e. the effect on the
  * original source — and `journalBatchId` is the GL proof.
  */
-export type ApplyOwnerOffsetResult = {
+type ApplyOwnerOffsetResult = {
   success: true;
   idempotent: boolean;
   dueFromOwnerId: string;
@@ -381,7 +381,7 @@ export function parseApplyOwnerOffsetResult(payload: unknown): ApplyOwnerOffsetR
 export const approvedOwnerSettlementsQueryKey = ['owners', 'approved-settlements'] as const;
 
 /** One APPROVED (unpaid) owner payable — the only lawful offset counterparty. */
-export type ApprovedOwnerSettlement = {
+type ApprovedOwnerSettlement = {
   id: string;
   ownerId: string;
   netPayable: number;

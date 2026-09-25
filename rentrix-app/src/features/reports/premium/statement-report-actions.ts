@@ -37,10 +37,10 @@ import {
  * snapshot there is nothing truthful to render, so output is refused rather
  * than emitting an empty or partially-populated statement.
  */
-export const MISSING_STATEMENT_DATA_MESSAGE =
+const MISSING_STATEMENT_DATA_MESSAGE =
   'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
 
-export function buildTenantStatementDocumentData(
+function buildTenantStatementDocumentData(
   tenantStatement: TenantStatementReport | null | undefined,
   period: { from?: string; to?: string },
 ): TenantStatementData | null {
@@ -131,7 +131,7 @@ export function downloadTenantStatementExcel(statement: TenantStatementReport | 
  * (rpt_owner_statement does not expose one) — the column is omitted entirely
  * rather than carrying a fabricated cumulative figure.
  */
-export function ownerStatementExcelRows(statement: OwnerStatementReport): readonly (readonly (string | number)[])[] {
+function ownerStatementExcelRows(statement: OwnerStatementReport): readonly (readonly (string | number)[])[] {
   return statement.transactions.map((transaction) => [
     transaction.date || '—',
     getOwnerStatementTransactionTypeLabel(transaction.type),

@@ -36,7 +36,7 @@ function formFromLand(land: LandRecord): LandFormValues {
   };
 }
 
-export type LandsWorkspaceProps = Readonly<{
+type LandsWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 

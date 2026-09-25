@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-export type KpiAccent = 'primary' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet' | 'slate';
+type KpiAccent = 'primary' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet' | 'slate';
 
 interface KpiCardProps {
   label: string;

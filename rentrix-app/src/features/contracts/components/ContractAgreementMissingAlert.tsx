@@ -6,7 +6,7 @@ import { defaultCompanySettingsContract, type CompanySettingsContract } from '@/
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Property } from '@/types/domain';
 
-export interface ContractAgreementMissingAlertProps {
+interface ContractAgreementMissingAlertProps {
   readonly property: Pick<Property, 'id' | 'title'> | undefined;
   readonly startDate: string;
   readonly endDate: string;

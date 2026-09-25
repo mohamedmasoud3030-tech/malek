@@ -12,7 +12,7 @@ import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { AuditLogRecord, AuditLogResult } from '../types';
 
-export type AuditLogViewState =
+type AuditLogViewState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: unknown }>
   | Readonly<{ status: 'ready'; result: AuditLogResult; refreshError?: unknown }>;

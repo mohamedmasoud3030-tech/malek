@@ -6,7 +6,7 @@ import { getAppLanguageState } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { PageHeaderActions } from './page-header-actions';
 
-export interface PageHeaderProps {
+interface PageHeaderProps {
   title: string;
   description?: ReactNode;
   count?: number | string;

@@ -51,7 +51,7 @@ export type TaxAuthorityReadinessStatus =
   | typeof TAX_PROFILE_MISSING
   | typeof FEE_TAX_TREATMENT_MISSING;
 
-export type TaxAuthorityReadiness = Readonly<{
+type TaxAuthorityReadiness = Readonly<{
   /** Local calendar date `YYYY-MM-DD` the status was resolved for. */
   date: string;
   scope: TaxAuthorityScope;

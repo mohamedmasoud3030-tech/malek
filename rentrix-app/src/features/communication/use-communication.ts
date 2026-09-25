@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { archiveCommunicationRecord, createCommunicationRecord, listCommunicationRecords, updateCommunicationRecord } from './services/communication-service';
 import type { CommunicationFilters, CommunicationFormValues } from './types';
 
-export const communicationKeys = { all: ['communication-records'] as const, list: (filters: CommunicationFilters) => [...communicationKeys.all, filters] as const };
+const communicationKeys = { all: ['communication-records'] as const, list: (filters: CommunicationFilters) => [...communicationKeys.all, filters] as const };
 
 export function useCommunicationRecords(filters: CommunicationFilters) {
   return useQuery({ queryKey: communicationKeys.list(filters), queryFn: () => listCommunicationRecords(filters) });

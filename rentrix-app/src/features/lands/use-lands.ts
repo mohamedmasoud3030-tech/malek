@@ -6,7 +6,7 @@ import type { LandFormInput } from './land-schema';
 import type { LandFilters } from './types';
 
 const landKeyBase = defineEntityKeys('lands');
-export const landKeys = { ...landKeyBase } as const;
+const landKeys = { ...landKeyBase } as const;
 
 export function useLands(filters: LandFilters) {
   return useQuery({ queryKey: landKeys.list(filters), queryFn: () => listLands(filters) });

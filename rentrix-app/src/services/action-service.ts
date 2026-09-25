@@ -6,7 +6,7 @@
  * these helpers use explicit native/browser hand-offs and never mutate domain data.
  */
 
-export type SharePayload = Readonly<{
+type SharePayload = Readonly<{
   title: string;
   text?: string;
   url?: string;

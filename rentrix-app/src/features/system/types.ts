@@ -1,4 +1,4 @@
-export type IntegritySeverity = 'ok' | 'warning' | 'critical';
+type IntegritySeverity = 'ok' | 'warning' | 'critical';
 
 export type DataIntegrityCheck = Readonly<{
   id: string;
@@ -8,7 +8,7 @@ export type DataIntegrityCheck = Readonly<{
   count: number;
 }>;
 
-export type DataIntegritySnapshot = Readonly<{
+type DataIntegritySnapshot = Readonly<{
   checkedAt: string;
   checks: readonly DataIntegrityCheck[];
 }>;

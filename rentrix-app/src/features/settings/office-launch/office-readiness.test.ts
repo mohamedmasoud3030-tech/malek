@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CompanySettingsDraft } from '@/features/settings/settingsForm';
+import type { CompanySettingsDraft } from '@/features/settings/form/sectionDrafts';
 import { deriveOfficeReadiness } from './office-readiness';
 
 const readyDraft: CompanySettingsDraft = {

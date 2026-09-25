@@ -12,7 +12,7 @@ export function extractInventoryComponents(content) {
  * URL (?section= / ?view= / ?workspace=) would silently re-adopt the retired hub
  * as its canonical destination, so that drift is rejected here.
  */
-export const PROMOTED_STANDALONE_SECTION_KEYS = new Set([
+const PROMOTED_STANDALONE_SECTION_KEYS = new Set([
   'utilities',
   'documents_vault',
   'service_providers',
@@ -29,7 +29,7 @@ export const PROMOTED_STANDALONE_SECTION_KEYS = new Set([
   'communication',
 ]);
 
-export function extractInventoryRoutes(content) {
+function extractInventoryRoutes(content) {
   const routes = [];
   for (const match of content.matchAll(/\broutes:\s*\[([^\]]*)\]/g)) {
     for (const literal of match[1].matchAll(/['"]([^'"]+)['"]/g)) routes.push(literal[1]);
@@ -37,7 +37,7 @@ export function extractInventoryRoutes(content) {
   return routes;
 }
 
-export function findInventoryRouteProblems(routes) {
+function findInventoryRouteProblems(routes) {
   const problems = [];
   if (routes.length === 0) {
     problems.push('active register inventory parser found zero route entries');
@@ -86,7 +86,7 @@ export function findInventoryProblems(components, { sourceRoot = resolve('src'),
   return problems;
 }
 
-export function validateActiveRegisterInventory({
+function validateActiveRegisterInventory({
   inventoryFile = resolve('src/features/active-register-inventory.ts'),
   sourceRoot = resolve('src'),
   fileExists = existsSync,

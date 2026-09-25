@@ -1,13 +1,11 @@
 /**
- * WP-D compatibility seam — company-settings form surface.
+ * Company-settings whole-record adapters.
  *
- * The per-section draft types, field maps, and validators now live in
+ * Per-section draft types, field maps, and validators live in
  * `./form/sectionDrafts`; the per-section isolation hook lives in
- * `./form/useSettingsSection`. This module keeps the historical import path
- * (`@/features/settings/settingsForm`) and every historical export working:
- * it owns the whole-record adapter functions (record ↔ draft ↔ payload —
- * inherently cross-section because a single Supabase row is saved as one
- * update) and re-exports the decomposed validation contract.
+ * `./form/useSettingsSection`. This module owns only the cross-section
+ * adapters (record ↔ draft ↔ payload) — inherently cross-section because a
+ * single Supabase row is saved as one update — plus the preview model.
  */
 import { normalizeCompanySettingsContract, type CompanyLocalSettings } from '@/lib/companySettings';
 import { companySettingsRecordToContract } from './companySettingsContractAdapter';
@@ -17,43 +15,10 @@ import {
   normalizeVatRate,
   stringifyBoolean,
   type CompanySettingsDraft,
-  type CompanySettingsDraftField,
-  type CompanySettingsDocumentsDraft,
-  type CompanySettingsIdentityDraft,
-  type CompanySettingsNotificationsDraft,
-  type CompanySettingsOfficeDraft,
-  type CompanySettingsSectionDraftId,
-  type CompanySettingsSectionDraftMap,
-  type CompanySettingsValidationErrors,
 } from './form/sectionDrafts';
 
-export type {
-  CompanySettingsDraft,
-  CompanySettingsDraftField,
-  CompanySettingsDocumentsDraft,
-  CompanySettingsIdentityDraft,
-  CompanySettingsNotificationsDraft,
-  CompanySettingsOfficeDraft,
-  CompanySettingsSectionDraftId,
-  CompanySettingsSectionDraftMap,
-  CompanySettingsValidationErrors,
-};
-export {
-  companySettingsDocumentsFields,
-  companySettingsDraftFields,
-  companySettingsIdentityFields,
-  companySettingsNotificationsFields,
-  companySettingsOfficeFields,
-  companySettingsSectionDraftFields,
-  companySettingsSectionDraftIds,
-  hasCompanySettingsValidationErrors,
-  validateCompanySettingsDraft,
-  validateDocumentsSectionDraft,
-  validateIdentitySectionDraft,
-  validateNotificationsSectionDraft,
-  validateOfficeSectionDraft,
-  validateSettingsSectionDraft,
-} from './form/sectionDrafts';
+
+
 
 export function companySettingsRecordToDraft(settings: CompanySettingsRecord): CompanySettingsDraft {
   const normalizedSettings = companySettingsRecordToContract(settings);

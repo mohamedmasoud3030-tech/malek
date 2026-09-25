@@ -11,7 +11,7 @@
  */
 
 /** Max time we wait for web fonts before degrading to the fallback stack. */
-export const FONT_WAIT_TIMEOUT_MS = 8000;
+const FONT_WAIT_TIMEOUT_MS = 8000;
 
 /** Max time we wait for a stalled image before degrading (skip its pixels). */
 export const IMAGE_WAIT_TIMEOUT_MS = 8000;

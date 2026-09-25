@@ -6,15 +6,15 @@ import type {
   AiAssistantSurfaceContext,
 } from './types';
 
-export type AiAssistantResponseMode = 'brief' | 'explanation' | 'draft' | 'analysis' | 'advisory';
-export type AiAssistantAttentionTone = 'critical' | 'warning' | 'info';
+type AiAssistantResponseMode = 'brief' | 'explanation' | 'draft' | 'analysis' | 'advisory';
+type AiAssistantAttentionTone = 'critical' | 'warning' | 'info';
 
-export type AiAssistantAttentionItem = Readonly<{
+type AiAssistantAttentionItem = Readonly<{
   label: string;
   tone: AiAssistantAttentionTone;
 }>;
 
-export type AiAssistantSuggestedAction = Readonly<{
+type AiAssistantSuggestedAction = Readonly<{
   action: AiAssistantAction;
   title: string;
   prompt: string;

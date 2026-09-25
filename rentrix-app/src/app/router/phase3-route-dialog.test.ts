@@ -64,7 +64,6 @@ describe('Route-native entity presentation', () => {
   it('background-location infrastructure remains for modal create/edit and lightweight preview workflows', () => {
     expect(backgroundProvider).toContain('BackgroundLocationProvider');
     expect(backgroundProvider).toContain('useBackgroundLocation');
-    expect(backgroundProvider).toContain('useIsDialogRoute');
     expect(protectedRoute).toContain('BackgroundLocationProvider');
   });
 

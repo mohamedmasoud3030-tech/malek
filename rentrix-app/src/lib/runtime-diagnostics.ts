@@ -1,7 +1,7 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import { env } from '@/lib/env';
 
-export type DiagnosticCode =
+type DiagnosticCode =
   | 'missing_supabase_url'
   | 'missing_supabase_anon_key'
   | 'placeholder_supabase_config'
@@ -9,7 +9,7 @@ export type DiagnosticCode =
   | 'missing_required_table'
   | 'missing_required_rpc';
 
-export type RuntimeDiagnostic = {
+type RuntimeDiagnostic = {
   code: DiagnosticCode;
   messageAr: string;
   technical: string;

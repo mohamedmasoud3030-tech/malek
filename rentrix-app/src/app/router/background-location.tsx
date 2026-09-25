@@ -53,20 +53,6 @@ export function useBackgroundLocation(): RouterLocation | null {
 }
 
 /**
- * Returns true if current route should render as dialog over background.
- * Call inside a detail/create/edit route with the list prefixes that are
- * valid backgrounds (e.g., ['/properties'] for /properties/:id).
- */
-export function useIsDialogRoute(expectedBackgroundPrefixes: readonly string[]): boolean {
-  const background = useBackgroundLocation();
-  if (!background) return false;
-  const bgPath = background.pathname;
-  return expectedBackgroundPrefixes.some(
-    (prefix) => bgPath === prefix || bgPath.startsWith(`${prefix}/`) || bgPath === prefix,
-  );
-}
-
-/**
  * Navigate while preserving the correct background for nested dialogs.
  * If current is already a dialog (has background), keep that background;
  * otherwise use current location as background.

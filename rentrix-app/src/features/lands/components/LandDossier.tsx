@@ -24,7 +24,7 @@ const landSections = [
   { id: 'records', label: 'السجل والمستندات', icon: FileText },
 ] as const;
 
-export function LandDossierContent({ landId, section }: Readonly<{ landId: string; section?: LandSection }>) {
+function LandDossierContent({ landId, section }: Readonly<{ landId: string; section?: LandSection }>) {
   const { canAccess } = useAuth();
   const companyFormatters = useCompanyFormatters();
   const query = useLandDossier(landId, canAccess('commissions.view'), canAccess('communication.view'));

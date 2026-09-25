@@ -9,7 +9,7 @@ import { updateCurrentUserPassword } from './change-password-service';
 
 const MIN_PASSWORD_LENGTH = 8;
 
-export type ChangePasswordFormState = Readonly<{
+type ChangePasswordFormState = Readonly<{
   password: string;
   confirmPassword: string;
 }>;
@@ -20,7 +20,7 @@ export function validateChangePasswordForm(form: ChangePasswordFormState): strin
   return null;
 }
 
-export type ChangePasswordWorkspaceVariant = 'standalone' | 'embedded';
+type ChangePasswordWorkspaceVariant = 'standalone' | 'embedded';
 type ChangePasswordWorkspaceProps = Readonly<{ variant?: ChangePasswordWorkspaceVariant }>;
 
 export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswordWorkspaceProps = {}) {

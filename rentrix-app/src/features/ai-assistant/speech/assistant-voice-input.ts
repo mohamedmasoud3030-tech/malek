@@ -14,9 +14,9 @@
  * network, missing device) instead of raw browser error codes.
  */
 
-export type AssistantVoiceInputStatus = 'idle' | 'listening';
+type AssistantVoiceInputStatus = 'idle' | 'listening';
 
-export type AssistantVoiceInputState = Readonly<{
+type AssistantVoiceInputState = Readonly<{
   supported: boolean;
   status: AssistantVoiceInputStatus;
   /** Live merged transcript: committed finals + current interim fragment. */
@@ -25,7 +25,7 @@ export type AssistantVoiceInputState = Readonly<{
   error: string | null;
 }>;
 
-export type AssistantVoiceInputCallbacks = Readonly<{
+type AssistantVoiceInputCallbacks = Readonly<{
   /** Fired on every transcript change while listening (live dictation). */
   onTranscript?: (transcript: string) => void;
   /** Fired once with the committed transcript when the session is intentionally committed. */
@@ -88,7 +88,7 @@ const ARABIC_RECOGNITION_ERRORS: Readonly<Record<string, string>> = {
 const UNKNOWN_RECOGNITION_ERROR = 'تعذر التعرف على الكلام. أعد المحاولة.';
 
 /** Pure mapping from a Web Speech error code to its user-facing Arabic message. */
-export function getAssistantVoiceInputErrorMessage(code: string): string {
+function getAssistantVoiceInputErrorMessage(code: string): string {
   return ARABIC_RECOGNITION_ERRORS[code] ?? UNKNOWN_RECOGNITION_ERROR;
 }
 

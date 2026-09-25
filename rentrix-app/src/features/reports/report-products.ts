@@ -11,11 +11,11 @@ import type { ReportFilterFieldId } from './reports-workspace-filters';
 
 /** Internal renderer locations; product targets below are their sole owner. */
 export type ReportSectionId = 'accounting' | 'statements' | 'analytics';
-export type AccountingReportViewId =
+type AccountingReportViewId =
   | 'accounting_reports'
   | 'general_ledger'
   | 'deferred_revenue';
-export type AnalyticsReportViewId =
+type AnalyticsReportViewId =
   | 'overview'
   | 'collections'
   | 'overdue'
@@ -40,7 +40,7 @@ export type StatementProductFocus = 'owner' | 'tenant' | 'financial' | 'all';
  * entity/account statements while retaining one canonical route metadata
  * source. It is not a second catalog or renderer registry.
  */
-export type ReportProductKind = 'report' | 'statement';
+type ReportProductKind = 'report' | 'statement';
 
 /**
  * One addressable body of a report product. Product targets deliberately own

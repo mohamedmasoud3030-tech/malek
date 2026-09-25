@@ -5,8 +5,8 @@ import { buildXlsxBlob } from '@/lib/xlsx-export';
 import { buildCsvMatrix, withUtf8Bom } from '@/lib/csvExport';
 
 export type OfficeImportEntity = 'owners' | 'properties' | 'units' | 'tenants' | 'contracts';
-export type OfficeImportRow = Readonly<Record<string, string>>;
-export type OfficeImportIssue = Readonly<{
+type OfficeImportRow = Readonly<Record<string, string>>;
+type OfficeImportIssue = Readonly<{
   row: number;
   field?: string;
   message: string;

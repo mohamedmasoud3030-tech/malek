@@ -15,7 +15,7 @@ export type SupportCategory = (typeof supportCategories)[number];
 export const supportUrgencies = ["LOW", "NORMAL", "HIGH", "CRITICAL"] as const;
 export type SupportUrgency = (typeof supportUrgencies)[number];
 
-export type SupportRequestStatus =
+type SupportRequestStatus =
   | "ACKNOWLEDGED"
   | "IN_REVIEW"
   | "WAITING_USER"
@@ -32,7 +32,7 @@ export type SupportRequestInput = Readonly<{
   actualBehavior: string;
 }>;
 
-export type SupportRequestReceipt = Readonly<{
+type SupportRequestReceipt = Readonly<{
   id: string;
   reference: string;
   status: SupportRequestStatus;
@@ -41,7 +41,7 @@ export type SupportRequestReceipt = Readonly<{
   responseTarget: string;
 }>;
 
-export type SupportRequestSummary = SupportRequestReceipt &
+type SupportRequestSummary = SupportRequestReceipt &
   Readonly<{
     category: SupportCategory;
     updatedAt: string;

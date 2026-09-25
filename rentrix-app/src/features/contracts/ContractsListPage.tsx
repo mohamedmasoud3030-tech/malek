@@ -75,7 +75,7 @@ function exportContractsXlsx(contracts: ContractListItem[]) {
   }
 }
 
-export type ContractsListPageProps = Readonly<{ embedded?: boolean }>;
+type ContractsListPageProps = Readonly<{ embedded?: boolean }>;
 
 export function ContractsListPage({ embedded = false }: ContractsListPageProps) {
   const navigate = useNavigate();

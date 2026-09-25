@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { defineEntityKeys } from '@/lib/query-keys';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { generateInvoicesFromActiveContracts, getInvoiceDetail, listDossierInvoicesForContracts, listInvoices, listInvoicesPaginated, type InvoiceListParams, type InvoicePaginationParams, type InvoiceStatusFilter } from './invoiceService';
+import { generateInvoicesFromActiveContracts, getInvoiceDetail, listDossierInvoicesForContracts, listInvoicesPaginated, type InvoicePaginationParams } from './invoiceService';
 
 const invoiceBase = defineEntityKeys('invoices');
 
@@ -42,10 +42,6 @@ export function useDossierInvoicesForContracts(contractIds: readonly string[]) {
     enabled: stableContractIds.length > 0,
     staleTime: 30_000,
   });
-}
-
-export function useInvoices(params: InvoiceStatusFilter | InvoiceListParams) {
-  return useQuery({ queryKey: invoiceKeys.list(params), queryFn: () => listInvoices(params) });
 }
 
 export function useInvoicesPaginated(params: InvoicePaginationParams) {

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Select } from '@/components/ui/select';
 import { fetchCommissionSources } from '../services/commission-source-service';
-import { commissionSourceTypeOptions, isCommissionSourceType } from '../labels';
+import { isCommissionSourceType } from '../labels';
 
 const typeLabels: Record<string, string> = {
   contract: 'عقد',
@@ -83,4 +83,4 @@ export function CommissionSourceSelector({
   );
 }
 
-export { typeLabels, commissionSourceTypeOptions };
+;

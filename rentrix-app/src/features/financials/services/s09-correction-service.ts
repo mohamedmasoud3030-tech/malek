@@ -57,8 +57,8 @@ function fail(code: string, message: string): never {
   throw new S09EvidenceError(code, message);
 }
 
-export const s09Statuses = ['DRAFT', 'VALIDATED', 'APPLIED', 'REVERSED'] as const;
-export type S09Status = (typeof s09Statuses)[number];
+const s09Statuses = ['DRAFT', 'VALIDATED', 'APPLIED', 'REVERSED'] as const;
+type S09Status = (typeof s09Statuses)[number];
 
 export const s09StatusLabels: Record<S09Status, string> = {
   DRAFT: 'مسودة',
@@ -74,7 +74,7 @@ export const s09StatusTone: Record<S09Status, SemanticTone> = {
   REVERSED: 'danger',
 };
 
-export type S09Correction = {
+type S09Correction = {
   id: string;
   accountingPeriodId: string | null;
   reviewId: string;
@@ -215,7 +215,7 @@ export async function loadS09Corrections(options?: {
 }
 
 /** APPROVED S08 reviews — the only lawful anchor for a correction. */
-export type S08ApprovedReview = {
+type S08ApprovedReview = {
   id: string;
   accountingPeriodId: string | null;
   createdAt: string | null;
@@ -277,7 +277,7 @@ export function createS09RequestId(prefix = 's09'): string {
   return `${prefix}-${globalThis.crypto.randomUUID()}`;
 }
 
-export type CreateS09DraftInput = {
+type CreateS09DraftInput = {
   reviewId: string;
   sourceType: string;
   sourceId: string;
@@ -340,7 +340,7 @@ export function buildCreateS09DraftPayload(input: CreateS09DraftInput) {
   return payload;
 }
 
-export type CreateS09DraftResult = {
+type CreateS09DraftResult = {
   id: string;
   status: S09Status;
   idempotent: boolean;
@@ -365,7 +365,7 @@ export function parseCreateS09DraftResult(payload: unknown): CreateS09DraftResul
   };
 }
 
-export type ApplyS09Result = {
+type ApplyS09Result = {
   id: string;
   status: 'APPLIED';
   /** GL proof of the correction. The original batch is untouched. */
@@ -493,7 +493,7 @@ export async function applyS09Correction(correctionId: string): Promise<ApplyS09
   return parseApplyS09Result(data);
 }
 
-export type ReverseS09Args = {
+type ReverseS09Args = {
   p_correction_id: string;
   p_reason: string;
 };
@@ -516,7 +516,7 @@ export function buildReverseS09Args(correctionId: string, reason: string): Rever
   return { p_correction_id: correctionId.trim(), p_reason: reason.trim() };
 }
 
-export type ReverseS09Result = {
+type ReverseS09Result = {
   id: string;
   status: 'REVERSED';
   /**

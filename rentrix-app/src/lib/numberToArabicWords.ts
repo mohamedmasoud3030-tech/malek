@@ -140,7 +140,7 @@ export const CURRENCY_WORD_CONFIGS: Record<string, CurrencyConfig> = {
 };
 
 /** Arabic currency symbols/abbreviations used in table cells and totals. */
-export const CURRENCY_SYMBOLS: Record<string, string> = {
+const CURRENCY_SYMBOLS: Record<string, string> = {
   OMR: 'ر.ع',
   AED: 'د.إ',
   SAR: 'ر.س',

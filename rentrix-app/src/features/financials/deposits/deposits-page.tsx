@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { DepositsWorkspace as DepositsWorkspaceBody, type DepositsWorkspaceHandle } from './deposits-workspace';
 
-export type DepositsWorkspaceProps = Readonly<{
+type DepositsWorkspaceProps = Readonly<{
   /**
    * embedded: rendered inside the finance hub, which already supplies the page
    * shell — the workspace body renders without a second layout or header.

@@ -219,4 +219,3 @@ export function CommandPaletteDialog() {
   );
 }
 
-export default CommandPaletteDialog;

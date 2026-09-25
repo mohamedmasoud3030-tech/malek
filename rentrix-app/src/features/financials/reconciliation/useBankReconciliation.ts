@@ -4,7 +4,7 @@ import type { SupportedTimezone } from '@/lib/companySettings';
 import { createBankStatementImportFromCsv, createBankStatementLine, ignoreBankStatementLine, listBankAccounts, listBankStatementLines, listSuggestedBankMatches, matchBankStatementLine } from './bankReconciliationService';
 import type { BankReconciliationFilters, BankReconciliationMatchValues, BankStatementImportValues, BankStatementLine, BankStatementLineFormValues } from './types';
 
-export const bankReconciliationKeys = {
+const bankReconciliationKeys = {
   all: ['bank-reconciliation'] as const,
   accounts: () => [...bankReconciliationKeys.all, 'accounts'] as const,
   lines: (filters: BankReconciliationFilters) => [...bankReconciliationKeys.all, 'lines', filters] as const,

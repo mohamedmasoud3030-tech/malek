@@ -10,6 +10,7 @@ import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 import { useContract, useCreateContract, useUpdateContract } from './useContracts';
 import { useUnitContractConflicts } from './queries/useUnitContractConflicts';
 import { useUnitContractDrafts } from './queries/useUnitContractDrafts';
+import type { UnitDraftContract } from './services/unitAvailabilityService';
 import {
   contractSchema,
   leaseModeValues,
@@ -45,7 +46,7 @@ interface UseContractFormReturn {
   unitConflictsQuery: ReturnType<typeof useUnitContractConflicts>;
   unitConflictsByUnitId: ReadonlyMap<string, import('./domain/unitAvailability').ContractUnitConflict>;
   unitDraftsQuery: ReturnType<typeof useUnitContractDrafts>;
-  unitDraftsByUnitId: ReadonlyMap<string, readonly import('./services/unitAvailabilityService').UnitDraftContract[]>;
+  unitDraftsByUnitId: ReadonlyMap<string, readonly UnitDraftContract[]>;
   agreementCoverageQuery: ReturnType<typeof useAgreementCoverage>;
   selectedProperty: Pick<Property, 'id' | 'title' | 'address'> | undefined;
   currentLinkedUnitId: string | null;
@@ -125,7 +126,7 @@ export function useContractForm({
     unitIds,
     excludedContractId: contractId ?? null,
   });
-  const unitDraftsByUnitId = new Map<string, import('./services/unitAvailabilityService').UnitDraftContract[]>();
+  const unitDraftsByUnitId = new Map<string, UnitDraftContract[]>();
   for (const draft of unitDraftsQuery.data ?? []) {
     if (!draft.unit_id) continue;
     const drafts = unitDraftsByUnitId.get(draft.unit_id) ?? [];

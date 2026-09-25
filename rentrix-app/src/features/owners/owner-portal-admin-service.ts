@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type OwnerPortalLink = Readonly<{
+type OwnerPortalLink = Readonly<{
   token: string;
   expires_at: string;
 }>;

@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { ActionMenu } from './action-menu';
 
-export type ExportMenuItem = Readonly<{
+type ExportMenuItem = Readonly<{
   id: string;
   label: string;
   icon?: LucideIcon;

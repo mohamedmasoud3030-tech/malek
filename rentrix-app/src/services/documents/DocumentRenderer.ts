@@ -179,7 +179,7 @@ async function printDocument(model: UnifiedDocumentModel): Promise<void> {
 /* PDF path — vector, via @react-pdf/renderer                           */
 /* ------------------------------------------------------------------ */
 
-export type DocumentPdfBuildResult = Readonly<{
+type DocumentPdfBuildResult = Readonly<{
   blob: Blob;
   pageCount: number;
 }>;

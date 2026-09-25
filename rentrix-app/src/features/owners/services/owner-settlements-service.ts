@@ -3,7 +3,7 @@ import { roundMoney } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { fetchAllRows } from '@/lib/paginatedRead';
 
-export type SettlementStatus = 'pending' | 'approved' | 'paid' | 'cancelled';
+type SettlementStatus = 'pending' | 'approved' | 'paid' | 'cancelled';
 export type CommissionType = 'percentage' | 'fixed';
 
 /**
@@ -48,7 +48,7 @@ export type OwnerSettlementTarget = {
   commission_value: number;
 };
 
-export type OwnerSettlementTotals = {
+type OwnerSettlementTotals = {
   /** Historical settlement volume across every live (non-cancelled) settlement. */
   gross: number;
   fees: number;
@@ -134,14 +134,14 @@ export type OwnerSettlementPreview = {
   } | null;
 };
 
-export type PreviewSettlementPayload = {
+type PreviewSettlementPayload = {
   owner_id: string;
   property_id?: string | null;
   period_start: string;
   period_end: string;
 };
 
-export type ApproveSettlementPayload = {
+type ApproveSettlementPayload = {
   settlement_id: string;
 };
 
@@ -382,7 +382,7 @@ const paymentQuoteSchema = z.object({
   net_payable:z.number().finite().nonnegative(),offset_applied:z.number().finite().nonnegative(),
   effective_payable:z.number().finite().nonnegative(),quote:z.string().regex(/^[a-f0-9]{64}$/),
 }).refine(q=>roundMoney(q.net_payable-q.offset_applied)===q.effective_payable);
-export type OwnerSettlementPaymentQuote=z.infer<typeof paymentQuoteSchema>;
+type OwnerSettlementPaymentQuote=z.infer<typeof paymentQuoteSchema>;
 export async function previewOwnerSettlementPayment(settlementId:string):Promise<OwnerSettlementPaymentQuote>{
   const {data,error}=await supabase.rpc('preview_owner_settlement_payment',{p_settlement_id:settlementId});
   if(error)throw new Error(messageFromError(error,'تعذر تحميل معاينة الصرف.'));

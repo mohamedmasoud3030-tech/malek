@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { JournalBatch, JournalEventInput, JournalLine, JournalLineInput } from './accountingDomain';
 
-export type JournalBatchFilters = Readonly<{
+type JournalBatchFilters = Readonly<{
   status?: JournalBatch['status'] | null;
   sourceType?: string | null;
   sourceId?: string | null;

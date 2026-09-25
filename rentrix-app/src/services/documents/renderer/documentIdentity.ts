@@ -127,7 +127,7 @@ export function stableDigest(input: string): string {
   return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}${lengthLane}`;
 }
 
-export type DocumentRenderChannel = 'print' | 'pdf' | 'pdf-file';
+type DocumentRenderChannel = 'print' | 'pdf' | 'pdf-file';
 
 /**
  * Operation-scoped identity for one document render.

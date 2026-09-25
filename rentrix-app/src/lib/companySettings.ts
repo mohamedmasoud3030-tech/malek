@@ -7,8 +7,8 @@ export const supportedCountries = ['OM', 'AE', 'SA', 'QA', 'KW', 'BH', 'US', 'EG
 export const supportedTimezones = ['Asia/Muscat', 'Asia/Dubai', 'Asia/Riyadh', 'UTC'] as const;
 
 export type SupportedLanguage = (typeof supportedLanguages)[number];
-export type SupportedCompanyLocale = (typeof supportedCompanyLocales)[number];
-export type SupportedCountry = (typeof supportedCountries)[number];
+type SupportedCompanyLocale = (typeof supportedCompanyLocales)[number];
+type SupportedCountry = (typeof supportedCountries)[number];
 export type SupportedTimezone = (typeof supportedTimezones)[number];
 export type TextDirection = 'rtl' | 'ltr';
 
@@ -16,9 +16,9 @@ export const DEFAULT_LANGUAGE: SupportedLanguage = 'ar';
 export const DEFAULT_COMPANY_LOCALE: SupportedCompanyLocale = 'ar-OM';
 export const DEFAULT_COUNTRY: SupportedCountry = 'OM';
 export const DEFAULT_TIMEZONE: SupportedTimezone = 'Asia/Muscat';
-export const DEFAULT_RECEIPT_PREFIX = 'REC';
-export const DEFAULT_INVOICE_PREFIX = 'INV';
-export const DEFAULT_CONTRACT_PREFIX = 'CON';
+const DEFAULT_RECEIPT_PREFIX = 'REC';
+const DEFAULT_INVOICE_PREFIX = 'INV';
+const DEFAULT_CONTRACT_PREFIX = 'CON';
 
 export type CompanyLocalSettings = {
   companyName: string;
@@ -136,7 +136,7 @@ export function normalizeCompanyLocale(value: unknown, language: unknown = undef
   return normalizeLanguage(language) === 'en' ? 'en-OM' : DEFAULT_COMPANY_LOCALE;
 }
 
-export function isSupportedCountry(value: unknown): value is SupportedCountry {
+function isSupportedCountry(value: unknown): value is SupportedCountry {
   return typeof value === 'string' && supportedCountries.includes(value as SupportedCountry);
 }
 

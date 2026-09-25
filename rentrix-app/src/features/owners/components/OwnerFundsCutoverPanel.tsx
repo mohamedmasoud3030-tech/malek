@@ -25,8 +25,8 @@ import {
   OWNER_FUNDS_GL_ACCOUNT,
 } from '../services/owner-funds-cutover-service';
 
-export const ownerFundsCutoverQueryKey = ['owner-funds-cutover'] as const;
-export const approvedS08ReviewsQueryKey = ['approved-s08-reviews'] as const;
+const ownerFundsCutoverQueryKey = ['owner-funds-cutover'] as const;
+const approvedS08ReviewsQueryKey = ['approved-s08-reviews'] as const;
 
 /**
  * The single canonical surface for governed historical adoption of owner funds

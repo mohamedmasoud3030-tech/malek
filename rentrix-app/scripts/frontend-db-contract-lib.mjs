@@ -12,7 +12,7 @@ function extensionOf(path) {
   return path.match(/(\.[^.\/]+)$/)?.[1] ?? '';
 }
 
-export function listProductionSourceFiles(root) {
+function listProductionSourceFiles(root) {
   const files = [];
   function visit(dir) {
     for (const name of readdirSync(dir)) {
@@ -90,7 +90,7 @@ function skipTrivia(text, index) {
   return i;
 }
 
-export function findMatchingDelimiter(text, start, open, close) {
+function findMatchingDelimiter(text, start, open, close) {
   let depth = 0;
   for (let i = start; i < text.length; i++) {
     const ch = text[i];

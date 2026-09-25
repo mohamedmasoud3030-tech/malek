@@ -17,7 +17,7 @@ import type { CompanySettingsPreviewModel } from '../settingsForm';
  * stable public contract — governance deep links, the workspace nav, and the
  * summary tiles all resolve through it. Do not rename existing ids.
  */
-export const settingsSectionIds = [
+const settingsSectionIds = [
   'office',
   'identity',
   'documents',

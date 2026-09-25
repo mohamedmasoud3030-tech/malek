@@ -13,9 +13,9 @@ import type { DocumentTypeId } from './documentPayloads';
 import { DOCUMENT_PAGE, DOCUMENT_TABLE } from './documentDesignTokens';
 import type { SignatureRole } from './types';
 
-export type DocumentOutputKind = 'print' | 'pdf';
+type DocumentOutputKind = 'print' | 'pdf';
 
-export type BusinessReferencePolicy = Readonly<{
+type BusinessReferencePolicy = Readonly<{
   /** Canonical payload field that carries the real business reference. */
   field: string;
   /**
@@ -34,13 +34,13 @@ export type BusinessReferencePolicy = Readonly<{
   displayAsDocumentNo: boolean;
 }>;
 
-export type PagePolicy = Readonly<{
+type PagePolicy = Readonly<{
   size: 'A4';
   orientation: 'portrait' | 'landscape';
   marginsMm: Readonly<{ top: number; right: number; bottom: number; left: number }>;
 }>;
 
-export type CurrencyPolicy = Readonly<{
+type CurrencyPolicy = Readonly<{
   /** Currency always comes from the real company settings, never a default. */
   source: 'company-settings';
   /**
@@ -52,7 +52,7 @@ export type CurrencyPolicy = Readonly<{
   precision: 'currency-derived';
 }>;
 
-export type EmptyStatePolicy = Readonly<{
+type EmptyStatePolicy = Readonly<{
   /**
    * `render`: tables/lists may be empty and say so explicitly in Arabic.
    * `block`: the document is meaningless without rows and output is refused.
@@ -61,7 +61,7 @@ export type EmptyStatePolicy = Readonly<{
   message?: string;
 }>;
 
-export type FileNameStrategy = Readonly<{
+type FileNameStrategy = Readonly<{
   /**
    * `reference-then-date`: `<prefix>-<sanitized reference>` when a real
    * reference exists, otherwise `<prefix>-<ISO date>` from `dateField`,

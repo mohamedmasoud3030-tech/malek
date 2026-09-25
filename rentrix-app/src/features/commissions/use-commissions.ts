@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { archiveCommission, createCommission, listCommissions, payCommissionAtomic, reverseCommissionAtomic, updateCommission } from './services/commissions-service';
 import type { CommissionFilters, CommissionFormValues } from './types';
 
-export const commissionKeys = { all: ['commissions'] as const, list: (filters: CommissionFilters) => [...commissionKeys.all, filters] as const };
+const commissionKeys = { all: ['commissions'] as const, list: (filters: CommissionFilters) => [...commissionKeys.all, filters] as const };
 
 export function useCommissions(filters: CommissionFilters) {
   return useQuery({ queryKey: commissionKeys.list(filters), queryFn: () => listCommissions(filters) });

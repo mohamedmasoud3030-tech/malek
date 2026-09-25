@@ -6,7 +6,8 @@ import {
   supportedTimezones,
 } from '@/lib/companySettings';
 import { supportedCurrencies } from '@/lib/formatters';
-import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsPreviewModel, CompanySettingsValidationErrors } from '../settingsForm';
+import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../form/sectionDrafts';
+import type { CompanySettingsPreviewModel } from '../settingsForm';
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SettingsFormField, SettingsPreviewField, SettingsSelectField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
@@ -18,7 +19,7 @@ const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = supportedTimezones;
 
-export type IdentitySectionProps = Readonly<{
+type IdentitySectionProps = Readonly<{
   activeSection: SettingsSectionId;
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;

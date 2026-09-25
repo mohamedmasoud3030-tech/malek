@@ -13,7 +13,7 @@ import {
   type MaintenanceStatus,
   type MaintenanceUpdate,
 } from './maintenance-service';
-export const maintenanceKeys = { all: ['maintenance'] as const, list: (s: MaintenanceStatus, p: string) => [...maintenanceKeys.all, s, p] as const };
+const maintenanceKeys = { all: ['maintenance'] as const, list: (s: MaintenanceStatus, p: string) => [...maintenanceKeys.all, s, p] as const };
 export function useMaintenance(status: MaintenanceStatus, propertyId: string, options?: Readonly<{ enabled?: boolean }>) { return useQuery({ queryKey: maintenanceKeys.list(status, propertyId), queryFn: () => listMaintenance(status, propertyId), enabled: options?.enabled ?? true }); }
 export function useCreateMaintenance() {
   const qc = useQueryClient();

@@ -39,7 +39,7 @@ type CommunicationWorkspaceProps = Readonly<{
   embedded?: boolean;
 }>;
 
-export function CommunicationWorkspace({ embedded = false }: CommunicationWorkspaceProps) {
+function CommunicationWorkspace({ embedded = false }: CommunicationWorkspaceProps) {
   const [filters, setFilters] = useState<CommunicationFilters>({ query: '', channel: 'all', status: 'all' });
   const [editingRecord, setEditingRecord] = useState<CommunicationRecord | null>(null);
   const [draft, setDraft] = useState<CommunicationFormValues>(emptyForm);

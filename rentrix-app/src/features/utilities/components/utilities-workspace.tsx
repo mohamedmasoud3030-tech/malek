@@ -81,8 +81,8 @@ const utilityIcons: Record<UtilityType, typeof Zap> = {
   other: ShieldCheck,
 };
 
-export type UtilitiesWorkspaceMode = 'standalone' | 'embedded';
-export type UtilitiesWorkspaceProps = Readonly<{ mode?: UtilitiesWorkspaceMode }>;
+type UtilitiesWorkspaceMode = 'standalone' | 'embedded';
+type UtilitiesWorkspaceProps = Readonly<{ mode?: UtilitiesWorkspaceMode }>;
 
 const emptyMeterForm = (): UtilityMeterFormValues => ({
   property_id: '',

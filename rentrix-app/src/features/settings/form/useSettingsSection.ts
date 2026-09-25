@@ -10,14 +10,14 @@ import {
   type CompanySettingsValidationErrors,
 } from './sectionDrafts';
 
-export type UseSettingsSectionOptions = Readonly<{
+type UseSettingsSectionOptions = Readonly<{
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;
   isSaving: boolean;
   onDraftChange: (field: CompanySettingsDraftField, value: string) => void;
 }>;
 
-export type SettingsSectionDraftState<TId extends CompanySettingsSectionDraftId> = Readonly<{
+type SettingsSectionDraftState<TId extends CompanySettingsSectionDraftId> = Readonly<{
   sectionId: TId;
   /** Fields owned by this section — the isolation contract (D.3). */
   fields: readonly CompanySettingsDraftField[];

@@ -9,7 +9,7 @@ import {
   type CostCenterFormValues,
 } from './costCenterService';
 
-export const costCenterKeys = {
+const costCenterKeys = {
   all: ['costCenters'] as const,
   list: () => [...costCenterKeys.all, 'list'] as const,
 };

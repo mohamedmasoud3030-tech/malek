@@ -10,7 +10,7 @@ import { useCompanySettingsContract } from '@/features/settings/useCompanySettin
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import type { DataIntegrityCheck, DataIntegrityResult } from '../types';
 
-export type DataIntegrityViewState =
+type DataIntegrityViewState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: unknown }>
   | Readonly<{ status: 'ready'; result: DataIntegrityResult; refreshError?: unknown }>;

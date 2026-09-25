@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 
-export type ParsedRoute = {
+type ParsedRoute = {
   name: string;
   parent: string;
   path: string | null;
@@ -88,7 +88,7 @@ function parseRouteDeclarations(): ParsedRoute[] {
 
 const LAYOUT_ROOTS = new Set(['rootRoute', 'authRoute', 'protectedRoute']);
 
-export function getRegisteredRoutePaths(): { full: Set<string>; topLevel: Set<string> } {
+function getRegisteredRoutePaths(): { full: Set<string>; topLevel: Set<string> } {
   const declarations = parseRouteDeclarations();
   const byName = new Map(declarations.map((route) => [route.name, route]));
 

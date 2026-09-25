@@ -35,7 +35,7 @@ export const vaultCategoryLabels: Record<VaultCategory, string> = {
   other: 'أخرى',
 };
 
-export type VaultListParams = {
+type VaultListParams = {
   category?: VaultCategory;
   search?: string;
   relatedEntityType?: DocumentEntityType;
@@ -113,7 +113,7 @@ export async function listVaultDocuments(params: VaultListParams = {}): Promise<
   }));
 }
 
-export type UploadVaultDocumentParams = {
+type UploadVaultDocumentParams = {
   file: File;
   title: string;
   category: VaultCategory;
@@ -212,19 +212,3 @@ export async function getVaultDocumentSignedUrl(storagePath: string, expiresInSe
   return data.signedUrl;
 }
 
-export async function getVaultDocumentDownloadUrl(storagePath: string): Promise<string> {
-  return getVaultDocumentSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
-}
-
-export async function getVaultDocumentsWithSignedUrls(documents: VaultDocumentItem[], expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<VaultDocumentItem[]> {
-  return Promise.all(
-    documents.map(async (document) => {
-      try {
-        const signedUrl = await getVaultDocumentSignedUrl(document.storagePath, expiresInSeconds);
-        return { ...document, signedUrl };
-      } catch {
-        return { ...document, signedUrl: null };
-      }
-    }),
-  );
-}

@@ -4,7 +4,7 @@ import { TaxAuthorityWorkspace } from '@/features/financials/tax-authority/tax-p
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 
-export type SettingsFinanceReadinessSectionProps = Readonly<{
+type SettingsFinanceReadinessSectionProps = Readonly<{
   activeSection: SettingsSectionId;
 }>;
 

@@ -37,7 +37,7 @@ export type FinanceViewId =
   | 'fixed_monthly_accruals'
   | 'bank_reconciliation';
 
-export interface FinanceViewDefinition {
+interface FinanceViewDefinition {
   id: FinanceViewId;
   sectionId: FinanceSectionId;
   label: string;
@@ -47,7 +47,7 @@ export interface FinanceViewDefinition {
   showInSectionNavigation?: boolean;
 }
 
-export interface FinanceSectionDefinition {
+interface FinanceSectionDefinition {
   id: FinanceSectionId;
   label: string;
   icon: LucideIcon;
@@ -134,7 +134,7 @@ export interface FinancialsSearch {
   view?: string;
 }
 
-export type ResolvedFinanceLocation = Readonly<{
+type ResolvedFinanceLocation = Readonly<{
   resolvedSectionId: FinanceSectionId;
   resolvedViewId: FinanceViewId;
 }>;

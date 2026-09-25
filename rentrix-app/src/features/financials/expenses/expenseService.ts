@@ -13,7 +13,7 @@ const expenseAcknowledgement = z.object({
 const createdExpenseAcknowledgement = expenseAcknowledgement.extend({ expense_no: z.string().min(1) });
 
 export type ExpenseFilters = { propertyId: string; category: string; costCenterId?: string; from: string; to: string };
-export type PagedExpenses = Readonly<{ rows: Expense[]; truncated: boolean }>;
+type PagedExpenses = Readonly<{ rows: Expense[]; truncated: boolean }>;
 export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'> & { attachment_url?: string | null; cost_center_id?: string | null; contract_id?: string | null; charged_to?: string | null };
 
 export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpenses> {
@@ -113,7 +113,7 @@ export type ExpenseWithJournalPayload = {
   attachmentUrl?: string | null;
 };
 
-export type ExpenseWithJournalResult = {
+type ExpenseWithJournalResult = {
   expenseId: string;
   expenseNo: string;
   requestId: string;

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { archivePaymentTerms, listPaymentTerms, savePaymentTerms, type PaymentTermsFormValues } from './paymentTermsService';
 
-export const paymentTermsKeys = {
+const paymentTermsKeys = {
   all: ['paymentTerms'] as const,
   list: () => [...paymentTermsKeys.all, 'list'] as const,
 };

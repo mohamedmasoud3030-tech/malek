@@ -24,7 +24,7 @@ export type TenantWorkspaceRow = {
   hasArrears: boolean;
 };
 
-export type TenantWorkspaceResult = {
+type TenantWorkspaceResult = {
   rows: TenantWorkspaceRow[];
   count: number;
 };
@@ -118,7 +118,7 @@ async function listTenantInvoices(contractIds: string[]) {
   return rows;
 }
 
-export type TenantDossier = Readonly<{
+type TenantDossier = Readonly<{
   person: TenantPerson;
   contracts: Array<TenantContract & { reference?: string | null }>;
   invoices: Array<TenantInvoice & { id: string; reference?: string | null }>;

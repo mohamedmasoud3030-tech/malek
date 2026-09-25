@@ -9,7 +9,7 @@ import {
   type ServiceProviderFormValues,
 } from './service-provider-schema';
 
-export type ServiceProvider = Database['public']['Tables']['service_providers']['Row'];
+type ServiceProvider = Database['public']['Tables']['service_providers']['Row'];
 export type ServiceProviderCategory = Database['public']['Tables']['service_provider_categories']['Row'];
 
 export type ServiceProviderListItem = ServiceProvider & Readonly<{
@@ -28,19 +28,19 @@ export type ServiceProviderListParams = Readonly<{
   pageSize: number;
 }>;
 
-export type PaginatedServiceProviders = Readonly<{
+type PaginatedServiceProviders = Readonly<{
   rows: ServiceProviderListItem[];
   count: number;
 }>;
 
-export type ServiceProviderSummary = Readonly<{
+type ServiceProviderSummary = Readonly<{
   total: number;
   active: number;
   categories: number;
   openJobs: number;
 }>;
 
-export type ServiceProviderMaintenanceJob = Readonly<{
+type ServiceProviderMaintenanceJob = Readonly<{
   id: string;
   reference: string | null;
   title: string | null;
@@ -56,7 +56,7 @@ export type ServiceProviderMaintenanceJob = Readonly<{
   category: { id: string; name: string } | null;
 }>;
 
-export type ServiceProviderDossier = Readonly<{
+type ServiceProviderDossier = Readonly<{
   provider: ServiceProviderListItem;
   maintenanceJobs: readonly ServiceProviderMaintenanceJob[];
 }>;

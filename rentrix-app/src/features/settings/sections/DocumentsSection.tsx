@@ -1,11 +1,11 @@
 import { AlertTriangle } from 'lucide-react';
-import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../settingsForm';
+import type { CompanySettingsDraft, CompanySettingsDraftField, CompanySettingsValidationErrors } from '../form/sectionDrafts';
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SettingsFormField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
 import type { SettingsSectionId } from '../registry/sectionRegistry';
 
-export type DocumentsSectionProps = Readonly<{
+type DocumentsSectionProps = Readonly<{
   activeSection: SettingsSectionId;
   draft: CompanySettingsDraft;
   errors: CompanySettingsValidationErrors;

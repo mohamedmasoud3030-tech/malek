@@ -30,7 +30,7 @@ function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
   );
 }
 
-export type OwnerWorkspaceTableProps = Readonly<{
+type OwnerWorkspaceTableProps = Readonly<{
   rows: OwnerWorkspaceRow[];
   visibleColumnKeys: string[];
   onCreateOwner: () => void;

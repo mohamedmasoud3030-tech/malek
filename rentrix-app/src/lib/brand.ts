@@ -11,27 +11,12 @@ export const APP_BRAND_NAME = 'MALEK';
 /** Fixed Arabic marketing line. Must stay byte-identical wherever it appears. */
 export const APP_BRAND_TAGLINE_AR = 'كل أملاكك في مكان واحد';
 
-export const APP_BRAND_DESCRIPTION_AR =
-  'منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والتحصيلات والصيانة والتقارير.';
-
 /** Lowercase slug for user-visible artifacts such as exported file names. */
 export const APP_BRAND_FILE_SLUG = 'malek';
 
 /** Canonical visible brand assets. Mark and lockup now carry the same approved artwork. */
 export const APP_BRAND_MARK_ASSET = '/malek-mark.svg';
 export const APP_BRAND_LOCKUP_ASSET = '/malek-lockup.svg';
-export const APP_BRAND_MASKABLE_ASSET = '/malek-maskable.svg';
-
-/**
- * Raster install icons derived from the canonical mark/maskable SVGs.
- * Required for iOS home-screen install and Android/Chrome PWA install surfaces
- * that do not reliably consume SVG icons.
- */
-export const APP_BRAND_PWA_ICON_192 = '/malek-icon-192.png';
-export const APP_BRAND_PWA_ICON_512 = '/malek-icon-512.png';
-export const APP_BRAND_PWA_MASKABLE_192 = '/malek-maskable-192.png';
-export const APP_BRAND_PWA_MASKABLE_512 = '/malek-maskable-512.png';
-export const APP_BRAND_APPLE_TOUCH_ICON = '/malek-apple-touch-180.png';
 
 /**
  * Technical identifiers intentionally keep the legacy `rentrix` prefix during

@@ -34,7 +34,7 @@ export type OwnerFinancialLifecycle = Readonly<{
  * zero over an empty register and a genuinely empty register are different
  * facts, and the report must not present the first as the second.
  */
-export type OwnerFundsHeld = Readonly<{
+type OwnerFundsHeld = Readonly<{
   held: number | null;
   held_proven_total: number;
   held_evidence_missing_count: number;

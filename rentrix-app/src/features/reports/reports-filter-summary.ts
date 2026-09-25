@@ -10,7 +10,7 @@ type FilterLabels = Readonly<{
   status?: string;
 }>;
 
-export type ReportFilterChip = Readonly<{
+type ReportFilterChip = Readonly<{
   key: 'period' | 'asOf' | 'costCenter' | 'owner' | 'contract' | 'property' | 'unit' | 'tenant' | 'status';
   label: string;
   value: string;

@@ -259,4 +259,3 @@ export function CollectionMovementSection({
   );
 }
 
-export type { CollectionMovementProps };

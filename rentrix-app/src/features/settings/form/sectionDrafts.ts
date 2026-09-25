@@ -16,7 +16,7 @@
  * slice fields — same set as before this decomposition.
  */
 
-export const companySettingsOfficeFields = [
+const companySettingsOfficeFields = [
   'company_name',
   'legal_name',
   'tax_number',
@@ -28,7 +28,7 @@ export const companySettingsOfficeFields = [
   'country',
 ] as const;
 
-export const companySettingsIdentityFields = [
+const companySettingsIdentityFields = [
   'currency',
   'locale',
   'timezone',
@@ -37,7 +37,7 @@ export const companySettingsIdentityFields = [
   'logo_url',
 ] as const;
 
-export const companySettingsDocumentsFields = [
+const companySettingsDocumentsFields = [
   'invoice_prefix',
   'contract_prefix',
   'receipt_prefix',
@@ -47,12 +47,12 @@ export const companySettingsDocumentsFields = [
   'vat_registration_number',
 ] as const;
 
-export const companySettingsNotificationsFields = [
+const companySettingsNotificationsFields = [
   'notification_email_enabled',
   'notification_sms_enabled',
 ] as const;
 
-export type CompanySettingsOfficeDraft = {
+type CompanySettingsOfficeDraft = {
   company_name: string;
   legal_name: string;
   tax_number: string;
@@ -64,7 +64,7 @@ export type CompanySettingsOfficeDraft = {
   country: string;
 };
 
-export type CompanySettingsIdentityDraft = {
+type CompanySettingsIdentityDraft = {
   currency: string;
   locale: string;
   timezone: string;
@@ -73,7 +73,7 @@ export type CompanySettingsIdentityDraft = {
   logo_url: string;
 };
 
-export type CompanySettingsDocumentsDraft = {
+type CompanySettingsDocumentsDraft = {
   invoice_prefix: string;
   contract_prefix: string;
   receipt_prefix: string;
@@ -83,15 +83,13 @@ export type CompanySettingsDocumentsDraft = {
   vat_registration_number: string;
 };
 
-export type CompanySettingsNotificationsDraft = {
+type CompanySettingsNotificationsDraft = {
   notification_email_enabled: string;
   notification_sms_enabled: string;
 };
 
-export type CompanySettingsOfficeDraftField = keyof CompanySettingsOfficeDraft;
-export type CompanySettingsIdentityDraftField = keyof CompanySettingsIdentityDraft;
-export type CompanySettingsDocumentsDraftField = keyof CompanySettingsDocumentsDraft;
-export type CompanySettingsNotificationsDraftField = keyof CompanySettingsNotificationsDraft;
+type CompanySettingsIdentityDraftField = keyof CompanySettingsIdentityDraft;
+type CompanySettingsDocumentsDraftField = keyof CompanySettingsDocumentsDraft;
 
 /**
  * Sections that own a company-settings draft slice. The registry maps these
@@ -203,7 +201,7 @@ function isValidVatRate(value: string, message: string): string | undefined {
 /* Per-section validators — each validates ONLY its owned fields.     */
 /* ------------------------------------------------------------------ */
 
-export function validateOfficeSectionDraft(draft: CompanySettingsOfficeDraft): CompanySettingsValidationErrors {
+function validateOfficeSectionDraft(draft: CompanySettingsOfficeDraft): CompanySettingsValidationErrors {
   const errors: CompanySettingsValidationErrors = {};
 
   if (!draft.company_name.trim()) errors.company_name = 'اسم الشركة مطلوب';
@@ -223,7 +221,7 @@ const identityRequiredLabels: Record<CompanySettingsIdentityDraftField, string> 
   logo_url: '',
 };
 
-export function validateIdentitySectionDraft(draft: CompanySettingsIdentityDraft): CompanySettingsValidationErrors {
+function validateIdentitySectionDraft(draft: CompanySettingsIdentityDraft): CompanySettingsValidationErrors {
   const errors: CompanySettingsValidationErrors = {};
 
   for (const field of companySettingsIdentityFields) {
@@ -246,7 +244,7 @@ const documentsRequiredLabels: Record<CompanySettingsDocumentsDraftField, string
   vat_registration_number: '',
 };
 
-export function validateDocumentsSectionDraft(draft: CompanySettingsDocumentsDraft): CompanySettingsValidationErrors {
+function validateDocumentsSectionDraft(draft: CompanySettingsDocumentsDraft): CompanySettingsValidationErrors {
   const errors: CompanySettingsValidationErrors = {};
 
   for (const field of companySettingsDocumentsFields) {
@@ -263,7 +261,7 @@ export function validateDocumentsSectionDraft(draft: CompanySettingsDocumentsDra
   return errors;
 }
 
-export function validateNotificationsSectionDraft(): CompanySettingsValidationErrors {
+function validateNotificationsSectionDraft(): CompanySettingsValidationErrors {
   return {};
 }
 

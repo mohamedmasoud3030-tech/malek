@@ -11,7 +11,7 @@ import { listLeads } from '@/features/leads/services/leads-service';
 import { listLands } from '@/features/lands/services/lands-service';
 import { listPeople } from '@/features/people/people-service';
 
-export interface SourceOption {
+interface SourceOption {
   id: string;
   label: string;
 }

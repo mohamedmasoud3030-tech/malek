@@ -34,7 +34,7 @@ export function supabaseUrl(): string {
   return parsed.origin;
 }
 
-export function supabaseAnonKey(): string {
+function supabaseAnonKey(): string {
   return required('VITE_SUPABASE_ANON_KEY');
 }
 

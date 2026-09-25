@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getCompanySettingsPreviewModel, type CompanySettingsDraft } from './settingsForm';
+import { getCompanySettingsPreviewModel } from './settingsForm';
+import type { CompanySettingsDraft } from './form/sectionDrafts';
 import { buildSettingsSummaryTiles } from './settings-workspace-model';
 
 const validDraft: CompanySettingsDraft = {
