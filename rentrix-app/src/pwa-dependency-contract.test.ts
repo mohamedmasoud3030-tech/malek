@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 const packageManifest = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 ) as { dependencies?: Record<string, string> };
-const lockfile = readFileSync(new URL('../../pnpm-lock.yaml', import.meta.url), 'utf8');
+const lockfile = readFileSync(new URL('../../pnpm-lock.yaml', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 describe('PWA registration dependency contract', () => {
   it('declares workbox-window directly for vite-plugin-pwa virtual registration', () => {

@@ -46,15 +46,15 @@ describe('billing schedule — authoritative single algorithm', () => {
   });
 
   it('issue_date anchored to billing_day, clamped to period_end', () => {
-    const periodStart = new Date('2026-08-01');
-    const periodEnd = new Date('2026-08-31');
+    const periodStart = new Date(2026, 7, 1);
+    const periodEnd = new Date(2026, 7, 31);
     expect(formatLocalDate(getIssueDate(periodStart, periodEnd, 28))).toBe('2026-08-28');
     expect(formatLocalDate(getIssueDate(periodStart, periodEnd, 31))).toBe('2026-08-31'); // clamped
     expect(formatLocalDate(getIssueDate(periodStart, periodEnd, 5))).toBe('2026-08-05');
   });
 
   it('due_date = period_end + grace_days', () => {
-    const periodEnd = new Date('2026-08-31');
+    const periodEnd = new Date(2026, 7, 31);
     expect(formatLocalDate(getDueDate(periodEnd, 10))).toBe('2026-09-10');
     expect(formatLocalDate(getDueDate(periodEnd, 0))).toBe('2026-08-31');
   });

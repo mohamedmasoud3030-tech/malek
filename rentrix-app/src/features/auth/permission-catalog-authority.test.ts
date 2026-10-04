@@ -33,7 +33,7 @@ const repoRoot = resolve(import.meta.dirname, '../../../..');
 const migrationsDir = resolve(repoRoot, 'supabase/migrations');
 
 function read(relativePath: string): string {
-  return readFileSync(resolve(repoRoot, relativePath), 'utf8');
+  return readFileSync(resolve(repoRoot, relativePath), 'utf8').replace(/\r\n/g, '\n');
 }
 
 function migrationFiles(): string[] {

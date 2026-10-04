@@ -82,7 +82,7 @@ interface Violation {
 
 function scan(rule: RegExp, label: string, violations: Violation[]): void {
   for (const file of collectSourceFiles(srcDir)) {
-    const rel = relative(srcDir, file);
+    const rel = relative(srcDir, file).replace(/\\/g, '/');
     if (isExcluded(rel)) continue;
     const source = readFileSync(file, 'utf8');
     const lines = source.split('\n');

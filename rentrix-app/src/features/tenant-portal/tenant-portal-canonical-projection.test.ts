@@ -8,7 +8,7 @@ const migration = readFileSync(
     '../../../../supabase/migrations/20260901000046_tenant_portal_canonical_projection.sql',
   ),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 
 // The CURRENT authority for the public snapshot after the bounded-projection
 // migration; the v46 source is kept as the scope-history pin while this file
@@ -17,7 +17,7 @@ const boundedMigrationPath = resolve(
   import.meta.dirname,
   '../../../../supabase/migrations/20260904000000_bound_anonymous_portal_projections.sql',
 );
-const boundedMigration = readFileSync(boundedMigrationPath, 'utf8');
+const boundedMigration = readFileSync(boundedMigrationPath, 'utf8').replace(/\r\n/g, '\n');
 
 describe('tenant portal canonical projection', () => {
   it('derives every external section from the token-resolved contract scope', () => {

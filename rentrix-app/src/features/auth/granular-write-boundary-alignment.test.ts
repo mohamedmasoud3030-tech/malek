@@ -2,26 +2,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const boundaryMigration = readFileSync(
+const read = (path: string) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+const boundaryMigration = read(
   resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000054_granular_write_boundary_alignment.sql'),
-  'utf8',
 );
-const propertyService = readFileSync(
-  resolve(import.meta.dirname, '../properties/property-service.ts'),
-  'utf8',
-);
-const unitService = readFileSync(
-  resolve(import.meta.dirname, '../units/unit-service.ts'),
-  'utf8',
-);
-const contractService = readFileSync(
-  resolve(import.meta.dirname, '../contracts/services/contractService.ts'),
-  'utf8',
-);
-const maintenanceService = readFileSync(
-  resolve(import.meta.dirname, '../maintenance/maintenance-service.ts'),
-  'utf8',
-);
+const propertyService = read(resolve(import.meta.dirname, '../properties/property-service.ts'));
+const unitService = read(resolve(import.meta.dirname, '../units/unit-service.ts'));
+const contractService = read(resolve(import.meta.dirname, '../contracts/services/contractService.ts'));
+const maintenanceService = read(resolve(import.meta.dirname, '../maintenance/maintenance-service.ts'));
 
 describe('granular Employee server write boundaries', () => {
   it('treats property and unit archive as a guarded soft-delete update', () => {

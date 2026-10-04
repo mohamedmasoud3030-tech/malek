@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
  * task-first contracts.
  */
 const read = (relativePath: string) =>
-  readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+  readFileSync(new URL(relativePath, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 const financePage = read('./FinancePage.tsx');
 const depositsPage = read('../financials/deposits/deposits-page.tsx');
