@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
+import { gitBlobSha } from './lib/governance-text-hash.mjs';
 
 const migrationsDir = new URL('../supabase/migrations/', import.meta.url);
 const baseline = '20260901000000_canonical_baseline.sql';
@@ -24,11 +24,14 @@ const transactionalTables = [
 // goes through the normal fail-closed rule below.
 const immutableGovernedRuntimeWriterBlobs = new Map([
   ['20260901000049_extend_short_stay_atomic.sql', '6187d4b1df558f3a324b0c02fd8430e3f3b18ee0'],
-  // PR #1825 remediation: transactional INSERTs are runtime writes inside
-  // governed SECURITY DEFINER contract RPC bodies, not migration-time data.
-  // Pin the exact reviewed blob so any future edit must pass the normal marker
-  // review instead of silently inheriting this exception.
-  ['20260915000001_contract_release_blocker_remediation.sql', 'f496143b7cb24cebcead1037aa49a577b9f90612'],
+  // This immutable migration captures the deployed receipt-void trigger body;
+  // its INSERT is executed by the governed trigger, not during migration apply.
+  ['20260913073735_align_receipt_void_request_acl_with_company_role.sql', '7ce6e899070fe0390e97e249249e7b5b09e8c383'],
+  // Company provisioning is a SECURITY DEFINER command with admin checks,
+  // atomic company/membership creation, and authenticated-only execution.
+  ['20260917000000_admin_company_provisioning_rpc.sql', '4d95da946f29127bbee8f09e3e31663b863b6694'],
+  // Contract renewal writes occur only inside the governed atomic RPC.
+  ['20260917055325_contract_release_blocker_remediation.sql', 'aeb5b20e1eab3e192d439dda7a66ade7c67a7d67'],
 ]);
 
 // Pre-existing violations grandfathered at the exact historical Git blob.
@@ -47,11 +50,6 @@ const grandfatheredPreexistingViolationBlobs = new Map([
   ['20260909000010_expense_history_diagnostic_lineage.sql', '3094c1421378877f84bf0b8922f3267b36a5b017'],
   ['20260909000012_owner_expense_allocation_source.sql', '7204b80aa7477d2de9e3e9a8f771c78bcff1a787'],
 ]);
-
-function gitBlobSha(content) {
-  const header = `blob ${Buffer.byteLength(content, 'utf8')}\0`;
-  return createHash('sha1').update(header).update(content).digest('hex');
-}
 
 const files = (await readdir(migrationsDir, { withFileTypes: true }))
   .filter((entry) => entry.isFile() && /^\d{14}_.+\.sql$/.test(entry.name))

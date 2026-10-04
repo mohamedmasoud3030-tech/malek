@@ -15,6 +15,160 @@
 > and GAP-010 versioned tax authority (#1458). Statuses are repository-evidence
 > only; governed stage credit and live/hosted verification remain separate.
 
+## WP-00 checkout reconciliation — 2026-10-04
+
+This section records a read-only reconciliation of the checkout at
+`af4bd0fa03b63dbf07d4643cbd75f81ca4cd7d68`. It does not replace or rewrite the
+historical matrix below. The matrix's audit cutoff and evidence remain tied to
+their cited SHAs; they must not be read as validation of this checkout.
+
+### Repository truth
+
+- Checkout: `arena/01a0c612-malek`, upstream
+  `origin/arena/01a0c612-malek`; worktree was clean before this documentation
+  update. Locally available `main` and `origin/main` both resolved to
+  `d8cc3c8e3e4120baf2e15dca4972a08ac4c10ce0`; that is also the merge-base.
+  This branch contains two commits not in local `main`; local `main` contains
+  none absent from this branch. No fetch was performed, so this is not a claim
+  about a newer remote tip.
+- Relative to the latest inspected release-convergence evidence date
+  (2026-09-17), 11 commits dated on/after that date are reachable from this
+  HEAD. The two commits unique to this branch are `a404619f` and `af4bd0fa`.
+- The current tree contains the React/Vite app, feature/service/test sources,
+  Supabase configuration, generated database contract and migrations. The
+  executable migration directory contains 112 SQL files, sorted from
+  `20260830223142_ai_assistant_postgrest_rpc_repair.sql` through
+  `20260917055325_contract_release_blocker_remediation.sql`.
+- Current repository configuration defines checks for typecheck, test
+  typecheck, app tests, architecture, frontend/database contract, RLS,
+  migration/type parity and build. Workflow definitions prove these commands
+  are configured; they do not prove that they passed on this checkout.
+
+### Verification truth
+
+No application, database replay, hosted, or browser validation was run for this
+reconciliation. Root `node_modules` is absent, and no dependency installation
+was performed. The three narrow checks run on the WP-00 documentation working
+tree were: `node scripts/check-doc-links.mjs` PASS (110 maintained Markdown
+files); `node scripts/check-database-governance.mjs` FAIL (19 findings in
+existing migrations); and `node scripts/check-10-stage-execution-plan.mjs`
+FAIL (governance checksum mismatches). Neither failing check's inputs were
+changed by WP-00. Therefore typecheck, test typecheck, unit/integration suites,
+architecture checks, frontend/database contract, RLS/security checks,
+migration replay/type parity, production build, and E2E/browser readiness remain
+unverified on the exact checkout SHA. Existing test files and workflow steps
+are repository surfaces, not pass evidence.
+
+### Evidence classification ledger
+
+| Claim | Source / cited SHA or date | Current repository evidence | Classification | Reason and next evidence |
+| --- | --- | --- | --- | --- |
+| The checkout is the exact repository baseline for this reconciliation. | `git` refs inspected 2026-10-04; HEAD `af4bd0fa03b63dbf07d4643cbd75f81ca4cd7d68`; merge-base/local `main` `d8cc3c8e3e4120baf2e15dca4972a08ac4c10ce0`. | Two branch-only commits (`a404619f`, `af4bd0fa`); zero local-main-only commits; clean pre-edit worktree. | `PROVEN_CURRENT` | Proven against locally available refs only. A fresh authorized fetch is needed to assert remote `main` freshness. |
+| The August traceability matrix and its local/CI results passed on their cited revisions. | This document's prior ledger; audit cutoff 2026-08-15, baseline `da9a98a38e61e9547df1e328ad91084e79b78410`; PR evidence includes `e648f743`. | Current tree contains later source and tests, but no current-head run artifact was inspected or produced. | `PROVEN_HISTORICAL` | Historical results remain evidence for those SHAs only. Rerun required gates against this checkout or its exact release candidate. |
+| Typecheck, test typecheck, unit/integration, architecture, frontend/database contract, RLS/security, migration parity/replay, build, and E2E/browser readiness pass on current HEAD. | Prior ledger runs on older SHAs; workflow definitions in `.github/workflows/ci.yml`, `canonical-db-baseline.yml`, and browser/release workflows. | Scripts and workflow steps exist; none was executed here. Root dependencies are absent. | `NOT_PROVEN` | No current-HEAD pass is established. Use targeted local checks where dependency state permits, then exact-SHA CI/release evidence. |
+| The database migration inventory has 112 SQL files at the current checkout. | Filesystem inventory at HEAD `af4bd0fa…`, inspected 2026-10-04. | 112 timestamped SQL files; first and last names are recorded above. | `PROVEN_CURRENT` | This proves repository inventory only. `pnpm db0:check-types` / canonical replay is still required to prove executable replay and generated-type parity; neither ran. |
+| The database governance scanner passes on the current checkout. | `node scripts/check-database-governance.mjs`, run 2026-10-04 against unchanged migrations at HEAD `af4bd0fa…`. | The scanner returned 19 findings involving changed historical exemption blobs, raw transactional-table inserts, and sprint/phase-named SQL objects. | `CONFLICTING_EVIDENCE` | This is an executable-gate failure, not documentation-only drift. Triage each finding against its approved migration context and guard policy; do not rewrite historical migrations or silence the guard in WP-00. |
+| The execution-plan governance integrity check passes on the current checkout. | `node scripts/check-10-stage-execution-plan.mjs`, run 2026-10-04. | The guard reports final-decision-register hash expected `61f8fbf5…` / actual `8cce9fba…`; master-plan hash expected `230eb171…` / actual `904e7c3b…`; and the plan's decision-register hash does not match the current register. | `CONFLICTING_EVIDENCE` | Governed inputs were not modified by WP-00. Reconcile integrity metadata through the authorized governance procedure; preserve all stage statuses and reviewer marks. |
+| The maintained Markdown link check passes on the WP-00 documentation tree. | `node scripts/check-doc-links.mjs`, run 2026-10-04. | Passed for 110 maintained Markdown files after the WP-00 notes were added. | `PROVEN_CURRENT` | This proves the repository's documentation-link gate only, not application or release readiness. |
+| Repository code exists for capabilities whose formal stages remain incomplete. | Current source/migration/test tree; `governance/10-stage-master-plan.json` at this checkout. | Plan credits S01 COMPLETE; S02/S03/S05/S07 PARTIAL; S04/S06/S08/S09/S10 NOT_STARTED. Repository contains implementation surfaces for portions of those domains, as separately documented below. | `IMPLEMENTED_NOT_GOVERNED` | Do not infer stage credit from repository presence. Only the authorized Agent/Reviewer governance process can change those statuses. |
+| Production/live, pilot, and professional sign-off evidence applies to current HEAD. | Release gates in Document 8; historical operational evidence dated 2026-09-17. | No hosted environment, production database, pilot, restore rehearsal, or external approval was inspected in WP-00. | `BLOCKED_EXTERNAL` | Requires authorized exact-candidate hosted/live evidence, restore and pilot records, and required accounting/legal/product sign-offs. |
+| CI cost policy accurately describes active pull-request checks. | `docs/decisions/CI_COST_POLICY.md` and `.github/workflows/ci.yml`, inspected 2026-10-04. | Current PR build job runs app tests, test typecheck, accessibility, runtime contract, RLS, type/contract checks and build; some heavier checks are separate/post-merge. | `CONFLICTING_EVIDENCE` | The policy says full app/financial suites are deferred, while the workflow runs the full app suite on PRs. The workflow is the effective configuration until an authorized policy/workflow decision changes it. |
+
+### Historical evidence
+
+The evidence ledger and release-gate records elsewhere in this document and
+Document 8 remain historical at their stated dates and SHAs. In particular,
+the prior `main@da9a98a…` ladder and PR #1458 results do not cover the current
+two-commit branch tip. The 2026-09-17 convergence report is likewise evidence
+for its named branch/fix commit, not for this checkout.
+
+### Governed stage credit
+
+The checked-in master plan currently records `S01 COMPLETE; S02 PARTIAL; S03
+PARTIAL; S04 NOT_STARTED; S05 PARTIAL; S06 NOT_STARTED; S07 PARTIAL; S08
+NOT_STARTED; S09 NOT_STARTED; S10 NOT_STARTED`. This is formal credit only;
+repository implementation is described separately and no stage status was
+changed by WP-00.
+
+### External proof still required
+
+Document 8's latest recorded release gates leave live environment/restore
+(G11), one-office pilot (G12), and Release Candidate approval (G13) unproven or
+not started. Hosted Auth/RLS/Storage, financial live-cycle/reconciliation,
+legal/tax/accounting decisions and candidate-specific browser acceptance also
+require their prescribed external evidence. WP-00 did not access those systems
+or independently remeasure those claims.
+
+## WP-01 governance gate reconciliation — 2026-10-04
+
+This addendum records WP-01 against repository HEAD
+`af4bd0fa03b63dbf07d4643cbd75f81ca4cd7d68`. The WP-00 database-gate result was
+reported as 19 findings; direct output contained 20. All 20 were classified
+below and the gate now passes. No migration bytes, stage status, decision, or
+reviewer mark changed.
+
+### Database governance disposition
+
+The scanner's exact-blob pins represent Git's canonical LF text. On this
+Windows checkout, `core.autocrlf=true` materializes CRLF. Hashing the worktree
+string without normalizing line endings falsely voided six exact-blob pins;
+the downstream insert/name findings on those pinned files were therefore
+spurious. Three additional migrations had four runtime-write matches inside
+governed trigger or SECURITY DEFINER RPC definitions. Their exact immutable blobs are now
+recorded in the scanner's existing fail-closed runtime-writer exception map.
+Changing any pinned file still voids its exception and rechecks it normally.
+
+| Original finding | Classification | Root cause / action | Final status |
+| --- | --- | --- | --- |
+| `20260901000049_extend_short_stay_atomic.sql`: immutable-writer pin mismatch | False positive | CRLF worktree bytes; compare the canonical LF Git blob. | Resolved; exact pin matches |
+| `20260901000049_extend_short_stay_atomic.sql`: raw INSERT into `invoices` | False positive | Runtime RPC token and false pin mismatch; canonical hash restores its existing exception. | Resolved |
+| `20260901000049_extend_short_stay_atomic.sql`: raw INSERT into `owner_funds_events` | False positive | Runtime RPC token and false pin mismatch; canonical hash restores its existing exception. | Resolved |
+| `20260909000002_deposit_receipt_command_integrity.sql`: grandfather pin void | False positive | CRLF worktree bytes; canonical hashing restores the exact historical pin. | Resolved; file skipped only at exact pin |
+| `20260909000002_deposit_receipt_command_integrity.sql`: raw INSERT into `tenant_deposits` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000002_deposit_receipt_command_integrity.sql`: raw INSERT into `deposit_transactions` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000004_historical_reconciliation_lineage.sql`: grandfather pin void | False positive | CRLF worktree bytes; canonical hashing restores the exact historical pin. | Resolved; file skipped only at exact pin |
+| `20260909000004_historical_reconciliation_lineage.sql`: identifier `wp05_subledger_tenant_receivables` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000004_historical_reconciliation_lineage.sql`: identifier `wp05_subledger_security_deposits` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000009_reconciliation_entry_authority.sql`: grandfather pin void | False positive | CRLF worktree bytes; canonical hashing restores the exact historical pin. | Resolved; file skipped only at exact pin |
+| `20260909000009_reconciliation_entry_authority.sql`: identifier `wp05_reconcile_all` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000010_expense_history_diagnostic_lineage.sql`: grandfather pin void | False positive | CRLF worktree bytes; canonical hashing restores the exact historical pin. | Resolved; file skipped only at exact pin |
+| `20260909000010_expense_history_diagnostic_lineage.sql`: identifier `s08_analyze_expense_misclassification` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000012_owner_expense_allocation_source.sql`: grandfather pin void | False positive | CRLF worktree bytes; canonical hashing restores the exact historical pin. | Resolved; file skipped only at exact pin |
+| `20260909000012_owner_expense_allocation_source.sql`: raw INSERT into `expenses` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260909000012_owner_expense_allocation_source.sql`: raw INSERT into `owner_funds_events` | False positive | Emitted after the false pin mismatch; exact historical blob remains pinned. | Resolved |
+| `20260913073735_align_receipt_void_request_acl_with_company_role.sql`: raw INSERT into `owner_funds_events` | False positive | Trigger function captures an executed receipt-void reversal at runtime; reviewed immutable blob added to the exact-pin mechanism. | Resolved |
+| `20260917000000_admin_company_provisioning_rpc.sql`: raw INSERT into `companies` | False positive | Admin-only SECURITY DEFINER provisioning RPC; reviewed immutable blob added to the exact-pin mechanism. | Resolved |
+| `20260917000000_admin_company_provisioning_rpc.sql`: raw INSERT into `company_members` | False positive | Same atomic, admin-checked provisioning RPC and exact pin as above. | Resolved |
+| `20260917055325_contract_release_blocker_remediation.sql`: raw INSERT into `contracts` | False positive | Contract renewal INSERT is inside the governed atomic RPC; reviewed immutable blob added to the exact-pin mechanism. | Resolved |
+
+The existing grandfathered pins and earlier runtime-writer pins remain
+unchanged. The scanner now hashes canonical Git text on LF and CRLF hosts, and
+has a focused regression test for equivalent line-ending hashes.
+The unused pin for the superseded
+`20260915000001_contract_release_blocker_remediation.sql` planning-named
+duplicate was removed; that migration was removed by repository commit
+`4aa81fce`, and the surviving live migration has its own exact blob pin.
+
+### Execution-plan integrity disposition
+
+The two `.sha256` files and the plan's `decision_register_sha256` already
+matched the canonical LF content at this HEAD: register
+`61f8fbf5273a702cccc455951624ef4d9331724e5b5a5d5f350bb01a14607908`, plan
+`230eb17134d10f30ef5d41dee55c7ed7d0a065e789da72fda4b56560dcd82fa7`. The guard
+had hashed CRLF worktree bytes instead. Its checksum verification now uses the
+same canonical Git text helper; no checksum or plan metadata was regenerated.
+Stage/reviewer semantics remain unchanged.
+
+### Verification truth
+
+At the recorded repository HEAD, `node scripts/check-database-governance.mjs`
+passed for all 112 active migrations, `node
+scripts/check-10-stage-execution-plan.mjs` passed for 10 stages, 98 tasks and
+18 decisions, and `node --test scripts/lib/governance-text-hash.test.mjs`
+passed. These are repository governance checks only; they do not establish
+hosted, runtime, database replay, or release readiness. Governed stage credit
+and external proof remain unchanged.
+
 ## How to read this document
 
 This matrix describes repository reality without granting governance credit. `governance/10-stage-master-plan.json`, the Agent checklist and Reviewer ledger remain the authority for governed stage credit. A repository test is not a live-environment test, and a Vercel Ready preview is not journey acceptance.

@@ -96,7 +96,17 @@ Update it whenever a new `.from()` or `.rpc()` call is added to frontend source 
 3. Run `pnpm --filter ./rentrix-app run check:frontend-db-contract` to verify.
 4. The CI gate (`ci.yml` step `Frontend–Database contract gate`) will block the merge if the contract drifts.
 
-## Migration chain
+## Foundational migration milestones (not a complete inventory)
+
+The table below lists the canonical baseline and its first follow-up migrations;
+it is **not** the complete migration chain. The executable chain is every
+timestamped SQL migration in `supabase/migrations/`, in filename order. At the
+WP-00 checkout `af4bd0fa03b63dbf07d4643cbd75f81ca4cd7d68` (2026-10-04), that
+directory contains 112 SQL migration files, from
+`20260830223142_ai_assistant_postgrest_rpc_repair.sql` through
+`20260917055325_contract_release_blocker_remediation.sql`. This inventory does
+not prove replay success or hosted migration parity; run the prescribed
+database gates for those claims.
 
 | # | File | Description |
 |---|------|-------------|
