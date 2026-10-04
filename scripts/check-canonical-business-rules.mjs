@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { sha256GitText } from './lib/governance-text-hash.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const contractPath = join(repoRoot, 'governance', 'canonical-business-rules.json');
@@ -26,8 +26,8 @@ function assertIncludes(values, expected, label) {
   }
 }
 
-const contractBytes = readFileSync(contractPath);
-const actualChecksum = createHash('sha256').update(contractBytes).digest('hex');
+const contractText = readFileSync(contractPath, 'utf8');
+const actualChecksum = sha256GitText(contractText);
 const checksumFile = readFileSync(checksumPath, 'utf8').trim();
 const checksumMatch = checksumFile.match(/^([a-f0-9]{64})\s+governance\/canonical-business-rules\.json$/);
 
@@ -39,7 +39,7 @@ if (!checksumMatch) {
 
 let rules;
 try {
-  rules = JSON.parse(contractBytes.toString('utf8'));
+  rules = JSON.parse(contractText);
 } catch (error) {
   fail(`invalid JSON contract: ${String(error)}`);
   process.exit();
