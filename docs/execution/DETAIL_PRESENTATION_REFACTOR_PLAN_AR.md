@@ -1,5 +1,7 @@
 # خطة إعادة تصميم Detail Presentation Architecture — MALEK / Rentrix
 
+> Historical proposal dated 2026-09-03. Its unit preview/page proposal was superseded when commit `4de5d23e` removed the retired global units workspace. Paths below describe the proposal-era tree, not current implementation.
+
 - الحالة: **مقترح للمراجعة — لم يبدأ التنفيذ**
 - التاريخ: 2026-09-03
 - النطاق: Frontend فقط (`rentrix-app/src`) — لا تغيير Backend/DB
