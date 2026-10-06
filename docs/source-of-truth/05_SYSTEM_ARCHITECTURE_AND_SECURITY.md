@@ -12,7 +12,7 @@ The frontend is not a trusted security boundary. Hiding an action or route never
 
 ## Target reconstruction decision
 
-The approved target is **reconstruction/refactor of the current `rentrix-app`**, not a clean-room `malek-app` rewrite.
+The approved target is **reconstruction/refactor of the existing application, now maintained in the single `malek-app` workspace**, not a clean-room rewrite.
 
 This decision is evidence-based:
 
@@ -23,11 +23,11 @@ This decision is evidence-based:
 
 Therefore:
 
-1. keep `rentrix-app` as the implementation package during reconstruction;
+1. keep `malek-app` as the sole implementation package during reconstruction;
 2. rebuild IA/presentation progressively against the canonical target contract;
 3. preserve strong services/RPCs/domain rules/tests instead of copying them into a parallel application;
 4. keep compatibility routes only where they protect existing deep links/workflows;
-5. perform any final technical rename of `rentrix-app` only after parity/release gates, as a mechanical migration rather than a rewrite.
+5. treat `malek-app` as the canonical application path; do not create a parallel package or revert to the historical path.
 
 ## Target client dependency direction
 
@@ -64,8 +64,8 @@ Presentation components must not become data-plane or financial authorities. Cro
 
 ## Frontend boundaries
 
-- `rentrix-app/src/app/router/route-tree.ts` owns route registration/guards.
-- `rentrix-app/src/app/navigation/route-contract.ts` owns canonical routes, aliases, view bindings and permissions.
+- `malek-app/src/app/router/route-tree.ts` owns route registration/guards.
+- `malek-app/src/app/navigation/route-contract.ts` owns canonical routes, aliases, view bindings and permissions.
 - Feature services/hooks own Supabase/RPC calls; presentation does not.
 - React Query/Zustand/client state may cache/display data but cannot define financial truth.
 - New page-specific data authorities are prohibited when an existing domain service/read model owns the same concept.
@@ -93,7 +93,7 @@ Portal v1 is read-only; no core office record mutation is authorized by the targ
 
 ## Current authorization reality
 
-`rentrix-app/src/features/auth/permissions.ts` implements:
+`malek-app/src/features/auth/permissions.ts` implements:
 
 - six backend roles;
 - typed `AppPermission` capabilities;
@@ -154,10 +154,10 @@ The implementation path must maintain or add automated guards for:
 
 ## Evidence anchors
 
-- `rentrix-app/src/features/auth/permissions.ts`
-- `rentrix-app/src/app/navigation/route-contract.ts`
-- `rentrix-app/scripts/check-architecture.mjs`
-- `rentrix-app/src/features/active-register-inventory.ts`
+- `malek-app/src/features/auth/permissions.ts`
+- `malek-app/src/app/navigation/route-contract.ts`
+- `malek-app/scripts/check-architecture.mjs`
+- `malek-app/src/features/active-register-inventory.ts`
 - `DATABASE_RULES.md`
 - `supabase/migrations/**`
 - `supabase/tests/**`

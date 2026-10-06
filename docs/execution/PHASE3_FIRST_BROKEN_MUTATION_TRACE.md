@@ -215,7 +215,7 @@ left for the next phase.
 ## 8. Verification (DB proof — full canonical chain, real RLS/grants/JWT)
 
 Regression test
-`rentrix-app/src/features/units/unit-direct-write-acl.pglite.test.ts`
+`malek-app/src/features/units/unit-direct-write-acl.pglite.test.ts`
 (7 tests, PGlite full replay, PostgREST-identical execution):
 
 - WITH the fix (all pass):
@@ -270,6 +270,6 @@ side. Exact steps (QA user `qa-admin@malek.app`):
 ## 10. Deliverables & commit
 
 - Fix: `supabase/migrations/20260912000001_units_direct_write_acl_restore.sql`
-- Regression: `rentrix-app/src/features/units/unit-direct-write-acl.pglite.test.ts`
+- Regression: `malek-app/src/features/units/unit-direct-write-acl.pglite.test.ts`
 - Report: `docs/execution/PHASE3_FIRST_BROKEN_MUTATION_TRACE.md` (this file)
 - Fix commit SHA: `e6b43d7e3f8e596f178757219b679a040b1909a2`

@@ -83,17 +83,17 @@ Before database work is considered complete:
 - generated database contract/type drift is reviewed;
 - a second completely fresh bootstrap produces the same canonical schema;
 - unexplained schema drift is zero;
-- **frontend–database contract gate passes** — every table, column, FK, RPC, and enum value the frontend uses is present in generated types (`pnpm --filter ./rentrix-app run check:frontend-db-contract`);
+- **frontend–database contract gate passes** — every table, column, FK, RPC, and enum value the frontend uses is present in generated types (`pnpm --filter ./malek-app run check:frontend-db-contract`);
 - **live contract gate passes** — same inventory verified against the connected Supabase schema when `SUPABASE_MGMT_TOKEN` is set.
 
 ## Contract gate maintenance
 
-The frontend inventory lives in `rentrix-app/scripts/check-frontend-db-contract.mjs`.
+The frontend inventory lives in `malek-app/scripts/check-frontend-db-contract.mjs`.
 Update it whenever a new `.from()` or `.rpc()` call is added to frontend source code:
 
 1. Add the new table/RPC to the `TABLES`/`RPCS` array.
 2. Add explicit columns to `SELECTED_COLS` if the select is not `*`.
-3. Run `pnpm --filter ./rentrix-app run check:frontend-db-contract` to verify.
+3. Run `pnpm --filter ./malek-app run check:frontend-db-contract` to verify.
 4. The CI gate (`ci.yml` step `Frontend–Database contract gate`) will block the merge if the contract drifts.
 
 ## Foundational migration milestones (not a complete inventory)

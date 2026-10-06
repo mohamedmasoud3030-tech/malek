@@ -1,7 +1,7 @@
 # Backup, Restore and Recovery-Time Runbook
 
 > **Status:** OPERATIONAL — Phase 3 Operational Release Proof
-> **Scope:** MALEK / rentrix-app, Supabase project `nnggcnpcuomwfuupupwg`
+> **Scope:** MALEK / malek-app, Supabase project `nnggcnpcuomwfuupupwg`
 > **Last verified:** 2026-08-25 (see Evidence section)
 
 ## Purpose

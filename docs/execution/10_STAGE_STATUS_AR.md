@@ -34,9 +34,9 @@
 - S02 owner agreement isolation: `supabase/migrations/20260804000000_fix_owner_agreement_company_isolation.sql` و`supabase/tests/owner_agreement_company_isolation.sql`.
 - S02 settlement reservation: `20260804010000_fa003_owner_settlement_input_reservation_foundation.sql` و`20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql`.
 - S03 GL core: `20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`, `20260804030200_stage3_gl_core_posting_engine_and_rpcs.sql`.
-- S04 property-management GL: `20260809010000_s04_property_management_gl_rpcs.sql`, `rentrix-app/src/s4/s04-property-management-gl.test.ts`.
-- S06 master-lease GL: `20260809020000_s06_master_lease_gl_lifecycle.sql`, `supabase/tests/master_lease_gl_lifecycle.sql`, `rentrix-app/src/s6/`.
-- S08 analysis: `scripts/s08/`, `evidence/s08/`, `rentrix-app/src/s08/`.
+- S04 property-management GL: `20260809010000_s04_property_management_gl_rpcs.sql`, `malek-app/src/s4/s04-property-management-gl.test.ts`.
+- S06 master-lease GL: `20260809020000_s06_master_lease_gl_lifecycle.sql`, `supabase/tests/master_lease_gl_lifecycle.sql`, `malek-app/src/s6/`.
+- S08 analysis: `scripts/s08/`, `evidence/s08/`, `malek-app/src/s08/`.
 
 ## نتائج التدقيق المركز المرتبطة بالـbaseline
 

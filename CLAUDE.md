@@ -11,14 +11,14 @@ This file is the Claude Code entry point. Keep it short. Product truth remains i
 
 ## Repository shape
 
-- Active application: `rentrix-app/`
+- Active application: `malek-app/`
 - Canonical product/architecture/accounting/UX docs: `docs/source-of-truth/`
 - Database and backend: `supabase/`
 - Governance: `governance/`
 - Repository scripts/checks: `scripts/`
 - Package manager: `pnpm@10.11.1` only
 
-Historical technical identifiers may still say Rentrix. User-visible product naming is MALEK unless an explicit migration says otherwise.
+Only immutable historical migrations and dated evidence may retain the former product identifier. Active code, configuration, and user-visible product naming use MALEK.
 
 ## Default execution mode
 

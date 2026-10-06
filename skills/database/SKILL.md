@@ -32,10 +32,10 @@ For query/index changes, inspect the actual access pattern and use `EXPLAIN (ANA
 
 ## 4. Synchronize contracts
 
-Regenerate/check DB types as required, update `rentrix-app/scripts/check-frontend-db-contract.mjs` when frontend DB usage changes, verify consumers, and remove superseded wrappers/contracts only after proving no remaining consumer.
+Regenerate/check DB types as required, update `malek-app/scripts/check-frontend-db-contract.mjs` when frontend DB usage changes, verify consumers, and remove superseded wrappers/contracts only after proving no remaining consumer.
 
 ## 5. Gates
 
-Database work commonly needs `pnpm db0:gate`, `pnpm db:guardian`, `pnpm test:supabase` and `pnpm --filter ./rentrix-app run check:frontend-db-contract`. Hosted QA is separate and only run when authorized credentials exist.
+Database work commonly needs `pnpm db0:gate`, `pnpm db:guardian`, `pnpm test:supabase` and `pnpm --filter ./malek-app run check:frontend-db-contract`. Hosted QA is separate and only run when authorized credentials exist.
 
 Read `references/postgres-rls-checklist.md`.

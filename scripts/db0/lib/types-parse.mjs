@@ -1,4 +1,4 @@
-// WP-DB0 — parse the hand-maintained `rentrix-app/src/types/database.ts`.
+// WP-DB0 — parse the hand-maintained `malek-app/src/types/database.ts`.
 //
 // The file is not `supabase gen types` output: it is hand-written with
 // `Partial<...> & Pick<...>` Insert/Update helpers. A TypeScript-aware parse is
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(HERE, '..', '..', '..');
-export const TYPES_PATH = join(ROOT, 'rentrix-app', 'src', 'types', 'database.ts');
+export const TYPES_PATH = join(ROOT, 'malek-app', 'src', 'types', 'database.ts');
 
 /** Find the body of a `name: {` block, returning the text between braces. */
 function blockBody(src, header, from = 0) {

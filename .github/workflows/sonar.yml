@@ -72,6 +72,7 @@ jobs:
           }
           probe projects-search 'https://sonarcloud.io/api/projects/search?organization=mohamedmasoud3030-tech&ps=5'
           probe analysis-jres 'https://api.sonarcloud.io/analysis/jres?os=linux&arch=x86_64'
+          # This is the existing external SonarCloud project key; changing it requires a project migration in SonarCloud.
           probe component-show 'https://sonarcloud.io/api/components/show?component=mohamedmasoud3030-tech_rentrixxx'
       - name: Install sonar-scanner-cli
         run: |

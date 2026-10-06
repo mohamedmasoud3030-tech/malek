@@ -90,7 +90,7 @@ jobs:
       - name: Release-tooling self-tests
         run: |
           node scripts/check-workflow-honesty.test.mjs
-          node rentrix-app/scripts/verify-deployment-identity.test.mjs
+          node malek-app/scripts/verify-deployment-identity.test.mjs
       - name: Governance guards
         run: |
           bash scripts/check-production-mutation-guard.sh
@@ -103,19 +103,19 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       - name: Test typecheck
-        run: pnpm --filter ./rentrix-app run typecheck:test
+        run: pnpm --filter ./malek-app run typecheck:test
       - name: Lint
         run: pnpm lint
       - name: Architecture check
-        run: pnpm --filter ./rentrix-app run check:architecture
+        run: pnpm --filter ./malek-app run check:architecture
       - name: Full application test gate
-        run: pnpm --filter ./rentrix-app test
+        run: pnpm --filter ./malek-app test
       - name: Shared primitive accessibility gate
-        run: pnpm --filter ./rentrix-app run test:a11y-primitives
+        run: pnpm --filter ./malek-app run test:a11y-primitives
       - name: Financial safety suite
-        run: pnpm --filter ./rentrix-app run test:financials
+        run: pnpm --filter ./malek-app run test:financials
       - name: Frontend and backend runtime contract suite
-        run: pnpm --filter ./rentrix-app run test:frontend-backend-runtime-contract
+        run: pnpm --filter ./malek-app run test:frontend-backend-runtime-contract
       - name: Migration and generated type parity
         run: pnpm db0:check-types
       - name: Canonical database integrity gates
@@ -123,14 +123,14 @@ jobs:
       - name: Six-role RLS compatibility matrix
         run: pnpm test:supabase:rls
       - name: Frontend and database contract gate
-        run: pnpm --filter ./rentrix-app run check:frontend-db-contract
+        run: pnpm --filter ./malek-app run check:frontend-db-contract
       - name: Build production bundle
         run: pnpm build
       - name: Record the built schema manifest
         id: manifest
         run: |
           set -euo pipefail
-          node -e "const p=require('./rentrix-app/dist/public/build-proof.json'); console.log('schemaDigest='+p.schemaDigest); console.log('migrationCount='+p.migrationCount)" | tee manifest.txt
+          node -e "const p=require('./malek-app/dist/public/build-proof.json'); console.log('schemaDigest='+p.schemaDigest); console.log('migrationCount='+p.migrationCount)" | tee manifest.txt
           echo "schema_digest=$(sed -n 's/^schemaDigest=//p' manifest.txt)" >> "$GITHUB_OUTPUT"
       - name: Upload release evidence
         if: always()
@@ -197,7 +197,7 @@ jobs:
           SCHEMA_DIGEST: ${{ needs.release-validation.outputs.schema_digest }}
         run: |
           set -euo pipefail
-          node rentrix-app/scripts/verify-deployment-identity.mjs \
+          node malek-app/scripts/verify-deployment-identity.mjs \
             --base-url "$BASE_URL" \
             --expected-sha "$TARGET" \
             --expected-schema-digest "$SCHEMA_DIGEST"
@@ -235,15 +235,15 @@ jobs:
             exit 1
           fi
       - name: Install Chromium
-        run: pnpm --filter ./rentrix-app exec playwright install --with-deps chromium
+        run: pnpm --filter ./malek-app exec playwright install --with-deps chromium
       - name: Run the read-only production smoke suite
-        run: pnpm --filter ./rentrix-app run e2e:production-smoke
+        run: pnpm --filter ./malek-app run e2e:production-smoke
       - name: Upload smoke diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: production-smoke-${{ github.run_id }}
-          path: rentrix-app/playwright-report
+          path: malek-app/playwright-report
           if-no-files-found: ignore
           retention-days: 30
 
@@ -280,15 +280,15 @@ jobs:
             exit 1
           fi
       - name: Install Chromium
-        run: pnpm --filter ./rentrix-app exec playwright install --with-deps chromium
+        run: pnpm --filter ./malek-app exec playwright install --with-deps chromium
       - name: Run the real-backend release journey
-        run: pnpm --filter ./rentrix-app run e2e:release
+        run: pnpm --filter ./malek-app run e2e:release
       - name: Upload journey diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: real-stack-journey-${{ github.run_id }}
-          path: rentrix-app/playwright-report
+          path: malek-app/playwright-report
           if-no-files-found: ignore
           retention-days: 30
 

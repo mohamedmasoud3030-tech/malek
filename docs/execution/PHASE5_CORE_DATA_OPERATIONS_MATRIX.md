@@ -70,8 +70,8 @@ gate was missing.
 ## 3. Core operations matrix — results (all on the canonical chain, real RLS/grants/JWT)
 
 Regression suite:
-- `rentrix-app/src/features/core-operations/core-data-operations-matrix.pglite.test.ts` (48 tests)
-- `rentrix-app/src/features/core-operations/core-financial-operations.pglite.test.ts` (6 tests)
+- `malek-app/src/features/core-operations/core-data-operations-matrix.pglite.test.ts` (48 tests)
+- `malek-app/src/features/core-operations/core-financial-operations.pglite.test.ts` (6 tests)
 
 | Entity | Create | Read | Update | Persistence | Business actions | Relationships | Financial |
 |--------|--------|------|--------|-------------|------------------|---------------|-----------|
@@ -165,7 +165,7 @@ the canonical chain.
 ## 8. Deliverables & commits
 
 - Fix: `supabase/migrations/20260912000003_complete_direct_write_acl_surface_restore.sql`
-- Matrix: `rentrix-app/src/features/core-operations/core-data-operations-matrix.pglite.test.ts`
-- Financial: `rentrix-app/src/features/core-operations/core-financial-operations.pglite.test.ts`
+- Matrix: `malek-app/src/features/core-operations/core-data-operations-matrix.pglite.test.ts`
+- Financial: `malek-app/src/features/core-operations/core-financial-operations.pglite.test.ts`
 - Report: `docs/execution/PHASE5_CORE_DATA_OPERATIONS_MATRIX.md` (this file)
 - Fix commit SHA: `92a6cbfcb23d619a2478607b251bd44a2b8f6f78`

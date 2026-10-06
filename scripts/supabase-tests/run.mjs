@@ -42,11 +42,11 @@ const layers = [
   {
     id: 'client-visibility',
     title: 'Client session, data-visibility, and function contracts',
-    cwd: join(ROOT, 'rentrix-app'),
+    cwd: join(ROOT, 'malek-app'),
     cmd: [
       process.execPath,
       [
-        join(ROOT, 'rentrix-app/node_modules/vitest/vitest.mjs'),
+        join(ROOT, 'malek-app/node_modules/vitest/vitest.mjs'),
         'run',
         '--config',
         'vite.config.ts',

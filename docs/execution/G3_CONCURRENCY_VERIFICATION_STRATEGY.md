@@ -37,8 +37,8 @@ The app uses **no** `navigator.locks` calls (grep-verified, zero hits). That is 
 
 ## 4. Evidence index
 
-- Fix + reproduction: `rentrix-app/src/components/ui/entity-form.tsx` (Actions disabled logic), `rentrix-app/src/components/ui/entity-form.test.ts` (G3 double-submit race test, red→green).
-- Server-side race locks: `rentrix-app/src/features/financials/services/s09-correction.pglite.test.ts` (27/27; fingerprint-drift approval block, duplicate-approval refusal, single-reversal, cross-company list isolation).
+- Fix + reproduction: `malek-app/src/components/ui/entity-form.tsx` (Actions disabled logic), `malek-app/src/components/ui/entity-form.test.ts` (G3 double-submit race test, red→green).
+- Server-side race locks: `malek-app/src/features/financials/services/s09-correction.pglite.test.ts` (27/27; fingerprint-drift approval block, duplicate-approval refusal, single-reversal, cross-company list isolation).
 - Surveyed, unchanged: `src/lib/supabase.ts`, `src/hooks/use-auth.tsx`, `src/lib/financial-cache.ts`, `src/features/auth/session-storage.ts`, all five G5/G6 panels' `isPending` gates.
 
 ## 5. NOW-9 audit appendix — double-submit guard class, per-surface verdicts (complete)

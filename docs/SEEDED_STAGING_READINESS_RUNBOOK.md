@@ -10,7 +10,7 @@ This runbook defines the safe, reproducible staging checks needed after the loca
 | `E2E_TEST_EMAIL` | Seeded low-risk test user email | Authenticated browser smoke |
 | `E2E_TEST_PASSWORD` | Seeded low-risk test user password | Authenticated browser smoke |
 | `SUPABASE_DB_URL` | Approved read-only Postgres URL | Supabase live readiness |
-| `RENTRIX_STAGING_SEED_ID` | Human-readable seed batch id | Evidence correlation |
+| `MALEK_STAGING_SEED_ID` | Human-readable seed batch id | Evidence correlation |
 
 ## Seeded data requirements
 

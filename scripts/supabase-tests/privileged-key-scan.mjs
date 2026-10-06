@@ -13,14 +13,14 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..');
 
 const CLIENT_ROOTS = [
-  join(ROOT, 'rentrix-app', 'src'),
-  join(ROOT, 'rentrix-app', 'public'),
-  join(ROOT, 'rentrix-app', 'index.html'),
+  join(ROOT, 'malek-app', 'src'),
+  join(ROOT, 'malek-app', 'public'),
+  join(ROOT, 'malek-app', 'index.html'),
 ];
 
 const ALLOWED_TEST_MARKERS = new Set([
-  'rentrix-app/src/lib/supabase-client-boundary.test.ts',
-  'rentrix-app/src/lib/env-validation.test.ts',
+  'malek-app/src/lib/supabase-client-boundary.test.ts',
+  'malek-app/src/lib/env-validation.test.ts',
 ]);
 
 const FORBIDDEN = [
@@ -67,8 +67,8 @@ for (const file of files) {
   }
 }
 
-const supabaseClient = readFileSync(join(ROOT, 'rentrix-app', 'src', 'lib', 'supabase.ts'), 'utf8');
-const envSource = readFileSync(join(ROOT, 'rentrix-app', 'src', 'lib', 'env.ts'), 'utf8');
+const supabaseClient = readFileSync(join(ROOT, 'malek-app', 'src', 'lib', 'supabase.ts'), 'utf8');
+const envSource = readFileSync(join(ROOT, 'malek-app', 'src', 'lib', 'env.ts'), 'utf8');
 
 const contractFindings = [];
 if (!/env\.supabaseAnonKey/.test(supabaseClient)) {

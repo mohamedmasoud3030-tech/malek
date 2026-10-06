@@ -109,7 +109,7 @@ matters is true — but a literal reading of "74/74 money columns" overstates it
 count of columns *at that type*, not the count of money columns.
 
 ### 2c. REAL DEFECT FOUND (write-path rounding), now fixed
-`docs/execution/RECONSTRUCTION_INVENTORY.md` and `HANDOFF.md` both assert that all 7 scale-2
+`docs/execution/RECONSTRUCTION_INVENTORY.md` and `docs/execution/HANDOFF_20260911_HISTORICAL.md` both assert that all 7 scale-2
 columns are non-money. **For stored history that is true; for the write path it is not.**
 
 `properties.current_value` is `numeric(14,2)`, yet the property form renders it with the shared OMR
@@ -150,7 +150,7 @@ docs links 102 files OK.
 
 ### 2d. Apply-status caveat (owner-gated)
 The migration is repo-side only. Production still has `current_value` at `numeric(14,2)`.
-Per `HANDOFF.md`, `supabase db push` against Production is blocked pending ledger reconciliation,
+Per `docs/execution/HANDOFF_20260911_HISTORICAL.md`, `supabase db push` against Production is blocked pending ledger reconciliation,
 and this turn's ledger read shows why that warning is current:
 
 | Probe | Live | Repo |
@@ -174,4 +174,4 @@ currently shows the two sides semantically identical for money precision.
 
 Everything measured here is *metadata + data on Production* and *replay locally*. Not proven by this
 report: UI behaviour in a real browser, and PostgREST/JWT-level read paths (the app's own suites run
-against PGlite with mocked auth, per `HANDOFF.md` §D).
+against PGlite with mocked auth, per `docs/execution/HANDOFF_20260911_HISTORICAL.md` §D).

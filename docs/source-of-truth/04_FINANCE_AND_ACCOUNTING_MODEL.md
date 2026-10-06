@@ -63,7 +63,7 @@ The repository’s `REQUIRED_ACCOUNT_DEFINITIONS` and Stage-3 provisioning contr
 | 6200 | ROU Depreciation | Expense | Debit |
 | 6300 | Lease Interest Expense | Expense | Debit |
 
-Evidence: `rentrix-app/src/features/accounting/accountingDomain.ts` and `supabase/migrations/20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`.
+Evidence: `malek-app/src/features/accounting/accountingDomain.ts` and `supabase/migrations/20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`.
 
 ## Event-to-accounting mapping
 

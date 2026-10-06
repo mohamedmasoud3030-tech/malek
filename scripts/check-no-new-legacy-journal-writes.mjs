@@ -12,7 +12,7 @@
 // Enforced paths:
 //   - supabase/migrations/**/*.sql
 //   - supabase/functions/**/*.{sql,ts,js,mjs,cjs}
-//   - rentrix-app/src/**/*.{sql,ts,tsx,js,jsx,mjs,cjs}
+//   - malek-app/src/**/*.{sql,ts,tsx,js,jsx,mjs,cjs}
 //
 // Excluded:
 //   - tests / fixtures / mocks
@@ -47,7 +47,7 @@ const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], {
   encoding: 'utf8',
 }).trim();
 
-const TARGET_ROOTS = ['supabase/migrations/', 'supabase/functions/', 'rentrix-app/src/'];
+const TARGET_ROOTS = ['supabase/migrations/', 'supabase/functions/', 'malek-app/src/'];
 const PRODUCTION_EXT = /\.(?:sql|ts|tsx|js|jsx|mjs|cjs)$/i;
 const TEST_OR_FIXTURE = /(?:(?:^|\/)(?:__tests__|tests?|fixtures?|mocks?)(?:\/|$))|(?:\.(?:test|spec)\.[^.]+$)/i;
 

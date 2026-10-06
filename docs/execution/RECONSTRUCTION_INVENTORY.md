@@ -1,6 +1,6 @@
-# Live reconstruction execution inventory
+# Historical reconstruction execution inventory — snapshot through 2026-09-10
 
-Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This is an execution ledger, not a replacement product specification. Canonical rules and stage credit remain in their existing documents.
+Baseline: `fe2a5911076229206eb54cbcd7f3fc5303501360`. This dated execution record is retained as historical evidence; it is not the live workspace map, current execution instruction, or a replacement product specification. Canonical rules and stage credit remain in their current documents.
 
 ## COMPLETED
 - Session persistence/restore/logout and authoritative route workspace permissions (first extraction).
@@ -495,7 +495,7 @@ Literal remote SHA verified by an independent anonymous read of the remote, not 
 `origin/main` (`fe2a5911…`) and `redesign/dashboard-calm-command-center` are untouched. No branch created, no PR, no merge, no force-push. The credential was used only for the in-process push: it is not in `.git/config`, the remote URL, `~/.git-credentials`, `~/.netrc`, `~/.gitconfig`, or any repository file (verified by scan after the push).
 
 ## Co-owned property expense allocation — EVIDENCED, then RESOLVED (Option 2, migration18)
-`rentrix-app/src/features/financials/reports/owner-statement-coownership-allocation.test.ts` (5 PASS).
+`malek-app/src/features/financials/reports/owner-statement-coownership-allocation.test.ts` (5 PASS).
 
 ### The defect (reporting only)
 `property_owners` is a real many-to-many carrying `ownership_percentage`, and co-ownership is a first-class governed feature: `20260901000069_atomic_property_ownership_payload.sql` accepts an explicit ownership payload, requires the shares to total EXACTLY 100, rejects duplicates and requires one primary. The property form exposes it.
@@ -623,7 +623,7 @@ Fixed in the SPEC, not the product: the bank day is now derived from the company
 
 ## SEC-003 / SEC-004 — two proven cross-company read leaks, found and closed (2026-09-10)
 
-Migration `20260910000000_audit_log_and_users_company_isolation.sql`. Both defects were **reproduced with real SQL** under the `authenticated` role with real JWT claims before any fix was written, and the reproduction is preserved as `rentrix-app/src/features/auth/company-unscoped-tables-isolation.pglite.test.ts`.
+Migration `20260910000000_audit_log_and_users_company_isolation.sql`. Both defects were **reproduced with real SQL** under the `authenticated` role with real JWT claims before any fix was written, and the reproduction is preserved as `malek-app/src/features/auth/company-unscoped-tables-isolation.pglite.test.ts`.
 
 ### Why no existing gate caught them
 The WP-DB0 isolation gate builds its worklist as `tables.filter(t => columns(t).has('company_id'))`. **A table with no `company_id` column was therefore never checked for cross-company reachability at all.** Ten tables sat in that blind spot. Eight are genuinely global reference data; two were leaking.
@@ -684,10 +684,10 @@ Each link below was checked against the LIVE post-replay definition, not against
 **Verification first, build second.** The prior ledger listed "governed adoption/allocation workflow UI" as NEXT but unconfirmed. Inspection result:
 
 - **ALLOCATION UI ALREADY EXISTS — resolved with evidence, nothing built.**
-  `rentrix-app/src/features/financials/expenses/owner-expense-allocation-fields.tsx`, hosted in
-  `rentrix-app/src/features/financials/components/expenses-section.tsx` (when `charged_to=OWNER`) and
-  `rentrix-app/src/features/maintenance/components/maintenance-detail-resolve-overlays.tsx`, with browser coverage
-  `rentrix-app/e2e/owner-expense-source.spec.ts`. No parallel surface was created.
+  `malek-app/src/features/financials/expenses/owner-expense-allocation-fields.tsx`, hosted in
+  `malek-app/src/features/financials/components/expenses-section.tsx` (when `charged_to=OWNER`) and
+  `malek-app/src/features/maintenance/components/maintenance-detail-resolve-overlays.tsx`, with browser coverage
+  `malek-app/e2e/owner-expense-source.spec.ts`. No parallel surface was created.
 - **GOVERNED ADOPTION SURFACE WAS GENUINELY ABSENT — one canonical surface built.**
   `public.create_owner_funds_cutover_atomic` / `public.approve_owner_funds_cutover_atomic` are GRANTED to
   `authenticated` and enforce role + S08-approval + maker/checker + stale-baseline refusal + idempotency, but had
@@ -696,11 +696,11 @@ Each link below was checked against the LIVE post-replay definition, not against
 ### Files (single capability = single implementation)
 | File | Role |
 |---|---|
-| `rentrix-app/src/features/owners/services/owner-funds-cutover-service.ts` | fail-closed evidence parser, `p_payload` RPC envelope, Arabic guard translation, disclosure authority |
-| `rentrix-app/src/features/owners/components/OwnerFundsCutoverPanel.tsx` | the surface: derived baseline + evidence, maker/checker, stale/immutability disclosure, role-scoped rendering |
-| `rentrix-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | hosts the panel once (no second route, no parallel tree) |
-| `rentrix-app/src/features/owners/services/owner-funds-cutover-service.test.ts` | 22 unit assertions (pure) |
-| `rentrix-app/src/features/owners/services/owner-funds-cutover-adoption.pglite.test.ts` | 12 real-PostgreSQL assertions against the deployed function bodies |
+| `malek-app/src/features/owners/services/owner-funds-cutover-service.ts` | fail-closed evidence parser, `p_payload` RPC envelope, Arabic guard translation, disclosure authority |
+| `malek-app/src/features/owners/components/OwnerFundsCutoverPanel.tsx` | the surface: derived baseline + evidence, maker/checker, stale/immutability disclosure, role-scoped rendering |
+| `malek-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | hosts the panel once (no second route, no parallel tree) |
+| `malek-app/src/features/owners/services/owner-funds-cutover-service.test.ts` | 22 unit assertions (pure) |
+| `malek-app/src/features/owners/services/owner-funds-cutover-adoption.pglite.test.ts` | 12 real-PostgreSQL assertions against the deployed function bodies |
 
 ### Defects found by building the surface against real SQL (both fixed)
 1. **False failure on a legitimate idempotent re-submission.** The deployed idempotent branch returns the EXISTING row nested under a `cutover` key (`{success, idempotent:true, cutover:{...}}`) with NO top-level `status`; a flat-shape-only parser reports `OWNER_FUNDS_CUTOVER_STATUS_UNKNOWN` for a lawful response. Parser now reads both envelopes; the lawful-status requirement is unchanged (regression-locked in the unit suite).
@@ -746,11 +746,11 @@ the original receivable; the effect is expressed as a movement plus a reduced re
 
 | File | Role |
 |---|---|
-| `rentrix-app/src/features/owners/services/owner-receivable-offset-service.ts` | fail-closed parsers, `p_payload` envelope, approved-settlement loader, Arabic guard translation |
-| `rentrix-app/src/features/owners/components/OwnerReceivableOffsetPanel.tsx` | the surface: original → offsets → outstanding + GL proof, role-scoped, right-gated |
-| `rentrix-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | hosts the panel once |
-| `rentrix-app/src/features/owners/services/owner-receivable-offset-service.test.ts` | 22 pure unit assertions |
-| `rentrix-app/src/features/owners/services/owner-receivable-offset.pglite.test.ts` | 11 real-PostgreSQL assertions against the deployed function body |
+| `malek-app/src/features/owners/services/owner-receivable-offset-service.ts` | fail-closed parsers, `p_payload` envelope, approved-settlement loader, Arabic guard translation |
+| `malek-app/src/features/owners/components/OwnerReceivableOffsetPanel.tsx` | the surface: original → offsets → outstanding + GL proof, role-scoped, right-gated |
+| `malek-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | hosts the panel once |
+| `malek-app/src/features/owners/services/owner-receivable-offset-service.test.ts` | 22 pure unit assertions |
+| `malek-app/src/features/owners/services/owner-receivable-offset.pglite.test.ts` | 11 real-PostgreSQL assertions against the deployed function body |
 
 ### Discipline enforced in code
 - **The right to offset is only ever read, never inferred.** `lawful_offset_right` is parsed as a strict
@@ -866,9 +866,9 @@ the same role gate the server enforces (ACCOUNTANT or ADMIN — a MANAGER cannot
 
 | File | Role |
 |---|---|
-| `rentrix-app/src/features/financials/services/s09-correction-service.ts` | `buildReverseS09Args` (pure, fail-closed), `parseReverseS09Result` (strict; cross-checks the nested `reverse_journal_batch` envelope), `reverseS09Correction`, `parseS09ListEnvelope`, REVERSED evidence rule, reversal error vocabulary |
-| `rentrix-app/src/features/financials/components/S09CorrectionPanel.tsx` | reversal UI on APPLIED rows (reason capture + compensating-entry disclosure), same single mount in `expenses-page.tsx` |
-| `rentrix-app/src/features/financials/services/s09-correction.pglite.test.ts` | +9 tests (6 real-SQL against the deployed body, 3 pure-parser); suite now 18/18 |
+| `malek-app/src/features/financials/services/s09-correction-service.ts` | `buildReverseS09Args` (pure, fail-closed), `parseReverseS09Result` (strict; cross-checks the nested `reverse_journal_batch` envelope), `reverseS09Correction`, `parseS09ListEnvelope`, REVERSED evidence rule, reversal error vocabulary |
+| `malek-app/src/features/financials/components/S09CorrectionPanel.tsx` | reversal UI on APPLIED rows (reason capture + compensating-entry disclosure), same single mount in `expenses-page.tsx` |
+| `malek-app/src/features/financials/services/s09-correction.pglite.test.ts` | +9 tests (6 real-SQL against the deployed body, 3 pure-parser); suite now 18/18 |
 
 ### Effect on the original source — proven in real SQL
 
@@ -958,8 +958,8 @@ aligning the interface with the deployed behaviour instead of implying uniform v
 
 | File | Role |
 |---|---|
-| `rentrix-app/src/features/financials/services/s09-correction.pglite.test.ts` | +5 real-SQL tests (suite now 23/23): invoice full chain + preservation, invoice/payment/deposit fail-closed refusals, non-enumerated behaviour lock |
-| `rentrix-app/src/features/financials/components/S09CorrectionPanel.tsx` | source-type disclosure hint (text only) |
+| `malek-app/src/features/financials/services/s09-correction.pglite.test.ts` | +5 real-SQL tests (suite now 23/23): invoice full chain + preservation, invoice/payment/deposit fail-closed refusals, non-enumerated behaviour lock |
+| `malek-app/src/features/financials/components/S09CorrectionPanel.tsx` | source-type disclosure hint (text only) |
 
 ### Evidence (fresh, 2026-09-11 05:40Z)
 
@@ -1001,9 +1001,9 @@ in `buildOwnerStatementData` via `truthfulStatusLabel(getDocumentTemplateEntry('
 
 | File | Role |
 |---|---|
-| `rentrix-app/src/services/documents/documentPayloads.ts`, `documentCompatibilityTypes.ts`, `documentPayloadAdapters.ts`, `documentRegistry.ts`, `DocumentEngine.ts` | optional truthful `statusLabel` chain |
-| `rentrix-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | `buildOwnerStatementData` resolves the registry label |
-| `rentrix-app/src/services/documents/documentEngine.canonical.test.ts` | +1 lock: cancelled label reaches printed chunks; absent label → no status KPI; all four registry labels stay Arabic-truthful |
+| `malek-app/src/services/documents/documentPayloads.ts`, `documentCompatibilityTypes.ts`, `documentPayloadAdapters.ts`, `documentRegistry.ts`, `DocumentEngine.ts` | optional truthful `statusLabel` chain |
+| `malek-app/src/features/owners/components/OwnerSettlementWorkspace.tsx` | `buildOwnerStatementData` resolves the registry label |
+| `malek-app/src/services/documents/documentEngine.canonical.test.ts` | +1 lock: cancelled label reaches printed chunks; absent label → no status KPI; all four registry labels stay Arabic-truthful |
 
 ### Evidence (fresh, 2026-09-11 06:15Z)
 

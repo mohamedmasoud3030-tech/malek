@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(HERE, '..', '..', '..');
-export const APP_SRC = join(ROOT, 'rentrix-app', 'src');
+export const APP_SRC = join(ROOT, 'malek-app', 'src');
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', '.git', 'coverage', '__snapshots__']);
 const CODE_EXT = /\.(ts|tsx)$/;

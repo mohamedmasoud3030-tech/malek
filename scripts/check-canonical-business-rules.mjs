@@ -48,7 +48,7 @@ try {
 assertEqual(rules.status, 'LOCKED_CANONICAL', 'status');
 assertEqual(rules.schema_version, '2.0.0', 'schema_version');
 assertEqual(rules.product, 'MALEK', 'product');
-assertEqual(rules.repository, 'mohamedmasoud3030-tech/malik', 'repository');
+assertEqual(rules.repository, 'mohamedmasoud3030-tech/malek', 'repository');
 assertEqual(rules.rules_owner, 'mohamedmasoud3030-tech', 'rules_owner');
 assertEqual(rules.change_control?.classification, 'FOUNDATIONAL_PRODUCT_CONSTITUTION', 'change_control.classification');
 assertEqual(rules.change_control?.normal_feature_pr_may_not_change_rules, true, 'change_control.normal_feature_pr_may_not_change_rules');

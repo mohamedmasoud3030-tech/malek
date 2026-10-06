@@ -4,7 +4,7 @@ minimumReleaseAgeExclude:
   - stripe-replit-sync
 
 packages:
-  - rentrix-app
+  - malek-app
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1

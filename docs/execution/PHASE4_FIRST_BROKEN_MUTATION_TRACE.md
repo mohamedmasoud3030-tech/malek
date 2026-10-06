@@ -167,7 +167,7 @@ write surface. `contracts` remains RPC-only by design
 ## 7. Verification (DB proof — full canonical chain, real RLS/grants/JWT)
 
 Regression test
-`rentrix-app/src/features/people/people-direct-write-acl.pglite.test.ts`
+`malek-app/src/features/people/people-direct-write-acl.pglite.test.ts`
 (7 tests, PGlite full replay, PostgREST-identical execution):
 
 - WITH the fix (all pass):
@@ -219,7 +219,7 @@ from the operator side. Exact steps (QA user `qa-admin@malek.app`):
 ## 9. Deliverables & commit
 
 - Fix: `supabase/migrations/20260912000002_people_direct_write_acl_restore.sql`
-- Regression: `rentrix-app/src/features/people/people-direct-write-acl.pglite.test.ts`
+- Regression: `malek-app/src/features/people/people-direct-write-acl.pglite.test.ts`
 - Report: `docs/execution/PHASE4_FIRST_BROKEN_MUTATION_TRACE.md` (this file)
 - Fix commit SHA: `0676722015de4b2fb164a20ffc480b4b42ab64bb`
 

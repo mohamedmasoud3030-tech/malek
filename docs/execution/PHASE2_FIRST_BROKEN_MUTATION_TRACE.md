@@ -12,8 +12,8 @@ No Phase 1 artifact exists in this repository. The first failing operation was t
 | Evidence | Location | Statement |
 |---|---|---|
 | HEAD commit message | `5a53be6b` | "…instead of dead-ending **every financial write** with `NO_ELIGIBLE_OPEN_ACCOUNTING_PERIOD`." / "Proven end-to-end against production Supabase: UI create 2026-10 → RPC 200 → …; **retry payment INV-2026-000003 450 @2026-10-01** → `record_invoice_payment_atomic` 200 → payments POSTED, invoice PAID, journal batch POSTED into the UI-created period (`open_period_contains_date`)" |
-| In-code defect record | `rentrix-app/src/features/financials/tax-authority/accounting-periods-management.tsx:11-16` | "Before this surface existed, the financial write path failed closed with `NO_ELIGIBLE_OPEN_ACCOUNTING_PERIOD` whenever the company needed a new period, and **the app told the user to 'open a period' while providing no way to do it**." |
-| Readiness surface | `rentrix-app/src/features/financials/tax-authority/finance-readiness-section.tsx:197-214` | "لا توجد فترة محاسبية مفتوحة. **افتح فترة** قبل تسجيل القيود الجديدة." (instruction with no in-app affordance before the fix) |
+| In-code defect record | `malek-app/src/features/financials/tax-authority/accounting-periods-management.tsx:11-16` | "Before this surface existed, the financial write path failed closed with `NO_ELIGIBLE_OPEN_ACCOUNTING_PERIOD` whenever the company needed a new period, and **the app told the user to 'open a period' while providing no way to do it**." |
+| Readiness surface | `malek-app/src/features/financials/tax-authority/finance-readiness-section.tsx:197-214` | "لا توجد فترة محاسبية مفتوحة. **افتح فترة** قبل تسجيل القيود الجديدة." (instruction with no in-app affordance before the fix) |
 
 **The first failing operation = recording an invoice payment** — the retry of payment **INV-2026-000003, 450 OMR, payment date 2026-10-01** — submitted from the invoice detail "Quick Payment" form, which dead-ended with `NO_ELIGIBLE_OPEN_ACCOUNTING_PERIOD` and offered no way to fix the precondition. It is the first mutation in the operator journey that failed to execute (earlier mutations in the same walkthrough — e.g. contract approval — executed successfully; one of them, approval, was later found to be *misreported* as a failure, which is a different, second defect class; see §6).
 
@@ -28,7 +28,7 @@ Legend: `baseline` = `supabase/migrations/20260901000000_canonical_baseline.sql`
 ### 2.1 UI
 
 - Route `/financials` → invoices hub → invoice detail panel `InvoiceDetailSection`
-  (`rentrix-app/src/features/financials/components/invoice-detail-section.tsx:211-224`) hosts `QuickPaymentForm`.
+  (`malek-app/src/features/financials/components/invoice-detail-section.tsx:211-224`) hosts `QuickPaymentForm`.
 - `QuickPaymentForm` (`.../components/quick-payment-form.tsx:56-146`): canonical `EntityForm.Root` with amount / method (`cash` | `bank_transfer` only — card/check intentionally hidden) / payment date / reference, and `EntityForm.Actions` whose pending guard is `submitDisabled || isSubmitting` (double-submit race closed by `6a66f692`).
 - Submit button → `onPostPayment` on the workspace controller.
 
@@ -53,7 +53,7 @@ For the failing attempt the state was: invoice INV-2026-000003 selected, `amount
 
 - `onPostPayment` builds a **flat** payload and routes it through the idempotent retry store:
   `paymentCommands.run('invoice-payment', payload, (request_id) => postPayment.mutateAsync({ ...payload, request_id }))` (`useInvoiceWorkspaceController.ts:214-219`).
-- `RetryableCommandStore` (`rentrix-app/src/lib/retryable-command.ts`): stable `request_id` per identical (operation, sorted payload) — a retry after a failed attempt reuses the same id, which is what makes the later "retry payment INV-2026-000003" safe (server idempotency guarantees one financial event).
+- `RetryableCommandStore` (`malek-app/src/lib/retryable-command.ts`): stable `request_id` per identical (operation, sorted payload) — a retry after a failed attempt reuses the same id, which is what makes the later "retry payment INV-2026-000003" safe (server idempotency guarantees one financial event).
 - `usePostPayment` (`.../payments/usePayments.ts:16-26`): `useMutation` → `recordInvoicePaymentAtomic`; `onSuccess` → `invalidateFinancialReadModels` + success toast; `onError` → `toast.error(message)`.
 - `recordInvoicePaymentAtomic` (`.../payments/paymentService.ts:35-39`): `supabase.rpc('record_invoice_payment_atomic', { payload })`; on `error` → `handleSupabaseError(error, 'تعذر تسجيل الدفعة')` (throws); on success → `parsePaymentResult` enforces the success envelope (`status:'recorded'`, matching `invoice_id`/`request_id`, present `payment_id`/`receipt_id`).
 
@@ -107,13 +107,13 @@ Because the exception escaped uncaught through the SECURITY DEFINER chain, the *
 ### 2.9 Returned result
 
 - PostgREST: HTTP 400, `code: "P0001"`, `message: "NO_ELIGIBLE_OPEN_ACCOUNTING_PERIOD: no open accounting period can accept effective date 2026-10-01 for company <uuid>. Create or reopen an OPEN period first."`, `details: "CONTEXT: PL/pgSQL function gl_post_journal_batch(uuid) line … at RAISE"`.
-- `handleSupabaseError` → `getActionableSupabaseErrorMessage` (`rentrix-app/src/lib/supabase-error.ts:44-46`) matches `no_eligible_open_accounting_period` and returns the operator-facing Arabic: "تعذر تسجيل الدفعة: **لا توجد فترة محاسبية مفتوحة تقبل هذا التاريخ. أنشئ فترة لاحقة أو أعد فتح فترة قابلة لإعادة الفتح** ثم حاول مجددًا." — an *instruction* to create/reopen a period.
+- `handleSupabaseError` → `getActionableSupabaseErrorMessage` (`malek-app/src/lib/supabase-error.ts:44-46`) matches `no_eligible_open_accounting_period` and returns the operator-facing Arabic: "تعذر تسجيل الدفعة: **لا توجد فترة محاسبية مفتوحة تقبل هذا التاريخ. أنشئ فترة لاحقة أو أعد فتح فترة قابلة لإعادة الفتح** ثم حاول مجددًا." — an *instruction* to create/reopen a period.
 - `usePostPayment.onError` → `toast.error(…)`. The mutation object rejects; `RetryableCommandStore` clears the pending promise but **keeps the same `request_id`**, so an in-form retry is safe and expected.
 
 ### 2.10 Cache / query invalidation / state refresh — consistent
 
 - Failure path: **no invalidation runs** (invalidation is `onSuccess`-only, `usePayments.ts:19-21`). This is correct: the server rolled back, so nothing changed; `invoices`/`receipts`/dashboard projections stay accurate and stale-by-design.
-- Success path: `invalidateFinancialReadModels` (`rentrix-app/src/lib/financial-cache.ts:10-20`) invalidates the enumerated read-model roots (`invoices, receipts, financialReports, accountingReports, contract-payments, …`) — the retry-after-fix then rendered the PAID invoice, the posted payment row, and the receipt without a manual reload (per the live proof in `5a53be6b`).
+- Success path: `invalidateFinancialReadModels` (`malek-app/src/lib/financial-cache.ts:10-20`) invalidates the enumerated read-model roots (`invoices, receipts, financialReports, accountingReports, contract-payments, …`) — the retry-after-fix then rendered the PAID invoice, the posted payment row, and the receipt without a manual reload (per the live proof in `5a53be6b`).
 - No optimistic updates exist on this path (react-query mutation, UI waits for the server), so there is no optimistic-reconcile bug to examine.
 
 ### 2.11 Rendered UI

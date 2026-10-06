@@ -1,6 +1,6 @@
 # Deterministic local/CI Supabase configuration.
 # The database gate starts only PostgreSQL and excludes all non-database services.
-project_id = "rentrix-ci"
+project_id = "malek-ci"
 
 [db]
 port = 54322

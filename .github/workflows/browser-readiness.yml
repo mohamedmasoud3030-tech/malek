@@ -71,7 +71,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install Chromium on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter ./rentrix-app exec playwright install chromium
+        run: pnpm --filter ./malek-app exec playwright install chromium
       - name: Run browser readiness shard
         run: pnpm e2e --project=${{ matrix.project }}
       - name: Upload Playwright diagnostics
@@ -81,8 +81,8 @@ jobs:
         with:
           name: browser-smoke-artifacts-${{ matrix.project }}
           path: |
-            rentrix-app/playwright-report
-            rentrix-app/test-results
+            malek-app/playwright-report
+            malek-app/test-results
           if-no-files-found: ignore
           retention-days: 7
 

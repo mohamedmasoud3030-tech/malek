@@ -9,7 +9,7 @@ if [[ -z "$TARGET_REF" && "${VITE_SUPABASE_URL:-}" =~ ^https://([a-z0-9]+)\.supa
   TARGET_REF="${BASH_REMATCH[1]}"
 fi
 
-printf 'Rentrix Supabase migration evidence preflight\n'
+printf 'MALEK Supabase migration evidence preflight\n'
 printf 'Repository: %s\n' "$ROOT_DIR"
 printf 'Timestamp UTC: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 printf '\n'

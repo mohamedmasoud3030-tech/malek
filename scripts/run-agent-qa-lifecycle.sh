@@ -15,10 +15,10 @@ pnpm qa:database-contracts
 node scripts/agent-qa-preflight.mjs
 
 E2E_SINGLE_OFFICE_ENABLED=1 \
-pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs seed
+pnpm --filter ./malek-app exec node scripts/single-office-isolated-smoke.mjs seed
 
 E2E_SINGLE_OFFICE_ENABLED=1 \
-pnpm --filter ./rentrix-app exec playwright test e2e/single-office-isolated.spec.ts \
+pnpm --filter ./malek-app exec playwright test e2e/single-office-isolated.spec.ts \
   --config playwright.config.ts --project=chromium-desktop
 
-pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs verify
+pnpm --filter ./malek-app exec node scripts/single-office-isolated-smoke.mjs verify

@@ -109,10 +109,10 @@ The canonical accounting model is a product control model. Final Omani tax rates
 
 ## Evidence anchors
 
-- `rentrix-app/src/app/navigation/route-contract.ts`
-- `rentrix-app/src/features/auth/permissions.ts`
-- `rentrix-app/src/features/finance/shell/financeShellModel.ts`
-- `rentrix-app/src/features/active-register-inventory.ts`
+- `malek-app/src/app/navigation/route-contract.ts`
+- `malek-app/src/features/auth/permissions.ts`
+- `malek-app/src/features/finance/shell/financeShellModel.ts`
+- `malek-app/src/features/active-register-inventory.ts`
 - `DATABASE_RULES.md`
 - Documents 2, 4, 5, 6 and 7 of this pack.
 

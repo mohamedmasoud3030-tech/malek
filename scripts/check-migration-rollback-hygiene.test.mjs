@@ -56,7 +56,7 @@ function runGuard(cwd, baseRef) {
 function makeRepo(baseFiles) {
   const dir = mkdtempSync(join(tmpdir(), 'migration-hygiene-test-'));
   git(dir, ['init', '-q', '-b', 'main']);
-  git(dir, ['config', 'user.email', 'test@rentrix.dev']);
+  git(dir, ['config', 'user.email', 'test@example.test']);
   git(dir, ['config', 'user.name', 'Test Harness']);
 
   for (const [relPath, content] of Object.entries(baseFiles)) {

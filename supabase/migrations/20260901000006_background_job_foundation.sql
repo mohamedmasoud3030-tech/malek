@@ -447,7 +447,7 @@ on conflict(company_id,schedule_name) do nothing;
 do $unschedule$
 begin
   if to_regnamespace('cron') is not null then
-    begin perform cron.unschedule('rentrix-automation-hourly'); exception when others then null; end;
+    begin perform cron.unschedule('malek-automation-hourly'); exception when others then null; end;
   end if;
 end
 $unschedule$;

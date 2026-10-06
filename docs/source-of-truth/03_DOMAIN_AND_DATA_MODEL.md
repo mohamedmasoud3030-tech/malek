@@ -152,10 +152,10 @@ Names above describe canonical meaning; legacy lowercase/alternate database valu
 
 ## Repository evidence anchors
 
-- Generated database types: `rentrix-app/src/types/database.ts`. WP-DB0 generates this file from a clean replay of the full migration chain (tables, views, enums, relationships and every RPC overload). It is the repository contract; live parity still requires the hosted migration-ledger and schema probes.
+- Generated database types: `malek-app/src/types/database.ts`. WP-DB0 generates this file from a clean replay of the full migration chain (tables, views, enums, relationships and every RPC overload). It is the repository contract; live parity still requires the hosted migration-ledger and schema probes.
 - Core migrations and RLS/RPC history: `supabase/migrations/`.
 - Settlement reservations: `20260804010000_fa003_owner_settlement_input_reservation_foundation.sql`, `20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql`.
-- GL domain types: `rentrix-app/src/features/accounting/accountingDomain.ts`.
+- GL domain types: `malek-app/src/features/accounting/accountingDomain.ts`.
 - Service Providers addition: migrations `20260810170000_service_providers_production_grade.sql` and `20260810171000_service_provider_atomic_writes.sql`, merged in the baseline line.
 
 Repository presence does not by itself prove the live schema equals migrations; live deployment verification is tracked separately in Document 7.

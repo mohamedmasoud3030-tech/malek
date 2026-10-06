@@ -64,7 +64,7 @@ the live database (run 34605721349); parity RE-MEASURED live — drift found and
 (`docs/execution/evidence/live-parity-20260911/`: 27 ledger-only vs 18 re-stamped repo versions;
 exactly one confirmed functional gap live — the 20260901000026 dedupe guard; all 26 branch-added
 migrations verified already-applied and content-identical live).
-What remains is owner-gated, with exact triggers in HANDOFF.md §"NOW-18": ledger reconciliation
+What remains is owner-gated, with exact triggers in HANDOFF_20260911_HISTORICAL.md §"NOW-18": ledger reconciliation
 decision before any `db push` (BACKUP_RESTORE_RUNBOOK path); `SUPABASE_DB_PASSWORD` for the
 sanctioned production-inspect artifact; a Supabase project slot for the QA journey; a root-domain
 staging host for G1 hosted E2E; the S09 `source_type` governance decision; and G2/G3-hosted which

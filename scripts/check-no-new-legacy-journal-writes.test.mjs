@@ -26,7 +26,7 @@ function write(cwd, path, content) {
 function makeRepo(baseFiles = {}) {
   const dir = mkdtempSync(join(tmpdir(), 's03-gl-write-guard-'));
   git(dir, ['init', '-q', '-b', 'main']);
-  git(dir, ['config', 'user.email', 'guard@malik.test']);
+  git(dir, ['config', 'user.email', 'guard@malek.test']);
   git(dir, ['config', 'user.name', 'Guard Test']);
   for (const [path, content] of Object.entries(baseFiles)) write(dir, path, content);
   write(dir, 'README.md', 'base\n');
@@ -138,7 +138,7 @@ test('untouched historical compatibility writer on base is grandfathered', () =>
 });
 
 test('editing a production file without increasing its inherited write count passes this regression guard', () => {
-  const path = 'rentrix-app/src/legacy-writer.ts';
+  const path = 'malek-app/src/legacy-writer.ts';
   const dir = makeRepo({
     [path]: `const sql = "insert into public.journal_entries (id) values ('legacy')";\nexport const a = 1;\n`,
   });
@@ -150,7 +150,7 @@ test('editing a production file without increasing its inherited write count pas
 
 test("new Supabase .from('journal_entries').insert mutation fails", () => {
   const dir = makeRepo();
-  write(dir, 'rentrix-app/src/new-writer.ts', `
+  write(dir, 'malek-app/src/new-writer.ts', `
     export async function bad(client) {
       return client.from('journal_entries').insert({ id: 'x' });
     }
@@ -164,7 +164,7 @@ test("new Supabase .from('journal_entries').insert mutation fails", () => {
 
 test("Supabase .from('journal_entries').select read remains allowed", () => {
   const dir = makeRepo();
-  write(dir, 'rentrix-app/src/new-reader.ts', `
+  write(dir, 'malek-app/src/new-reader.ts', `
     export async function ok(client) {
       return client.from('journal_entries').select('*');
     }
@@ -176,10 +176,10 @@ test("Supabase .from('journal_entries').select read remains allowed", () => {
 
 test('test and fixture files may contain legacy-write examples without affecting production guard', () => {
   const dir = makeRepo();
-  write(dir, 'rentrix-app/src/s3/example.test.ts', `
+  write(dir, 'malek-app/src/s3/example.test.ts', `
     const example = "insert into public.journal_entries (id) values ('test-only')";
   `);
-  write(dir, 'rentrix-app/src/fixtures/legacy.ts', `
+  write(dir, 'malek-app/src/fixtures/legacy.ts', `
     const fixture = "delete from public.journal_entries where id = 'fixture'";
   `);
   commit(dir);
@@ -200,7 +200,7 @@ for (const mode of ['untracked', 'staged', 'unstaged']) {
 
 test('untracked canonical reads are checked quietly, including unusual filenames', () => {
   const dir = makeRepo();
-  write(dir, 'rentrix-app/src/read with\nnewline.ts', "const query = 'select * from public.journal_entries';\n");
+  write(dir, 'malek-app/src/read with\nnewline.ts', "const query = 'select * from public.journal_entries';\n");
   const result = run(dir);
   expectStatus(result, true);
   assert(result.stdout.includes('production files checked: 1'), 'new working file was not inspected');

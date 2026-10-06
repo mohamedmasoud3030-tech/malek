@@ -318,13 +318,13 @@ Tenant Portal is a separate, constrained shell. v1 is read-only and shows only t
 
 - `docs/execution/MALEK_RUNTIME_UI_UX_RECONSTRUCTION_BLUEPRINT.md` — active runtime-audit execution translation and screenshot self-review protocol;
 - authenticated 2026-09-01 runtime screenshot campaign and structural audit evidence;
-- `rentrix-app/src/app/navigation/route-contract.ts`
-- `rentrix-app/src/app/router/route-tree.ts`
-- `rentrix-app/src/app/layout/app-shell.tsx`
-- `rentrix-app/src/app/layout/layout-navigation-view.tsx`
-- `rentrix-app/src/features/active-register-inventory.ts`
-- `rentrix-app/src/features/finance/shell/financeShellModel.ts`
-- `rentrix-app/src/features/auth/permissions.ts`
+- `malek-app/src/app/navigation/route-contract.ts`
+- `malek-app/src/app/router/route-tree.ts`
+- `malek-app/src/app/layout/app-shell.tsx`
+- `malek-app/src/app/layout/layout-navigation-view.tsx`
+- `malek-app/src/features/active-register-inventory.ts`
+- `malek-app/src/features/finance/shell/financeShellModel.ts`
+- `malek-app/src/features/auth/permissions.ts`
 - shared layout/register/components and company formatters.
 
 ## Release interpretation

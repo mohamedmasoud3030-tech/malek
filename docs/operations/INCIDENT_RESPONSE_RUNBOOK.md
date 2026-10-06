@@ -1,7 +1,7 @@
 # Incident Response Runbook
 
 > **Status:** OPERATIONAL — Phase 3 Operational Release Proof
-> **Scope:** MALEK / rentrix-app
+> **Scope:** MALEK / malek-app
 
 ## Severity levels
 
@@ -23,7 +23,7 @@
    (e.g., disabled by a later migration) is itself the SEV-1.
 2. **Freeze writes if data integrity is in question.** There is no
    application-level maintenance-mode flag in this codebase today (verified:
-   no such flag found in `rentrix-app/src`). The fastest safe stop is
+   no such flag found in `malek-app/src`). The fastest safe stop is
    pausing the Vercel deployment (`Vercel:pause_project` — returns 503 to
    all traffic) or revoking the affected RPC's `authenticated` EXECUTE grant
    directly via `REVOKE EXECUTE ... FROM authenticated` as an emergency

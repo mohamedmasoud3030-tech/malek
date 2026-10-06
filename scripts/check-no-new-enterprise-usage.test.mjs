@@ -4,11 +4,11 @@ import { resolve, relative, sep } from 'node:path';
 import test from 'node:test';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const SRC = resolve(ROOT, 'rentrix-app/src');
+const SRC = resolve(ROOT, 'malek-app/src');
 
 // Same allowlist as the guard (now enterprise is completely removed, only design-system allowed)
 const allowedPrefixes = [
-  `rentrix-app/src/features/design-system/`,
+  `malek-app/src/features/design-system/`,
 ];
 
 function isAllowedFile(file) {

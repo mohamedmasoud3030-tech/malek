@@ -108,7 +108,7 @@ artifact must never be presented as live, pilot or production balance proof.
 ## Corrected RC1 owner-agency synthetic accounting proof
 
 The corrected proof is the deterministic PGlite integration test
-`rentrix-app/src/features/financials/owner-agency-invoice-accounting.test.ts`,
+`malek-app/src/features/financials/owner-agency-invoice-accounting.test.ts`,
 using the forward migrations `20260820030000`, `20260820040000`,
 `20260820050000` and `20260820060000`. It creates both collection roles,
 applies 5.000% rent profile A, activates 7.000% profile B after old invoices

@@ -123,6 +123,6 @@ Read-only inventory by company/period/source/owner/property/agreement/transactio
 - Locked decisions D01–D18: `governance/final-decision-register.json`.
 - Owner-agreement isolation migration/tests: `supabase/migrations/20260804000000_fix_owner_agreement_company_isolation.sql`, `supabase/tests/owner_agreement_company_isolation.sql`.
 - Settlement reservation foundation: `supabase/migrations/20260804010000_fa003_owner_settlement_input_reservation_foundation.sql` and `20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql`.
-- Property-management GL surfaces: `supabase/migrations/20260809010000_s04_property_management_gl_rpcs.sql` and `rentrix-app/src/s4/s04-property-management-gl.test.ts`.
-- MASTER_LEASE repository surfaces: `supabase/migrations/20260809020000_s06_master_lease_gl_lifecycle.sql`, `supabase/tests/master_lease_gl_lifecycle.sql`, `rentrix-app/src/s6/`.
-- Historical-analysis repository surfaces: `scripts/s08/`, `evidence/s08/`, `rentrix-app/src/s08/`.
+- Property-management GL surfaces: `supabase/migrations/20260809010000_s04_property_management_gl_rpcs.sql` and `malek-app/src/s4/s04-property-management-gl.test.ts`.
+- MASTER_LEASE repository surfaces: `supabase/migrations/20260809020000_s06_master_lease_gl_lifecycle.sql`, `supabase/tests/master_lease_gl_lifecycle.sql`, `malek-app/src/s6/`.
+- Historical-analysis repository surfaces: `scripts/s08/`, `evidence/s08/`, `malek-app/src/s08/`.
