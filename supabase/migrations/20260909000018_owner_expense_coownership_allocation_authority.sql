@@ -84,7 +84,6 @@ do $statement_expenses$
 declare d text; needle text;
 begin
   d := pg_get_functiondef('public._owner_statement_expenses(uuid,date,date,uuid)'::regprocedure);
-  d := replace(d, E'\r\n', E'\n');
 
   needle := '        AND EXISTS (
           SELECT 1 FROM public.property_owners po
@@ -93,7 +92,6 @@ begin
             AND (po.starts_on IS NULL OR po.starts_on <= public._safe_date(e.date_time))
             AND (po.ends_on IS NULL OR po.ends_on >= public._safe_date(e.date_time))
         )';
-  needle := replace(needle, E'\r\n', E'\n');
   if (length(d) - length(replace(d, needle, ''))) / length(needle) <> 1 then
     raise exception 'OWNER_EXPENSE_COOWNERSHIP_STATEMENT_PRECONDITION';
   end if;
@@ -108,7 +106,6 @@ do $net_payout$
 declare d text; needle text;
 begin
   d := pg_get_functiondef('public.calculate_owner_net_payout(uuid,date,date,text)'::regprocedure);
-  d := replace(d, E'\r\n', E'\n');
 
   needle := '    and exists (
       select 1 from public.property_owners po
@@ -117,7 +114,6 @@ begin
         and (po.starts_on is null or po.starts_on <= public._safe_date(e.date_time))
         and (po.ends_on is null or po.ends_on >= public._safe_date(e.date_time))
     );';
-  needle := replace(needle, E'\r\n', E'\n');
   if (length(d) - length(replace(d, needle, ''))) / length(needle) <> 1 then
     raise exception 'OWNER_EXPENSE_COOWNERSHIP_PAYOUT_PRECONDITION';
   end if;
@@ -138,7 +134,6 @@ do $reservable$
 declare d text; needle text;
 begin
   d := pg_get_functiondef('public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text)'::regprocedure);
-  d := replace(d, E'\r\n', E'\n');
 
   needle := '       and exists (
          select 1
@@ -148,7 +143,6 @@ begin
             and (po.starts_on is null or po.starts_on <= public._safe_date(e.date_time))
             and (po.ends_on is null or po.ends_on >= public._safe_date(e.date_time))
        );';
-  needle := replace(needle, E'\r\n', E'\n');
   if (length(d) - length(replace(d, needle, ''))) / length(needle) <> 1 then
     raise exception 'OWNER_EXPENSE_COOWNERSHIP_RESERVABLE_PRECONDITION';
   end if;

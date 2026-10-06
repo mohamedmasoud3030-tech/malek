@@ -56,10 +56,6 @@ begin
       rec.resolver
     );
 
-    -- pg_get_functiondef preserves line endings embedded in PL/pgSQL bodies.
-    -- Normalize only CRLF before locating the body boundary; the explicit
-    -- fail-closed abort below remains in force if no complete BEGIN line exists.
-    def := replace(def, E'\r\n', E'\n');
     begin_at := position(E'\nbegin\n' in def);
     if begin_at = 0 then
       begin_at := position(E'\nBEGIN\n' in def);

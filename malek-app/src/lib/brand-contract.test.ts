@@ -306,11 +306,15 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
 
   it('uses the canonical MALEK mark throughout shell and install configuration', () => {
     const indexHtml = readApp('index.html');
-    const manifest = readApp('public/manifest.json');
+    const manifest = JSON.parse(readApp('public/manifest.json')) as {
+      icons?: Array<{ src: string }>;
+    };
     const viteConfig = readApp('vite.config.ts');
 
     expect(indexHtml).toContain(APP_BRAND_MARK_ASSET);
-    expect(manifest.icons?.some((icon) => icon.src === APP_BRAND_MARK_ASSET)).toBe(true);
+    expect(
+      manifest.icons?.some((icon) => icon.src === APP_BRAND_MARK_ASSET),
+    ).toBe(true);
     expect(viteConfig).toContain('includeAssets');
   });
 

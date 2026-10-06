@@ -1,17 +1,5 @@
 # supabase/migrations
 
-> **Current inventory note (WP-00, 2026-10-04):** the dated sections below
-> describing the 2025/2026-07 baselines, live applications and 110-entry
-> reconciliation are historical migration-ledger notes, not the current chain
-> inventory. At checkout `af4bd0fa03b63dbf07d4643cbd75f81ca4cd7d68`, this
-> directory contains 112 SQL files, ordered from
-> `20260830223142_ai_assistant_postgrest_rpc_repair.sql` to
-> `20260917055325_contract_release_blocker_remediation.sql`. The tracked
-> `docs/CURRENT_STATE.md` path referenced in the historical notes is absent at
-> this revision. `DATABASE_RULES.md` is the current database operating contract;
-> this README preserves the historical reconciliation record. Inventory alone
-> does not prove fresh replay or live parity.
-
 ## Filename convention
 
 Every file must be named `<14-digit-timestamp>_<snake_case_name>.sql`, matching

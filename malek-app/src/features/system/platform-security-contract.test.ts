@@ -18,7 +18,7 @@ describe('platform security and PWA boundaries', () => {
   });
 
   it('does not permit eval and blocks plugin objects, foreign base tags and form exfiltration', () => {
-    const config = readFileSync(resolve(root, 'rent' + 'rix-app/vercel.json'), 'utf8');
+    const config = readFileSync(resolve(root, 'malek-app/vercel.json'), 'utf8');
     expect(config).not.toContain("'unsafe-eval'");
     expect(config).toContain("object-src 'none'");
     expect(config).toContain("base-uri 'self'");
@@ -26,7 +26,7 @@ describe('platform security and PWA boundaries', () => {
   });
 
   it('keeps service-worker runtime caching limited to navigations and static assets', () => {
-    const vite = readFileSync(resolve(root, 'rent' + 'rix-app/vite.config.ts'), 'utf8');
+    const vite = readFileSync(resolve(root, 'malek-app/vite.config.ts'), 'utf8');
     // Navigation HTML is NetworkOnly and falls back to the precached offline
     // shell only when the network fails. Static assets are the only content
     // allowed into the runtime cache.
@@ -43,7 +43,7 @@ describe('platform security and PWA boundaries', () => {
   });
 
   it('precaches the install shell only — not every lazy JS chunk or landing PNG', () => {
-    const vite = readFileSync(resolve(root, 'rent' + 'rix-app/vite.config.ts'), 'utf8');
+    const vite = readFileSync(resolve(root, 'malek-app/vite.config.ts'), 'utf8');
     expect(vite).toContain('"offline.html"');
     expect(vite).toContain('"manifest.json"');
     expect(vite).toContain('"assets/*.css"');
