@@ -164,6 +164,26 @@ function normalizeOptionalString(value: unknown): string | null {
   return typeof value === 'string' ? value.trim() : null;
 }
 
+/**
+ * Canonical VAT-rate normalization for company settings.
+ *
+ * Accepts 0–100 inclusive and rounds to three decimals; anything else
+ * (non-numeric, NaN, negative, above 100) falls back to 0, matching the
+ * `company_settings.default_vat_rate` column default (`DEFAULT 0 NOT NULL`)
+ * and the save-path contract asserted by `settingsForm.test.ts`
+ * (invalid input such as `-2` or `'101'` normalizes to `0`).
+ *
+ * This is the single authority for VAT-rate normalization. The settings form
+ * and the company-settings service both call it so the draft, the persistence
+ * payload, and the stored record cannot disagree on the fallback.
+ */
+export function normalizeVatRate(value: unknown): number {
+  const parsedValue = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
+  return Number.isFinite(parsedValue) && parsedValue >= 0 && parsedValue <= 100
+    ? Math.round(parsedValue * 1000) / 1000
+    : 0;
+}
+
 export function normalizeCompanyLogoUrl(value: unknown): string | null {
   const trimmedUrl = normalizeOptionalString(value);
 

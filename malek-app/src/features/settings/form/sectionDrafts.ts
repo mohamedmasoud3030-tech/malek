@@ -142,11 +142,6 @@ export const companySettingsDraftFields = [
 /* Shared normalization/validation helpers (moved from settingsForm)  */
 /* ------------------------------------------------------------------ */
 
-export function normalizeVatRate(value: unknown): number {
-  const parsedValue = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
-  return Number.isFinite(parsedValue) && parsedValue >= 0 && parsedValue <= 100 ? Math.round(parsedValue * 1000) / 1000 : 0;
-}
-
 export function stringifyBoolean(value: unknown): string {
   return value === true || value === 'true' ? 'true' : 'false';
 }

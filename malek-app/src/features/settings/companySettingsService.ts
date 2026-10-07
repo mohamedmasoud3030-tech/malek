@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { APP_BRAND_NAME } from '@/lib/brand';
-import { normalizeCompanyLocale, normalizeCompanyLogoUrl, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
+import { normalizeCompanyLocale, normalizeCompanyLogoUrl, normalizeCountry, normalizeTimezone, normalizeVatRate } from '@/lib/companySettings';
 import { normalizeCurrency } from '@/lib/formatters';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
@@ -127,13 +127,6 @@ function stringifyPrimitive(value: unknown): string | null {
     default:
       return null;
   }
-}
-
-function normalizeVatRate(value: unknown): number {
-  const parsedValue = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
-
-  if (!Number.isFinite(parsedValue) || parsedValue < 0 || parsedValue > 100) return defaultCompanySettings.default_vat_rate;
-  return Math.round(parsedValue * 1000) / 1000;
 }
 
 function normalizeBoolean(value: unknown, fallback: boolean): boolean {

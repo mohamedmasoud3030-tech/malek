@@ -7,12 +7,11 @@
  * adapters (record ↔ draft ↔ payload) — inherently cross-section because a
  * single Supabase row is saved as one update — plus the preview model.
  */
-import { normalizeCompanySettingsContract, type CompanyLocalSettings } from '@/lib/companySettings';
+import { normalizeCompanySettingsContract, normalizeVatRate, type CompanyLocalSettings } from '@/lib/companySettings';
 import { companySettingsRecordToContract } from './companySettingsContractAdapter';
 import type { CompanySettingsRecord, CompanySettingsUpdatePayload } from './companySettingsService';
 import {
   companySettingsDraftFields,
-  normalizeVatRate,
   stringifyBoolean,
   type CompanySettingsDraft,
 } from './form/sectionDrafts';

@@ -12,6 +12,7 @@ import {
   normalizeCompanySettingsContract,
   normalizeCountry,
   normalizeTimezone,
+  normalizeVatRate,
 } from './companySettings';
 import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from './companyFormatters';
 
@@ -95,5 +96,29 @@ describe('company settings runtime contract', () => {
     expect(getCompanyLocale(unsafeSettings)).toBe('ar-OM');
     expect(formatCompanyMoney(unsafeSettings, Number.NaN)).toContain('OMR');
     expect(formatCompanyDate(unsafeSettings, '2026-05-18T00:00:00.000Z')).toBeTruthy();
+  });
+
+  it('normalizes VAT rates to the 0-100 range and falls invalid values back to the column default', () => {
+    // Valid rates, including boundary values and three-decimal rounding.
+    expect(normalizeVatRate(0)).toBe(0);
+    expect(normalizeVatRate(5)).toBe(5);
+    expect(normalizeVatRate(100)).toBe(100);
+    expect(normalizeVatRate(5.1234)).toBe(5.123);
+    expect(normalizeVatRate('7.5')).toBe(7.5);
+    expect(normalizeVatRate(' 5 ')).toBe(5);
+
+    // Invalid, out-of-range, and unparseable values fall back to 0, matching
+    // company_settings.default_vat_rate (DEFAULT 0 NOT NULL).
+    expect(normalizeVatRate(-1)).toBe(0);
+    expect(normalizeVatRate(-0.0001)).toBe(0);
+    expect(normalizeVatRate(100.0001)).toBe(0);
+    expect(normalizeVatRate(101)).toBe(0);
+    expect(normalizeVatRate(null)).toBe(0);
+    expect(normalizeVatRate(undefined)).toBe(0);
+    expect(normalizeVatRate('')).toBe(0);
+    expect(normalizeVatRate('abc')).toBe(0);
+    expect(normalizeVatRate(Number.NaN)).toBe(0);
+    expect(normalizeVatRate(Number.POSITIVE_INFINITY)).toBe(0);
+    expect(normalizeVatRate({})).toBe(0);
   });
 });
