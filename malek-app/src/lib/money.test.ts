@@ -3,6 +3,8 @@
  * the server's public._r3, plus parser/validator behaviour.
  */
 import { describe, expect, it } from 'vitest';
+import { currencyFractionDigits } from '@/services/documents/currencyPrecision';
+import { supportedCurrencies } from './formatters';
 import {
   MONEY_MINOR_UNIT,
   MONEY_MIN_POSITIVE,
@@ -67,6 +69,18 @@ describe('R3 money contract (OMR = 3 decimals)', () => {
     expect(moneyInputProps()).toEqual({ step: '0.001', min: '0', inputMode: 'decimal', dir: 'ltr' });
     expect(moneyInputProps({ positive: true }).min).toBe('0.001');
     expect(moneyInputProps({ currency: 'AED' }).step).toBe('0.01');
+  });
+
+  it('keeps every supported currency minor unit in step with the document renderer', () => {
+    // The document platform resolves precision from its own ISO 4217 table
+    // (currencyFractionDigits) while the app formats through currencyMetadata.
+    // Both tables are independently maintained, so the R3 rule "the frontend
+    // must NEVER apply a different monetary precision" is pinned here for the
+    // whole supported set rather than assumed. A mismatch would render a
+    // printed owner statement at a different precision than the app displays.
+    for (const currency of supportedCurrencies) {
+      expect(getCurrencyMinorUnit(currency), currency).toBe(currencyFractionDigits(currency));
+    }
   });
 });
 

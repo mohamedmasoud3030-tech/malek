@@ -6,6 +6,7 @@ import type { SupportedTimezone } from '@/lib/companySettings';
 import type { Database } from '@/types/database';
 import { computeFileFingerprint } from '@/lib/bankCsvParser';
 import { toCompanyDateKey } from './bank-reconciliation-date';
+import { isValidDateInput } from '../financials-date-utils';
 import { importBankStatementBatch } from './bankCsvImportService';
 import type {
   BankAccount,
@@ -129,13 +130,6 @@ function parseCsvRow(row: string) {
 
 function normalizeCsvAmount(value: string) {
   return Number(value.replace(/,/g, '').replace(/[()]/g, (match) => (match === '(' ? '-' : '')));
-}
-
-function isValidDateInput(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
 
 export function parseBankStatementCsv(csv: string, bankAccountId: string): BankStatementLineInsert[] {

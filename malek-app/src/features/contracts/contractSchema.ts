@@ -1,23 +1,10 @@
 import { z } from 'zod';
+import { isValidDateInput } from '@/features/financials/financials-date-utils';
 
 const money = z.preprocess(
   (value) => (value === '' || value === null || value === undefined ? Number.NaN : Number(value)),
   z.number({ invalid_type_error: 'قيمة الدفعة التعاقدية مطلوبة' }).positive('قيمة الدفعة التعاقدية يجب أن تكون أكبر من صفر'),
 );
-
-function isValidDateInput(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-
-  const [yearText, monthText, dayText] = value.split('-');
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const day = Number(dayText);
-  const parsedDate = new Date(year, month - 1, day);
-
-  return parsedDate.getFullYear() === year
-    && parsedDate.getMonth() === month - 1
-    && parsedDate.getDate() === day;
-}
 
 const isoDate = z
   .string()
