@@ -252,7 +252,7 @@ it('keeps frozen scope immutable even under the lifecycle write marker', async (
   const id = await review(true, false);
   await db.exec('reset role');
   await db.query(
-    "select set_config('malek.s08_review_change_authorized','true',true)",
+    "select set_config('malik.s08_review_change_authorized','true',true)",
   );
   await expect(
     db.query(
