@@ -149,7 +149,7 @@
 
 - `RECONSTRUCTION_INVENTORY.md`: التسلسل الحي الكامل، وآخر تفاصيل14/15. بعض الأقسام القديمة تسجل ما كان مفتوحاً آنذاك ثم أصلحته12/13؛ اقرأ زمنياً ولا تعيد العمل المنجز.
 - `RECONSTRUCTION_COVERAGE.md` وأدلة execution ذات الصلة، و`../source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`.
-- الأدلة المنسوخة عند التوقف: `evidence/session-stop-20260909/`؛ تضم full14/15، browser15، gates/contracts15، focused/types/build16، وفشل المتصفح16 والسجل الجزئي للمحاولة الأخيرة. لا توجد نتيجة متصفح16 ناجحة في هذه الأدلة.
+- الأدلة المنسوخة عند التوقف: `evidence/session-stop-20260909/`؛ تضم full14/15، browser15، gates/contracts15، focused/types/build16، وفشل المتصفح16 والسجل الجزئي للمحاولة الأخيرة. لا توجد نتيجة متصفح16 ناجحة في هذه الأدلة. (أُزيلت ملفات السجل الخام هذه لاحقًا في تمرين تقارب repository كأثر طرفية قديم بلا أي مراجع واردة؛ تبقى متاحة بالكامل في تاريخ git.)
 - أدلة مساحة العمل الأصلية الأوسع: `/home/user/validation/offset-safety/` وما سبقه من `owner-expense/`, `expense-correction/`, `expenses/`, `historical/`. ملفات التشغيل/cache/build والبنائيات ليست تغييرات مصدر مطلوباً إدخالها للمستودع.
 - `/home/user/RECONSTRUCTION_SESSION.md` ملاحظات مساعدة قديمة نسبياً؛ **هذه الوثيقة وحالة git وسجل التنفيذ أحدث منها عند التوقف**.
 
