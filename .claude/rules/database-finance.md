@@ -4,11 +4,11 @@ paths:
   - "scripts/db0/**"
   - "scripts/guardian/**"
   - "scripts/supabase-tests/**"
-  - "rentrix-app/src/**/*financial*"
-  - "rentrix-app/src/**/*account*"
-  - "rentrix-app/src/**/*invoice*"
-  - "rentrix-app/src/**/*receipt*"
-  - "rentrix-app/src/**/*settlement*"
+  - "malek-app/src/**/*financial*"
+  - "malek-app/src/**/*account*"
+  - "malek-app/src/**/*invoice*"
+  - "malek-app/src/**/*receipt*"
+  - "malek-app/src/**/*settlement*"
 ---
 
 # Database and finance rules

@@ -1,0 +1,218 @@
+/**
+ * Command center — unified "needs attention" queue.
+ *
+ * The queue is intentionally decision-oriented rather than a second copy of
+ * every dashboard list. Existing authoritative signals are merged into a small
+ * ranked set of actions:
+ *
+ * - overdue invoices / expiring contracts: bounded queue rows from
+ *   rpt_dashboard_snapshot;
+ * - maintenance: one combined action surface backed by the authoritative urgent
+ *   count plus the shared maintenance follow-up derivation;
+ * - long vacancy: the shared vacancy derivation over the complete units read;
+ * - utility obligations: the shared complete-set derivation;
+ * - owner settlements and bank exceptions: snapshot KPI counts.
+ *
+ * Nothing is counted here from capped datasets, and no business rule is
+ * re-decided: severity thresholds below are presentation ranking only.
+ */
+import type { DashboardSnapshot } from './dashboard-snapshot';
+import type { MaintenanceFollowUpSignal } from './maintenance-follow-up-signal';
+import type { UtilityObligationsSignal } from './utility-obligations-signal';
+import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
+
+type NeedsAttentionSeverity = 'danger' | 'warning' | 'info';
+
+type NeedsAttentionItem = Readonly<{
+  /** Stable render key. */
+  key: string;
+  severity: NeedsAttentionSeverity;
+  /** Age used for ranking inside a severity; 0 when age does not apply. */
+  ageDays: number;
+  title: string;
+  meta: string;
+  /** Canonical router path of the owning workspace. */
+  to: string;
+  /** Canonical search state of the owning workspace (hub section/view). */
+  search?: Readonly<Record<string, string>>;
+  /** Set for items that open a contract dossier through the modal route. */
+  contractId?: string;
+}>;
+
+export type NeedsAttentionSignal = Readonly<{
+  items: readonly NeedsAttentionItem[];
+  /** Number of decision items before any presentation cap, not a raw record count. */
+  totalCount: number;
+  /** False when one or more contributing reads were unavailable. */
+  isComplete: boolean;
+}>;
+
+export const EMPTY_NEEDS_ATTENTION_SIGNAL: NeedsAttentionSignal = {
+  items: [],
+  totalCount: 0,
+  isComplete: true,
+};
+
+/** A vacancy older than this joins the queue — the re-letting risk window. */
+export const NEEDS_ATTENTION_VACANCY_DAYS = 60;
+
+const severityRank: Record<NeedsAttentionSeverity, number> = {
+  danger: 0,
+  warning: 1,
+  info: 2,
+};
+
+function formatQueueLocation(propertyTitle: string | null, unitNumber: string | null) {
+  const property = propertyTitle ?? 'عقار غير محدد';
+  return unitNumber ? `${property} / وحدة ${unitNumber}` : property;
+}
+
+export function buildNeedsAttentionSignal(params: {
+  snapshot: DashboardSnapshot | undefined;
+  vacancyAnalytics: VacancyAnalytics | undefined;
+  utilityObligations: UtilityObligationsSignal;
+  maintenanceFollowUp: MaintenanceFollowUpSignal;
+  isComplete?: boolean;
+}): NeedsAttentionSignal {
+  const { snapshot, vacancyAnalytics, utilityObligations, maintenanceFollowUp, isComplete = true } = params;
+  if (!snapshot) return { ...EMPTY_NEEDS_ATTENTION_SIGNAL, isComplete: false };
+
+  const items: NeedsAttentionItem[] = [];
+
+  // 1) Overdue invoices — the collection queue, most overdue first (server order).
+  for (const row of snapshot.queues.overdueInvoices) {
+    items.push({
+      key: `overdue-${row.invoiceId}`,
+      severity: 'danger',
+      ageDays: row.daysOverdue,
+      title: row.tenantName ?? 'مستأجر غير محدد',
+      meta: `فاتورة متأخرة ${row.daysOverdue} يوم · ${formatQueueLocation(row.propertyTitle, row.unitNumber)}`,
+      to: '/financials',
+      search: { section: 'collections', view: 'arrears' },
+    });
+  }
+
+  // 2) Maintenance — one decision item instead of repeating urgent rows and a
+  // second follow-up aggregate for the same workspace.
+  const urgentMaintenanceCount = snapshot.maintenance.urgentOpen;
+  const maintenanceFollowUpCount = maintenanceFollowUp.actionableCount;
+  if (urgentMaintenanceCount > 0 || maintenanceFollowUpCount > 0) {
+    const hasUrgent = urgentMaintenanceCount > 0;
+    const maintenanceMeta = (() => {
+      if (hasUrgent && maintenanceFollowUpCount > 0) {
+        return `${urgentMaintenanceCount} عاجل مفتوح · ${maintenanceFollowUpCount} يحتاج متابعة تشغيلية`;
+      }
+      if (hasUrgent) return 'ابدأ بالحالات العاجلة من سجل الصيانة';
+      if (maintenanceFollowUp.stalledCount > 0) return `${maintenanceFollowUp.stalledCount} متوقف عن التقدم`;
+      return 'طلبات تجاوزت مواعيدها أو بانتظار الإغلاق';
+    })();
+    items.push({
+      key: 'maintenance-action',
+      severity: hasUrgent ? 'danger' : 'warning',
+      ageDays: maintenanceFollowUp.oldestOpenAgeDays ?? 0,
+      title: hasUrgent
+        ? `${urgentMaintenanceCount} طلب صيانة عاجل يحتاج تدخلاً`
+        : `${maintenanceFollowUpCount} طلب صيانة يحتاج متابعة`,
+      meta: maintenanceMeta,
+      to: '/maintenance',
+    });
+  }
+
+  // 3) Contracts nearing expiry — the renewal decision window.
+  for (const row of snapshot.queues.expiringContracts) {
+    items.push({
+      key: `expiring-${row.id}`,
+      severity: row.daysRemaining <= 7 ? 'danger' : 'warning',
+      ageDays: Math.max(0, 30 - row.daysRemaining),
+      title: row.tenantName ?? 'مستأجر غير محدد',
+      meta: `عقد ينتهي خلال ${row.daysRemaining} يوم · ${formatQueueLocation(row.propertyTitle, row.unitNumber)}`,
+      to: '/contracts',
+      contractId: row.id,
+    });
+  }
+
+  // 4) Vacancies aging past the re-letting window.
+  const longVacancies = (vacancyAnalytics?.vacantRows ?? []).filter(
+    (row) => row.daysVacant >= NEEDS_ATTENTION_VACANCY_DAYS,
+  );
+  for (const row of longVacancies) {
+    items.push({
+      key: `vacant-${row.unitId}`,
+      severity: 'warning',
+      ageDays: row.daysVacant,
+      title: `وحدة ${row.unitNumber}`,
+      meta: `شاغرة منذ ${row.daysVacant} يوم · ${row.propertyTitle}`,
+      to: '/properties',
+      search: { section: 'units' },
+    });
+  }
+
+  // 5) Utility obligations — late claims rank above imminently due ones.
+  if (utilityObligations.summary.overdueCount > 0) {
+    items.push({
+      key: 'utilities-overdue',
+      severity: 'danger',
+      ageDays: utilityObligations.oldestOverdueDays,
+      title: `${utilityObligations.summary.overdueCount} فاتورة مرافق متأخرة`,
+      meta: 'سداد المرافق المتأخرة مطلوب الآن',
+      to: '/maintenance',
+      search: { section: 'utilities' },
+    });
+  }
+  if (utilityObligations.summary.dueSoonCount > 0) {
+    items.push({
+      key: 'utilities-due-soon',
+      severity: 'warning',
+      ageDays: 0,
+      title: `${utilityObligations.summary.dueSoonCount} فاتورة مرافق تستحق قريباً`,
+      meta: 'راجع المطالبة والمسؤول عن السداد',
+      to: '/maintenance',
+      search: { section: 'utilities' },
+    });
+  }
+
+  // 6) Owner settlements waiting on the office.
+  if (snapshot.ownerFunds.settlementsApproved > 0) {
+    items.push({
+      key: 'owner-settlements-approved',
+      severity: 'warning',
+      ageDays: 0,
+      title: `${snapshot.ownerFunds.settlementsApproved} تسوية ملاك معتمدة بانتظار الصرف`,
+      meta: 'أكمل الصرف من تسويات الملاك',
+      to: '/financials',
+      search: { section: 'funds', view: 'owner_settlements' },
+    });
+  }
+  if (snapshot.ownerFunds.settlementsDraft > 0) {
+    items.push({
+      key: 'owner-settlements-draft',
+      severity: 'info',
+      ageDays: 0,
+      title: `${snapshot.ownerFunds.settlementsDraft} تسوية ملاك بانتظار الاعتماد`,
+      meta: 'راجع المسودة واعتمدها',
+      to: '/financials',
+      search: { section: 'funds', view: 'owner_settlements' },
+    });
+  }
+
+  // 7) Bank lines waiting for matching.
+  if (snapshot.exceptions.unmatchedBankLines > 0) {
+    items.push({
+      key: 'bank-reconciliation',
+      severity: 'warning',
+      ageDays: 0,
+      title: `${snapshot.exceptions.unmatchedBankLines} حركة بنكية غير مطابقة`,
+      meta: 'طابق حركات كشف البنك',
+      to: '/financials',
+      search: { section: 'banking', view: 'bank_reconciliation' },
+    });
+  }
+
+  items.sort((a, b) => {
+    if (severityRank[a.severity] !== severityRank[b.severity]) return severityRank[a.severity] - severityRank[b.severity];
+    if (a.ageDays !== b.ageDays) return b.ageDays - a.ageDays;
+    return a.title.localeCompare(b.title, 'ar');
+  });
+
+  return { items, totalCount: items.length, isComplete };
+}

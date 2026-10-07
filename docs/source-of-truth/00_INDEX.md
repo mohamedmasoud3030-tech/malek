@@ -47,7 +47,7 @@ Implementation evidence cannot silently rewrite an approved target. A mismatch i
 
 The following decisions are locked for target reconstruction:
 
-- **Reconstruct/refactor the current `rentrix-app`; do not create a clean-room `malek-app` rewrite.**
+- **Reconstruct/refactor the existing application in place; its one canonical workspace is `malek-app/`. This is a mechanical identity/path migration, not a second application or clean-room rewrite.**
 - Keep Supabase schema/RLS/RPCs, accounting engines, services, permission authority, tests and architecture guards as the strong technical core unless a specific defect requires change.
 - Visible global IA remains exactly seven roots: **Today → Portfolio → Leasing → Money → Services → Reports → Settings**.
 - Routine staff UX presents **Office Owner / Employee** while the six-role/effective-permission backend remains authoritative.
@@ -62,7 +62,7 @@ The following decisions are locked for target reconstruction:
 - Entity dossiers own relationship/operations; heavy financial analysis belongs in Money/Reports.
 - Payment behavior never rewrites the contractual due schedule; contract history is versioned/append-only according to its governing lifecycle.
 - MALEK may inherit controlled brand/ecosystem cues from the parent LENA platform, but **LENA's “السحر والجمال / Magic & Beauty” world identity is not an internal MALEK UI theme**. Routine MALEK surfaces remain property-operations/financial, calm, data-first and trust-oriented.
-- Final technical rename of `rentrix-app` is allowed only after reconstruction/parity/release gates and is mechanical, not a rewrite.
+- The application workspace is `malek-app/`; do not restore the retired path or create a parallel workspace. This identity change does not grant reconstruction, release, or governed stage credit.
 
 Older source-of-truth wording in Documents 1/5/6 has been reconciled to this lock. Historical design guides do not override it.
 

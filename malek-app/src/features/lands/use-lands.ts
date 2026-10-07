@@ -1,0 +1,46 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { defineEntityKeys } from '@/lib/query-keys';
+import { archiveLand, createLand, getLandDossier, listLands, updateLand } from './services/lands-service';
+import type { LandFormInput } from './land-schema';
+import type { LandFilters } from './types';
+
+const landKeyBase = defineEntityKeys('lands');
+const landKeys = { ...landKeyBase } as const;
+
+export function useLands(filters: LandFilters) {
+  return useQuery({ queryKey: landKeys.list(filters), queryFn: () => listLands(filters) });
+}
+
+export function useLandDossier(landId: string, includeCommissions: boolean, includeActivity: boolean) {
+  return useQuery({
+    queryKey: [...landKeys.all, 'dossier', landId, includeCommissions, includeActivity],
+    queryFn: () => getLandDossier(landId, { includeCommissions, includeActivity }),
+    enabled: Boolean(landId),
+  });
+}
+
+export function useSaveLand() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, values }: { id?: string; values: LandFormInput }) =>
+      id ? updateLand(id, values) : createLand(values),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: landKeys.all });
+      toast.success('تم حفظ بيانات الأرض');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر حفظ بيانات الأرض'),
+  });
+}
+
+export function useArchiveLand() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: archiveLand,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: landKeys.all });
+      toast.success('تمت أرشفة الأرض');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر أرشفة الأرض'),
+  });
+}

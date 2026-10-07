@@ -139,34 +139,34 @@ SQL
   # browser), then inspect the resulting database state. Calling verify
   # directly after seed is invalid because no payment should exist yet.
   E2E_ENVIRONMENT_KIND=local \
-  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
+  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@example.test \
   E2E_SINGLE_OFFICE_PASSWORD='Canonical-Aa1!' \
   VITE_SUPABASE_URL="$api_url" \
   VITE_SUPABASE_ANON_KEY="$anon_key" \
   SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
   PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
   SINGLE_OFFICE_EVIDENCE_PATH="$DIAG_DIR/canonical-seed.json" \
-  pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs seed
+  pnpm --filter ./malek-app exec node scripts/single-office-isolated-smoke.mjs seed
 
   E2E_ENVIRONMENT_KIND=local \
-  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
+  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@example.test \
   E2E_SINGLE_OFFICE_PASSWORD='Canonical-Aa1!' \
   VITE_SUPABASE_URL="$api_url" \
   VITE_SUPABASE_ANON_KEY="$anon_key" \
   SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
   PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
   SINGLE_OFFICE_EVIDENCE_PATH="$DIAG_DIR/canonical-lifecycle.json" \
-  pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs lifecycle
+  pnpm --filter ./malek-app exec node scripts/single-office-isolated-smoke.mjs lifecycle
 
   E2E_ENVIRONMENT_KIND=local \
-  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@rentrix.test \
+  E2E_SINGLE_OFFICE_EMAIL=canonical-admin@example.test \
   E2E_SINGLE_OFFICE_PASSWORD='Canonical-Aa1!' \
   VITE_SUPABASE_URL="$api_url" \
   VITE_SUPABASE_ANON_KEY="$anon_key" \
   SUPABASE_SERVICE_ROLE_KEY="$service_role_key" \
   PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
   SINGLE_OFFICE_EVIDENCE_PATH="$DIAG_DIR/canonical-lifecycle.json" \
-  pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs verify
+  pnpm --filter ./malek-app exec node scripts/single-office-isolated-smoke.mjs verify
 
   psql "$DB_URL" -v ON_ERROR_STOP=1 -Atqc "
     select count(*)

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// WP-DB0 — regenerate `rentrix-app/src/types/database.ts` from the migrations.
+// WP-DB0 — regenerate `malek-app/src/types/database.ts` from the migrations.
 //
 //   node scripts/db0/gen-types.mjs           # write the file
 //   node scripts/db0/gen-types.mjs --check   # fail if the file is out of date
@@ -15,7 +15,7 @@ import { generateTypes } from './lib/gen-types.mjs';
 const args = process.argv.slice(2);
 const check = args.includes('--check');
 const toStdout = args.includes('--stdout');
-const TARGET = join(ROOT, 'rentrix-app', 'src', 'types', 'database.ts');
+const TARGET = join(ROOT, 'malek-app', 'src', 'types', 'database.ts');
 
 const db = await createDatabase();
 const { failures } = await replay(db, { stopOnError: false });
@@ -42,7 +42,7 @@ if (check) {
     /* missing file counts as drift */
   }
   if (current !== generated) {
-    console.error('Schema/type drift: rentrix-app/src/types/database.ts does not match the migration chain.');
+    console.error('Schema/type drift: malek-app/src/types/database.ts does not match the migration chain.');
     console.error('Run `pnpm db0:gen-types` and commit the result.');
     process.exit(1);
   }

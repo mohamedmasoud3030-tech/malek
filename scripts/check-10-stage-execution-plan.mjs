@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sha256GitText } from './lib/governance-text-hash.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -18,8 +18,7 @@ const failures = [];
 const fail = (message) => failures.push(message);
 
 function verifyChecksum(filePath, checksumPath, expectedRelativePath) {
-  const bytes = readFileSync(filePath);
-  const actual = createHash('sha256').update(bytes).digest('hex');
+  const actual = sha256GitText(readFileSync(filePath, 'utf8'));
   const line = readFileSync(checksumPath, 'utf8').trim();
   const match = line.match(/^([a-f0-9]{64})\s+/);
   const target = match ? line.slice(match[0].length).trim() : '';

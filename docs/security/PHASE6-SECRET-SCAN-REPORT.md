@@ -148,7 +148,7 @@ Deliberately **not** changed in the same pass: no failure had been observed for 
 could not be validated under the project's real vitest config here — this sandbox is a 2 GB/2 CPU
 container and the app config (`vite.config.ts`: PWA plugin, jsdom, worker pool) is OOM-killed by the
 kernel for *any* suite (`dmesg`: `Out of memory: Killed process … (node (vitest))`, `SIGKILL`), which
-is an environment limit and also exactly the "SIGKILL = INFRA, not app" rule recorded in `HANDOFF.md`.
+is an environment limit and also exactly the "SIGKILL = INFRA, not app" rule recorded in `../execution/HANDOFF_20260911_HISTORICAL.md`.
 `pnpm run typecheck` does pass here. A follow-up that lifts the three same-cut-off cases in
 `owner-expense-source` into one `beforeAll` is mechanical and verifiable on a CI-sized runner; the two
 different-cut-off cases should instead be given an explicit per-test timeout as `tax-posting-history`

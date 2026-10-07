@@ -1,0 +1,603 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import { createClient } from '@supabase/supabase-js';
+
+const COMPANY_ID = '00000000-0000-4000-8000-000000000001';
+const ENVIRONMENT_KIND = process.env.E2E_ENVIRONMENT_KIND?.trim().toLowerCase();
+const EMAIL = process.env.E2E_SINGLE_OFFICE_EMAIL?.trim();
+const PASSWORD = process.env.E2E_SINGLE_OFFICE_PASSWORD?.trim();
+const CHECKER_EMAIL = process.env.E2E_SINGLE_OFFICE_CHECKER_EMAIL?.trim()
+  ?? 'single-office-checker@example.test';
+const CHECKER_PASSWORD = process.env.E2E_SINGLE_OFFICE_CHECKER_PASSWORD?.trim() ?? PASSWORD;
+const PAYMENT_REFERENCE = 'SO-E2E-001';
+const REQUIRED_ACCOUNTS = ['1111', '1201', '2000', '2100', '4000', '4100'];
+
+// Date-rot-safe fixture timeline: the RC1 invoice is issued on the 1st of the
+// CURRENT month and collected on a deterministic day inside the same OPEN
+// accounting period. Both the browser seed and the verify path derive the same
+// dates from the current date, so this never rots into a past/future month.
+function iso(d) { return d.toISOString().slice(0, 10); }
+const now = new Date();
+const PERIOD_START = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
+const PERIOD_END = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+const PAYMENT_DATE = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), Math.min(5, now.getUTCDate()))));
+const IDS = {
+  owner: '00000000-0000-0000-0000-000000009201',
+  property: '00000000-0000-0000-0000-000000009301',
+  unit: '00000000-0000-0000-0000-000000009401',
+  tenant: '00000000-0000-0000-0000-000000009501',
+  propertyOwner: '00000000-0000-0000-0000-000000009551',
+  agreement: '00000000-0000-0000-0000-000000009601',
+  agreementVersion: '00000000-0000-0000-0000-000000009602',
+  contract: '00000000-0000-0000-0000-000000009701',
+  invoice: '00000000-0000-0000-0000-000000009801',
+  taxProfile: '00000000-0000-0000-0000-000000009901',
+  taxSnapshot: '00000000-0000-0000-0000-000000009902',
+  feeTaxTreatment: '00000000-0000-0000-0000-000000009903',
+  accountingPeriod: '00000000-0000-0000-0000-000000009904',
+};
+
+const requiredEnvironment = [
+  'E2E_ENVIRONMENT_KIND',
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_ANON_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'PRODUCTION_SUPABASE_PROJECT_REF',
+  'E2E_SINGLE_OFFICE_EMAIL',
+  'E2E_SINGLE_OFFICE_PASSWORD',
+];
+
+for (const name of requiredEnvironment) {
+  if (!process.env[name]?.trim()) throw new Error(`${name} is required for the single-office isolated smoke.`);
+}
+
+if (!['local', 'qa'].includes(ENVIRONMENT_KIND)) {
+  throw new Error('The single-office mutation smoke is allowed only on local or the dedicated QA Supabase stack.');
+}
+
+const supabaseUrl = new URL(process.env.VITE_SUPABASE_URL.trim());
+const productionRef = process.env.PRODUCTION_SUPABASE_PROJECT_REF.trim();
+if (supabaseUrl.hostname === `${productionRef}.supabase.co` || supabaseUrl.hostname.startsWith(`${productionRef}.`)) {
+  throw new Error('Refusing to run the single-office mutation smoke against Production.');
+}
+if (ENVIRONMENT_KIND === 'qa') {
+  const qaRef = process.env.QA_SUPABASE_PROJECT_REF?.trim();
+  if (!qaRef || supabaseUrl.hostname !== `${qaRef}.supabase.co`) {
+    throw new Error('QA smoke requires QA_SUPABASE_PROJECT_REF matching VITE_SUPABASE_URL exactly.');
+  }
+  if (process.env.QA_MUTATION_APPROVED !== '1') {
+    throw new Error('QA smoke requires QA_MUTATION_APPROVED=1 for the intentional seed/lifecycle mutation.');
+  }
+}
+
+const serviceClient = createClient(supabaseUrl.toString(), process.env.SUPABASE_SERVICE_ROLE_KEY.trim(), {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+});
+const authenticatedClient = createClient(supabaseUrl.toString(), process.env.VITE_SUPABASE_ANON_KEY.trim(), {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+});
+
+function assertNoError(label, result) {
+  if (result.error) throw new Error(`${label} failed: ${result.error.message}`, { cause: result.error });
+  return result.data;
+}
+
+async function upsert(table, row, onConflict = 'id') {
+  const result = await serviceClient.from(table).upsert(row, { onConflict });
+  assertNoError(`upsert ${table}`, result);
+}
+
+async function writeEvidence(payload) {
+  const evidencePath = process.env.SINGLE_OFFICE_EVIDENCE_PATH?.trim();
+  if (!evidencePath) return;
+  await mkdir(dirname(evidencePath), { recursive: true });
+  await writeFile(evidencePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
+
+async function ensureIdentity(email, password, name) {
+  let user = null;
+  for (let page = 1; !user; page += 1) {
+    const usersResult = await serviceClient.auth.admin.listUsers({ page, perPage: 1000 });
+    if (usersResult.error) throw usersResult.error;
+    user = usersResult.data.users.find((candidate) => candidate.email === email) ?? null;
+    if (usersResult.data.users.length < 1000) break;
+  }
+
+  if (!user) {
+    const created = await serviceClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      app_metadata: { role: 'ADMIN', user_role: 'ADMIN', company_id: COMPANY_ID },
+    });
+    if (created.error || !created.data.user) {
+      throw created.error ?? new Error(`Could not create the ${name} smoke identity.`);
+    }
+    user = created.data.user;
+  } else {
+    const updated = await serviceClient.auth.admin.updateUserById(user.id, {
+      password,
+      email_confirm: true,
+      app_metadata: { role: 'ADMIN', user_role: 'ADMIN', company_id: COMPANY_ID },
+    });
+    if (updated.error || !updated.data.user) {
+      throw updated.error ?? new Error(`Could not refresh the ${name} smoke identity.`);
+    }
+    user = updated.data.user;
+  }
+
+  await upsert('users', {
+    id: user.id,
+    email,
+    name,
+    full_name: name,
+    role: 'ADMIN',
+    status: 'ACTIVE',
+    is_active: true,
+    deleted_at: null,
+  });
+  await upsert('company_members', {
+    company_id: COMPANY_ID,
+    user_id: user.id,
+    role: 'ADMIN',
+    is_active: true,
+  }, 'company_id,user_id');
+
+  return user;
+}
+
+async function seed() {
+  const user = await ensureIdentity(EMAIL, PASSWORD, 'Single Office Admin');
+  const checker = await ensureIdentity(CHECKER_EMAIL, CHECKER_PASSWORD, 'Single Office Checker');
+
+  assertNoError(
+    'provision canonical chart of accounts',
+    await serviceClient.rpc('provision_company_chart_of_accounts', { p_company_id: COMPANY_ID }),
+  );
+  const accounts = assertNoError(
+    'load canonical accounts',
+    await serviceClient.from('accounts').select('id,no,company_id').eq('company_id', COMPANY_ID)
+      .in('no', REQUIRED_ACCOUNTS),
+  ) ?? [];
+  const accountCounts = new Map();
+  for (const account of accounts) {
+    accountCounts.set(account.no, (accountCounts.get(account.no) ?? 0) + 1);
+  }
+  for (const required of REQUIRED_ACCOUNTS) {
+    const count = accountCounts.get(required) ?? 0;
+    if (count !== 1) {
+      throw new Error(`Canonical account ${required} must exist exactly once for the launch company; found ${count}.`);
+    }
+  }
+
+  await upsert('owners', {
+    id: IDS.owner,
+    full_name: 'مالك اختبار المكتب الواحد',
+    display_name: 'مالك المكتب الواحد',
+    is_active: true,
+    company_id: COMPANY_ID,
+  });
+  await upsert('properties', {
+    id: IDS.property,
+    title: 'عقار اختبار المكتب الواحد',
+    type: 'residential',
+    address: 'مسقط — بيئة الإطلاق المعزولة',
+    status: 'active',
+    company_id: COMPANY_ID,
+  });
+  await upsert('units', {
+    id: IDS.unit,
+    property_id: IDS.property,
+    unit_number: 'SO-E2E-1',
+    status: 'available',
+    rent_amount: 1000,
+    company_id: COMPANY_ID,
+  });
+  await upsert('people', {
+    id: IDS.tenant,
+    full_name: 'مستأجر اختبار المكتب الواحد',
+    type: 'tenant',
+    company_id: COMPANY_ID,
+  });
+  await upsert('property_owners', {
+    id: IDS.propertyOwner,
+    property_id: IDS.property,
+    owner_id: IDS.owner,
+    ownership_percentage: 100,
+    is_primary: true,
+    starts_on: '2026-01-01',
+    ends_on: '2027-12-31',
+    company_id: COMPANY_ID,
+  });
+  await upsert('owner_agreements', {
+    id: IDS.agreement,
+    owner_id: IDS.owner,
+    property_id: IDS.property,
+    agreement_type: 'property_management',
+    commission_type: 'RATE',
+    commission_value: 10,
+    starts_on: '2026-01-01',
+    ends_on: '2027-12-31',
+    notes: 'single-office-isolated-smoke',
+    company_id: COMPANY_ID,
+  });
+  // RC1 Owner-Agency fixture lineage: explicit versioned agreement snapshot.
+  // The initial-agreement trigger creates v1 as OWNER_IS_CREDITOR, but this
+  // seed pins a deterministic version row so the contract snapshot and the
+  // POSTED invoice lineage share one immutable agreement-version id.
+  await upsert('owner_agreement_versions', {
+    id: IDS.agreementVersion,
+    owner_agreement_id: IDS.agreement,
+    company_id: COMPANY_ID,
+    version_no: 1,
+    operating_model: 'OWNER_AGENCY',
+    collection_role: 'OWNER_IS_CREDITOR',
+    commission_type: 'RATE',
+    commission_value: 10,
+    commission_recognition_basis: 'ON_COLLECTION',
+    offset_allowed: false,
+    reserve_amount: 0,
+    effective_from: '2026-01-01',
+    effective_to: '2027-12-31',
+    created_by: user.id,
+  });
+  // Point the agreement at its immutable current version. A plain UPDATE (not
+  // an upsert) so no INSERT branch is attempted: an upsert would run the
+  // BEFORE INSERT ownership trigger with NULL owner/property/period columns.
+  {
+    const updated = await serviceClient
+      .from('owner_agreements')
+      .update({ current_version_id: IDS.agreementVersion })
+      .eq('id', IDS.agreement);
+    assertNoError('update owner_agreements current_version_id', updated);
+  }
+  // Versioned, approved NON_TAXABLE rent tax authority and RATE management-fee
+  // tax treatment (explicit NON_TAXABLE / 0.000, not a fallback).
+  await upsert('company_tax_profiles', {
+    id: IDS.taxProfile,
+    company_id: COMPANY_ID,
+    version_no: 1,
+    tax_code: 'NON_TAXABLE',
+    tax_rate: 0,
+    effective_from: '2026-01-01',
+    effective_to: '2027-12-31',
+    status: 'ACTIVE',
+    description: 'single-office NON_TAXABLE rent authority',
+    created_by: user.id,
+    approved_by: checker.id,
+    approved_at: new Date().toISOString(),
+  });
+  await upsert('company_fee_tax_treatments', {
+    id: IDS.feeTaxTreatment,
+    company_id: COMPANY_ID,
+    fee_kind: 'RATE_MANAGEMENT_FEE',
+    version_no: 1,
+    tax_code: 'NON_TAXABLE',
+    tax_rate: 0,
+    effective_from: '2026-01-01',
+    effective_to: '2027-12-31',
+    status: 'ACTIVE',
+    created_by: user.id,
+    approved_by: checker.id,
+    approved_at: new Date().toISOString(),
+  });
+  // An OPEN accounting period covering the whole current fixture period, so the
+  // RC1 collection and its VOID reversal can post on the server-derived dates.
+  await upsert('accounting_periods', {
+    id: IDS.accountingPeriod,
+    company_id: COMPANY_ID,
+    name: `single-office ${PERIOD_START}..${PERIOD_END}`,
+    start_date: PERIOD_START,
+    end_date: PERIOD_END,
+    status: 'OPEN',
+  });
+  await upsert('contracts', {
+    id: IDS.contract,
+    property_id: IDS.property,
+    unit_id: IDS.unit,
+    tenant_id: IDS.tenant,
+    agreement_id: IDS.agreement,
+    agreement_version_id: IDS.agreementVersion,
+    operating_model_snapshot: 'OWNER_AGENCY',
+    collection_role_snapshot: 'OWNER_IS_CREDITOR',
+    start_date: '2026-01-01',
+    end_date: '2027-06-30',
+    rent_amount: 1000,
+    payment_cycle: 'monthly',
+    status: 'active',
+    notes: 'single-office-isolated-smoke',
+    company_id: COMPANY_ID,
+  });
+  // RC1 POSTED invoice with immutable agreement-version and tax lineage.
+  // The RATE collection is OWNER_IS_CREDITOR, so rent stays an operational
+  // tenant obligation at issue and the 2000 owner-funds payable is credited on
+  // collection (never 4000, never 1201 at issue).
+  await upsert('taxable_line_tax_snapshots', {
+    id: IDS.taxSnapshot,
+    company_id: COMPANY_ID,
+    source_type: 'invoice',
+    source_id: IDS.invoice,
+    journal_batch_id: null,
+    account_no: '2100',
+    tax_code: 'NON_TAXABLE',
+    tax_rate: 0,
+    net_amount: 1000,
+    tax_amount: 0,
+    effective_date: PERIOD_START,
+  });
+  await upsert('invoices', {
+    id: IDS.invoice,
+    contract_id: IDS.contract,
+    issue_date: PERIOD_START,
+    due_date: PAYMENT_DATE,
+    amount: 1000,
+    paid_amount: 0,
+    tax_amount: 0,
+    tax_rate: 0,
+    status: 'UNPAID',
+    document_status: 'POSTED',
+    charge_type: 'RENT',
+    billing_period_start: PERIOD_START,
+    billing_period_end: PERIOD_END,
+    invoice_agreement_version_id: IDS.agreementVersion,
+    invoice_operating_model: 'OWNER_AGENCY',
+    invoice_collection_role: 'OWNER_IS_CREDITOR',
+    invoice_accounting_classification: 'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL',
+    tax_treatment: 'NON_TAXABLE',
+    tax_profile_id: IDS.taxProfile,
+    tax_code: 'NON_TAXABLE',
+    tax_basis: 'NON_TAXABLE',
+    tax_snapshot_id: IDS.taxSnapshot,
+    notes: 'single-office-isolated-smoke',
+    company_id: COMPANY_ID,
+  });
+
+  const evidence = {
+    action: 'seed',
+    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    productionMutation: false,
+    companyId: COMPANY_ID,
+    userId: user.id,
+    checkerUserId: checker.id,
+    email: EMAIL,
+    checkerEmail: CHECKER_EMAIL,
+    canonicalAccounts: Object.fromEntries([...accountCounts.entries()].sort(([left], [right]) => left.localeCompare(right))),
+    ids: IDS,
+    paymentReference: PAYMENT_REFERENCE,
+    paymentDate: PAYMENT_DATE,
+    seededAt: new Date().toISOString(),
+  };
+  await writeEvidence(evidence);
+  console.log(JSON.stringify(evidence));
+}
+
+async function signInAs(email, password, label) {
+  const client = createClient(supabaseUrl.toString(), process.env.VITE_SUPABASE_ANON_KEY.trim(), {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const signedIn = await client.auth.signInWithPassword({ email, password });
+  assertNoError(`sign in ${label}`, signedIn);
+  const companyClaim = signedIn.data.session?.user?.app_metadata?.company_id
+    ?? signedIn.data.session?.user?.app_metadata?.companyId
+    ?? null;
+  if (companyClaim !== COMPANY_ID) {
+    throw new Error(`${label} JWT is missing the isolated company claim; custom access token / app_metadata is not canonical.`);
+  }
+  return client;
+}
+
+// Authoritative database lifecycle used by canonical rebuild and the release
+// blocker. This is the same RPC contract the browser calls (payment -> receipt
+// -> maker request VOID -> distinct checker approve). Playwright remains a
+// separate browser-readiness proof and must not be the only way a payment row
+// is created before verify.
+async function lifecycle() {
+  const maker = await signInAs(EMAIL, PASSWORD, 'maker');
+  const paymentRequestId = crypto.randomUUID();
+  const payment = assertNoError(
+    'record_invoice_payment_atomic',
+    await maker.rpc('record_invoice_payment_atomic', {
+      payload: {
+        invoice_id: IDS.invoice,
+        amount: 1000,
+        method: 'cash',
+        date: PAYMENT_DATE,
+        reference: PAYMENT_REFERENCE,
+        request_id: paymentRequestId,
+      },
+    }),
+  );
+  if (!payment?.receipt_id || !payment?.payment_id) {
+    throw new Error(`record_invoice_payment_atomic returned an incomplete payload: ${JSON.stringify(payment)}`);
+  }
+
+  const persisted = assertNoError(
+    'load posted lifecycle payment',
+    await serviceClient.from('payments')
+      .select('id,receipt_id,status,reference_number,reference_no')
+      .eq('id', payment.payment_id)
+      .single(),
+  );
+  if (persisted.reference_number !== PAYMENT_REFERENCE && persisted.reference_no !== PAYMENT_REFERENCE) {
+    throw new Error(
+      `Payment ${payment.payment_id} did not persist reference ${PAYMENT_REFERENCE}: ${JSON.stringify(persisted)}`,
+    );
+  }
+  if (persisted.reference_number !== PAYMENT_REFERENCE) {
+    throw new Error(
+      `Payment wrote reference_no but not reference_number (${persisted.reference_number}). Canonical compatibility trigger/RPC is incomplete.`,
+    );
+  }
+
+  const voidRequest = assertNoError(
+    'request_receipt_void_atomic',
+    await maker.rpc('request_receipt_void_atomic', {
+      payload: {
+        receipt_id: payment.receipt_id,
+        reason: 'اختبار إلغاء معزول قبل إطلاق المكتب الأول',
+        request_id: crypto.randomUUID(),
+      },
+    }),
+  );
+  if (!voidRequest?.void_request_id) {
+    throw new Error(`request_receipt_void_atomic returned no void_request_id: ${JSON.stringify(voidRequest)}`);
+  }
+
+  const checker = await signInAs(CHECKER_EMAIL, CHECKER_PASSWORD, 'checker');
+  const approved = assertNoError(
+    'approve_receipt_void_atomic',
+    await checker.rpc('approve_receipt_void_atomic', {
+      payload: {
+        void_request_id: voidRequest.void_request_id,
+        request_id: crypto.randomUUID(),
+      },
+    }),
+  );
+  if (String(approved?.status ?? approved?.void_request_status ?? '').toUpperCase() !== 'VOID'
+    && String(approved?.void_request_status ?? '').toUpperCase() !== 'EXECUTED') {
+    throw new Error(`approve_receipt_void_atomic did not execute VOID: ${JSON.stringify(approved)}`);
+  }
+
+  const evidence = {
+    action: 'lifecycle',
+    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    productionMutation: false,
+    companyId: COMPANY_ID,
+    invoiceId: IDS.invoice,
+    paymentId: payment.payment_id,
+    receiptId: payment.receipt_id,
+    paymentRequestId,
+    voidRequestId: voidRequest.void_request_id,
+    paymentReference: PAYMENT_REFERENCE,
+    paymentDate: PAYMENT_DATE,
+    completedAt: new Date().toISOString(),
+  };
+  await writeEvidence(evidence);
+  console.log(JSON.stringify(evidence));
+}
+
+async function verify() {
+  const signedIn = await authenticatedClient.auth.signInWithPassword({ email: EMAIL, password: PASSWORD });
+  assertNoError('sign in for lifecycle verification', signedIn);
+
+  const invoice = assertNoError(
+    'load lifecycle invoice',
+    await serviceClient.from('invoices').select('id,status,paid_amount').eq('id', IDS.invoice).single(),
+  );
+  const payments = assertNoError(
+    'load lifecycle payment',
+    await serviceClient.from('payments').select('id,receipt_id,status,amount,reference_number')
+      .eq('reference_number', PAYMENT_REFERENCE),
+  ) ?? [];
+
+  if (payments.length !== 1) throw new Error(`Expected exactly one lifecycle payment, found ${payments.length}.`);
+  const [payment] = payments;
+
+  const receipt = assertNoError(
+    'load lifecycle receipt',
+    await serviceClient.from('receipts').select('id,status,voided_at,request_id').eq('id', payment.receipt_id).single(),
+  );
+  const allocations = assertNoError(
+    'load lifecycle allocations',
+    await serviceClient.from('receipt_allocations').select('id').eq('receipt_id', payment.receipt_id),
+  ) ?? [];
+  const reversalEntries = assertNoError(
+    'load lifecycle reversal journal',
+    await serviceClient.from('journal_entries').select('id,amount,type,entity_type,entity_id')
+      .eq('entity_type', 'receipt_void').eq('entity_id', payment.receipt_id),
+  ) ?? [];
+  const idempotencyRows = assertNoError(
+    'load lifecycle idempotency keys',
+    await serviceClient.from('financial_operation_idempotency').select('operation_name,request_id,response_payload')
+      .in('operation_name', [
+        `record_invoice_payment_atomic:${COMPANY_ID}`,
+        `post_receipt_atomic:${COMPANY_ID}`,
+        `void_receipt_atomic:${COMPANY_ID}`,
+      ]),
+  ) ?? [];
+  const paymentKeys = idempotencyRows.filter((row) => (
+    row.operation_name === `record_invoice_payment_atomic:${COMPANY_ID}`
+      && row.request_id === receipt.request_id
+      && row.response_payload?._target_id === IDS.invoice
+  ));
+  const postReceiptKeys = idempotencyRows.filter((row) => (
+    row.operation_name === `post_receipt_atomic:${COMPANY_ID}`
+      && row.request_id === receipt.request_id
+      && row.response_payload?._target_id === `receipt:${payment.receipt_id}`
+  ));
+  const voidKeys = idempotencyRows.filter((row) => (
+    row.operation_name === `void_receipt_atomic:${COMPANY_ID}`
+      && row.response_payload?._target_id === payment.receipt_id
+  ));
+
+  const normalizedInvoiceStatus = String(invoice.status).toUpperCase();
+  if (Number(invoice.paid_amount) !== 0 || !['UNPAID', 'OVERDUE'].includes(normalizedInvoiceStatus)) {
+    throw new Error(`VOID did not restore the invoice: status=${invoice.status} paid_amount=${invoice.paid_amount}.`);
+  }
+  if (payment.status !== 'VOID' || receipt.status !== 'VOID' || !receipt.voided_at) {
+    throw new Error('Payment and receipt were not both preserved as VOID audit history.');
+  }
+  if (allocations.length !== 1) throw new Error(`Expected one preserved allocation, found ${allocations.length}.`);
+  if (reversalEntries.length !== 4) {
+    throw new Error(`Expected four collection-and-RATE-fee reversal journal entries, found ${reversalEntries.length}.`);
+  }
+  if (paymentKeys.length !== 1 || postReceiptKeys.length !== 1 || voidKeys.length !== 1) {
+    throw new Error(
+      `Expected one payment, post-receipt, and void key; found ${paymentKeys.length}/${postReceiptKeys.length}/${voidKeys.length}.`,
+    );
+  }
+
+  const debit = reversalEntries
+    .filter((entry) => String(entry.type).toUpperCase() === 'DEBIT')
+    .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
+  const credit = reversalEntries
+    .filter((entry) => String(entry.type).toUpperCase() === 'CREDIT')
+    .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
+  if (Math.abs(debit - credit) > 0.0001 || debit !== 1100) {
+    throw new Error(`Collection-and-RATE-fee reversal is not balanced for 1100: debit=${debit} credit=${credit}.`);
+  }
+
+  const report = await authenticatedClient.rpc('rpt_daily_collection', {
+    p_from: PAYMENT_DATE,
+    p_to: PAYMENT_DATE,
+  });
+  assertNoError('run daily collection report after VOID', report);
+  const reportPayload = report.data ?? {};
+  const reportRows = Array.isArray(reportPayload) ? reportPayload : (reportPayload.rows ?? []);
+  const reportTotal = Array.isArray(reportPayload)
+    ? reportRows.reduce((sum, row) => sum + Number(row.total ?? 0), 0)
+    : Number(reportPayload.total ?? 0);
+  const reportPaymentCount = reportRows.reduce((sum, row) => sum + Number(row.count ?? 0), 0);
+  if (reportTotal !== 0 || reportPaymentCount !== 0 || reportRows.length !== 0) {
+    throw new Error(
+      `VOID payment remained in daily collection reporting: total=${reportTotal} count=${reportPaymentCount} rows=${reportRows.length}.`,
+    );
+  }
+
+  const evidence = {
+    action: 'verify',
+    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    productionMutation: false,
+    companyId: COMPANY_ID,
+    invoice: { id: invoice.id, status: invoice.status, paidAmount: Number(invoice.paid_amount) },
+    payment: { id: payment.id, status: payment.status, amount: Number(payment.amount) },
+    receipt: { id: receipt.id, status: receipt.status, voidedAt: receipt.voided_at },
+    preservedAllocationCount: allocations.length,
+    reversal: { entries: reversalEntries.length, debit, credit },
+    idempotency: {
+      paymentKeys: paymentKeys.length,
+      postReceiptKeys: postReceiptKeys.length,
+      voidKeys: voidKeys.length,
+    },
+    dailyCollectionAfterVoid: { total: reportTotal, count: reportPaymentCount, rows: reportRows },
+    verifiedAt: new Date().toISOString(),
+  };
+  await writeEvidence(evidence);
+  console.log(JSON.stringify(evidence));
+}
+
+const action = process.argv[2];
+if (action === 'seed') await seed();
+else if (action === 'lifecycle') await lifecycle();
+else if (action === 'verify') await verify();
+else throw new Error('Usage: node scripts/single-office-isolated-smoke.mjs <seed|lifecycle|verify>');

@@ -1,10 +1,10 @@
 /.github/ @mohamedmasoud3030-tech
 /supabase/ @mohamedmasoud3030-tech
-/rentrix-app/src/integrations/ @mohamedmasoud3030-tech
-/rentrix-app/src/features/auth/ @mohamedmasoud3030-tech
-/rentrix-app/src/features/contracts/ @mohamedmasoud3030-tech
-/rentrix-app/src/features/financials/ @mohamedmasoud3030-tech
-/rentrix-app/src/routes/ @mohamedmasoud3030-tech
+/malek-app/src/integrations/ @mohamedmasoud3030-tech
+/malek-app/src/features/auth/ @mohamedmasoud3030-tech
+/malek-app/src/features/contracts/ @mohamedmasoud3030-tech
+/malek-app/src/features/financials/ @mohamedmasoud3030-tech
+/malek-app/src/routes/ @mohamedmasoud3030-tech
 
 # Canonical business and contract constitution — product-owner approval required.
 /docs/business/ @mohamedmasoud3030-tech

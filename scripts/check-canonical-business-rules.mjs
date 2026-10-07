@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
+import { sha256GitText } from './lib/governance-text-hash.mjs';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const contractPath = join(repoRoot, 'governance', 'canonical-business-rules.json');
@@ -26,8 +26,8 @@ function assertIncludes(values, expected, label) {
   }
 }
 
-const contractBytes = readFileSync(contractPath);
-const actualChecksum = createHash('sha256').update(contractBytes).digest('hex');
+const contractText = readFileSync(contractPath, 'utf8');
+const actualChecksum = sha256GitText(contractText);
 const checksumFile = readFileSync(checksumPath, 'utf8').trim();
 const checksumMatch = checksumFile.match(/^([a-f0-9]{64})\s+governance\/canonical-business-rules\.json$/);
 
@@ -39,7 +39,7 @@ if (!checksumMatch) {
 
 let rules;
 try {
-  rules = JSON.parse(contractBytes.toString('utf8'));
+  rules = JSON.parse(contractText);
 } catch (error) {
   fail(`invalid JSON contract: ${String(error)}`);
   process.exit();
@@ -48,7 +48,7 @@ try {
 assertEqual(rules.status, 'LOCKED_CANONICAL', 'status');
 assertEqual(rules.schema_version, '2.0.0', 'schema_version');
 assertEqual(rules.product, 'MALEK', 'product');
-assertEqual(rules.repository, 'mohamedmasoud3030-tech/malik', 'repository');
+assertEqual(rules.repository, 'mohamedmasoud3030-tech/malek', 'repository');
 assertEqual(rules.rules_owner, 'mohamedmasoud3030-tech', 'rules_owner');
 assertEqual(rules.change_control?.classification, 'FOUNDATIONAL_PRODUCT_CONSTITUTION', 'change_control.classification');
 assertEqual(rules.change_control?.normal_feature_pr_may_not_change_rules, true, 'change_control.normal_feature_pr_may_not_change_rules');

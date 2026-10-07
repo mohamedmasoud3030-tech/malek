@@ -3,9 +3,9 @@
  * Enterprise freeze guard — Phase 1 Foundation.
  *
  * Rule: no new imports of `enterprise/*` outside:
- *   - rentrix-app/src/components/enterprise/** (the system itself)
- *   - rentrix-app/src/features/design-system/** (showcase)
- *   - rentrix-app/src/components/enterprise/*.test.* + *.test.*
+ *   - malek-app/src/components/enterprise/** (the system itself)
+ *   - malek-app/src/features/design-system/** (showcase)
+ *   - malek-app/src/components/enterprise/*.test.* + *.test.*
  *
  * Production features must compose from components/ui + components/layout only.
  * This guard is informational in Phase 1 (blocks CI only for new violations
@@ -16,12 +16,12 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve, relative, sep } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const SRC = resolve(ROOT, 'rentrix-app/src');
+const SRC = resolve(ROOT, 'malek-app/src');
 const strict = process.argv.includes('--strict');
 
 // Allowlist: files that MAY import enterprise/* (now enterprise is completely deleted, only design-system allowed)
 const allowedPrefixes = [
-  `rentrix-app/src/features/design-system/`,
+  `malek-app/src/features/design-system/`,
 ];
 
 function isAllowedFile(file) {

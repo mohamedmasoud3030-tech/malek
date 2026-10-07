@@ -85,10 +85,10 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install Chromium system dependencies
-        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+        run: pnpm --filter ./malek-app exec playwright install-deps chromium
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter ./rentrix-app exec playwright install chromium
+        run: pnpm --filter ./malek-app exec playwright install chromium
       - name: Run the approved disposable-QA lifecycle
         run: pnpm qa:lifecycle
       - name: Upload QA lifecycle diagnostics
@@ -97,7 +97,7 @@ jobs:
         with:
           name: hosted-qa-lifecycle-${{ github.run_id }}
           path: |
-            rentrix-app/playwright-report
-            rentrix-app/test-results
+            malek-app/playwright-report
+            malek-app/test-results
           if-no-files-found: ignore
           retention-days: 7

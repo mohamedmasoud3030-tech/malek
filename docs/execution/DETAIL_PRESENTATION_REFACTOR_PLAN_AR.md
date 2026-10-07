@@ -1,8 +1,10 @@
 # خطة إعادة تصميم Detail Presentation Architecture — MALEK / Rentrix
 
+> Historical proposal dated 2026-09-03. Its unit preview/page proposal was superseded when commit `4de5d23e` removed the retired global units workspace. Paths below describe the proposal-era tree, not current implementation.
+
 - الحالة: **مقترح للمراجعة — لم يبدأ التنفيذ**
 - التاريخ: 2026-09-03
-- النطاق: Frontend فقط (`rentrix-app/src`) — لا تغيير Backend/DB
+- النطاق: Frontend فقط (`malek-app/src`) — لا تغيير Backend/DB
 - المرجع القيادي: `docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md` ثم `.claude/rules/frontend-ui.md`
 
 ---
@@ -76,7 +78,7 @@
 ## 4. خطوات التنفيذ
 
 ### Phase 0 — Registry واحد للقرار (قبل أي تعديل UI)
-- ملف جديد: `rentrix-app/src/features/detail-presentation/detail-presentation-registry.ts`
+- ملف جديد: `malek-app/src/features/detail-presentation/detail-presentation-registry.ts`
   - يصرّح لكل كيان: `presentation: 'page' | 'quick-preview'` + المسار الكانوني + تسمية الإجراء الافتراضية («فتح الملف» / «معاينة سريعة»).
 - `DetailPresentationActions` مشترك (desktop ActionMenu + mobile card primary action) يقرأ من الـ registry بدل أن كل صفحة تقرر بنفسها.
 - Contract test جديد: `detail-presentation-registry.test.ts` يفرض:

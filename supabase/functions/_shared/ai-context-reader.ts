@@ -8,7 +8,7 @@ import type { ContextSection, JsonObject } from "./ai-contract.ts";
  * pre-built snapshot for the sections it can read fresh.
  *
  * Governance notes:
- * - Query shapes mirror `rentrix-app/src/features/ai-assistant/services/
+ * - Query shapes mirror `malek-app/src/features/ai-assistant/services/
  *   ai-assistant-service.ts` exactly (tables, selects, filters, orders,
  *   limits, pagination, `.in()` chunking). Any divergence is a correctness
  *   bug — keep them in sync or add a test.

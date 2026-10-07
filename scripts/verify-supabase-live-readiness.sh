@@ -19,7 +19,7 @@ psql "$SUPABASE_DB_URL" \
   --set=VERBOSITY=terse \
   --no-align \
   --tuples-only <<'SQL'
-\echo 'Rentrix live Supabase readiness check (read-only)'
+\echo 'MALEK live Supabase readiness check (read-only)'
 BEGIN READ ONLY;
 
 select 'server_timestamp_utc=' || now() at time zone 'utc';

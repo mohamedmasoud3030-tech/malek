@@ -7,7 +7,7 @@ const EXPECTED_SUPABASE = '2.105.0';
 const EXPECTED_PLAYWRIGHT = '1.61.1';
 
 const rootPackage = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
-const appPackage = JSON.parse(readFileSync(resolve('rentrix-app/package.json'), 'utf8'));
+const appPackage = JSON.parse(readFileSync(resolve('malek-app/package.json'), 'utf8'));
 const lockfile = readFileSync(resolve('pnpm-lock.yaml'), 'utf8');
 
 function assertEqual(actual, expected, label) {
@@ -17,7 +17,7 @@ function assertEqual(actual, expected, label) {
 }
 
 assertEqual(rootPackage.devDependencies?.supabase, EXPECTED_SUPABASE, 'package.json supabase');
-assertEqual(appPackage.devDependencies?.['@playwright/test'], EXPECTED_PLAYWRIGHT, 'rentrix-app/package.json @playwright/test');
+assertEqual(appPackage.devDependencies?.['@playwright/test'], EXPECTED_PLAYWRIGHT, 'malek-app/package.json @playwright/test');
 
 if (!lockfile.includes(`supabase:\n        specifier: ${EXPECTED_SUPABASE}\n        version: ${EXPECTED_SUPABASE}`)) {
   throw new Error('pnpm-lock.yaml does not pin the expected Supabase CLI specifier.');
@@ -29,7 +29,7 @@ if (!lockfile.includes(`'@playwright/test':\n        specifier: ${EXPECTED_PLAYW
 const supabaseVersion = execFileSync('pnpm', ['exec', 'supabase', '--version'], { encoding: 'utf8' }).trim();
 const playwrightVersion = execFileSync(
   'pnpm',
-  ['--filter', './rentrix-app', 'exec', 'playwright', '--version'],
+  ['--filter', './malek-app', 'exec', 'playwright', '--version'],
   { encoding: 'utf8' },
 ).trim();
 

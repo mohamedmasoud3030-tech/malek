@@ -1,0 +1,71 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { APP_HOST } from './features/landing/constants';
+
+describe('architecture guard v2 contract', () => {
+  const guard = readFileSync(
+    resolve(import.meta.dirname, '../scripts/check-architecture.mjs'),
+    'utf8',
+  );
+
+  it('governs every feature instead of a focused subset', () => {
+    expect(guard).toContain('featureDependencyAllowList');
+    expect(guard).toContain('if (isFeatureFile(file))');
+    expect(guard).not.toContain('focusedFeatureAllowList');
+    expect(guard).not.toContain('isFocusedArchitectureFile');
+  });
+
+  it('defaults unknown features to no cross-feature dependencies', () => {
+    expect(guard).toContain('featureDependencyAllowList.get(sourceFeature) ?? new Set()');
+  });
+
+  it('keeps presentation debt at zero and makes future debt entries self-cleaning', () => {
+    expect(guard).toContain('const presentationServiceDebtAllowList = new Set([]);');
+    expect(guard).toContain('const presentationDataPlaneDebtAllowList = new Set([]);');
+    expect(guard).toContain('validateDebtAllowLists();');
+    expect(guard).toContain('stale presentation data-plane debt allowlist entry');
+    expect(guard).toContain('stale presentation service debt allowlist entry');
+    expect(guard).not.toContain('features/financials/deposits/deposits-workspace.tsx');
+    expect(guard).not.toContain('app/router/legacy-preview-redirect.tsx');
+  });
+
+  it('keeps financials independent from reports and removes the retired finance-hub edge', () => {
+    // financials→owners is a reviewed hook-only seam (usePropertyOwners /
+    // useOwnerAgreements: an OWNER-charged expense may only be allocated to a
+    // real owner with an active agreement — migration-12 allocation law).
+    // financials→accounting is a reviewed hook-only seam (the accounting
+    // period management UI under financials/tax-authority consumes
+    // useAccountingPeriods / useCreateAccountingPeriod /
+    // useUpdateAccountingPeriodStatus from features/accounting).
+    // The exact-set literal keeps the reports and finance-hub edges removed.
+    expect(guard).toContain("['financials', new Set(['auth', 'contracts', 'owners', 'properties', 'settings', 'accounting'])]");
+    expect(guard).not.toContain("['finance-hub'");
+  });
+
+  it('blocks runtime cross-feature services including kebab-case service modules', () => {
+    expect(guard).toContain('isCrossFeatureServiceImport');
+    expect(guard).toContain('(?:[-.]service|Service)');
+    expect(guard).toContain('presentation components must use a feature hook');
+  });
+
+  it('keeps the existing app, Supabase, page-size, and cycle guards', () => {
+    expect(guard).toContain('getAppBoundaryViolation');
+    expect(guard).toContain('presentation components must not import Supabase directly');
+    expect(guard).toContain('pages must stay below 650 lines');
+    expect(guard).toContain('findCycles');
+  });
+});
+
+describe('production metadata source contract', () => {
+  const html = readFileSync(resolve(import.meta.dirname, '../index.html'), 'utf8');
+  const productionUrl = 'https://malek-plus.vercel.app/';
+
+  it('publishes the configured MALEK production host in canonical and social metadata', () => {
+    expect(html).toContain(`<meta property="og:url" content="${productionUrl}" />`);
+    expect(html).toContain(`<link rel="canonical" href="${productionUrl}" />`);
+    expect(html).toContain(`<meta property="og:image" content="${productionUrl}opengraph.jpg" />`);
+    expect(html).toContain(`<meta name="twitter:image" content="${productionUrl}opengraph.jpg" />`);
+    expect(APP_HOST).toBe('malek-plus.vercel.app');
+  });
+});

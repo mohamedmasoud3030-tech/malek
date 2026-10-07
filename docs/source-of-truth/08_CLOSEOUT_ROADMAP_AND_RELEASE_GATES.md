@@ -244,6 +244,15 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 
 ## Final release gates
 
+> **Evidence snapshot, not current-head validation:** the gate statuses below
+> were recorded from evidence available through 2026-09-17 and cite earlier
+> SHAs/runs. They are retained as the historical release snapshot and have not
+> been revalidated against checkout `af4bd0fa03b63dbf07d4643cbd75f81ca4cd7d68`
+> (WP-00 reconciliation, 2026-10-04). See Document 7's checkout reconciliation
+> for current repository truth, current-head verification truth, and external
+> evidence still required. Do not treat prior CI or browser passes as passes on
+> the current checkout.
+
 | Gate | Required evidence | Baseline state |
 |---|---|---|
 | G1 — Canonical decisions approved | no unresolved owner/accounting/legal ambiguity for release scope | PARTIAL / EXTERNAL: ADR 0017 excludes MASTER_LEASE and unmapped adjustments for RC1; Oman legal/template and professional tax confirmation remain external |

@@ -1,6 +1,6 @@
 # Release Evidence Ledger for 99.9% Readiness
 
-This ledger is the evidence checklist for any future Rentrix 99.9% readiness claim. A local pass is not enough: each row must link to a CI run, operator log, or signed product/accounting decision before the claim is defensible.
+This ledger is the evidence checklist for any future MALEK readiness claim. A local pass is not enough: each row must link to a CI run, operator log, or signed product/accounting decision before the claim is defensible.
 
 ## Evidence states
 

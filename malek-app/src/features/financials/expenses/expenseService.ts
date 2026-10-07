@@ -1,0 +1,152 @@
+import { z } from 'zod';
+import { fetchAllRows } from '@/lib/paginatedRead';
+import { supabase } from '@/lib/supabase';
+import { handleSupabaseError } from '@/lib/supabase-error';
+import type { Expense } from '@/types/domain';
+
+const expenseAcknowledgement = z.object({
+  success: z.literal(true),
+  expense_id: z.string().min(1),
+  request_id: z.string().min(1),
+  idempotent: z.boolean(),
+});
+const createdExpenseAcknowledgement = expenseAcknowledgement.extend({ expense_no: z.string().min(1) });
+
+export type ExpenseFilters = { propertyId: string; category: string; costCenterId?: string; from: string; to: string };
+type PagedExpenses = Readonly<{ rows: Expense[]; truncated: boolean }>;
+export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'> & { attachment_url?: string | null; cost_center_id?: string | null; contract_id?: string | null; charged_to?: string | null };
+
+export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpenses> {
+  try {
+    const buildQuery = () => {
+      let query = supabase.from('expenses').select('*').is('deleted_at', null).order('expense_date', { ascending: false }).order('id', { ascending: false });
+      if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
+      if (filters.category) query = query.eq('category', filters.category);
+      if (filters.costCenterId) query = query.eq('cost_center_id', filters.costCenterId);
+      if (filters.from) query = query.gte('expense_date', filters.from);
+      if (filters.to) query = query.lte('expense_date', filters.to);
+      return query;
+    };
+    // PostgREST silently caps a single response at the server max-rows
+    // (default 1000) — page forward so large portfolios don't lose expenses
+    // (and their KPI totals) to the cap. The secondary id order keeps paging
+    // deterministic when many expenses share the same date. This page exposes
+    // the `truncated` flag and renders a visible warning, so it explicitly opts
+    // into the only supported partial-read contract.
+    return await fetchAllRows<Expense>(
+      () => buildQuery().returns<Expense[]>(),
+      { allowTruncated: true },
+    );
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل المصروفات');
+    throw error;
+  }
+}
+
+/**
+ * Atomic expense update that persists every editable field. Amount or date
+ * changes are represented by balanced reversal and replacement journal entries;
+ * metadata-only changes do not duplicate ledger movements.
+ */
+export async function updateExpense(id: string, payload: ExpensePayload): Promise<Expense> {
+  try {
+    const requestId = crypto.randomUUID();
+
+    const { data, error } = await supabase.rpc(
+      'update_expense_with_journal_atomic',
+      {
+        p_payload: {
+          request_id: requestId,
+          expense_id: id,
+          property_id: payload.property_id,
+          category: payload.category,
+          amount: payload.amount,
+          expense_date: payload.expense_date,
+          cost_center_id: payload.cost_center_id ?? null,
+          contract_id: payload.contract_id ?? null,
+          charged_to: payload.charged_to ?? null,
+          description: payload.description ?? null,
+          attachment_url: payload.attachment_url ?? null,
+        },
+      },
+    );
+    if (error) throw error;
+
+    const result = expenseAcknowledgement.parse(data);
+    if (result.expense_id !== id || result.request_id !== requestId) throw new Error('Expense acknowledgement scope mismatch');
+
+    const { data: expense, error: fetchError } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle()
+      .returns<Expense>();
+    if (fetchError) throw fetchError;
+    const expenseRow = (Array.isArray(expense) ? expense[0] ?? null : expense) as Expense | null;
+    if (!expenseRow) throw new Error('المصروف غير موجود بعد التحديث');
+    return expenseRow;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تعديل المصروف');
+    throw error instanceof Error ? error : new Error('تعذر تعديل المصروف');
+  }
+}
+
+/**
+ * Atomic expense creation that records the expense together with its journal
+ * entry and audit-log row in a single RPC. `requestId` enables idempotent retries.
+ */
+export type OwnerExpenseAllocation = { owner_id: string; amount: number; owner_agreement_id?: string };
+
+export type ExpenseWithJournalPayload = {
+  ownerAllocations?: OwnerExpenseAllocation[];
+  allocationEvidence?: string;
+  requestId?: string;
+  propertyId: string;
+  category: string;
+  amount: number;
+  expenseDate: string;
+  description?: string | null;
+  costCenterId?: string | null;
+  contractId?: string | null;
+  chargedTo?: string | null;
+  attachmentUrl?: string | null;
+};
+
+type ExpenseWithJournalResult = {
+  expenseId: string;
+  expenseNo: string;
+  requestId: string;
+  idempotent: boolean;
+};
+
+export async function createExpenseWithJournal(payload: ExpenseWithJournalPayload): Promise<ExpenseWithJournalResult> {
+  const { data, error } = await supabase.rpc(
+    'create_expense_with_journal_atomic',
+    {
+      p_payload: {
+        ...(payload.chargedTo === 'OWNER' ? {owner_allocations: payload.ownerAllocations ?? [], allocation_evidence: payload.allocationEvidence ?? ''} : {}),
+        request_id: payload.requestId ?? null,
+        property_id: payload.propertyId,
+        category: payload.category,
+        amount: payload.amount,
+        expense_date: payload.expenseDate,
+        description: payload.description ?? null,
+        cost_center_id: payload.costCenterId ?? null,
+        contract_id: payload.contractId ?? null,
+        charged_to: payload.chargedTo ?? null,
+        attachment_url: payload.attachmentUrl ?? null,
+      },
+    },
+  );
+  if (error) throw error;
+
+  const result = createdExpenseAcknowledgement.parse(data);
+  if (payload.requestId && result.request_id !== payload.requestId) throw new Error('Expense acknowledgement request mismatch');
+  return {
+    expenseId: result.expense_id,
+    expenseNo: result.expense_no,
+    requestId: result.request_id,
+    idempotent: result.idempotent,
+  };
+}

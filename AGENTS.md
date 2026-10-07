@@ -1,6 +1,6 @@
 # Working on MALEK
 
-> **Compatibility note:** user-visible branding is MALEK. Historical technical identifiers such as the repository name, `rentrix-app/`, database object names, persisted keys, and infrastructure identifiers remain unchanged unless an explicit migration says otherwise.
+> **Compatibility note:** MALEK is the active product and application identity. Immutable historical database identifiers and dated evidence keep their recorded names; active workspace/configuration references use `malek-app/`.
 
 This file is the contributor/agent entry point. Product truth lives in the MALEK Canonical Pack.
 

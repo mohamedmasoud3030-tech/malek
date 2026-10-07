@@ -1,0 +1,86 @@
+import { useQuery } from '@tanstack/react-query';
+import { Select } from '@/components/ui/select';
+import { fetchCommissionSources } from '../services/commission-source-service';
+import { isCommissionSourceType } from '../labels';
+
+const typeLabels: Record<string, string> = {
+  contract: 'عقد',
+  owner: 'مالك',
+  lead: 'عميل محتمل',
+  land: 'أرض',
+};
+
+interface CommissionSourceSelectorProps {
+  readonly type: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly disabled?: boolean;
+}
+
+/**
+ * UX-049: Replaces free-text source_id entry with a typed, permission-aware
+ * source selector. Only displays valid entity types supported by the domain.
+ * Uses readable Arabic labels and never exposes raw UUIDs as primary labels.
+ * Internal value remains the entity UUID for submission through the existing
+ * protected RPC path.
+ *
+ * RC1 closeout (Rule 4): 'payment' is no longer a commission source type.
+ * Unsupported types (including any legacy 'payment' row opened for editing)
+ * fail closed with a disabled control instead of a fake source option.
+ */
+export function CommissionSourceSelector({
+  type,
+  value,
+  onChange,
+  disabled = false,
+}: CommissionSourceSelectorProps) {
+  const sourceQuery = useQuery({
+    queryKey: ['commission-source-selector', type],
+    queryFn: () => fetchCommissionSources(type),
+    enabled: isCommissionSourceType(type),
+    staleTime: 30_000,
+  });
+
+  const sources = sourceQuery.data ?? [];
+  const isLoading = sourceQuery.isLoading;
+  const hasError = sourceQuery.isError;
+
+  if (!isCommissionSourceType(type)) {
+    return (
+      <Select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled
+        aria-label="المصدر غير المدعوم"
+      >
+        <option value="">نوع مصدر غير مدعوم — لا يمكن تعديل هذه العمولة بهذا النوع</option>
+      </Select>
+    );
+  }
+
+  const placeholderLabel = (() => {
+    if (isLoading) return 'جارٍ تحميل المصادر...';
+    if (hasError) return 'تعذر تحميل المصادر';
+    return `اختر ${typeLabels[type] ?? 'المصدر'}`;
+  })();
+
+  return (
+    <Select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      disabled={disabled || isLoading}
+      aria-label={`المصدر (${typeLabels[type] ?? type})`}
+    >
+      <option value="">
+        {placeholderLabel}
+      </option>
+      {sources.map((source) => (
+        <option key={source.id} value={source.id}>
+          {source.label}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
+;

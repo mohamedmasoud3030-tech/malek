@@ -1,0 +1,68 @@
+import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { defineEntityKeys } from '@/lib/query-keys';
+import { financialReportKeys } from '../reports/useFinancialReports';
+import { generateInvoicesFromActiveContracts, getInvoiceDetail, listDossierInvoicesForContracts, listInvoicesPaginated, type InvoicePaginationParams } from './invoiceService';
+
+const invoiceBase = defineEntityKeys('invoices');
+
+export const invoiceKeys = {
+  ...invoiceBase,
+  paginated: (params: InvoicePaginationParams) => [...invoiceBase.lists(), 'paginated', params] as const,
+  /** Contract-scoped dossier rows for a register page. `contractIds` is already deduped + sorted. */
+  dossierForContracts: (contractIds: readonly string[]) => [...invoiceBase.lists(), 'dossier-for-contracts', contractIds] as const,
+} as const;
+
+/**
+ * Contract ids are normalised before they become a query key: duplicates would
+ * otherwise create two cache entries for the same visible page, and an unstable
+ * input order would refetch on every render. Sorting + de-duplication makes the
+ * key deterministic, so one page of contracts always resolves to one read.
+ */
+export function normalizeContractInvoiceQueryIds(contractIds: readonly string[]): string[] {
+  return [...new Set(contractIds.filter((id): id is string => typeof id === 'string' && id.length > 0))].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Bounded, cached invoice context for a whole register page.
+ *
+ * Registers need payment attention per row but must not fan out into N+1
+ * per-row queries. This reuses the canonical dossier-scoped read (no new RPC,
+ * no schema change, RLS still enforced by the same client) and lets React Query
+ * deduplicate concurrent callers that show the same page.
+ */
+export function useDossierInvoicesForContracts(contractIds: readonly string[]) {
+  const stableContractIds = useMemo(() => normalizeContractInvoiceQueryIds(contractIds), [contractIds]);
+
+  return useQuery({
+    queryKey: invoiceKeys.dossierForContracts(stableContractIds),
+    queryFn: () => listDossierInvoicesForContracts(stableContractIds),
+    // Nothing to read: never issue an empty `in()` query.
+    enabled: stableContractIds.length > 0,
+    staleTime: 30_000,
+  });
+}
+
+export function useInvoicesPaginated(params: InvoicePaginationParams) {
+  return useQuery({ queryKey: invoiceKeys.paginated(params), queryFn: () => listInvoicesPaginated(params) });
+}
+
+export function useInvoice(invoiceId: string) {
+  return useQuery({ queryKey: invoiceKeys.detail(invoiceId), queryFn: () => getInvoiceDetail(invoiceId), enabled: Boolean(invoiceId) });
+}
+
+export function useGenerateInvoices() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: generateInvoicesFromActiveContracts,
+    onSuccess: async (count) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: invoiceKeys.all }),
+        queryClient.invalidateQueries({ queryKey: financialReportKeys.all }),
+      ]);
+      toast.success(`تم إنشاء ${count} فاتورة`);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء الفواتير'),
+  });
+}

@@ -34,7 +34,7 @@ jobs:
           node scripts/check-migration-rollback-hygiene.test.mjs
           node scripts/check-no-new-legacy-journal-writes.test.mjs
           node scripts/check-workflow-honesty.test.mjs
-          node rentrix-app/scripts/verify-deployment-identity.test.mjs
+          node malek-app/scripts/verify-deployment-identity.test.mjs
           git fetch --no-tags origin main
           node scripts/check-migration-rollback-hygiene.mjs --base origin/main
           node scripts/check-no-new-legacy-journal-writes.mjs --base origin/main
@@ -54,21 +54,21 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       - name: Test typecheck
-        run: pnpm --filter ./rentrix-app run typecheck:test
+        run: pnpm --filter ./malek-app run typecheck:test
       - name: Shared primitive accessibility gate
-        run: pnpm --filter ./rentrix-app run test:a11y-primitives
+        run: pnpm --filter ./malek-app run test:a11y-primitives
       - name: Full application test gate
-        run: pnpm --filter ./rentrix-app test
+        run: pnpm --filter ./malek-app test
       - name: Lint
         run: pnpm lint
       - name: Architecture check
-        run: pnpm --filter ./rentrix-app run check:architecture
+        run: pnpm --filter ./malek-app run check:architecture
       - name: Migration ↔ generated database type parity
         run: pnpm db0:check-types
       - name: Frontend ↔ Database contract gate
-        run: pnpm --filter ./rentrix-app run check:frontend-db-contract
+        run: pnpm --filter ./malek-app run check:frontend-db-contract
       - name: Frontend ↔ Backend runtime contract suite
-        run: pnpm --filter ./rentrix-app run test:frontend-backend-runtime-contract
+        run: pnpm --filter ./malek-app run test:frontend-backend-runtime-contract
       - name: Six-role RLS compatibility matrix
         run: pnpm test:supabase:rls
       - name: Build production bundle
@@ -102,8 +102,8 @@ jobs:
       - name: Documentation links
         run: pnpm check:docs
       - name: Full application tests
-        run: pnpm --filter ./rentrix-app test
+        run: pnpm --filter ./malek-app test
       - name: Shared primitive accessibility proof
-        run: pnpm --filter ./rentrix-app run test:a11y-primitives
+        run: pnpm --filter ./malek-app run test:a11y-primitives
       - name: Financial safety tests
-        run: pnpm --filter ./rentrix-app run test:financials
+        run: pnpm --filter ./malek-app run test:financials

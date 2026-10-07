@@ -1,0 +1,136 @@
+/**
+ * Tenant Portal v1 read-only projection contract.
+ *
+ * Every field is a projection of canonical company/tenant-scoped data. The
+ * portal is never an accounting authority and never writes office records.
+ */
+
+type TenantPortalIdentity = Readonly<{
+  fullName: string;
+  phone?: string | null;
+  email?: string | null;
+}>;
+
+type TenantPortalUnit = Readonly<{
+  title: string;
+  unitNumber: string;
+  status: string;
+}>;
+
+type TenantPortalContract = Readonly<{
+  reference: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  rentAmount: number;
+  currency: string;
+}>;
+
+type TenantPortalDueScheduleItem = Readonly<{
+  label: string;
+  dueDate: string;
+  amount: number;
+  currency: string;
+  status: 'paid' | 'open' | 'overdue';
+}>;
+
+type TenantPortalPaidPosition = Readonly<{
+  invoiced: number;
+  paid: number;
+  remaining: number;
+  overdue: number;
+  currency: string;
+}>;
+
+type TenantPortalServiceItem = Readonly<{
+  label: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  dueDate: string;
+  amount: number;
+  paid: number;
+  remaining: number;
+  currency: string;
+  status: 'paid' | 'open' | 'overdue';
+}>;
+
+type TenantPortalReceipt = Readonly<{
+  reference: string;
+  date: string;
+  amount: number;
+  currency: string;
+  status: 'posted' | 'void';
+}>;
+
+type TenantPortalDocument = Readonly<{
+  title: string;
+  type: string;
+  createdAt: string;
+  reference?: string | null;
+}>;
+
+type TenantPortalMaintenanceRecord = Readonly<{
+  label: string;
+  status: string;
+  createdAt: string;
+}>;
+
+export type TenantPortalSnapshot = Readonly<{
+  tenantId: string;
+  companyId: string;
+  asOf: string;
+  identity: TenantPortalIdentity;
+  unit: TenantPortalUnit | null;
+  contract: TenantPortalContract | null;
+  dueSchedule: readonly TenantPortalDueScheduleItem[];
+  paidPosition: TenantPortalPaidPosition | null;
+  services: readonly TenantPortalServiceItem[];
+  receipts: readonly TenantPortalReceipt[];
+  documents: readonly TenantPortalDocument[];
+  maintenance: readonly TenantPortalMaintenanceRecord[];
+  /**
+   * The server projection bounds every list to a recent window (50 rows) and
+   * reports the full matching row count in these additive keys. Totals in
+   * `paidPosition` and the due schedule status remain complete regardless.
+   */
+  dueScheduleTotal?: number;
+  servicesTotal?: number;
+  receiptsTotal?: number;
+  documentsTotal?: number;
+  maintenanceTotal?: number;
+}>;
+
+/**
+ * The portal may only present a list as complete when it really is. When the
+ * bounded projection truncated the window, the UI must say so explicitly
+ * (same fail-honest doctrine as the paged-read contract).
+ */
+export function tenantPortalWindowNote(shown: number, total: number | undefined): string | null {
+  if (typeof total !== 'number' || total <= shown) return null;
+  return `يعرض ${shown} من أصل ${total}`;
+}
+
+/** Section ids the v1 portal may render — no office module may be added. */
+export const TENANT_PORTAL_V1_SECTIONS = [
+  'identity',
+  'unit_contract',
+  'due_schedule',
+  'position',
+  'services',
+  'receipts',
+  'documents',
+  'maintenance',
+] as const;
+
+type TenantPortalSectionId = (typeof TENANT_PORTAL_V1_SECTIONS)[number];
+
+export function isTenantPortalSectionId(value: string): value is TenantPortalSectionId {
+  return (TENANT_PORTAL_V1_SECTIONS as readonly string[]).includes(value);
+}
+
+export type TenantPortalLoadResult =
+  | Readonly<{ status: 'ready'; snapshot: TenantPortalSnapshot }>
+  | Readonly<{
+      status: 'invalid';
+      reason: 'TENANT_PORTAL_LINK_REQUIRED' | 'TENANT_PORTAL_LINK_INVALID_OR_EXPIRED';
+    }>;

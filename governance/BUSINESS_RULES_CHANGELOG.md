@@ -12,6 +12,13 @@
 - Canonical contract SHA-256: `382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79`.
 - Final decision register SHA-256: `61f8fbf5273a702cccc455951624ef4d9331724e5b5a5d5f350bb01a14607908`.
 - Current 10-stage master plan SHA-256: `230eb17134d10f30ef5d41dee55c7ed7d0a065e789da72fda4b56560dcd82fa7`.
+### 2.0.0 — 2026-10-06 identity-only hash refresh
+
+- `repository` corrected from `mohamedmasoud3030-tech/malik` to
+  `mohamedmasoud3030-tech/malek`. No business, accounting, permission, or
+  contract rule changed: `status`, `schema_version`, and every asserted rule
+  value are byte-identical apart from this one identity field.
+- Canonical contract SHA-256: `30a52693586ffddc5a8f6cf7bbce994997ce921eab155838bf4f4fcc480585d2`.
 
 ## 1.0.0 — 2026-08-05
 

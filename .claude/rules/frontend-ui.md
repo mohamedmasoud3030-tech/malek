@@ -1,8 +1,8 @@
 ---
 paths:
-  - "rentrix-app/src/**/*.ts"
-  - "rentrix-app/src/**/*.tsx"
-  - "rentrix-app/src/**/*.css"
+  - "malek-app/src/**/*.ts"
+  - "malek-app/src/**/*.tsx"
+  - "malek-app/src/**/*.css"
 ---
 
 # Frontend and UI rules

@@ -85,13 +85,13 @@ Custom Access Token Hook وقت إصدار التوكن. بذلك يقرأ ال�
 
 ## 5. الاختبارات
 
-- `rentrix-app/src/hooks/use-company.test.tsx` — سلوكي كامل بالمحاكاة:
+- `malek-app/src/hooks/use-company.test.tsx` — سلوكي كامل بالمحاكاة:
   يبني Session بالشكل المطابق للبيئة الحية: `company_id` موجود في JWT فقط وغير
   موجود عمدًا في `session.user.app_metadata`. يغطي مستخدم شركة واحدة (claim
   جاهز / توكن قديم يتعافى بالتحديث / مزامنة تفضيل مع تحقق)، مستخدم multi-company
   (التقاط الـclaim الثاني، تبديل ناجح، تبديل يرفضه الخادم فيقفل)، وجلسات
   (تسجيل خروج/دخول مستخدم آخر بدون تسريب مستأجر)، وكل مسارات القفل.
-- `rentrix-app/src/hooks/use-company-regression.test.ts` — عقد نصي يمنع
+- `malek-app/src/hooks/use-company-regression.test.ts` — عقد نصي يمنع
   إعادة قراءة المستأجر من Auth user object أو إدخال fallback محلي غير متحقق منه.
 - `supabase/tests/two_company_readiness.sql` — بوابة pgTAP على الخادم: حقن
   الـclaim، التبديل A↔B، رفض العضوية المعطّلة، وعزل RLS بين شركتين.

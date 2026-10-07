@@ -7,7 +7,7 @@ on:
       - 'supabase/**'
       - 'scripts/canonical-db/**'
       - 'scripts/db0/**'
-      - 'rentrix-app/src/types/database.ts'
+      - 'malek-app/src/types/database.ts'
       - '.github/workflows/canonical-db-baseline.yml'
   push:
     branches: [main]
@@ -15,7 +15,7 @@ on:
       - 'supabase/**'
       - 'scripts/canonical-db/**'
       - 'scripts/db0/**'
-      - 'rentrix-app/src/types/database.ts'
+      - 'malek-app/src/types/database.ts'
       - '.github/workflows/canonical-db-baseline.yml'
   workflow_dispatch:
 
@@ -65,10 +65,10 @@ jobs:
 
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter ./rentrix-app exec playwright install chromium
+        run: pnpm --filter ./malek-app exec playwright install chromium
 
       - name: Verify Chromium installation
-        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
+        run: pnpm --filter ./malek-app exec playwright install --dry-run chromium
 
       - name: Build and prove canonical database foundation
         run: bash scripts/canonical-db/build-baseline.sh
@@ -77,7 +77,7 @@ jobs:
         run: pnpm db0:gen-types
 
       - name: Reject generated schema or type drift
-        run: git diff --exit-code -- supabase rentrix-app/src/types/database.ts
+        run: git diff --exit-code -- supabase malek-app/src/types/database.ts
 
       - name: Upload canonical build evidence
         if: always()

@@ -475,7 +475,7 @@ lost.
   `primitives.axe.test.tsx` disables `color-contrast` and `target-size`, and the
   only end-to-end axe scan is against `/login`.
 - **Self-report contradictions** (`RELEASE_EVIDENCE_LEDGER.md:20`,
-  `docs/execution/10_STAGE_STATUS_AR.md:3`, `HANDOFF.md:149`) — mitigated for the
+  `docs/execution/10_STAGE_STATUS_AR.md:3`, `docs/execution/HANDOFF_20260911_HISTORICAL.md:149`) — mitigated for the
   first by the status banner added in §0; the others remain.
 - **Advertised role count is wrong.** `src/features/landing/i18n/legal.ts:47,188`
   describes three roles; the code (`src/features/auth/permissions.ts:3`) and the

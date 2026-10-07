@@ -38,10 +38,10 @@ jobs:
       - name: Rebuild approved native package
         run: pnpm rebuild esbuild
       - name: Prove exact deployed RC SHA
-        run: node rentrix-app/scripts/hosted-staging-preflight.mjs
+        run: node malek-app/scripts/hosted-staging-preflight.mjs
       - name: Prove real hosted authentication lifecycle
         env:
           E2E_ENVIRONMENT_KIND: production-readonly
-        run: pnpm --filter @workspace/rentrix exec playwright test e2e/release-blocker-auth.spec.ts --project=chromium-desktop
+        run: pnpm --filter @workspace/malek exec playwright test e2e/release-blocker-auth.spec.ts --project=chromium-desktop
       - name: Prove tenant-scoped Storage upload/download boundary
-        run: node rentrix-app/scripts/storage-tenant-isolation-proof.mjs
+        run: node malek-app/scripts/storage-tenant-isolation-proof.mjs

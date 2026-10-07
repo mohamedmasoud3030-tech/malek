@@ -3,7 +3,7 @@
 > **الحالة:** `LOCKED_CANONICAL`  
 > **Schema version:** `2.0.0`  
 > **مالك القرار:** `@mohamedmasoud3030-tech`  
-> **SHA-256:** `382a0b8c00bb605be0e6e5e2310f7f8ee3c59d584b3a7468a6b49ecaa5e74a79`
+> **SHA-256:** `30a52693586ffddc5a8f6cf7bbce994997ce921eab155838bf4f4fcc480585d2`
 
 هذا المستند هو المصدر الدستوري الأعلى لمنطق MALEK. التفاصيل النهائية الملزمة موجودة في:
 

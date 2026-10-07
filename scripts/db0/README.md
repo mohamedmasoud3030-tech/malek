@@ -10,7 +10,7 @@ Branching, and it never touches the live project or its demo data.
 ```bash
 pnpm db0:gate          # all gates — this is what CI runs
 pnpm db0:audit         # full reality audit -> .db0-artifacts/
-pnpm db0:gen-types     # regenerate rentrix-app/src/types/database.ts
+pnpm db0:gen-types     # regenerate malek-app/src/types/database.ts
 pnpm db0:check-types   # fail if database.ts drifted from the migrations
 pnpm db0:replay        # apply the chain to a clean database
 pnpm db0:idempotency   # prove re-running the WP-DB0 migrations is a no-op

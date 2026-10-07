@@ -51,6 +51,6 @@ consent, not a project-management artifact. It does not need "phases" or
 
 ## Everything else is not governed here
 
-Module sequencing, UI conventions, ADRs, roadmap — none of that lives in
-this file. Use `docs/CURRENT_STATE.md` and `docs/NEXT.md` for that, the way
-the repo already works. This file has exactly one job.
+Module sequencing, UI conventions, decisions, and release criteria are governed
+by the MALEK Canonical Pack at `docs/source-of-truth/00_INDEX.md`, with
+repository procedures in `AGENTS.md`. This file has exactly one job.
