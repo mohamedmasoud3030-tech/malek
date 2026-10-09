@@ -5,7 +5,7 @@
 - **Recorded local date:** 2026-10-08 (`America/Los_Angeles`).
 - **Source revision inspected and built:** `2d20a0d356204857b4acc1e393eaea107aa8e6a7`.
 - **Working branch:** `arena/35340dd0-malek`; PR target: `main`.
-- **Change scope:** add this handover document only; no application, database, dependency-manifest, or lockfile changes.
+- **Change scope:** this handover, the complete Arabic inventory in Markdown and PDF, and its navigation index; no application, database, dependency-manifest, or lockfile changes.
 
 ## 1. Project structure summary
 
@@ -42,6 +42,8 @@ MALEK is an Arabic-first/RTL rental-property-management web application. There i
 ├── .github/                  Ownership, issue template, and GitHub Actions workflows
 └── patches/                  Reviewed PDFKit patch used by the dependency graph
 ```
+
+**Uploaded inventory documents:** [Arabic inventory index](docs/inventory/README.md), [complete Markdown report](docs/inventory/malek-files-ar.md), and [complete PDF report](docs/inventory/malek-files-ar.pdf). Both reports retain the original 1,755-file source snapshot; the index lists the four subsequently added handover/delivery files.
 
 - **Main entry:** `malek-app/src/index.tsx` → `App.tsx` → `app/router/app-router.tsx` and `route-tree.ts`.
 - **Domain coverage in source:** properties, units, owners, people/tenants, contracts, billing, collections, receipts, expenses, accounting, owner settlements, reports, maintenance, utilities, contextual documents, settings, permissions, support, AI, automation, and external portals. Lands, leads, communications, audit, and specialized tools also have repository surfaces. Presence is not a claim of completion or routine-UX visibility.
@@ -88,8 +90,8 @@ These are warnings, not the first error; the build result remains **PASS**. No u
 ### Additional verification and boundaries
 
 - `corepack pnpm typecheck`: **PASS**; no TypeScript error reported.
-- `corepack pnpm check:docs`: **PASS** for 109 maintained Markdown files, including this handover.
-- `git diff --cached --check`: **PASS**; no whitespace errors in the staged document.
+- `corepack pnpm check:docs`: **PASS** after adding the inventory documents and index.
+- `git diff --cached --check -- AGENT_HANDOVER.md docs/inventory/README.md`: **PASS** for the edited handover and new index. The copied Arabic inventory is preserved byte-for-byte, including its intentional two-space Markdown hard line breaks.
 - Full Vitest, financial, accessibility, Playwright, fresh-database, and hosted-QA suites: **not run** in this documentation task.
 - Browser/runtime behavior, hosted Supabase/Auth/Storage, production deployment, and AI provider connectivity: **not verified**.
 - Generated dependencies, logs, build proof, and bundle output are not included in the PR.
@@ -127,36 +129,36 @@ Evidence: [root package manifest](package.json), [application package manifest](
 
 ### Counting scope
 
-Count **Git-tracked project files** and every directory implied by their paths. Exclude `.git/` and untracked/ignored dependencies, build output, caches, logs, and other generated artifacts. Tracked generated contracts such as `malek-app/src/types/database.ts` remain included, along with hidden tracked files, environment templates, tests, documentation, fonts, images, and SQL evidence.
+Count **Git-tracked project files** and every directory implied by their paths. Exclude `.git/` and untracked/ignored dependencies, build output, caches, logs, and other generated artifacts. Tracked generated contracts such as `malek-app/src/types/database.ts` and the versioned inventory deliverables remain included, along with hidden tracked files, environment templates, tests, documentation, fonts, images, and SQL evidence.
 
-| Metric                                                       |     Count |
-| ------------------------------------------------------------ | --------: |
-| Files at the inspected source revision, before this handover | **1,755** |
-| Repository files after adding `AGENT_HANDOVER.md`            | **1,756** |
-| Directories, excluding the repository root                   |   **203** |
-| Directories, including the repository root                   |   **204** |
-| Directory groups containing files directly, including root   |   **199** |
-| Test/spec files in the inspected source                      |   **611** |
+| Metric                                                             |     Count |
+| ------------------------------------------------------------------ | --------: |
+| Files at the inspected source revision, before this handover       | **1,755** |
+| Repository files after adding the handover and inventory documents | **1,759** |
+| Directories, excluding the repository root                         |   **204** |
+| Directories, including the repository root                         |   **205** |
+| Directory groups containing files directly, including root         |   **200** |
+| Test/spec files in the inspected source                            |   **611** |
 
-The earlier complete Arabic inventory used **199 file-containing groups**, not all ancestor directories. That is why its grouping count differs from the **203 actual tracked-path folders** reported here. Adding this root-level document does not create a new directory.
+The complete Arabic inventory is preserved as a snapshot of the inspected source revision: **1,755 files**, **203 ancestor directories excluding root**, and **199 file-containing groups including root**. This PR adds four delivery/documentation files and one directory (`docs/inventory/`), producing the current totals below. The original reports are complete for their cited source snapshot, rather than silently being presented as a regenerated inventory of this later PR.
 
-### File distribution after adding this document
+### File distribution after adding the handover and inventory documents
 
 | Top-level location |     Files |
 | ------------------ | --------: |
 | Repository root    |        19 |
 | `.claude/`         |        16 |
 | `.github/`         |        16 |
-| `docs/`            |       124 |
+| `docs/`            |       127 |
 | `governance/`      |         7 |
 | `malek-app/`       |     1,367 |
 | `patches/`         |         1 |
 | `scripts/`         |        71 |
 | `skills/`          |         7 |
 | `supabase/`        |       128 |
-| **Total**          | **1,756** |
+| **Total**          | **1,759** |
 
-Reproduce the tracked-file/directory counts after this document is staged or committed:
+Reproduce the tracked-file/directory counts after all four delivery/documentation files are staged or committed:
 
 ```bash
 python - <<'PY'
