@@ -50,6 +50,9 @@
     "test": "corepack pnpm --filter @workspace/malek run test",
     "test:workflow-honesty": "node scripts/check-workflow-honesty.test.mjs",
     "check:workflow-honesty": "node scripts/check-workflow-honesty.mjs",
+    "gate:local": "node scripts/agent-local-gate.mjs",
+    "gate:local:quick": "node scripts/agent-local-gate.mjs --quick",
+    "gate:local:full": "node scripts/agent-local-gate.mjs --full",
     "test:deployment-identity": "node malek-app/scripts/verify-deployment-identity.test.mjs"
   },
   "devDependencies": {
