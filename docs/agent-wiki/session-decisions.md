@@ -8,6 +8,28 @@ and grants no stage credit.
 
 ## 2026-10-19
 
+### The wiki's format rules are enforced by `pnpm check:wiki`
+
+A guard (`scripts/check-agent-wiki.mjs`) fails when a page is orphaned, does not link back to
+`index.md`, is missing an H1, or lacks a `> **Recorded:** YYYY-MM-DD ...` line citing a commit.
+Negative-tested by creating an orphan page and by adding a link to a nonexistent page; both failed
+with specific messages. It is wired into `pnpm gate:local` (14 steps).
+
+CI wiring is **not** done: adding a step to `ci.yml` changes the pipeline that every PR depends on,
+and `check-workflow-honesty` governs workflow declarations. Proposed below instead.
+
+### Proposed recurring schedules (not enabled — this harness has no scheduler)
+
+| Cadence | Job | Why |
+| --- | --- | --- |
+| Per PR | `pnpm check:wiki` + `pnpm gate:local --quick` | keeps the wiki navigable and catches obvious guard regressions in under a minute |
+| Daily | `pnpm gate:local --full` on `main`, evidence archived | detects drift between the gate inventory's numbers and reality |
+| Weekly | wiki lint: contradictions, orphan pages, superseded claims, stale `Recorded:` lines | the wiki's own "Lint" operation; cannot be automated past form checks |
+| Monthly | re-verify documented SHAs and timings; refresh the gate inventory | measured numbers decay with every merge |
+
+None of these can be created from here. They should be added as GitHub Actions scheduled workflows by
+the owner, or run manually until then.
+
 ### The wiki lives at `docs/agent-wiki/`
 
 Chosen by the owner. In-repo, version-controlled, cited by commit. It is explicitly subordinate to the

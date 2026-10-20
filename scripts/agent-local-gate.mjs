@@ -55,6 +55,7 @@ const mode = process.argv.includes('--full')
 /** Each step runs `corepack pnpm` so the repository-pinned package manager is always used. */
 const STEP_LIBRARY = {
   'check:docs': { pnpmArgs: ['run', 'check:docs'], timeoutMs: 300_000 },
+  'check:wiki': { pnpmArgs: ['run', 'check:wiki'], timeoutMs: 300_000 },
   'check:business-rules': { pnpmArgs: ['run', 'check:business-rules'], timeoutMs: 300_000 },
   'check:execution-plan': { pnpmArgs: ['run', 'check:execution-plan'], timeoutMs: 300_000 },
   'check:migration-hygiene': { pnpmArgs: ['run', 'check:migration-hygiene'], timeoutMs: 300_000 },
@@ -102,6 +103,7 @@ for (const [id, step] of Object.entries(STEP_LIBRARY)) {
 
 const QUICK_STEPS = [
   'check:docs',
+  'check:wiki',
   'check:business-rules',
   'check:execution-plan',
   'check:migration-hygiene',

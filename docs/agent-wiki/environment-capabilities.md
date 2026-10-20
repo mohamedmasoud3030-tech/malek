@@ -32,9 +32,11 @@ pnpm install --frozen-lockfile                   -> "Already up to date", 0.98 s
 ```
 
 `--ignore-scripts` followed by `pnpm rebuild esbuild` is the sequence CI uses
-([ci.yml](../../.github/workflows/ci.yml)); a plain `--frozen-lockfile` install also succeeded with
-`onlyBuiltDependencies` in [package.json](../../package.json) approving esbuild, core-js and supabase.
-Neither form modified `pnpm-lock.yaml` (tree stayed clean).
+([ci.yml](../../.github/workflows/ci.yml)); that is the **verified cold path** (empty store, 633
+packages, 10.1 s). A warm `--frozen-lockfile` re-run also succeeded (0.98 s) with `onlyBuiltDependencies`
+in [package.json](../../package.json) approving esbuild, core-js and supabase. A *completely cold*
+plain install (without `--ignore-scripts`) was **not** tested. Neither form modified `pnpm-lock.yaml`
+(tree stayed clean).
 
 > **Toolchain drift:** CI pins Node **24** in every workflow ([ci.yml](../../.github/workflows/ci.yml),
 > `node-version: 24`); this sandbox has Node **22**. A local pass is not proof of a CI pass. See

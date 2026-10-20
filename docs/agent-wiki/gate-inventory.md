@@ -11,6 +11,7 @@ get wrong: what a green result does **not** prove.
 | Gate | Command | Time | Observed result | Blind spot |
 | --- | --- | --- | --- | --- |
 | Docs links | `pnpm check:docs` | 0.35 s (warm) | PASS, 111 Markdown files | Proves links resolve. Proves nothing about whether the linked text is true. |
+| Agent wiki guard | `pnpm check:wiki` | 0.4 s | PASS — 7 pages, 6 index links, all dated | Checks form only (orphans, missing back-links, undated claims). It cannot tell whether a claim is still true. |
 | Canonical rules | `pnpm check:business-rules` | 0.27 s | PASS, `v2.0.0` hash `30a5269…` | Verifies the rule file matches its pinned hash. It is a tamper check, not a correctness check. |
 | Execution plan | `pnpm check:execution-plan` | 0.27 s | PASS, 10 stages / 98 tasks / 18 decisions | Same: integrity of the plan, not its accuracy. |
 | Migration hygiene | `pnpm check:migration-hygiene` | 0.29 s | OK (base `origin/main`), 1 legacy warning for `supabase/migrations/rls_per_table/00_rollback_rls_for_table.sql` | **Diff-scoped.** Only new/modified files vs `origin/main` are enforced. |
@@ -62,5 +63,5 @@ corepack pnpm --filter ./malek-app test          # ~9 minutes
 ```
 
 One command that runs the safe subset and writes machine-readable evidence:
-`pnpm gate:local` — measured **13/13 PASS in 115 s** at `f2b6de5` on 2026-10-19, evidence in
+`pnpm gate:local` — measured **14/14 PASS in ~115 s** at `f2b6de5` on 2026-10-19, evidence in
 `.gate/last-run.json`. See [session-decisions.md](session-decisions.md).
