@@ -42,6 +42,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { candidateChanges } from './lib/git-candidate-changes.mjs';
+import { parseBaseOption } from './lib/cli-options.mjs';
 
 const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], {
   encoding: 'utf8',
@@ -53,17 +54,6 @@ const TEST_OR_FIXTURE = /(?:(?:^|\/)(?:__tests__|tests?|fixtures?|mocks?)(?:\/|$
 
 const SQL_WRITE = /\b(?:insert\s+into|update|delete\s+from)\s+(?:public\s*\.\s*)?["']?journal_entries["']?\b/gi;
 const CLIENT_WRITE = /\.from\s*\(\s*(["'])journal_entries\1\s*\)\s*\.\s*(?:insert|update|delete|upsert)\s*\(/gi;
-
-function parseArgs(argv) {
-  let base = null;
-  for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--base' && argv[i + 1]) {
-      base = argv[i + 1];
-      i += 1;
-    }
-  }
-  return { base };
-}
 
 function refExists(ref) {
   try {
@@ -135,7 +125,7 @@ function counts(content) {
 }
 
 function main() {
-  const { base: cliBase } = parseArgs(process.argv.slice(2));
+  const cliBase = parseBaseOption(process.argv.slice(2));
   const baseRef = resolveBaseRef(cliBase);
   if (!refExists(baseRef)) throw new Error(`Base ref does not resolve: ${baseRef}`);
 

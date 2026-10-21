@@ -1,4 +1,5 @@
 import postgres from "npm:postgres@3.4.3";
+import { fetchWithTimeout } from "../_shared/fetch-with-timeout.ts";
 import {
   AI_OUTPUT_SCHEMA_VERSION,
   AI_PLANNING_SCHEMA_VERSION,
@@ -83,10 +84,6 @@ function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string, 
 }
 function errorResponse(code: string, message: string, status: number, extraHeaders: Record<string, string> = {}): Response {
   return jsonResponse({ error: { code, message } }, status, extraHeaders);
-}
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try { return await fetch(url, { ...init, signal: controller.signal }); } finally { clearTimeout(timeout); }
 }
 async function readJsonBody(request: Request): Promise<unknown> { try { return (await request.json()) as unknown; } catch { return null; } }
 function positiveIntegerEnv(name: string, fallback: number, min: number, max: number): number {

@@ -31,6 +31,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { candidateChanges } from './lib/git-candidate-changes.mjs';
+import { parseBaseOption } from './lib/cli-options.mjs';
 
 const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 const MIGRATIONS_DIR = 'supabase/migrations';
@@ -71,17 +72,6 @@ function resolveBaseRef(cliBase) {
   throw new Error('Unable to resolve a base ref (tried origin/main, main). Pass --base <ref> explicitly.');
 }
 
-function parseArgs(argv) {
-  let base = null;
-  for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--base' && argv[i + 1]) {
-      base = argv[i + 1];
-      i += 1;
-    }
-  }
-  return { base };
-}
-
 function gitDiffNameStatus(baseRef) {
   return candidateChanges(REPO_ROOT, baseRef, [MIGRATIONS_DIR]);
 }
@@ -105,7 +95,7 @@ function headerLines(content, n = 15) {
 }
 
 function main() {
-  const { base: cliBase } = parseArgs(process.argv.slice(2));
+  const cliBase = parseBaseOption(process.argv.slice(2));
   const baseRef = resolveBaseRef(cliBase);
 
   const baseMigrationFiles = listBaseFiles(baseRef, MIGRATIONS_DIR);

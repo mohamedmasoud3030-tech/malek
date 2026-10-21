@@ -156,12 +156,14 @@ describe('owner service normalization helpers', () => {
     expect(ownerServiceSource).not.toContain('.delete()');
   });
 
-  it('loads property-form owner options from active, non-archived owners only', () => {
+  it('loads property-form owner options through the shared active, non-archived owner query', () => {
     const ownerServiceSource = readFileSync(new URL('./owner-service.ts', import.meta.url), 'utf8');
+    const ownerOptionsSource = readFileSync(new URL('../../../services/owner-options.ts', import.meta.url), 'utf8');
 
     expect(ownerServiceSource).toContain('export async function listOperationalOwners');
-    expect(ownerServiceSource).toContain(".is('deleted_at', null)");
-    expect(ownerServiceSource).toContain(".eq('is_active', true)");
+    expect(ownerServiceSource).toContain('return fetchActiveOwnerOptions();');
+    expect(ownerOptionsSource).toContain(".is('deleted_at', null)");
+    expect(ownerOptionsSource).toContain(".eq('is_active', true)");
   });
 
   it('keeps the owners hub register free of soft-deleted rows and uses maybeSingle on detail reads', () => {

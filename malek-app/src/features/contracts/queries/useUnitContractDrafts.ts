@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { normalizeUnitIds } from './unit-ids';
 import { listUnitDraftContracts } from '../services/unitAvailabilityService';
 
 const unitContractDraftKeys = {
@@ -17,10 +18,7 @@ export function useUnitContractDrafts({
   unitIds: readonly string[];
   excludedContractId?: string | null;
 }>) {
-  const uniqueUnitIds = useMemo(
-    () => [...new Set(unitIds.filter(Boolean))].sort((left, right) => left.localeCompare(right)),
-    [unitIds],
-  );
+  const uniqueUnitIds = useMemo(() => normalizeUnitIds(unitIds), [unitIds]);
   return useQuery({
     queryKey: unitContractDraftKeys.list(propertyId, excludedContractId),
     queryFn: () => listUnitDraftContracts({ unitIds: uniqueUnitIds, excludedContractId }),

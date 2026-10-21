@@ -1,4 +1,5 @@
 import type { Session, User } from '@supabase/supabase-js';
+import { readAccessTokenAppMetadata } from '@/lib/access-token-claims';
 
 export const authorizationRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'] as const;
 
@@ -295,23 +296,8 @@ function getRoleFromUser(user: AuthorizationUserLike | null | undefined): Author
  * validates. A malformed or absent claim fails closed.
  */
 export function getRoleFromAccessToken(accessToken: string | null | undefined): AuthorizationRole | null {
-  if (!accessToken) return null;
-  try {
-    const payloadSegment = accessToken.split('.')[1];
-    if (!payloadSegment) return null;
-    const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-    const binary = globalThis.atob(padded);
-    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-    const claims = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
-    if (!claims || typeof claims !== 'object') return null;
-    const appMetadata = (claims as Record<string, unknown>).app_metadata;
-    if (!appMetadata || typeof appMetadata !== 'object') return null;
-    const metadata = appMetadata as Record<string, unknown>;
-    return normalizeRole(metadata.user_role ?? metadata.role);
-  } catch {
-    return null;
-  }
+  const metadata = readAccessTokenAppMetadata(accessToken);
+  return normalizeRole(metadata?.user_role ?? metadata?.role);
 }
 
 function getRoleFromSession(session: AuthorizationSessionLike | null | undefined): AuthorizationRole | null {

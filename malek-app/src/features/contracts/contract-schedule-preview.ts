@@ -1,3 +1,4 @@
+import { toDateOnlyISO } from '@/lib/formatters';
 /**
  * Contract schedule preview helper.
  *
@@ -41,13 +42,6 @@ export function calculateContractSchedulePreview(
   const cycle = paymentCycle || 'monthly';
   const stepMonths = CYCLE_STEP_MONTHS[cycle] ?? 1;
 
-  function formatLocalDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
   const sampleDates: string[] = [];
   let current = new Date(start);
   let count = 0;
@@ -56,7 +50,7 @@ export function calculateContractSchedulePreview(
   // deliberately not labelled as invoice issue/due dates: the authoritative
   // billing engine resolves those from billing_day/grace_days.
   while (current <= end && count < 120) {
-    sampleDates.push(formatLocalDate(current));
+    sampleDates.push(toDateOnlyISO(current));
     count += 1;
     current = new Date(current.getFullYear(), current.getMonth() + stepMonths, current.getDate());
   }
