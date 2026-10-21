@@ -54,6 +54,7 @@
     "test": "corepack pnpm --filter @workspace/malek run test",
     "test:workflow-honesty": "node scripts/check-workflow-honesty.test.mjs",
     "check:workflow-honesty": "node scripts/check-workflow-honesty.mjs",
+    "check:duplication": "node scripts/check-duplication.mjs",
     "audit:gaps": "node scripts/gap-evidence-audit.mjs",
     "evidence:live": "node scripts/live-evidence/run.mjs",
     "evidence:live:check": "node scripts/live-evidence/run.mjs --offline",
@@ -65,6 +66,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",
+    "jscpd": "4.3.0",
     "prettier": "^3.8.1",
     "supabase": "2.105.0",
     "typescript": "~5.9.2"

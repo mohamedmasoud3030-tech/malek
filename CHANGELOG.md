@@ -9,7 +9,25 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **Duplication is now measured and ratcheted.** `pnpm check:duplication` runs `jscpd` over production
+  TypeScript and fails above a locked ceiling; it is part of the default local gate. `supabase/migrations`
+  is excluded because merged migrations are immutable (`DATABASE_RULES.md`, `check:migration-hygiene`
+  Rule 3) — the 4,222 duplicated SQL lines are an append-only ledger, not removable debt.
+  See [ADR 0022](docs/decisions/0022-duplication-ratchet.md).
+
+### Fixed
+
+- **The tenant dossier printed raw ISO dates.** The contracts list shared by the person dossier and the
+  tenant dialog now formats `start_date`/`end_date` through the company formatters in both surfaces.
+
+### Removed
+
+- Three duplicated blocks collapsed into single owners: the two owner-receivable panels
+  (`owner-receivable-panel-parts.tsx`), the party contracts list (`dossier-contracts-section.tsx`), and
+  the tax-window row coercion in `finance-readiness-service.ts`. Production duplication
+  1.35% → 1.03%.
 
 ## [1.0.0-rc.2] — 2026-10-21
 

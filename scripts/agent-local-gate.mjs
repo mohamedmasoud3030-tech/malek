@@ -61,6 +61,10 @@ const STEP_LIBRARY = {
   'check:migration-hygiene': { pnpmArgs: ['run', 'check:migration-hygiene'], timeoutMs: 300_000 },
   'check:enterprise-freeze': { pnpmArgs: ['run', 'check:enterprise-freeze'], timeoutMs: 300_000 },
   'check:gl-write-boundary': { pnpmArgs: ['run', 'check:gl-write-boundary'], timeoutMs: 300_000 },
+  // Duplication ratchet over production TypeScript. Deliberately NOT in
+  // QUICK_STEPS: it shells out to jscpd over ~1,000 files (~10 s), which is fine
+  // for a pre-commit gate but not for the fast inner loop.
+  'check:duplication': { pnpmArgs: ['run', 'check:duplication'], timeoutMs: 900_000 },
   'check:workflow-honesty': { pnpmArgs: ['run', 'check:workflow-honesty'], timeoutMs: 300_000 },
   'check:sensitive-writes': { pnpmArgs: ['run', 'check:sensitive-writes'], timeoutMs: 300_000 },
   'check:sensitive-writes-tests': { pnpmArgs: ['run', 'test:sensitive-writes'], timeoutMs: 300_000 },
@@ -120,6 +124,7 @@ const QUICK_STEPS = [
 
 const DEFAULT_STEPS = [
   ...QUICK_STEPS,
+  'check:duplication',
   'app:architecture',
   'app:typecheck-tests',
   'app:a11y-primitives',

@@ -53,7 +53,7 @@ export class OwnerReceivableEvidenceError extends Error {
  * A receivable owed BY an owner, as stored. Every money field is authoritative
  * server state — never recomputed here.
  */
-type OwnerReceivable = {
+export type OwnerReceivable = {
   id: string;
   ownerId: string;
   propertyId: string | null;
