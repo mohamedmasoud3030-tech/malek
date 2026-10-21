@@ -57,6 +57,7 @@
     "audit:gaps": "node scripts/gap-evidence-audit.mjs",
     "evidence:live": "node scripts/live-evidence/run.mjs",
     "evidence:live:check": "node scripts/live-evidence/run.mjs --offline",
+    "release:check": "node scripts/release/build-release.mjs --check",
     "gate:local": "node scripts/agent-local-gate.mjs",
     "gate:local:quick": "node scripts/agent-local-gate.mjs --quick",
     "gate:local:full": "node scripts/agent-local-gate.mjs --full",
