@@ -85,18 +85,57 @@ const releaseDir = `docs/releases/${options.version}`;
 
 const failures = [];
 
+/**
+ * Metadata-only delta rule.
+ *
+ * Verification artifacts embed the commit they ran at. Committing the generated evidence report moves
+ * HEAD, so a strict "artifacts must equal HEAD" rule deadlocks the release. Instead we allow the
+ * verified commit to be an ancestor of HEAD **only when every file that changed in between is
+ * evidence or release metadata**. The allowed paths are printed, the count is recorded in the
+ * manifest, and any source/config/script change fails the build.
+ *
+ * This keeps the guarantee that matters: the code tree being released is the tree that was verified.
+ */
+const METADATA_ONLY_PATHS = [/^docs\/evidence\//, /^docs\/releases\//];
+
+function metadataOnlyDelta(fromSha) {
+  const changed = git(['diff', '--name-only', `${fromSha}..HEAD`]).split('\n').filter(Boolean);
+  const offending = changed.filter((path) => !METADATA_ONLY_PATHS.some((pattern) => pattern.test(path)));
+  return { changed, offending };
+}
+
 const gate = readJson(GATE_ARTIFACT);
+let verifiedCommit = null;
 if (!gate) failures.push(`${GATE_ARTIFACT} is missing. Run: corepack pnpm gate:local --full`);
 else {
-  if (gate.headSha !== headSha) failures.push(`${GATE_ARTIFACT} was produced at ${gate.headSha?.slice(0, 12)}, not ${shortSha}`);
   if (gate.summary?.failed > 0) failures.push(`${GATE_ARTIFACT} records ${gate.summary.failed} failed step(s)`);
   if (gate.mode !== 'full') failures.push(`${GATE_ARTIFACT} mode is "${gate.mode}"; a release needs --full (tests + build)`);
+  if (gate.headSha !== headSha) {
+    const delta = metadataOnlyDelta(gate.headSha);
+    if (delta.offending.length > 0) {
+      failures.push(
+        `${GATE_ARTIFACT} was produced at ${gate.headSha?.slice(0, 12)}, and ${delta.offending.length} non-metadata file(s) changed since: ${delta.offending.slice(0, 5).join(', ')}`,
+      );
+    } else {
+      verifiedCommit = gate.headSha;
+    }
+  }
 }
 
 const evidence = readJson(EVIDENCE_ARTIFACT);
-if (!evidence) failures.push(`${EVIDENCE_ARTIFACT} is missing. Run: corepack pnpm evidence:live --write`);
-else {
-  if (evidence.headSha !== headSha) failures.push(`${EVIDENCE_ARTIFACT} was produced at ${evidence.headSha?.slice(0, 12)}, not ${shortSha}`);
+if (!evidence) failures.push(`${EVIDENCE_ARTIFACT} is missing. Run: corepack pnpm evidence:live`);
+else if (evidence.headSha !== headSha) {
+  const delta = metadataOnlyDelta(evidence.headSha);
+  if (delta.offending.length > 0) {
+    failures.push(
+      `${EVIDENCE_ARTIFACT} was produced at ${evidence.headSha?.slice(0, 12)}, and ${delta.offending.length} non-metadata file(s) changed since: ${delta.offending.slice(0, 5).join(', ')}`,
+    );
+  } else if (!verifiedCommit) {
+    verifiedCommit = evidence.headSha;
+  }
+}
+if (gate && evidence && gate.headSha !== evidence.headSha) {
+  failures.push(`gate and evidence artifacts disagree on the commit: ${gate.headSha?.slice(0, 12)} vs ${evidence.headSha?.slice(0, 12)}`);
 }
 
 const status = git(['status', '--porcelain']).trim();
@@ -151,6 +190,10 @@ const release = {
   generatedAt: new Date().toISOString(),
   commit: headSha,
   shortCommit: shortSha,
+  verifiedCommit: verifiedCommit ?? headSha,
+  metadataOnlyDelta: verifiedCommit
+    ? git(['diff', '--name-only', `${verifiedCommit}..HEAD`]).split('\n').filter(Boolean)
+    : [],
   branch: git(['rev-parse', '--abbrev-ref', 'HEAD']).trim(),
   toolchain: { node: process.version, pnpm: pnpmVersion, packageManager: gate.toolchain?.pnpm },
   lockfile: { file: 'pnpm-lock.yaml', sha256: lockfileHash },
@@ -213,6 +256,7 @@ lines.push(`| Field | Value |`);
 lines.push(`| --- | --- |`);
 lines.push(`| Version | \`${options.version}\` |`);
 lines.push(`| Commit | \`${headSha}\` |`);
+lines.push(`| Verified commit | \`${verifiedCommit ?? headSha}\`${verifiedCommit ? ' — only evidence/release metadata changed since' : ''} |`);
 lines.push(`| Generated | ${release.generatedAt} |`);
 lines.push(`| Node / pnpm | ${process.version} / ${pnpmVersion} |`);
 lines.push(`| Tracked files | ${files.length} (${formatBytes(totalBytes)}) |`);
