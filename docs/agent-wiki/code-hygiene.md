@@ -161,7 +161,7 @@ This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --mi
 
 ### Verification and metric interpretation
 
-Focused UI component tests: **16/16**; report/tax focused suites: **26/26**; deposit workflow suites: **25/25**; owner/tenant portal boundary suites: **17/17**; production and test TypeScript checks passed. The 18/18 gate was green before the final deposit-field extraction; rerun it after that extraction before marking this pass verified.
+Focused UI component tests: **16/16**; report/tax focused suites: **26/26**; deposit workflow suites: **25/25**; owner/tenant portal boundary suites: **17/17**; production and test TypeScript checks passed; fresh `agent-local-gate` **18/18 at `9f84127f4c4a`**.
 
 Current production-source measurement: **0.96% / 1,261 duplicated lines / 114 clones / 132,006 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. This pass reduced the measured rate by 0.03 points, 51 duplicated lines, 6 clones, and 693 duplicated tokens (15,345 to 14,652). The component extractions also retain the caller-owned permission, data, and state contracts; this is not a claim of zero duplication.
 
