@@ -136,6 +136,7 @@ This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --mi
 - **Person/tenant dossier activity:** `DossierActivitySection` owns only the common read-only timeline display. Each caller retains its existing permission gate, data source, heading ID, date formatter, and entity-specific empty-state sentence.
 - **EntityTable loading/loaded toolbar:** one `toolbarContent` node now feeds both branches. This removes an exact same-file JSX copy without changing where the toolbar appears or what it contains.
 - **Unsaved-changes warning:** `UnsavedChangesDialog` now owns the repeated Arabic copy and warning presentation used by person forms, service-provider forms, and route blockers. Each caller still owns its own busy/close/discard state and callbacks.
+- **Deposit amount input:** `DepositAmountField` owns the identical currency-aware numeric control used by deposit allocation and refund forms. Each form retains its distinct validation, evidence/payment method, mutation, and ledger behavior.
 
 ### Deliberately kept separate
 
@@ -152,12 +153,17 @@ This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --mi
 | EntityTable's loading vs populated toolbar | Share the exact toolbar node | Both branches used identical toggle/toolbar JSX; a single `toolbarContent` value removes the internal copy while preserving branch placement. |
 | Offset vs recovery movement panels | Keep their remaining state and movement rows separate | Their shared selector, assurance, feedback, amount/date, and facts display were already extracted; distinct mutation lifecycles, permission evidence, and ledger wording remain entity/action-specific. |
 | Property vs service-provider preview dialogs | Keep | Same dialog shell and edit affordance are supplied by shared `EntityPreviewDialog`; preview facts and privacy fields differ. |
+| Owner vs property dossier snippets | Keep | Ownership settlements/ledger exposure and property operations/units are different aggregates and permission surfaces; their row wrappers are not a common business component. |
+| Person edit vs person create routes | Keep separate route adapters | They share list backdrop and modal mechanics, but edit has a required route parameter plus a fail-safe fallback when it is absent. A common shell would still need to branch on the route contract and saves little. |
+| Balance sheet vs income statement panels | Keep their report-specific groups | They already reuse `ReportList`/`ReportListRow`; balance-sheet account-code subtotals and income statement revenue/expense KPIs are not interchangeable. |
+| Deposit return vs allocation forms | Share the amount input only; keep workflows separate | `DepositAmountField` shares the identical currency-aware amount control. Refund vs allocation still have different validations, evidence/payment inputs, mutation paths, and posting consequences. |
+| Owner agreement status empty states | Keep each message/action | Current, scheduled, and ended agreement states require different business wording and actions; their near-identical wrapper is not a repeated reusable feature. |
 
 ### Verification and metric interpretation
 
-Focused UI component tests: **16/16**; report/tax focused suites: **26/26**; owner/tenant portal boundary suites: **17/17**; production and test TypeScript checks passed; the fresh local gate after these extractions passed **18/18**.
+Focused UI component tests: **16/16**; report/tax focused suites: **26/26**; deposit workflow suites: **25/25**; owner/tenant portal boundary suites: **17/17**; production and test TypeScript checks passed. The 18/18 gate was green before the final deposit-field extraction; rerun it after that extraction before marking this pass verified.
 
-Current production-source measurement: **0.98% / 1,293 duplicated lines / 116 clones / 131,976 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. This pass reduced the measured rate by 0.01 points, 19 duplicated lines, 4 clones, and 446 duplicated tokens (15,345 to 14,899). The component extractions also retain the caller-owned permission, data, and state contracts; this is not a claim of zero duplication.
+Current production-source measurement: **0.96% / 1,261 duplicated lines / 114 clones / 132,006 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. This pass reduced the measured rate by 0.03 points, 51 duplicated lines, 6 clones, and 693 duplicated tokens (15,345 to 14,652). The component extractions also retain the caller-owned permission, data, and state contracts; this is not a claim of zero duplication.
 
 ## Things that look dead and must not be deleted
 

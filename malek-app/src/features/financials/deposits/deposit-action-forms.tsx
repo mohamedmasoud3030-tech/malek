@@ -14,6 +14,34 @@ function depositErrorMessage(error: unknown, fallback: string) {
   return error ? getActionableSupabaseErrorMessage(error, fallback) : undefined;
 }
 
+function DepositAmountField({
+  currencyCode,
+  value,
+  max,
+  onChange,
+}: Readonly<{
+  currencyCode: string;
+  value: number;
+  max?: number;
+  onChange: (value: number) => void;
+}>) {
+  return (
+    <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
+      <Input
+        required
+        type="number"
+        min="0.001"
+        step="0.001"
+        inputMode="decimal"
+        dir="ltr"
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value) || 0)}
+        max={max}
+      />
+    </EntityForm.Field>
+  );
+}
+
 export function DepositCreateForm({ controller }: Readonly<{ controller: Controller }>) {
   const {
     actionType,
@@ -161,19 +189,12 @@ export function DepositClaimForm({ controller }: Readonly<{ controller: Controll
       >
         <EntityForm.ErrorSummary message={claimMut.isError ? depositErrorMessage(claimMut.error, 'تعذر إنشاء طلب التخصيص.') : undefined} />
         <EntityForm.Section title="بيانات الطلب">
-          <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
-            <Input
-              required
-              type="number"
-              min="0.001"
-              step="0.001"
-              inputMode="decimal"
-              dir="ltr"
-              value={amountInput}
-              onChange={(event) => setAmountInput(Number(event.target.value) || 0)}
-              max={selectedDeposit?.remaining_amount}
-            />
-          </EntityForm.Field>
+          <DepositAmountField
+            currencyCode={currencyCode}
+            value={amountInput}
+            max={selectedDeposit?.remaining_amount}
+            onChange={setAmountInput}
+          />
           <EntityForm.Field label="نوع الطلب *">
             <Select
               required
@@ -308,19 +329,12 @@ export function DepositRefundForm({ controller }: Readonly<{ controller: Control
       >
         <EntityForm.ErrorSummary message={refundMut.isError ? depositErrorMessage(refundMut.error, 'تعذر رد وديعة التأمين.') : undefined} />
         <EntityForm.Section title="بيانات الاسترداد">
-          <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
-            <Input
-              required
-              type="number"
-              min="0.001"
-              step="0.001"
-              inputMode="decimal"
-              dir="ltr"
-              value={amountInput}
-              onChange={(event) => setAmountInput(Number(event.target.value) || 0)}
-              max={selectedDeposit?.remaining_amount}
-            />
-          </EntityForm.Field>
+          <DepositAmountField
+            currencyCode={currencyCode}
+            value={amountInput}
+            max={selectedDeposit?.remaining_amount}
+            onChange={setAmountInput}
+          />
           <EntityForm.Field label="طريقة الدفع *">
             <Select
               required
