@@ -124,6 +124,34 @@ two, with preserved per-script environment policy.
 - **Merging `PersonDossier.tsx` and `TenantPreviewDialog.tsx`.** Already rejected in
   [ADR 0022](../decisions/0022-duplication-ratchet.md) for a stated reason; not revisited.
 
+## UI pages, views, and feature display audit (2026-10-21)
+
+This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --min-lines 5`, not just the highest pair. It reviewed list views, settings sections, dossiers, portals, financial report panels, tax forms, CSV/XLSX actions, and route fixtures.
+
+### Safe extractions performed
+
+- **Report table exports:** `CollectionsSection` and `OverdueSection` now share `ReportTabularExportActions` for Excel/CSV buttons. Each caller retains its exact rows, filename, sheet name, permission flag, and empty-data disabled state.
+- **Report CSV actions:** `ExpiringContractsSection` and `FollowUpSection` now share `ReportCsvExportButton`. The entity-specific CSV column mapping and filename remain at the caller.
+- **Tax forms:** the rent-tax and fee-tax dialogs share `TaxDefinitionFields`. `includeEffectiveTo` preserves the rent-tax end-date control and its two-column layout; fee-tax keeps its existing layout without that control. Approval mutations, fee kinds, and validation stay separate.
+- **Person/tenant dossier activity:** `DossierActivitySection` owns only the common read-only timeline display. Each caller retains its existing permission gate, data source, heading ID, date formatter, and entity-specific empty-state sentence.
+
+### Deliberately kept separate
+
+| Similar surfaces | Decision | Reason |
+| --- | --- | --- |
+| Lands vs communication list views | Keep | They already share `EntityTable`, `FilterBar`, `AsyncContentState`, action-menu primitives, and active-filter types. Their row schemas, filters, mobile actions, and mutation behavior are different. A mega-list component would encode entity-specific branches without removing the real domain rules. |
+| Owner vs tenant portals | Keep authorization/data boundaries separate | Bearer-token RPCs, snapshot DTOs, accessible data, summary meanings, and section inventories are intentionally different. Do not unify page services or trust boundaries to save repeated loading/invalid-link markup. |
+| Person vs tenant dossiers | Share contracts/activity only; keep other sections | Financial visibility, identity semantics, tenancy context, document type, and privacy permissions differ. Remaining similarity is layout around different data and gates. |
+| Settings sections | Keep section composition distinct | Common card, input, field, and draft handling are already shared. Remaining field groupings and warnings carry section-specific settings semantics. |
+| Balance sheet vs income statement | Keep account groups distinct | Balance-sheet groups carry code/name and as-of semantics; income statement groups carry revenue/expense semantics and a different KPI summary. `ReportList` primitives are already shared. |
+| Contract E2E fixture vs production page | Keep fixture | The fixture composes production filters, KPI, result, and preview components with deterministic showcase data; replacing it with the live query would destroy hermetic E2E behavior. |
+
+### Verification and metric interpretation
+
+Focused UI/report/tax tests: **26/26**, plus owner/tenant portal boundary suites **17/17**; production and test TypeScript checks passed; local gate **18/18** at `eb6982f4f9ef` (the latest follow-up edits were typechecked and their focused tests run separately).
+
+Current production-source measurement: **1.00% / 1,322 duplicated lines / 118 clones / 132,000 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. The percentage/line count moved slightly upward as the extracted display helpers entered the measured source set and jscpd re-segmented cross-file clones; duplicated clone count fell by 2 and duplicated tokens fell from **15,345 to 15,102**. This is not presented as a percentage win. The extracts remove concrete repeated JSX while retaining entity-specific presentation contracts; the result remains below the 1.05% locked ceiling. Do not call this “zero duplication.”
+
 ## Things that look dead and must not be deleted
 
 | Looks dead | Actually | Evidence |

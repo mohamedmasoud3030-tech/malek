@@ -25,6 +25,7 @@ import { isContractStatus } from '@/lib/contractStatus';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
+import { DossierActivitySection } from '@/features/people/components/dossier-activity-section';
 import { useTenantDossier } from '../useTenantWorkspace';
 
 import { TenantPortalLinkAction } from './TenantPortalLinkAction';
@@ -217,39 +218,13 @@ function TenantDossierContent({
       ) : null}
 
       {(!section || section === 'records') && canViewActivity ? (
-        <section
-          aria-labelledby="tenant-activity-heading"
+        <DossierActivitySection
+          headingId="tenant-activity-heading"
+          emptyMessage="لا يوجد نشاط موثق."
+          entries={dossier.latestActivity}
+          formatDateTime={(value) => formatCompanyDateTime(companyFormatters, value)}
           className={section ? undefined : 'border-t border-border/60 pt-4'}
-        >
-          <header className="border-b border-border/60 pb-2.5">
-            <h3
-              id="tenant-activity-heading"
-              className="flex items-center gap-2 text-base font-black"
-            >
-              <Activity className="size-5 text-primary" />
-              آخر النشاط
-            </h3>
-          </header>
-          {dossier.latestActivity.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">
-              لا يوجد نشاط موثق.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border/60">
-              {dossier.latestActivity.map((item) => (
-                <li key={item.id} className="py-3">
-                  <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    {item.body}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatCompanyDateTime(companyFormatters, item.created_at)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        />
       ) : null}
       {!section || section === 'records' ? (
         <ContextualDocumentsSection

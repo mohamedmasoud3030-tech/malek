@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
-import { AlertTriangle, FileText } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { VacancyAnalytics } from '@/features/units/vacancy-analytics';
-import { buildReportCsvFilename, downloadCsv, type ExpiringContractRow } from '../reports-page.helpers';
+import { buildReportCsvFilename, type ExpiringContractRow } from '../reports-page.helpers';
 import { ReportInsightNote, ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
+import { ReportCsvExportButton } from './report-csv-export-button';
 
 type ExpiringContractsSectionProps = Readonly<{
   expiringRows: ExpiringContractRow[];
@@ -59,30 +60,22 @@ export function ExpiringContractsSection({
     [expiringRows],
   );
 
-  const exportAction = canExportReports ? (
-    <Button
-      type="button"
-      variant="secondary"
-      size="sm"
-      className="min-h-11 shrink-0 gap-2 text-xs"
-      onClick={() => downloadCsv(
-        buildReportCsvFilename('expiring-contracts'),
-        expiringRows.map((row) => ({
-          tenant: row.tenantName,
-          property: row.propertyTitle,
-          unit: row.unitNumber,
-          endDate: row.endDate,
-          daysRemaining: row.daysRemaining,
-          monthlyRent: row.monthlyRent,
-          urgency: urgencyLabel(row.daysRemaining),
-        })),
-      )}
-      disabled={expiringRows.length === 0}
-    >
-      <FileText className="size-4" aria-hidden="true" />
-      CSV
-    </Button>
-  ) : undefined;
+  const exportRows = expiringRows.map((row) => ({
+    tenant: row.tenantName,
+    property: row.propertyTitle,
+    unit: row.unitNumber,
+    endDate: row.endDate,
+    daysRemaining: row.daysRemaining,
+    monthlyRent: row.monthlyRent,
+    urgency: urgencyLabel(row.daysRemaining),
+  }));
+  const exportAction = (
+    <ReportCsvExportButton
+      enabled={canExportReports}
+      filename={buildReportCsvFilename('expiring-contracts')}
+      rows={exportRows}
+    />
+  );
 
   return (
     <div className="space-y-3">
