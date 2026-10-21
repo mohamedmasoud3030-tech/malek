@@ -9,6 +9,12 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.0.0-rc.2] — 2026-10-21
+
+Second frozen source snapshot. Adds the authentication fix below to `v1.0.0-rc.1`.
+
 ### Fixed
 
 - **Stale sessions no longer unlock the shell.** `getSession()` only compares `expires_at` with the
