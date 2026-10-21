@@ -148,7 +148,7 @@ This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --mi
 
 ### Verification and metric interpretation
 
-Focused UI/report/tax tests: **26/26**, plus owner/tenant portal boundary suites **17/17**; production and test TypeScript checks passed; local gate **18/18** at `eb6982f4f9ef` (the latest follow-up edits were typechecked and their focused tests run separately).
+Focused UI/report/tax tests: **26/26**, plus owner/tenant portal boundary suites **17/17**; production and test TypeScript checks passed; the fresh local gate after these extractions passed **18/18**.
 
 Current production-source measurement: **1.00% / 1,322 duplicated lines / 118 clones / 132,000 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. The percentage/line count moved slightly upward as the extracted display helpers entered the measured source set and jscpd re-segmented cross-file clones; duplicated clone count fell by 2 and duplicated tokens fell from **15,345 to 15,102**. This is not presented as a percentage win. The extracts remove concrete repeated JSX while retaining entity-specific presentation contracts; the result remains below the 1.05% locked ceiling. Do not call this “zero duplication.”
 
