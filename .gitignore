@@ -52,3 +52,6 @@ malek-app/public/build-proof.json
 
 # Agent local gate evidence (regenerate with `pnpm gate:local`)
 .gate/
+
+# Local exploratory scripts (never committed)
+.scratch/

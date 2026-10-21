@@ -64,6 +64,7 @@ const STEP_LIBRARY = {
   'check:workflow-honesty': { pnpmArgs: ['run', 'check:workflow-honesty'], timeoutMs: 300_000 },
   'check:sensitive-writes': { pnpmArgs: ['run', 'check:sensitive-writes'], timeoutMs: 300_000 },
   'check:sensitive-writes-tests': { pnpmArgs: ['run', 'test:sensitive-writes'], timeoutMs: 300_000 },
+  'check:sql-signatures': { pnpmArgs: ['run', 'check:sql-signatures'], timeoutMs: 600_000 },
   typecheck: { pnpmArgs: ['run', 'typecheck'], timeoutMs: 900_000 },
   'app:architecture': {
     pnpmArgs: [...APP_FILTER, 'run', 'check:architecture'],
@@ -123,6 +124,7 @@ const DEFAULT_STEPS = [
   'app:typecheck-tests',
   'app:a11y-primitives',
   'app:frontend-db-contract',
+  'check:sql-signatures',
   'db0:gate',
 ];
 

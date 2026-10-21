@@ -6,6 +6,33 @@
 Dated decisions taken in this session, newest first. A decision here is not a product/accounting rule
 and grants no stage credit.
 
+## 2026-10-21 (evening)
+
+### Shipped the executable evidence layer
+
+`pnpm evidence:live` maps 18 open gaps to 17 proof units, executes them against a real PostgreSQL 18
+engine (PGlite replayed from `supabase/migrations`), and writes a SHA-stamped report to
+`docs/evidence/live-evidence.md`. Result at `d647030`: **14 PROVEN_LOCALLY, 4 NO_LOCAL_PROOF**.
+
+Rejected alternative: writing new SQL scenarios from scratch. The repository already carries the
+executable proofs; the missing piece was the gap-keyed artifact, not more SQL.
+
+### Added a SQL-signature documentation guard
+
+While writing the S08 sign-off packet I documented three function signatures from memory. All three
+were wrong (`s08_create_frozen_review` takes `p_payload jsonb`, not company/period arguments;
+`s08_approve_frozen_review` takes `p_review_id, p_notes`, not a decision/reason triple). The guard
+`pnpm check:sql-signatures` now replays the schema and compares every signature declared between
+`<!-- sql-signatures -->` markers. Negative-tested by corrupting one row: it failed with the exact
+schema mismatch, then passed after restore.
+
+### S08 sign-off packet and hosted runbook
+
+- `docs/accounting/S08_SIGN_OFF_PACKET_AR.md` — makes GAP-015/016 signable in one 60–90 minute review.
+  It does not grant the signature; it only removes every other reason for delay.
+- `docs/operations/HOSTED_EVIDENCE_RUNBOOK_AR.md` — the ordered commands that turn GAP-021 and the
+  hosted half of the other 12 into one session of work.
+
 ## 2026-10-21 (later)
 
 ### Delivery advisory produced with `doc-coauthoring`
