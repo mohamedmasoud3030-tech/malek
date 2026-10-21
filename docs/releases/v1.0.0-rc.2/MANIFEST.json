@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "version": "v1.0.0-rc.2",
+  "generatedAt": "2026-10-21T04:41:43.187Z",
+  "commit": "61e01ce32d623f8c4e9aded9e0f297edd5d52b42",
+  "shortCommit": "61e01ce32d62",
+  "verifiedCommit": "ab875a08d3509090dc98371e505d5c0d0155a3ca",
+  "metadataOnlyDelta": [
+    "docs/evidence/live-evidence.md"
+  ],
+  "branch": "arena/22405ca6-malek",
+  "toolchain": {
+    "node": "v22.22.3",
+    "pnpm": "10.11.1",
+    "packageManager": "10.11.1"
+  },
+  "lockfile": {
+    "file": "pnpm-lock.yaml",
+    "sha256": "d7fe04e231c4379a7e8840586063144741e21c5f192a8650bab17d158c204ab5"
+  },
+  "tree": {
+    "files": 1792,
+    "bytes": 16492099,
+    "byTopLevel": {
+      ".claude": 16,
+      "(root)": 20,
+      ".github": 16,
+      "docs": 150,
+      "governance": 7,
+      "malek-app": 1367,
+      "patches": 1,
+      "scripts": 80,
+      "skills": 7,
+      "supabase": 128
+    }
+  },
+  "verification": {
+    "gate": {
+      "mode": "full",
+      "passed": 19,
+      "failed": 0,
+      "total": 19,
+      "steps": [
+        {
+          "id": "check:docs",
+          "status": "pass",
+          "durationMs": 381
+        },
+        {
+          "id": "check:wiki",
+          "status": "pass",
+          "durationMs": 316
+        },
+        {
+          "id": "check:business-rules",
+          "status": "pass",
+          "durationMs": 323
+        },
+        {
+          "id": "check:execution-plan",
+          "status": "pass",
+          "durationMs": 361
+        },
+        {
+          "id": "check:migration-hygiene",
+          "status": "pass",
+          "durationMs": 333
+        },
+        {
+          "id": "check:enterprise-freeze",
+          "status": "pass",
+          "durationMs": 391
+        },
+        {
+          "id": "check:gl-write-boundary",
+          "status": "pass",
+          "durationMs": 326
+        },
+        {
+          "id": "check:workflow-honesty",
+          "status": "pass",
+          "durationMs": 320
+        },
+        {
+          "id": "check:sensitive-writes",
+          "status": "pass",
+          "durationMs": 349
+        },
+        {
+          "id": "check:sensitive-writes-tests",
+          "status": "pass",
+          "durationMs": 455
+        },
+        {
+          "id": "typecheck",
+          "status": "pass",
+          "durationMs": 22768
+        },
+        {
+          "id": "app:architecture",
+          "status": "pass",
+          "durationMs": 478
+        },
+        {
+          "id": "app:typecheck-tests",
+          "status": "pass",
+          "durationMs": 24844
+        },
+        {
+          "id": "app:a11y-primitives",
+          "status": "pass",
+          "durationMs": 1913
+        },
+        {
+          "id": "app:frontend-db-contract",
+          "status": "pass",
+          "durationMs": 711
+        },
+        {
+          "id": "check:sql-signatures",
+          "status": "pass",
+          "durationMs": 4106
+        },
+        {
+          "id": "db0:gate",
+          "status": "pass",
+          "durationMs": 56445
+        },
+        {
+          "id": "app:test",
+          "status": "pass",
+          "durationMs": 500168
+        },
+        {
+          "id": "build",
+          "status": "pass",
+          "durationMs": 14527
+        }
+      ],
+      "artifact": ".gate/last-run.json"
+    },
+    "evidence": {
+      "gaps": 18,
+      "proofUnits": 17,
+      "byStatus": {
+        "PROVEN_LOCALLY": 14,
+        "NO_LOCAL_PROOF": 4
+      },
+      "provenLocally": [
+        "GAP-001",
+        "GAP-003",
+        "GAP-006",
+        "GAP-007",
+        "GAP-008",
+        "GAP-009",
+        "GAP-010",
+        "GAP-011",
+        "GAP-013",
+        "GAP-014",
+        "GAP-015",
+        "GAP-016",
+        "GAP-017",
+        "GAP-018"
+      ],
+      "notProvenLocally": [
+        "GAP-019",
+        "GAP-020",
+        "GAP-021",
+        "GAP-022"
+      ],
+      "artifact": ".gate/live-evidence.json"
+    }
+  },
+  "notVerified": [
+    "Supabase Auth service (JWT issuance, sessions, hooks)",
+    "PostgREST HTTP layer",
+    "Supabase Storage",
+    "Browser rendering and Playwright journeys",
+    "Hosted configuration, secrets, grants at the deployed SHA",
+    "Legal opinion and pilot operations"
+  ],
+  "notes": {
+    "meaning": "This is a verified SOURCE SNAPSHOT. It is not a production release. Hosted, browser, legal and pilot evidence are absent by construction in the build environment."
+  }
+}
