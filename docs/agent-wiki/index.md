@@ -48,6 +48,7 @@ traps, and re-reporting stale SHAs as current reality.
 | Page | What it answers |
 | --- | --- |
 | [session-decisions.md](session-decisions.md) | Dated decisions taken in this session, and what was deliberately *not* changed. |
+| [delivery-advisory.md](delivery-advisory.md) | Points to the 2026-10-21 consulting roadmap to delivery, and the three claims that matter. |
 
 ## Related repository documents (authoritative, not duplicated here)
 

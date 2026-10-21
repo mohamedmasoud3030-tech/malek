@@ -1,6 +1,6 @@
 # Known traps
 
-> **Recorded:** 2026-10-19 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
 > **Authority:** agent memory only — see [index](index.md).
 
 Each trap below has already cost real time in a real session. Read this before diagnosing.
@@ -94,7 +94,7 @@ with `git check-ignore --no-index`:
 `.env.qa.example` and `.env.production-demo.example` are only in git because they were tracked before
 the rule mattered. If you add a new template and `git status` stays clean, this is why.
 
-> **Superseded on 2026-10-19:** `.gitignore` now also carries `!.env.*.example` and
+> **Superseded on 2026-10-21:** `.gitignore` now also carries `!.env.*.example` and
 > `!.env.qa.example`. Verified after the change: `.env.new.example`, `.env.qa.example` and
 > `.env.production-demo.example` are trackable, while `.env.qa.local` and `.env.local` remain ignored.
 > The original observation stands as history; new templates matching `*.example` are no longer lost.

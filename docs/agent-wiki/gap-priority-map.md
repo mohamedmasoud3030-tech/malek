@@ -1,6 +1,6 @@
 # Gap priority map
 
-> **Recorded:** 2026-10-19 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
 > **Authority:** agent memory only — see [index](index.md).
 > **Source of record:** [Document 7 gap register](../source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md)
 > and [Document 8 work packages](../source-of-truth/08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md).
@@ -9,7 +9,7 @@ This page does **not** re-adjudicate any gap status. Document 7 owns status; Doc
 packages. What this page adds is a different axis that neither document organises by: **what kind of
 blocker is in the way**, because that determines whether an agent can act at all.
 
-The grouping below is this wiki's synthesis (2026-10-19) of the tables in Documents 7 and 8.
+The grouping below is this wiki's synthesis (2026-10-21) of the tables in Documents 7 and 8.
 
 ## 23 gaps, grouped by blocker
 

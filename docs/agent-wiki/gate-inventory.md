@@ -1,9 +1,9 @@
 # Gate inventory
 
-> **Recorded:** 2026-10-19 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a` (clean tree, no changes vs `origin/main`)
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a` (clean tree, no changes vs `origin/main`)
 > **Authority:** agent memory only — see [index](index.md).
 
-Every row below was executed in this sandbox on 2026-10-19. "Blind spot" is the part agents most often
+Every row below was executed in this sandbox on 2026-10-21. "Blind spot" is the part agents most often
 get wrong: what a green result does **not** prove.
 
 ## What passed
@@ -63,5 +63,5 @@ corepack pnpm --filter ./malek-app test          # ~9 minutes
 ```
 
 One command that runs the safe subset and writes machine-readable evidence:
-`pnpm gate:local` — measured **14/14 PASS in ~115 s** at `f2b6de5` on 2026-10-19, evidence in
+`pnpm gate:local` — measured **14/14 PASS in ~115 s** at `f2b6de5` on 2026-10-21, evidence in
 `.gate/last-run.json`. See [session-decisions.md](session-decisions.md).

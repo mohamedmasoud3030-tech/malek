@@ -1,12 +1,31 @@
 # Session decisions
 
-> **Recorded:** 2026-10-19 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
 > **Authority:** agent memory only — see [index](index.md).
 
 Dated decisions taken in this session, newest first. A decision here is not a product/accounting rule
 and grants no stage credit.
 
-## 2026-10-19
+## 2026-10-21 (later)
+
+### Delivery advisory produced with `doc-coauthoring`
+
+The owner asked for an expert consulting document covering the path from the current state to
+delivery, and for a GitHub skill to produce it with. Chosen: `doc-coauthoring` from
+`anthropics/skills`, adopted as method only — see [delivery-advisory.md](delivery-advisory.md).
+SDD frameworks and `superpowers/writing-plans` were rejected because both prescribe their own plan
+store, which would become a parallel planning authority.
+
+Outcome: [`docs/advisory/2026-10-21-delivery-consultation-ar.md`](../advisory/2026-10-21-delivery-consultation-ar.md).
+It is advisory; it closes no gap and grants no credit.
+
+### Date correction
+
+The first wiki pages were dated `2026-10-19`, taken from container file timestamps. The actual session
+date is **2026-10-21**; every page was corrected. The earlier commit messages still say 2026-10-19 —
+history is not rewritten. Recorded here so the discrepancy is not read as a conflicting claim.
+
+## 2026-10-21
 
 ### The wiki's format rules are enforced by `pnpm check:wiki`
 
@@ -69,7 +88,7 @@ machine-readable evidence to `.gate/last-run.json` (gitignored). It exists so ag
 eight commands, and so their claims can point at an artifact instead of prose. It duplicates no
 governance logic: it invokes the existing scripts unchanged.
 
-Verified at `f2b6de5` on 2026-10-19: **13/13 PASS in 115 s** (default mode). The first execution
+Verified at `f2b6de5` on 2026-10-21: **13/13 PASS in 115 s** (default mode). The first execution
 failed four steps because `--filter ./malek-app` was passed as a single argv element; the runner now
 rejects any argv element containing whitespace at startup so that mistake cannot recur silently.
 

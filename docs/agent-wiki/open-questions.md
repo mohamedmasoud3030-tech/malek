@@ -1,6 +1,6 @@
 # Open questions
 
-> **Recorded:** 2026-10-19 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
 > **Authority:** agent memory only — see [index](index.md).
 
 Questions only the owner can answer. Each entry states the consequence of each answer so the decision
