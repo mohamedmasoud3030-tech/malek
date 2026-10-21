@@ -14,6 +14,8 @@ const workspacePath = resolve(import.meta.dirname, '../components/invoice-worksp
 const workspace = readFileSync(workspacePath, 'utf8');
 const boundaryPath = resolve(import.meta.dirname, '../tax-authority/tax-readiness-boundary.ts');
 const boundary = readFileSync(boundaryPath, 'utf8');
+const invoiceServicePath = resolve(import.meta.dirname, '../invoices/invoiceService.ts');
+const invoiceService = readFileSync(invoiceServicePath, 'utf8');
 
 describe('billing readiness service — FOM-007 remediation', () => {
   it('lists active contracts with explicit billing policy via pagination contract', () => {
@@ -154,10 +156,12 @@ describe('billing readiness service — FOM-007 remediation', () => {
     expect(section).toContain('obligation.grace_days');
   });
 
-  it('provides recovery via generate_invoices_from_active_contracts idempotent', () => {
-    expect(service).toContain('generate_invoices_from_active_contracts');
-    // The bulk-generate/recovery action lives in the invoice workspace
-    // (dialog) so the readiness section stays a compact secondary summary.
+  it('leaves the idempotent bulk-generate RPC to its single owner', () => {
+    // The bulk-generate/recovery action lives in the invoice workspace, so the
+    // readiness service must not carry a second copy of the RPC wrapper: two
+    // definitions of the same server call drift and only one of them is wired.
+    expect(invoiceService).toContain('generate_invoices_from_active_contracts');
+    expect(service).not.toContain('generate_invoices_from_active_contracts');
     expect(workspace).toContain('BillingReadinessSection');
     expect(workspace).toContain('إنشاء الفواتير الجاهزة');
     expect(workspace).toContain('onConfirm');

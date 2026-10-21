@@ -34,7 +34,7 @@ import {
  * shared component declares the structural contract it actually consumes
  * instead of forcing one caller's type onto the other.
  */
-export type DossierContractRow = Readonly<{
+type DossierContractRow = Readonly<{
   id: string;
   status: string;
   start_date: string;

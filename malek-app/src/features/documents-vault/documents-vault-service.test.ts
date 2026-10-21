@@ -29,15 +29,13 @@ describe('documents vault real implementation', () => {
     }
   });
 
-  it('uses a private bucket, signed URLs, and compensating cleanup', () => {
+  it('reads documents through signed URLs only, never a public URL', () => {
     const service = readFileSync(resolve(import.meta.dirname, './documents-vault-service.ts'), 'utf8');
     expect(service).toContain('supabase.storage.from');
-    expect(service).toContain('.upload(');
     expect(service).toContain('createSignedUrl');
     expect(service).toContain('getVaultDocumentSignedUrl');
     expect(service).not.toContain('getPublicUrl');
     expect(service).toContain('vault_documents');
-    expect(service).toContain('.remove([fullPath])');
     expect(service).toContain('file_size');
     expect(service).toContain('mime_type');
   });

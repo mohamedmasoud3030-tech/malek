@@ -8,7 +8,7 @@ import type { CompanySettingsPreviewModel } from '../settingsForm';
 import { OfficeSection } from '../sections/OfficeSection';
 import { IdentitySection } from '../sections/IdentitySection';
 import { DocumentsSection } from '../sections/DocumentsSection';
-import type { SettingsSectionId } from '../registry/sectionRegistry';
+import type { SettingsSectionId } from '../registry/types';
 
 type CompanyProfileSectionsProps = Readonly<{
   activeSection: SettingsSectionId;

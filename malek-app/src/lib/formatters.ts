@@ -43,10 +43,6 @@ export function getCurrencyMetadata(value: unknown): CurrencyMetadata {
   return currencyMetadata[normalizeCurrency(value)];
 }
 
-export function getCurrencyMinorUnit(value: unknown): number {
-  return getCurrencyMetadata(value).minorUnit;
-}
-
 /**
  * Ensures Latin (Western Arabic) numerals for any locale by appending -u-nu-latn
  * when the locale is Arabic-based and does not already specify a numbering system.

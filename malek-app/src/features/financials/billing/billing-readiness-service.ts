@@ -272,9 +272,3 @@ export async function getBillingReadiness(companyId: string): Promise<BillingObl
   return obligations;
 }
 
-
-export async function generateInvoicesFromActiveContracts(): Promise<number> {
-  const { data, error } = await supabase.rpc('generate_invoices_from_active_contracts').returns<number>();
-  if (error) throw error;
-  return data ?? 0;
-}
