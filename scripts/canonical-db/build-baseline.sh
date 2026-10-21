@@ -23,7 +23,7 @@ BASELINE_PATH="$ROOT_DIR/supabase/migrations/$BASELINE_NAME"
 VERIFY_SQL="$ROOT_DIR/scripts/canonical-db/verify-canonical.sql"
 mkdir -p "$OUT_DIR" "$DIAG_DIR"
 
-export SUPABASE_EXCLUDED_SERVICES="realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor"
+export SUPABASE_EXCLUDED_SERVICES="realtime,storage-api,imgproxy,mailpit,inbucket,studio,edge-runtime,logflare,vector,supavisor"
 
 cleanup() {
   local status=$?
