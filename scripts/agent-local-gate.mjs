@@ -62,6 +62,8 @@ const STEP_LIBRARY = {
   'check:enterprise-freeze': { pnpmArgs: ['run', 'check:enterprise-freeze'], timeoutMs: 300_000 },
   'check:gl-write-boundary': { pnpmArgs: ['run', 'check:gl-write-boundary'], timeoutMs: 300_000 },
   'check:workflow-honesty': { pnpmArgs: ['run', 'check:workflow-honesty'], timeoutMs: 300_000 },
+  'check:sensitive-writes': { pnpmArgs: ['run', 'check:sensitive-writes'], timeoutMs: 300_000 },
+  'check:sensitive-writes-tests': { pnpmArgs: ['run', 'test:sensitive-writes'], timeoutMs: 300_000 },
   typecheck: { pnpmArgs: ['run', 'typecheck'], timeoutMs: 900_000 },
   'app:architecture': {
     pnpmArgs: [...APP_FILTER, 'run', 'check:architecture'],
@@ -110,6 +112,8 @@ const QUICK_STEPS = [
   'check:enterprise-freeze',
   'check:gl-write-boundary',
   'check:workflow-honesty',
+  'check:sensitive-writes',
+  'check:sensitive-writes-tests',
   'typecheck',
 ];
 
