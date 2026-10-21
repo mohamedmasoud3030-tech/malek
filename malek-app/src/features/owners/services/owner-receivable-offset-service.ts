@@ -424,14 +424,28 @@ export async function loadApprovedOwnerSettlements(
  * `offset_owner_receivable_atomic`; nothing here is invented, and an unknown
  * error is surfaced verbatim rather than being softened into a generic message.
  */
-export function translateOwnerOffsetError(error: unknown): string {
-  const raw = [
+/**
+ * Flatten a PostgREST/Postgres failure into the single string the error maps
+ * match against.
+ *
+ * Both owner-receivable translators (offset and recovery) need the same
+ * message + code + details concatenation before they can look up a user-facing
+ * sentence. It lives here because this module is already the base the recovery
+ * service imports from; a second copy would let the two surfaces drift in which
+ * part of the error they honour.
+ */
+export function collectErrorText(error: unknown): string {
+  return [
     (error as { message?: unknown })?.message,
     (error as { code?: unknown })?.code,
     (error as { details?: unknown })?.details,
   ]
     .filter((part): part is string => typeof part === 'string')
     .join(' ');
+}
+
+export function translateOwnerOffsetError(error: unknown): string {
+  const raw = collectErrorText(error);
   const map: ReadonlyArray<readonly [string, string]> = [
     [
       'DUE_FROM_OWNER_OFFSET_ROLE_REQUIRED',

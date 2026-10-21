@@ -43,6 +43,67 @@ something that a test or an implicit edge keeps alive.
 - **SQL: 119 functions defined, 102 RPCs called from the client, 0 unreferenced by both.** Merged migrations stay immutable — deduplicating them is forbidden by `check-migration-rollback-hygiene` Rule 3.
 - **Isolated production files: 15**, and all 15 have a declared owner (see below).
 
+## Contracts and tests as a source of duplication (measured 2026-10-21)
+
+This round's question was not "what is duplicated" but "what keeps it duplicated". Two measurements
+answer it.
+
+### 1. The test layer duplicates more than production
+
+| Layer | Duplication | Lines | Clones |
+| --- | ---: | ---: | ---: |
+| Production TypeScript | 1.02% | 1,342 | 121 |
+| Test layer (`*.test.ts`, `*.test.tsx`) | **2.81%** | **1,602** | **149** |
+
+`scripts/check-duplication.mjs` now measures both, with independent ceilings (1.10% and 2.85%), in the
+same gate step. Before this, tests were excluded entirely, so scaffolding duplication had no ceiling at
+all — that was the blindness, not the number.
+
+Not all of it should go. `people-direct-write-acl.pglite.test.ts` and
+`unit-direct-write-acl.pglite.test.ts` share seven test titles and ~340 tokens, but their `insert` /
+`update` payloads are entity-specific and *are* the proof. Parameterizing them would hide the evidence.
+The duplication worth removing is scaffolding (the same read/mock/bootstrap block per suite), which is
+why the ceiling is a ratchet rather than a target of zero.
+
+### 2. Contract tests freeze the copies they assert
+
+Of the string literals asserted by `expect(source).toContain(...)` in contract tests, **107 also appear
+in two or more production files**. The largest:
+
+| Literal | Production files carrying it | Reading |
+| --- | ---: | --- |
+| `error instanceof Error ? error.message` | 43 | A missing primitive, not 43 decisions |
+| `const queryClient = useQueryClient()` | 36 | React Query boilerplate per hook |
+| `activeFilters={activeFilters}` | 17 | One prop used in 17 places — *not* duplication |
+| `contract.properties?.title` | 17 | No accessor for a repeated optional chain |
+| `enabled: options?.enabled ?? true` | 8 | Repeated query-option boilerplate |
+
+The mechanism matters: a source-text assertion fails the moment the copied block is extracted, so the
+cheapest way to keep the suite green is to leave the copy. That is how a guard turns into a veto
+against cleanup — the same failure the round-9 instruction named.
+
+Worked example already paid down. `app/ux-completion-contract.test.ts` **already** asserts the right
+rule — use `getActionableSupabaseErrorMessage`, never a raw `error instanceof Error ? error.message` —
+but only for four named files (`deposit-action-forms.tsx`, `use-deposit-workspace-controller.ts`,
+`person-form-modal.tsx`, `property-form-modal.tsx`). The other ~39 files that hand-roll the same
+expression are simply outside the list, so the contract cannot see them. Extending it is a UX-text
+change (the actionable helper rewrites provider errors into Arabic guidance), so it belongs in its own
+round with its own review — not in a deletion sweep.
+
+First payment taken: `collectErrorText` in `features/owners/services/owner-receivable-offset-service.ts`.
+The offset and recovery error translators carried the same 11-line message/code/details prologue;
+production duplication went 1.03% → **1.02%** (1,355 → 1,342 lines).
+
+### 3. What was considered and rejected here
+
+- **Parameterizing the two ACL suites.** Rejected: the SQL payloads are the evidence.
+- **Migrating the 169 test files that read production source with `readFileSync(resolve(...))`.**
+  Rejected for this round: it is a pure refactor, but it can only be verified by a full suite run
+  (~25 min, previously aborted under a 1,500 s cap). A 169-file diff with partial verification is
+  worse than no diff. If taken up, build the helper first, migrate in batches, and run the full suite.
+- **Merging `PersonDossier.tsx` and `TenantPreviewDialog.tsx`.** Already rejected in
+  [ADR 0022](../decisions/0022-duplication-ratchet.md) for a stated reason; not revisited.
+
 ## Things that look dead and must not be deleted
 
 | Looks dead | Actually | Evidence |

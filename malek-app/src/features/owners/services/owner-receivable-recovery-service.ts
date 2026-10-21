@@ -16,7 +16,7 @@
  *  - idempotent by request_id, fingerprinted over (id, amount, cash account, date)
  */
 import { supabase } from '@/lib/supabase';
-import { OwnerReceivableEvidenceError } from './owner-receivable-offset-service';
+import { collectErrorText, OwnerReceivableEvidenceError } from './owner-receivable-offset-service';
 
 const OMR_EXACT = 1000;
 
@@ -259,13 +259,7 @@ export function parseRecoverOwnerReceivableResult(
  * an unknown error is surfaced verbatim rather than softened.
  */
 export function translateOwnerRecoveryError(error: unknown): string {
-  const raw = [
-    (error as { message?: unknown })?.message,
-    (error as { code?: unknown })?.code,
-    (error as { details?: unknown })?.details,
-  ]
-    .filter((part): part is string => typeof part === 'string')
-    .join(' ');
+  const raw = collectErrorText(error);
   const map: ReadonlyArray<readonly [string, string]> = [
     ['DUE_FROM_OWNER_RECOVERY_ROLE_REQUIRED', 'تسجيل التحصيل يتطلب صلاحية مدير أو محاسب.'],
     [

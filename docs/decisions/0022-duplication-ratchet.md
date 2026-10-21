@@ -48,6 +48,24 @@ the inner loop and too important to skip before a commit.
 Repeated prose across governed documents is usually a quotation of a canonical rule. Collapsing it
 would create the second source of truth `AGENTS.md` forbids.
 
+### 4. The test layer is measured separately, with its own ratchet
+
+Added 2026-10-21 after the round-9 sweep. The test layer is **2.81%** (1,602 lines / 149 clones over
+56,994 lines) — more than double the production rate — and it was previously invisible: the guard
+excluded tests, so nothing stopped the scaffolding from growing.
+
+It is a second measurement, not a merged one, because the two numbers mean different things. A test
+that repeats an assertion block for another table or entity is usually **evidence**: the SQL payload
+or the row shape *is* the proof, and hiding it behind a parameterized helper would make the proof
+weaker and the failure harder to read. Concretely, `people-direct-write-acl.pglite.test.ts` and
+`unit-direct-write-acl.pglite.test.ts` share seven test titles and ~340 tokens of structure, but their
+`insert`/`update` payloads are entity-specific and are what the test exists to pin. That duplication
+stays.
+
+What must not grow is **scaffolding** duplication — the same read/mock/bootstrap block copied per
+suite. `TEST_THRESHOLD_PERCENT = 2.85` locks the current level; like the production ceiling it may only
+be lowered.
+
 ## What this change actually removed
 
 This was not a measurement-only change. Three real extractions landed with it, taking production
@@ -72,8 +90,26 @@ into one parameterized component would trade 180 duplicated lines for a componen
 caller, which is harder to review and easier to break. The remaining duplication is recorded, measured
 and ratcheted; it is a known quantity, not an unexamined one.
 
+## Contract tests are the other half of the picture
+
+A round-9 measurement worth recording: **107 string literals asserted by contract tests also appear in
+two or more production files.** Some are legitimate API usage (`activeFilters={activeFilters}` in 17
+files is one prop, not 17 copies). Others mark a missing primitive: `error instanceof Error ?
+error.message` appeared in 43 files, and `const queryClient = useQueryClient()` in 36.
+
+The guards do not *create* that duplication, but they freeze it: a source-text test that asserts
+`expect(source).toContain(...)` fails the moment the copied block is extracted, so the cheapest way to
+keep the suite green is to leave the copy in place. That is the failure mode to watch when paying this
+debt down: extract first, then rewrite the assertion to state the *contract* (one owner, one call
+site) instead of the *text*.
+
+The first payment from that observation is `collectErrorText` in
+`features/owners/services/owner-receivable-offset-service.ts`: the offset and recovery error
+translators carried the same 11-line message/code/details prologue. Extracting it took production
+TypeScript from 1.03% to **1.02%** (1,355 to 1,342 lines, 122 to 121 clones).
+
 ## Consequence
 
-Duplication can no longer grow without a red gate. The number in the guard is now the honest answer to
+Duplication can no longer grow without a red gate, in either layer. The number in the guard is now the honest answer to
 "how much duplication is in this repository", and the 68% that cannot be removed is documented with
 the rule that makes it immutable instead of being silently excluded from the total.
