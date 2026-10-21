@@ -26,6 +26,7 @@ Every `RELEASE.md` therefore opens by saying it is **not a production release**,
 | Version | Commit | Status |
 | --- | --- | --- |
 | `v1.0.0-rc.1` | `968de3234a0f` (verified at `4db9c2659ffc`) | verified source snapshot — not production ready |
+| `v1.0.0-rc.2` | `61e01ce32d62` (verified at `ab875a08d350`) | current snapshot — adds the restored-session verification fix (ADR 0021) |
 
 ## Version lineage note
 
