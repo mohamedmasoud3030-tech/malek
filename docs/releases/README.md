@@ -25,4 +25,17 @@ Every `RELEASE.md` therefore opens by saying it is **not a production release**,
 
 | Version | Commit | Status |
 | --- | --- | --- |
-| `v1.0.0-rc.1` | see its `MANIFEST.json` | verified source snapshot — not production ready |
+| `v1.0.0-rc.1` | `968de3234a0f` (verified at `4db9c2659ffc`) | verified source snapshot — not production ready |
+
+## Version lineage note
+
+`v1.0.0-locked` (tagged 2026-03-27) belongs to a **superseded, divergent history** and is not comparable
+with anything under this directory. The current lineage starts at this snapshot. Do not treat the two
+as consecutive releases.
+
+## Verifying a snapshot
+
+```bash
+sha256sum -c docs/releases/<version>/SHA256SUMS --quiet    # every tracked file
+sha256sum -c malek-<version>-<sha>.tar.gz.sha256           # the archive, if downloaded
+```
