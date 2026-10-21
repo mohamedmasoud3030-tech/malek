@@ -1,10 +1,33 @@
 # Session decisions
 
-> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a`
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@dd4e4b11ff5` (after the `v1.0.0-rc.1` snapshot merged)
 > **Authority:** agent memory only — see [index](index.md).
 
 Dated decisions taken in this session, newest first. A decision here is not a product/accounting rule
 and grants no stage credit.
+
+## 2026-10-21 (late)
+
+### The stale-session fix was rebuilt, not merged as-is
+
+PR #1832 was opened 2026-09-21 against `rentrix-app/`; the tree has since been renamed to `malek-app/`,
+so the branch shares no merge base with `main` and could not be reviewed as a diff. Its intent was
+kept, its two defects were fixed, and the result is
+[ADR 0021](../decisions/0021-restored-session-verification.md): verify the restored token with
+`auth.getUser()` before the shell opens, refresh once on a refusal, and distinguish a server refusal
+from an unreachable server so a flaky network cannot force a sign-out.
+
+The PR's CSP `wasm-unsafe-eval` relaxation was dropped: PGlite is a root **devDependency used by
+tests only**, so no WebAssembly reaches the bundle. Widening the production policy for an unused
+capability would have been a real weakening, not a fix.
+
+### PR #1836 (root docs move) was closed, not merged
+
+It renamed `CLAUDE.md`, `AGENT_HANDOVER.md` and `DATABASE_RULES.md` into `docs/` without touching any
+reference (36 exist). `AGENTS.md` line 9 instructs every agent to read `DATABASE_RULES.md` from the
+root, and `CLAUDE.md` must sit at the root for agent tooling to discover it. A cosmetic move that
+breaks tool discovery is a regression, so the intent — a tidy root — is served by the measurement in
+[the hygiene audit](../operations/REPOSITORY_HYGIENE_2026-10-21.md) instead.
 
 ## 2026-10-21 (evening)
 
