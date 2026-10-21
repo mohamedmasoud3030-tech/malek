@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import { requireIsolatedEnvironment } from './lib/isolated-environment.mjs';
 
 const COMPANY_ID = '00000000-0000-4000-8000-000000000001';
-const ENVIRONMENT_KIND = process.env.E2E_ENVIRONMENT_KIND?.trim().toLowerCase();
 const EMAIL = process.env.E2E_SINGLE_OFFICE_EMAIL?.trim();
 const PASSWORD = process.env.E2E_SINGLE_OFFICE_PASSWORD?.trim();
 const CHECKER_EMAIL = process.env.E2E_SINGLE_OFFICE_CHECKER_EMAIL?.trim()
@@ -47,20 +47,12 @@ const requiredEnvironment = [
   'E2E_SINGLE_OFFICE_PASSWORD',
 ];
 
-for (const name of requiredEnvironment) {
-  if (!process.env[name]?.trim()) throw new Error(`${name} is required for the single-office isolated smoke.`);
-}
-
-if (!['local', 'qa'].includes(ENVIRONMENT_KIND)) {
-  throw new Error('The single-office mutation smoke is allowed only on local or the dedicated QA Supabase stack.');
-}
-
-const supabaseUrl = new URL(process.env.VITE_SUPABASE_URL.trim());
-const productionRef = process.env.PRODUCTION_SUPABASE_PROJECT_REF.trim();
-if (supabaseUrl.hostname === `${productionRef}.supabase.co` || supabaseUrl.hostname.startsWith(`${productionRef}.`)) {
-  throw new Error('Refusing to run the single-office mutation smoke against Production.');
-}
-if (ENVIRONMENT_KIND === 'qa') {
+const { kind: environmentKind, supabaseUrl } = requireIsolatedEnvironment({
+  required: requiredEnvironment,
+  allowedKinds: ['local', 'qa'],
+  label: 'the single-office mutation smoke',
+});
+if (environmentKind === 'qa') {
   const qaRef = process.env.QA_SUPABASE_PROJECT_REF?.trim();
   if (!qaRef || supabaseUrl.hostname !== `${qaRef}.supabase.co`) {
     throw new Error('QA smoke requires QA_SUPABASE_PROJECT_REF matching VITE_SUPABASE_URL exactly.');
@@ -354,7 +346,7 @@ async function seed() {
 
   const evidence = {
     action: 'seed',
-    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    environment: environmentKind === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
     productionMutation: false,
     companyId: COMPANY_ID,
     userId: user.id,
@@ -460,7 +452,7 @@ async function lifecycle() {
 
   const evidence = {
     action: 'lifecycle',
-    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    environment: environmentKind === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
     productionMutation: false,
     companyId: COMPANY_ID,
     invoiceId: IDS.invoice,
@@ -576,7 +568,7 @@ async function verify() {
 
   const evidence = {
     action: 'verify',
-    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
+    environment: environmentKind === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
     productionMutation: false,
     companyId: COMPANY_ID,
     invoice: { id: invoice.id, status: invoice.status, paidAmount: Number(invoice.paid_amount) },

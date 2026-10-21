@@ -10,6 +10,7 @@ import {
   ATTACHMENTS_ALLOWED_MIME_TYPES,
   ATTACHMENTS_MAX_FILE_SIZE,
 } from '@/lib/attachments-contract';
+import { readSource } from '../../test/read-source';
 
 const readVaultWorkspace = () => readFileSync(
   resolve(import.meta.dirname, './components/documents-vault-workspace.tsx'),
@@ -18,7 +19,7 @@ const readVaultWorkspace = () => readFileSync(
 
 describe('documents vault real implementation', () => {
   it('service and workspace do not contain hardcoded document mocks', () => {
-    const service = readFileSync(resolve(import.meta.dirname, './documents-vault-service.ts'), 'utf8');
+    const service = readSource(import.meta.url, './documents-vault-service.ts');
     const workspace = readVaultWorkspace();
 
     for (const marker of ['placehold.co', 'doc-1', 'عقد إيجار موثق - شقة 102', 'ID+Card+Scan']) {
@@ -30,7 +31,7 @@ describe('documents vault real implementation', () => {
   });
 
   it('reads documents through signed URLs only, never a public URL', () => {
-    const service = readFileSync(resolve(import.meta.dirname, './documents-vault-service.ts'), 'utf8');
+    const service = readSource(import.meta.url, './documents-vault-service.ts');
     expect(service).toContain('supabase.storage.from');
     expect(service).toContain('createSignedUrl');
     expect(service).toContain('getVaultDocumentSignedUrl');

@@ -1,20 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import { requireIsolatedEnvironment } from './lib/isolated-environment.mjs';
 
-const environmentKind = process.env.E2E_ENVIRONMENT_KIND?.trim().toLowerCase();
-const baseRequired = [
-  'E2E_ENVIRONMENT_KIND',
-  'VITE_SUPABASE_URL',
-  'VITE_SUPABASE_ANON_KEY',
-  'PRODUCTION_SUPABASE_PROJECT_REF',
-];
-
-for (const name of baseRequired) {
-  if (!process.env[name]?.trim()) throw new Error(`${name} is required for isolated Storage smoke.`);
-}
-
-if (!['local', 'staging'].includes(environmentKind)) {
-  throw new Error('Storage smoke is allowed only for local or staging environments.');
-}
+const { kind: environmentKind, supabaseUrl } = requireIsolatedEnvironment({
+  required: ['E2E_ENVIRONMENT_KIND', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'PRODUCTION_SUPABASE_PROJECT_REF'],
+  allowedKinds: ['local', 'staging'],
+  label: 'Storage smoke',
+});
 
 const isLocal = environmentKind === 'local';
 if (isLocal && !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
@@ -26,13 +17,6 @@ if (!isLocal) {
   }
 }
 
-// Production refusal happens BEFORE any Supabase client call — no write of any
-// kind may ever reach the production project from this script.
-const supabaseUrl = new URL(process.env.VITE_SUPABASE_URL.trim());
-const productionRef = process.env.PRODUCTION_SUPABASE_PROJECT_REF.trim();
-if (supabaseUrl.hostname === `${productionRef}.supabase.co` || supabaseUrl.hostname.startsWith(`${productionRef}.`)) {
-  throw new Error('Refusing Storage smoke against the production Supabase project.');
-}
 
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY.trim();
 const authenticatedClient = createClient(supabaseUrl.toString(), anonKey, {

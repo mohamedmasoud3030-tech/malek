@@ -1,20 +1,19 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../../test/read-source';
 
 // P0 regression guard: the deposit contract picker must present readable
 // business labels (tenant — unit — property) instead of truncated UUIDs,
 // while the UUID remains the internal option value and payload field.
 // After refactor, checks are spread across queries, controller, forms, columns, doc.
 
-const workspace = readFileSync(resolve(import.meta.dirname, './deposits-workspace.tsx'), 'utf8');
-const controller = readFileSync(resolve(import.meta.dirname, './use-deposit-workspace-controller.ts'), 'utf8');
-const queries = readFileSync(resolve(import.meta.dirname, './deposit-workspace-queries.ts'), 'utf8');
-const forms = readFileSync(resolve(import.meta.dirname, './deposit-action-forms.tsx'), 'utf8');
-const columns = readFileSync(resolve(import.meta.dirname, './deposit-table-columns.tsx'), 'utf8');
-const doc = readFileSync(resolve(import.meta.dirname, './deposit-clearance-document.ts'), 'utf8');
-const service = readFileSync(resolve(import.meta.dirname, './deposit-service.ts'), 'utf8');
-const options = readFileSync(resolve(import.meta.dirname, './deposit-contract-options.ts'), 'utf8');
+const workspace = readSource(import.meta.url, './deposits-workspace.tsx');
+const controller = readSource(import.meta.url, './use-deposit-workspace-controller.ts');
+const queries = readSource(import.meta.url, './deposit-workspace-queries.ts');
+const forms = readSource(import.meta.url, './deposit-action-forms.tsx');
+const columns = readSource(import.meta.url, './deposit-table-columns.tsx');
+const doc = readSource(import.meta.url, './deposit-clearance-document.ts');
+const service = readSource(import.meta.url, './deposit-service.ts');
+const options = readSource(import.meta.url, './deposit-contract-options.ts');
 
 const all = [workspace, controller, queries, forms, columns, doc].join('\n');
 

@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { unitSchema } from '@/features/units/unit-schema';
+import { readSource } from '../../../test/read-source';
 
 // The standalone full-page person/property forms were retired in Wave A (UX
 // simplification): their create/edit journeys now render the same compact
@@ -45,7 +44,7 @@ describe('single-pass form validation', () => {
   it.each(resolverBackedSubmissionFiles)(
     '%s keeps resolver output raw when the submit handler parses values',
     (relativePath) => {
-      const source = readFileSync(resolve(import.meta.dirname, relativePath), 'utf8');
+      const source = readSource(import.meta.url, relativePath);
       const parseCount = source.match(/\.parse\(values\)/g)?.length ?? 0;
       const rawResolverCount = source.match(/\{\s*raw:\s*true\s*\}/g)?.length ?? 0;
       const firstParseIndex = source.indexOf('.parse(values)');

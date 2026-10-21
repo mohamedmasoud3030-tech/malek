@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readSource } from '../../test/read-source';
 
 describe('automation real execution', () => {
   it('service uses real tables and RPC', () => {
@@ -35,7 +36,7 @@ describe('automation real execution', () => {
 
   it('automation surfaces are not just local preview', () => {
     for (const surface of ['./components/automation-workspace.tsx', './components/automation-center-view.tsx']) {
-      const content = readFileSync(resolve(import.meta.dirname, surface), 'utf8');
+      const content = readSource(import.meta.url, surface);
       expect(content, surface).not.toContain('لم يتم تشغيل عامل أتمتة خارجي');
     }
   });

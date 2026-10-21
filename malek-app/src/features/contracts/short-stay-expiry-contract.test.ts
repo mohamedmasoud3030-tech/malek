@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../test/read-source';
 
 const migration = readFileSync(
   resolve(
@@ -13,8 +14,8 @@ const service = readFileSync(
   resolve(import.meta.dirname, './services/shortStayLifecycleService.ts'),
   'utf8',
 );
-const contractHooks = readFileSync(resolve(import.meta.dirname, './useContracts.ts'), 'utf8');
-const unitHooks = readFileSync(resolve(import.meta.dirname, '../units/use-units.ts'), 'utf8');
+const contractHooks = readSource(import.meta.url, './useContracts.ts');
+const unitHooks = readSource(import.meta.url, '../units/use-units.ts');
 
 describe('short stay checkout expiry', () => {
   it('expires only active short stays whose checkout date has arrived', () => {

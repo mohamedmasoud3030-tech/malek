@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { APP_HOST } from './features/landing/constants';
+import { readSource } from './test/read-source';
 
 describe('architecture guard v2 contract', () => {
   const guard = readFileSync(
@@ -58,7 +59,7 @@ describe('architecture guard v2 contract', () => {
 });
 
 describe('production metadata source contract', () => {
-  const html = readFileSync(resolve(import.meta.dirname, '../index.html'), 'utf8');
+  const html = readSource(import.meta.url, '../index.html');
   const productionUrl = 'https://malek-plus.vercel.app/';
 
   it('publishes the configured MALEK production host in canonical and social metadata', () => {

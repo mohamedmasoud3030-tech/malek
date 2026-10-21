@@ -94,6 +94,26 @@ First payment taken: `collectErrorText` in `features/owners/services/owner-recei
 The offset and recovery error translators carried the same 11-line message/code/details prologue;
 production duplication went 1.03% → **1.02%** (1,355 → 1,342 lines).
 
+### 3. Cleanup executed after the first measurement
+
+The shared source-reading idiom was migrated in **24 contract-test files** to one typed helper,
+`malek-app/src/test/read-source.ts`. It centralizes UTF-8 and path resolution only; each test still
+names its own production file and keeps its own assertions. Four suites that had private versions of
+the same `readSource` helper now use the shared implementation. The 24-file batch passes **177/177
+focused tests** and `app:typecheck-tests`.
+
+A second, security-sensitive duplicate was removed from the isolated smoke scripts:
+`single-office-isolated-smoke.mjs` and `storage-isolated-smoke.mjs` had separate copies of the
+production-project refusal and environment-kind validation. Both now call
+`malek-app/scripts/lib/isolated-environment.mjs`, before constructing any Supabase client. Their
+allow-lists stay distinct (`local`/`qa` vs `local`/`staging`). A new `node:test` suite proves local and
+QA acceptance, unsupported-kind rejection, exact production-project rejection, and production
+subdomain rejection (**5/5**). The live smoke scripts were syntax-checked, not run: no hosted
+credentials are available and the guard is explicitly not a claim of hosted verification.
+
+Net behavior: unchanged in contract tests; smoke-script safety is now one implementation instead of
+two, with preserved per-script environment policy.
+
 ### 3. What was considered and rejected here
 
 - **Parameterizing the two ACL suites.** Rejected: the SQL payloads are the evidence.

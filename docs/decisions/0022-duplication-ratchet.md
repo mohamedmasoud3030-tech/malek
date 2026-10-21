@@ -108,6 +108,17 @@ The first payment from that observation is `collectErrorText` in
 translators carried the same 11-line message/code/details prologue. Extracting it took production
 TypeScript from 1.03% to **1.02%** (1,355 to 1,342 lines, 122 to 121 clones).
 
+## Follow-up cleanup (2026-10-21)
+
+The shared test source-reader was adopted in 24 contract-test files through
+`malek-app/src/test/read-source.ts`; 177 focused tests and test typecheck passed. It shares only the
+UTF-8/path mechanics, not the assertions or the identity of each contracted source file.
+
+The isolated Storage and single-office smoke scripts also shared a duplicated production-project
+refusal. They now call `malek-app/scripts/lib/isolated-environment.mjs` before client creation. Their
+allowed environment sets remain intentionally distinct. Five direct node tests pin acceptance and
+refusal cases. The smoke scripts themselves were not run against hosted services.
+
 ## Consequence
 
 Duplication can no longer grow without a red gate, in either layer. The number in the guard is now the honest answer to
