@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EntityForm } from "@/components/ui/entity-form";
+import { UnsavedChangesDialog } from "@/components/ui/unsaved-changes-dialog";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -380,16 +380,9 @@ export function ServiceProviderFormDialog({
           </EntityForm.Root>
         )}
       </EntityForm.Overlay>
-      <ConfirmDialog
+      <UnsavedChangesDialog
         open={showDiscardDialog}
-        onOpenChange={(next) => {
-          if (!next && !saveMutation.isPending) setShowDiscardDialog(false);
-        }}
-        title="تغييرات غير محفوظة"
-        description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
-        confirmLabel="تجاهل التغييرات"
-        cancelLabel="مواصلة التعديل"
-        variant="warning"
+        onOpenChange={(next) => { if (!next && !saveMutation.isPending) setShowDiscardDialog(false); }}
         onConfirm={confirmDiscard}
       />
     </>

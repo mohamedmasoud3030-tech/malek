@@ -134,6 +134,8 @@ This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --mi
 - **Report CSV actions:** `ExpiringContractsSection` and `FollowUpSection` now share `ReportCsvExportButton`. The entity-specific CSV column mapping and filename remain at the caller.
 - **Tax forms:** the rent-tax and fee-tax dialogs share `TaxDefinitionFields`. `includeEffectiveTo` preserves the rent-tax end-date control and its two-column layout; fee-tax keeps its existing layout without that control. Approval mutations, fee kinds, and validation stay separate.
 - **Person/tenant dossier activity:** `DossierActivitySection` owns only the common read-only timeline display. Each caller retains its existing permission gate, data source, heading ID, date formatter, and entity-specific empty-state sentence.
+- **EntityTable loading/loaded toolbar:** one `toolbarContent` node now feeds both branches. This removes an exact same-file JSX copy without changing where the toolbar appears or what it contains.
+- **Unsaved-changes warning:** `UnsavedChangesDialog` now owns the repeated Arabic copy and warning presentation used by person forms, service-provider forms, and route blockers. Each caller still owns its own busy/close/discard state and callbacks.
 
 ### Deliberately kept separate
 
@@ -145,12 +147,17 @@ This pass inspected every TSX clone reported by `jscpd` at `--min-tokens 50 --mi
 | Settings sections | Keep section composition distinct | Common card, input, field, and draft handling are already shared. Remaining field groupings and warnings carry section-specific settings semantics. |
 | Balance sheet vs income statement | Keep account groups distinct | Balance-sheet groups carry code/name and as-of semantics; income statement groups carry revenue/expense semantics and a different KPI summary. `ReportList` primitives are already shared. |
 | Contract E2E fixture vs production page | Keep fixture | The fixture composes production filters, KPI, result, and preview components with deterministic showcase data; replacing it with the live query would destroy hermetic E2E behavior. |
+| Person vs service-provider forms | Keep their field schemas and save flows separate; share discard-warning UI only | Their unsaved-change dialog was the common display contract and is now `UnsavedChangesDialog`; validation schemas, mutation policies, category controls, and submit states differ. |
+| Rent-tax vs fee-tax setup | Share only common input fields | Rent-tax allows an end date; fee-tax has fee-kind and approval semantics. `TaxDefinitionFields` preserves the optional rent-only control and layout without merging mutation rules. |
+| EntityTable's loading vs populated toolbar | Share the exact toolbar node | Both branches used identical toggle/toolbar JSX; a single `toolbarContent` value removes the internal copy while preserving branch placement. |
+| Offset vs recovery movement panels | Keep their remaining state and movement rows separate | Their shared selector, assurance, feedback, amount/date, and facts display were already extracted; distinct mutation lifecycles, permission evidence, and ledger wording remain entity/action-specific. |
+| Property vs service-provider preview dialogs | Keep | Same dialog shell and edit affordance are supplied by shared `EntityPreviewDialog`; preview facts and privacy fields differ. |
 
 ### Verification and metric interpretation
 
-Focused UI/report/tax tests: **26/26**, plus owner/tenant portal boundary suites **17/17**; production and test TypeScript checks passed; the fresh local gate after these extractions passed **18/18**.
+Focused UI component tests: **16/16**; report/tax focused suites: **26/26**; owner/tenant portal boundary suites: **17/17**; production and test TypeScript checks passed; the fresh local gate after these extractions passed **18/18**.
 
-Current production-source measurement: **1.00% / 1,322 duplicated lines / 118 clones / 132,000 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. The percentage/line count moved slightly upward as the extracted display helpers entered the measured source set and jscpd re-segmented cross-file clones; duplicated clone count fell by 2 and duplicated tokens fell from **15,345 to 15,102**. This is not presented as a percentage win. The extracts remove concrete repeated JSX while retaining entity-specific presentation contracts; the result remains below the 1.05% locked ceiling. Do not call this “zero duplication.”
+Current production-source measurement: **0.98% / 1,293 duplicated lines / 116 clones / 131,976 lines**. Immediately before this pass: **0.99% / 1,312 lines / 120 clones / 131,930 lines**. This pass reduced the measured rate by 0.01 points, 19 duplicated lines, 4 clones, and 446 duplicated tokens (15,345 to 14,899). The component extractions also retain the caller-owned permission, data, and state contracts; this is not a claim of zero duplication.
 
 ## Things that look dead and must not be deleted
 

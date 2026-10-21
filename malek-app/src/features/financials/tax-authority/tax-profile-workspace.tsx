@@ -56,7 +56,7 @@ type TaxDraftFields = Readonly<{
 type TaxCodeOption = Readonly<{ code: string; name_ar: string }>;
 
 /** Shared UI for the identical tax-code/rate/start-date/description fields. */
-function TaxDefinitionFields<T extends TaxDraftFields>({
+export function TaxDefinitionFields<T extends TaxDraftFields>({
   draft,
   setDraft,
   taxCodes,
