@@ -30,6 +30,38 @@ is_transient_failure() {
     "$log_file"
 }
 
+classify_start_failure() {
+  local attempt_log="$1"
+  local files=("$attempt_log" "$START_LOG" "$LOG_DIR/postgres-container.log")
+  if grep -Eiq 'toomanyrequests|rate exceeded|too many requests|(^|[^0-9])429([^0-9]|$)' "${files[@]}" 2>/dev/null; then
+    printf 'image-pull-rate-limit'
+  elif grep -Eiq 'cannot connect to the docker daemon|docker daemon is not running' "${files[@]}" 2>/dev/null; then
+    printf 'docker-daemon-unavailable'
+  elif grep -Eiq 'no space left on device|disk quota exceeded' "${files[@]}" 2>/dev/null; then
+    printf 'disk-capacity'
+  elif grep -Eiq 'address already in use|port is already allocated' "${files[@]}" 2>/dev/null; then
+    printf 'port-conflict'
+  elif grep -Eiq 'tls handshake timeout|i/o timeout|connection reset|unexpected eof|context deadline exceeded|temporary failure|network is unreachable|no such host' "${files[@]}" 2>/dev/null; then
+    printf 'network-or-registry'
+  elif grep -Eiq 'manifest unknown|image.*not found|failed to pull|invalid reference format' "${files[@]}" 2>/dev/null; then
+    printf 'container-image'
+  elif grep -Eiq 'health check timed out|pg_isready|database.*unhealthy' "${files[@]}" 2>/dev/null; then
+    printf 'database-health'
+  else
+    printf 'unclassified-startup-failure'
+  fi
+}
+
+report_start_failure() {
+  local attempt_log="$1"
+  local attempt="$2"
+  local exit_status="$3"
+  local category
+  category="$(classify_start_failure "$attempt_log")"
+  printf '::error title=Supabase stack startup::category=%s; attempt=%s/%s; exit=%s (raw logs are intentionally not emitted)\n' \
+    "$category" "$attempt" "$MAX_ATTEMPTS" "$exit_status" >&2
+}
+
 wait_for_database() {
   local container_name=""
   for _ in $(seq 1 60); do
@@ -69,7 +101,10 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
 
   if ! is_transient_failure "$attempt_log"; then
     printf 'Supabase start failed with a non-transient error; retry is intentionally disabled.\n' | tee -a "$START_LOG" >&2
-    exit "${start_status:-1}"
+    report_start_failure "$attempt_log" "$attempt" "${start_status:-1}"
+    failure_status="${start_status:-1}"
+    [[ "$failure_status" -ne 0 ]] || failure_status=1
+    exit "$failure_status"
   fi
 
   if [[ "$attempt" -lt "$MAX_ATTEMPTS" ]]; then
@@ -80,4 +115,5 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
 done
 
 printf 'Supabase failed to start after %s transient retries.\n' "$MAX_ATTEMPTS" | tee -a "$START_LOG" >&2
+report_start_failure "$attempt_log" "$MAX_ATTEMPTS" 1
 exit 1
