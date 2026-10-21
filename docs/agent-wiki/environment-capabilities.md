@@ -1,6 +1,6 @@
 # Environment capabilities
 
-> **Recorded:** 2026-10-21 · **Repository state:** `malek@f2b6de55593e611f8e7713fb21e14cad14fbf67a` (clean tree)
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@10c6350b` (clean tree, after `v1.0.0-rc.2` merged)
 > **Authority:** agent memory only — see [index](index.md).
 
 This page exists because an agent that assumes a capability it does not have will either waste an hour
@@ -15,7 +15,7 @@ this sandbox, not inferred.
 | TypeScript / build / unit tests | **Yes** | Source-level proof is fully available. |
 | PostgreSQL replay + RLS/isolation audit (**PGlite**) | **Yes** | `pnpm db0:gate` runs the real migration chain in WASM. **No Docker needed.** |
 | Docker / local Supabase stack (`supabase start`) | **No** | `docker` is not installed. Hosted-parity local Auth/Storage/PostgREST is impossible here. |
-| Hosted Supabase / QA project | **No credentials** | `pnpm qa:preflight` fails closed by design. Any hosted claim stays unproven. |
+| Hosted Supabase / QA project | **No credentials, and no route to it** | `pnpm qa:preflight` fails closed by design. Even with a management token, this sandbox cannot reach `api.supabase.com` (see below). Any hosted claim stays unproven. |
 | Browser automation (Playwright) | **No** | No browsers installed, and the Playwright CDN is unreachable. No screenshots, no clicking. |
 | GitHub (`gh`, `git` push) | **Yes** | PRs, checks, issues and branches are usable. |
 | General internet | **Restricted** | Egress only to `github.com`, `codeload.github.com`, `api.github.com`, `registry.npmjs.org`, `pypi.org`, `files.pythonhosted.org`. |
@@ -41,6 +41,30 @@ plain install (without `--ignore-scripts`) was **not** tested. Neither form modi
 > **Toolchain drift:** CI pins Node **24** in every workflow ([ci.yml](../../.github/workflows/ci.yml),
 > `node-version: 24`); this sandbox has Node **22**. A local pass is not proof of a CI pass. See
 > [known-traps.md](known-traps.md).
+
+### Supabase is unreachable, with or without a credential
+
+Measured 2026-10-21 while a Supabase management token (`sbp_…`) was supplied for hosted verification:
+
+```text
+getent hosts api.supabase.com   -> 2606:4700:440b::ac40:911a  (DNS resolves)
+curl https://api.supabase.com   -> TCP connected to 104.18.42.230:443, then
+                                   OpenSSL SSL_connect: SSL_ERROR_SYSCALL (HTTP status 000)
+curl https://registry.npmjs.org -> 200
+```
+
+DNS resolves and the TCP handshake completes, so this is not a broken resolver or a dead host: the
+egress allowlist terminates the TLS handshake. **A credential does not create a route.** Repeating the
+attempt with a different token will fail identically; do not spend time on it.
+
+A second, separate point: `sbp_` tokens are the **management API** credential and are not what the
+hosted-proof path consumes. `pnpm qa:preflight` reads `QA_ENVIRONMENT_KIND`, `QA_SUPABASE_PROJECT_REF`,
+`PRODUCTION_SUPABASE_PROJECT_REF`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `QA_ADMIN_EMAIL`,
+`QA_ADMIN_PASSWORD` — see [the hosted runbook](../operations/HOSTED_EVIDENCE_RUNBOOK_AR.md). A
+management token would only be useful to *provision* such a project, and that also needs egress.
+
+Consequence: `GAP-021` and the hosted half of the 14 locally-proven gaps cannot be closed from this
+environment by any means. They need a machine with egress to the project, or a CI job that has it.
 
 ### PGlite database gates (the important one)
 
