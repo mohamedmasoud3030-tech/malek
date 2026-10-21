@@ -94,6 +94,9 @@ evidence pointers is not useful to a future agent — it's just an opinion.
 | 0009 | [MALEK canonical accounting model](./0009-malek-canonical-accounting-model.md) | 2026-08-01 | Accepted |
 | 0010 | [Stage 3 general ledger core](./0010-stage3-general-ledger-core.md) | 2026-08-01 | Accepted |
 | 0011 | [Final business, accounting, and operating policies](./0011-final-business-accounting-and-operating-policies.md) | 2026-08-04 | Accepted |
+| 0019 | [RC1 release scope: OWNER_AGENCY only](./0019-rc1-scope-owner-agency-only.md) | 2026-10-21 | Approved |
+| 0020 | [Six-role authorization mapping](./0020-six-role-authorization-mapping.md) | 2026-10-21 | Approved |
+| 0021 | [Restored browser sessions are verified against Auth before the shell opens](./0021-restored-session-verification.md) | 2026-10-21 | Accepted |
 
 The index is oldest first. The duplicate historical `0003` record and the
 unused `0007` slot are preserved as-is; do not renumber existing files.

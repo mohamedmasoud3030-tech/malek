@@ -9,7 +9,14 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Stale sessions no longer unlock the shell.** `getSession()` only compares `expires_at` with the
+  local clock, so a token the Auth server had already revoked still opened the authenticated app and
+  produced a cascade of PostgREST `401`s. Bootstrap now proves the token with `auth.getUser()`, spends
+  exactly one `refreshSession()` on a refusal, and clears the session only when the server refuses the
+  refresh token too. An unreachable Auth server is no longer treated as a refusal, so a flaky network
+  cannot force a sign-out. See [ADR 0021](docs/decisions/0021-restored-session-verification.md).
 
 ## [1.0.0-rc.1] — 2026-10-21
 
