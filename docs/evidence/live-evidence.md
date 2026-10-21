@@ -1,8 +1,8 @@
 # Live evidence report
 
 > **Generated artifact — do not edit by hand.** Regenerate with `pnpm evidence:live`.
-> **Revision:** `488f4665cc2b99be2fabecd70b285e4a76493d2b`
-> **Generated:** 2026-10-21T02:21:28.114Z
+> **Revision:** `6c4dc560ccf1c74785108fa2a3cf6a6ad368fc24`
+> **Generated:** 2026-10-21T03:07:45.546Z
 > **Engine:** PGlite (PostgreSQL 18 in WASM), schema replayed from `supabase/migrations`.
 
 ## What this report proves — and what it does not
