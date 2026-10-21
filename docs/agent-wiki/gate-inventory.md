@@ -13,7 +13,10 @@ get wrong: what a green result does **not** prove.
 | Docs links | `pnpm check:docs` | 0.35 s (warm) | PASS, 111 Markdown files | Proves links resolve. Proves nothing about whether the linked text is true. |
 | Sensitive write boundary | `pnpm check:sensitive-writes` | 0.3 s | PASS — 688 files, **12** sensitive tables, 0 unapproved browser mutations | Static string scan, not an AST. It catches fixed-name chains only; a table name built at runtime is invisible to it. |
 | Sensitive write boundary tests | `pnpm test:sensitive-writes` | 0.5 s | PASS — 10 tests, including CLI fail-closed and test-file exclusion | Proves the guard detects violations, not that the app is safe. |
-| Gap evidence audit | `pnpm audit:gaps` | 1.1 s | REPORT — 23 gaps; resolves citations to files/objects; flags unresolvable ones (6 at first run, all stale post-squash filenames) | Report-only. `EVIDENCED` never means `CLOSED`. |
+| SQL signature docs | `pnpm check:sql-signatures` | 4.6 s | PASS — 10 documented signatures match the replayed schema | Checks argument lists only, and only inside `<!-- sql-signatures -->` markers. Return types and prose are not verified. |
+| Live evidence bundle | `pnpm evidence:live` | ~45 s | 14 gaps PROVEN_LOCALLY, 17 proof units, 4 NO_LOCAL_PROOF | Engine-level proof only; no Auth, PostgREST, Storage, browser or hosted config. See [live-evidence.md](live-evidence.md). |
+| SQL signature docs | `pnpm check:sql-signatures` | 4.6 s | PASS — 10 documented signatures match the replayed schema | Checks argument lists only, and only inside `<!-- sql-signatures -->` markers. Return types and prose are not verified. |
+ 1.1 s | REPORT — 23 gaps; resolves citations to files/objects; flags unresolvable ones (6 at first run, all stale post-squash filenames) | Report-only. `EVIDENCED` never means `CLOSED`. |
 | Sensitive write boundary | `pnpm check:sensitive-writes` | 0.3 s | PASS — 688 files, **12** sensitive tables, 0 unapproved browser mutations | Static string scan, not an AST. It catches fixed-name chains only; a table name built at runtime is invisible to it. |
 | Sensitive write boundary tests | `pnpm test:sensitive-writes` | 0.5 s | PASS — 10 tests, including CLI fail-closed and test-file exclusion | Proves the guard detects violations, not that the app is safe. |
  0.4 s | PASS — 7 pages, 6 index links, all dated | Checks form only (orphans, missing back-links, undated claims). It cannot tell whether a claim is still true. |
@@ -68,5 +71,5 @@ corepack pnpm --filter ./malek-app test          # ~9 minutes
 ```
 
 One command that runs the safe subset and writes machine-readable evidence:
-`pnpm gate:local` — measured **14/14 PASS in ~115 s** at `f2b6de5` on 2026-10-21, evidence in
+`pnpm gate:local` — measured **17/17 PASS in ~126 s** at `f2b6de5` on 2026-10-21, evidence in
 `.gate/last-run.json`. See [session-decisions.md](session-decisions.md).

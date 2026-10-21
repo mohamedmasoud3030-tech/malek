@@ -48,6 +48,7 @@ traps, and re-reporting stale SHAs as current reality.
 | Page | What it answers |
 | --- | --- |
 | [session-decisions.md](session-decisions.md) | Dated decisions taken in this session, and what was deliberately *not* changed. |
+| [live-evidence.md](live-evidence.md) | How to run and read the executable evidence layer (`pnpm evidence:live`), and what it can never prove. |
 | [gap-execution-board.md](gap-execution-board.md) | Per-gap disposition from the 2026-10-21 instruction to close all 23, with evidence and next action. |
 | [delivery-advisory.md](delivery-advisory.md) | Points to the 2026-10-21 consulting roadmap to delivery, and the three claims that matter. |
 
