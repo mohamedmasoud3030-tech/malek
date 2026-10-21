@@ -11,7 +11,12 @@ get wrong: what a green result does **not** prove.
 | Gate | Command | Time | Observed result | Blind spot |
 | --- | --- | --- | --- | --- |
 | Docs links | `pnpm check:docs` | 0.35 s (warm) | PASS, 111 Markdown files | Proves links resolve. Proves nothing about whether the linked text is true. |
-| Agent wiki guard | `pnpm check:wiki` | 0.4 s | PASS — 7 pages, 6 index links, all dated | Checks form only (orphans, missing back-links, undated claims). It cannot tell whether a claim is still true. |
+| Sensitive write boundary | `pnpm check:sensitive-writes` | 0.3 s | PASS — 688 files, **12** sensitive tables, 0 unapproved browser mutations | Static string scan, not an AST. It catches fixed-name chains only; a table name built at runtime is invisible to it. |
+| Sensitive write boundary tests | `pnpm test:sensitive-writes` | 0.5 s | PASS — 10 tests, including CLI fail-closed and test-file exclusion | Proves the guard detects violations, not that the app is safe. |
+| Gap evidence audit | `pnpm audit:gaps` | 1.1 s | REPORT — 23 gaps; resolves citations to files/objects; flags unresolvable ones (6 at first run, all stale post-squash filenames) | Report-only. `EVIDENCED` never means `CLOSED`. |
+| Sensitive write boundary | `pnpm check:sensitive-writes` | 0.3 s | PASS — 688 files, **12** sensitive tables, 0 unapproved browser mutations | Static string scan, not an AST. It catches fixed-name chains only; a table name built at runtime is invisible to it. |
+| Sensitive write boundary tests | `pnpm test:sensitive-writes` | 0.5 s | PASS — 10 tests, including CLI fail-closed and test-file exclusion | Proves the guard detects violations, not that the app is safe. |
+ 0.4 s | PASS — 7 pages, 6 index links, all dated | Checks form only (orphans, missing back-links, undated claims). It cannot tell whether a claim is still true. |
 | Canonical rules | `pnpm check:business-rules` | 0.27 s | PASS, `v2.0.0` hash `30a5269…` | Verifies the rule file matches its pinned hash. It is a tamper check, not a correctness check. |
 | Execution plan | `pnpm check:execution-plan` | 0.27 s | PASS, 10 stages / 98 tasks / 18 decisions | Same: integrity of the plan, not its accuracy. |
 | Migration hygiene | `pnpm check:migration-hygiene` | 0.29 s | OK (base `origin/main`), 1 legacy warning for `supabase/migrations/rls_per_table/00_rollback_rls_for_table.sql` | **Diff-scoped.** Only new/modified files vs `origin/main` are enforced. |
