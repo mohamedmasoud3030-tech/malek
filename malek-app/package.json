@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "node scripts/write-build-proof.mjs && vite build --config vite.config.ts",
+    "build:property-operations": "node scripts/write-build-proof.mjs && vite build --config vite.config.ts --mode property-operations",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",

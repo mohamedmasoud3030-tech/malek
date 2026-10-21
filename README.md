@@ -19,6 +19,8 @@ pnpm typecheck
 pnpm lint
 pnpm check:docs
 pnpm build
+# Optional curated build; pnpm build remains the standard full-product edition.
+corepack pnpm --filter ./malek-app build:property-operations
 pnpm --filter ./malek-app test
 pnpm --filter ./malek-app run test:financials
 ```
