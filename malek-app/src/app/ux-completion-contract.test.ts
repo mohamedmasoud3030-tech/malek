@@ -196,7 +196,7 @@ describe('UX completion contract', () => {
     const finance = source('features/finance/shell/financeShellModel.ts');
     const routeContract = source('app/navigation/route-contract.ts');
     const reports = source('features/reports/report-products.ts');
-    const settings = source('features/settings/registry/sectionRegistry.ts');
+    const settings = source('features/settings/registry/section-catalog.ts');
     const routes = source('app/router/route-tree.ts');
 
     expect(appNav).not.toContain("['/settings', 'automation'");
