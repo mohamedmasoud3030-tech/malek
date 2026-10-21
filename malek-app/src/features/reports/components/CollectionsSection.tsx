@@ -1,5 +1,3 @@
-import { FileSpreadsheet, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import {
   formatPaymentMethodLabel,
@@ -17,7 +15,6 @@ import {
 } from '@/services/documents/documentPayloadAdapters';
 import {
   buildReportCsvFilename,
-  downloadCsv,
   toDailyCollectionCsv,
   type RentRollReportRow,
 } from '../reports-page.helpers';
@@ -35,12 +32,8 @@ import {
 } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
 import { formatLatinNumber } from '@/lib/formatters';
-import {
-  csvRowsToXlsxBlob,
-  downloadBlob,
-  xlsxFilenameFromCsv,
-} from '@/lib/tabular-export';
 import { ReportDocumentActions } from './report-document-actions';
+import { ReportTabularExportActions } from './report-tabular-export-actions';
 
 export function CollectionsSection({
   summary,
@@ -215,35 +208,14 @@ export function CollectionsSection({
   ) : undefined;
 
   const rentRollCsvFilename = buildReportCsvFilename('rent-roll');
-  const rentRollAction = canExportReports ? (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() =>
-          downloadBlob(
-            csvRowsToXlsxBlob(rentRollRows, 'سجل الإيجارات'),
-            xlsxFilenameFromCsv(rentRollCsvFilename),
-          )
-        }
-        className="min-h-11 gap-1.5 text-xs"
-        disabled={rentRollRows.length === 0}
-      >
-        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-        Excel
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => downloadCsv(rentRollCsvFilename, rentRollRows)}
-        className="min-h-11 gap-1.5 text-xs"
-        disabled={rentRollRows.length === 0}
-      >
-        <FileText className="size-3.5" aria-hidden="true" />
-        CSV
-      </Button>
-    </div>
-  ) : undefined;
+  const rentRollAction = (
+    <ReportTabularExportActions
+      rows={rentRollRows}
+      filename={rentRollCsvFilename}
+      sheetName="سجل الإيجارات"
+      enabled={canExportReports}
+    />
+  );
 
   const rateTone = (rate: number) => {
     if (rate >= 85) return 'good';
