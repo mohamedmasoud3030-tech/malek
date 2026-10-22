@@ -73,6 +73,8 @@ jobs:
         run: pnpm test:supabase:rls
       - name: Build production bundle
         run: pnpm build
+      - name: Build and verify Property Operations edition
+        run: pnpm --filter @workspace/malek run build:property-operations
 
   heavy-validation:
     name: heavy-validation
