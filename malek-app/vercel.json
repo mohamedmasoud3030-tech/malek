@@ -2,8 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install --frozen-lockfile",
   "ignoreCommand": "node scripts/vercel-project-guard.mjs",
-  "buildCommand": "pnpm --filter @workspace/malek exec node scripts/production-demo-preflight.mjs && pnpm --filter @workspace/malek run build",
-  "outputDirectory": "dist/public",
+  "buildCommand": "pnpm --filter @workspace/malek exec node scripts/production-demo-preflight.mjs && pnpm --filter @workspace/malek run build:property-operations",
+  "outputDirectory": "dist/property-operations",
   "framework": "vite",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
