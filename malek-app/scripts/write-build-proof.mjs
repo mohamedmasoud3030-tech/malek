@@ -7,12 +7,13 @@ import { dirname, join, resolve } from 'node:path';
  * Writes the deployment identity artifact published at `/build-proof.json`.
  *
  * It exists so a deployed surface can be tied to an immutable Git revision and
- * to the exact database migration manifest that revision ships. Three values
- * are recorded, and all three are derived — never hand-written:
+ * to the exact database migration manifest that revision ships. Four values
+ * are recorded, and all are derived or explicitly selected at build time:
  *
- *   sha          — the commit the artifact was built from.
- *   builtAt      — UTC build timestamp (ordering evidence, not identity).
- *   schemaDigest — sha256 over the sorted `migration.sql:<sha256(sql)>>` manifest
+ *   sha            — the commit the artifact was built from.
+ *   productEdition — the selected product edition (`standard` by default).
+ *   builtAt        — UTC build timestamp (ordering evidence, not identity).
+ *   schemaDigest   — sha256 over the sorted `migration.sql:<sha256(sql)>>` manifest
  *                  of supabase/migrations. Two builds that ship different
  *                  schema files can never share a digest.
  *
@@ -25,6 +26,12 @@ import { dirname, join, resolve } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '../..');
 const migrationsDir = join(repoRoot, 'supabase', 'migrations');
+
+const editionIndex = process.argv.indexOf('--edition');
+const productEdition = editionIndex === -1 ? 'standard' : process.argv[editionIndex + 1];
+if (!['standard', 'property-operations'].includes(productEdition)) {
+  throw new Error('Build proof requires --edition standard|property-operations.');
+}
 
 const sha = (
   process.env.VERCEL_GIT_COMMIT_SHA
@@ -55,6 +62,7 @@ await writeFile(
   resolve(here, '../public/build-proof.json'),
   `${JSON.stringify({
     sha,
+    productEdition,
     builtAt: new Date().toISOString(),
     schemaDigest,
     migrationCount,

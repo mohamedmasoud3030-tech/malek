@@ -35,6 +35,13 @@ assert.equal(
   1,
   'an abbreviated SHA must fail — identity requires the full revision',
 );
+const invalidEdition = run([
+  '--base-url', 'https://example.invalid',
+  '--expected-sha', REVIEWED_SHA,
+  '--expected-edition', 'enterprise',
+]);
+assert.equal(invalidEdition.code, 1, 'unknown product editions must fail');
+assert.match(invalidEdition.output, /expected-edition must be standard or property-operations/);
 assert.equal(
   run(['--base-url', 'http://example.invalid', '--expected-sha', REVIEWED_SHA]).code,
   1,

@@ -22,8 +22,10 @@ function productionEnvGuardPlugin() {
         process.env.VITEST === "true" ||
         config.mode === "test" ||
         process.env.NODE_ENV === "test";
-      const isProdBuild =
-        config.command === "build" && config.mode === "production";
+      // Vite's `--mode` is also used to select product editions (for example
+      // `property-operations`). A custom mode must not disable production
+      // credential validation; `isProduction` reflects the actual build type.
+      const isProdBuild = config.command === "build" && config.isProduction;
       const isVercel = Boolean(
         process.env.VERCEL || process.env.VERCEL_ENV === "production",
       );

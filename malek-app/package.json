@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "node scripts/write-build-proof.mjs && vite build --config vite.config.ts",
-    "build:property-operations": "node scripts/write-build-proof.mjs && vite build --config vite.config.ts --mode property-operations",
+    "build": "node scripts/write-build-proof.mjs --edition standard && vite build --config vite.config.ts",
+    "build:property-operations": "node scripts/write-build-proof.mjs --edition property-operations && vite build --config vite.config.ts --mode property-operations --outDir dist/property-operations",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
+    "preview:property-operations": "vite preview --config vite.config.ts --host 0.0.0.0 --outDir dist/property-operations",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test": "vitest run --config vite.config.ts --exclude src/components/ui/primitives.axe.test.tsx",
