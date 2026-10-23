@@ -98,3 +98,18 @@ Report:
 **Never declare a module complete** from a component test, migration or merged PR alone. A module is complete only when the applicable chain is evidenced: `UI → Service/RPC → Database → RLS/Permissions → Audit → Tests → QA/Runtime evidence`.
 
 **Do not create parallel source-of-truth documents.** Update the Canonical Pack instead.
+
+---
+
+## Portfolio command center
+
+This repository is part of a 10-project portfolio governed by the
+[`command-center-`](https://github.com/mohamedmasoud3030-tech/command-center-) repository. Portfolio rules (they take precedence over this file where they conflict):
+one live status file per repo, dated reports are archived — never silently deleted, no secrets in git,
+and the non-technical owner is always answered in simple Egyptian Arabic with explicit decisions to approve.
+
+## Skill copies note (2026-10-21)
+
+Skills exist under both `skills/` and `.claude/skills/` and may have drifted.
+When editing any skill, check both copies in the same change and keep them aligned;
+a future pass will canonicalize one location.
