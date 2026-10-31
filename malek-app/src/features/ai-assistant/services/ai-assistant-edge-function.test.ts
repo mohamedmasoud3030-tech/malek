@@ -1,9 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readSource } from '../../../test/read-source';
 
 const readRepoFile = (path: string) =>
-  readFileSync(resolve(import.meta.dirname, "../../../../../", path), "utf8");
+  readSource(import.meta.url, "../../../../../", path);
 
 const edge = () => readRepoFile("supabase/functions/ai-assistant/index.ts");
 const safety = () => readRepoFile("supabase/functions/_shared/ai-safety.ts");

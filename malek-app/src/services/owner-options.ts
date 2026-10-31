@@ -2,7 +2,7 @@ import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 
-type OwnerOption = Readonly<{
+export type OwnerOption = Readonly<{
   id: string;
   full_name: string;
   display_name: string | null;
@@ -15,17 +15,21 @@ type OwnerOption = Readonly<{
  * owners feature; consumers outside that feature never import its hooks or
  * services directly.
  */
+export async function fetchActiveOwnerOptions(): Promise<OwnerOption[]> {
+  const { rows } = await fetchAllRows<OwnerOption>(() => supabase
+    .from('owners')
+    .select('id, full_name, display_name, name')
+    .is('deleted_at', null)
+    .eq('is_active', true)
+    .order('full_name', { ascending: true })
+    .order('id', { ascending: true })
+    .returns<OwnerOption[]>());
+  return rows;
+}
+
 export async function listOwnerOptions(): Promise<OwnerOption[]> {
   try {
-    const { rows } = await fetchAllRows<OwnerOption>(() => supabase
-      .from('owners')
-      .select('id, full_name, display_name, name')
-      .is('deleted_at', null)
-      .eq('is_active', true)
-      .order('full_name', { ascending: true })
-      .order('id', { ascending: true })
-      .returns<OwnerOption[]>());
-    return rows;
+    return await fetchActiveOwnerOptions();
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل قائمة الملاك');
     throw error;

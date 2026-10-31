@@ -86,6 +86,43 @@ async function loadTaxAuthorityReadiness(
 }
 
 /**
+ * Row → window mappers for the two governed tax tables.
+ *
+ * `company_tax_profiles` and `company_fee_tax_treatments` expose the same
+ * window columns, and both the "covering" read and the "latest draft" read
+ * need the same coercion. Reading a row is not a domain decision: the
+ * READY/MISSING verdict always comes from the governed resolver, so sharing
+ * the coercion here cannot widen authority — it only stops the same cast from
+ * existing four times.
+ */
+type TaxWindowRow = Record<string, unknown> | undefined;
+
+function mapCoveringTaxWindow(row: TaxWindowRow) {
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    tax_code: String(row.tax_code ?? ''),
+    tax_rate: Number(row.tax_rate ?? 0),
+    effective_from: String(row.effective_from ?? ''),
+    effective_to: (row.effective_to as string) ?? null,
+    version_no: Number(row.version_no ?? 0),
+    status: String(row.status ?? 'ACTIVE'),
+  };
+}
+
+function mapDraftTaxWindow(row: TaxWindowRow) {
+  if (!row) return null;
+  return {
+    id: String(row.id ?? ''),
+    tax_code: String(row.tax_code ?? ''),
+    tax_rate: Number(row.tax_rate ?? 0),
+    effective_from: String(row.effective_from ?? ''),
+    status: String(row.status ?? 'DRAFT'),
+    created_by: String(row.created_by ?? ''),
+  };
+}
+
+/**
  * Presentation detail for a scope the authority already reported as READY.
  * The rows are read under the existing company RLS policy
  * (company_tax_profiles_company_read / company_fee_tax_treatments_company_read),
@@ -104,17 +141,7 @@ async function readCoveringTaxProfile(companyId: string, date: string) {
     .order('effective_from', { ascending: false })
     .order('version_no', { ascending: false })
     .limit(1);
-  const row = data?.[0] as Record<string, unknown> | undefined;
-  if (!row) return null;
-  return {
-    id: String(row.id ?? ''),
-    tax_code: String(row.tax_code ?? ''),
-    tax_rate: Number(row.tax_rate ?? 0),
-    effective_from: String(row.effective_from ?? ''),
-    effective_to: (row.effective_to as string) ?? null,
-    version_no: Number(row.version_no ?? 0),
-    status: String(row.status ?? 'ACTIVE'),
-  };
+  return mapCoveringTaxWindow(data?.[0] as TaxWindowRow);
 }
 
 async function readCoveringFeeTaxTreatment(companyId: string, feeKind: TaxAuthorityFeeScope, date: string) {
@@ -129,17 +156,7 @@ async function readCoveringFeeTaxTreatment(companyId: string, feeKind: TaxAuthor
     .order('effective_from', { ascending: false })
     .order('version_no', { ascending: false })
     .limit(1);
-  const row = data?.[0] as Record<string, unknown> | undefined;
-  if (!row) return null;
-  return {
-    id: String(row.id ?? ''),
-    tax_code: String(row.tax_code ?? ''),
-    tax_rate: Number(row.tax_rate ?? 0),
-    effective_from: String(row.effective_from ?? ''),
-    effective_to: (row.effective_to as string) ?? null,
-    version_no: Number(row.version_no ?? 0),
-    status: String(row.status ?? 'ACTIVE'),
-  };
+  return mapCoveringTaxWindow(data?.[0] as TaxWindowRow);
 }
 
 async function readLatestTaxDraft(companyId: string) {
@@ -150,16 +167,7 @@ async function readLatestTaxDraft(companyId: string) {
     .eq('status', 'DRAFT')
     .order('created_at', { ascending: false })
     .limit(1);
-  const row = data?.[0] as Record<string, unknown> | undefined;
-  if (!row) return null;
-  return {
-    id: String(row.id ?? ''),
-    tax_code: String(row.tax_code ?? ''),
-    tax_rate: Number(row.tax_rate ?? 0),
-    effective_from: String(row.effective_from ?? ''),
-    status: String(row.status ?? 'DRAFT'),
-    created_by: String(row.created_by ?? ''),
-  };
+  return mapDraftTaxWindow(data?.[0] as TaxWindowRow);
 }
 
 async function readLatestFeeTaxDraft(companyId: string, feeKind: TaxAuthorityFeeScope) {
@@ -171,16 +179,7 @@ async function readLatestFeeTaxDraft(companyId: string, feeKind: TaxAuthorityFee
     .eq('status', 'DRAFT')
     .order('created_at', { ascending: false })
     .limit(1);
-  const row = data?.[0] as Record<string, unknown> | undefined;
-  if (!row) return null;
-  return {
-    id: String(row.id ?? ''),
-    tax_code: String(row.tax_code ?? ''),
-    tax_rate: Number(row.tax_rate ?? 0),
-    effective_from: String(row.effective_from ?? ''),
-    status: String(row.status ?? 'DRAFT'),
-    created_by: String(row.created_by ?? ''),
-  };
+  return mapDraftTaxWindow(data?.[0] as TaxWindowRow);
 }
 
 export async function getFinanceReadiness(companyId: string): Promise<FinanceReadiness> {

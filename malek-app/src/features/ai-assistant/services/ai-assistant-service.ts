@@ -1,3 +1,4 @@
+import { toDateOnlyISO } from '@/lib/formatters';
 import { getInvoiceRemainingAmount } from '@/features/financials/invoices/invoice-amounts';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { getMaintenanceStatusVariants, normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
@@ -99,13 +100,6 @@ type FunctionSuccessBody = {
     contextTrimmed?: boolean;
   };
 };
-
-function toDateOnly(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function addDays(date: Date, days: number): Date {
   const copy = new Date(date);
@@ -575,10 +569,10 @@ async function loadEntityContext(
 
 export async function buildAiAssistantContext(surface?: AiAssistantSurfaceContext): Promise<AiAssistantContext> {
   const now = new Date();
-  const asOf = toDateOnly(now);
-  const renewalUntil = toDateOnly(addDays(now, renewalLookaheadDays));
-  const thirtyDaysAgo = toDateOnly(addDays(now, -30));
-  const ninetyDaysAgo = toDateOnly(addDays(now, -90));
+  const asOf = toDateOnlyISO(now);
+  const renewalUntil = toDateOnlyISO(addDays(now, renewalLookaheadDays));
+  const thirtyDaysAgo = toDateOnlyISO(addDays(now, -30));
+  const ninetyDaysAgo = toDateOnlyISO(addDays(now, -90));
 
   const [openInvoices, contractRenewals, snapshot, maintenanceRows, depositRows] = await Promise.all([
     fetchOpenInvoiceContextRows(asOf),

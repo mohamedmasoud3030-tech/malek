@@ -73,3 +73,25 @@ corepack pnpm --filter ./malek-app test          # ~9 minutes
 One command that runs the safe subset and writes machine-readable evidence:
 `pnpm gate:local` — measured **17/17 PASS in ~126 s** at `f2b6de5` on 2026-10-21, evidence in
 `.gate/last-run.json`. See [session-decisions.md](session-decisions.md).
+
+## `check:duplication` (added 2026-10-21)
+
+> **Recorded:** 2026-10-21 · **Repository state:** `malek@2c117e48` (before the extraction below)
+
+`node scripts/check-duplication.mjs` runs `jscpd@4.3.0` over `malek-app/src` (TypeScript/TSX, tests
+excluded, `--min-tokens 50 --min-lines 5`) and fails above a locked ceiling.
+
+| | |
+| --- | --- |
+| Measured before | 1.35% · 1,783 lines · 132 clones |
+| Measured after the 0022 extraction | **1.03%** · 1,362 lines · 123 clones |
+| Locked ceiling | 1.10% |
+| Runtime | ~9 s |
+| In `gate:local` | default and full modes, **not** quick |
+
+**Blind spot, stated:** it does not see `supabase/migrations/**` and must not. `DATABASE_RULES.md`
+makes a merged migration immutable, so those 4,222 duplicated lines cannot be removed. Counting them
+would produce a gate that can never pass. See [ADR 0022](../decisions/0022-duplication-ratchet.md).
+
+**Raising the ceiling is a downgrade.** If a change pushes duplication over 1.10%, extract the shared
+piece. When duplication drops, lower `THRESHOLD_PERCENT` in the same commit.

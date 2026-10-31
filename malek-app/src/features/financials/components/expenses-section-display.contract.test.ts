@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../../test/read-source';
 
 describe('expenses section display architecture', () => {
-  const source = readFileSync(resolve(import.meta.dirname, './expenses-section.tsx'), 'utf8');
+  const source = readSource(import.meta.url, './expenses-section.tsx');
 
   it('surfaces amount as the mobile primary money datum', () => {
     expect(source).toContain('EntityTable');

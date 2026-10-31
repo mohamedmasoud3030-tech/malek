@@ -19,13 +19,19 @@ const EXPORT_HEADERS = [
 ] as const;
 
 
-function buildPropertiesCsv(properties: Property[]) {
-  const rows = properties.map((property) => [
+function propertyIdentityColumns(property: Property): string[] {
+  return [
     property.title ?? '',
     property.type ?? '',
     property.address ?? '',
     property.owner_name ?? '',
     propertyStatusLabels[property.status as keyof typeof propertyStatusLabels] ?? property.status ?? '',
+  ];
+}
+
+function buildPropertiesCsv(properties: Property[]) {
+  const rows = properties.map((property) => [
+    ...propertyIdentityColumns(property),
     formatDefaultCompanyMoney(property.purchase_value),
     formatDefaultCompanyMoney(property.current_value),
     DEFAULT_CURRENCY,
@@ -47,11 +53,7 @@ export function buildPropertiesXlsxBlob(properties: Property[]) {
     name: 'العقارات',
     headers: EXPORT_HEADERS,
     rows: properties.map((property) => [
-      property.title ?? '',
-      property.type ?? '',
-      property.address ?? '',
-      property.owner_name ?? '',
-      propertyStatusLabels[property.status as keyof typeof propertyStatusLabels] ?? property.status ?? '',
+      ...propertyIdentityColumns(property),
       property.purchase_value == null ? null : Number(property.purchase_value),
       property.current_value == null ? null : Number(property.current_value),
       DEFAULT_CURRENCY,

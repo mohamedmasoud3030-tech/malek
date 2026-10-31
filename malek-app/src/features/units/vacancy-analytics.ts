@@ -1,5 +1,6 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { isContractStatus } from '@/lib/contractStatus';
+import { formatUtcCalendarDate } from '@/lib/utc-calendar-date';
 import type { Unit } from '@/types/domain';
 
 type VacancyAnalyticsUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount' | 'created_at'>;
@@ -104,23 +105,16 @@ function calendarDayDiff(later: string, earlier: string): number {
   return Math.max(0, Math.round((toUtcTimestamp(later) - toUtcTimestamp(earlier)) / DAY_MS));
 }
 
-function toUtcDateOnly(date: Date): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function addDays(dateOnly: string, days: number): string {
   const date = new Date(toUtcTimestamp(dateOnly));
   date.setUTCDate(date.getUTCDate() + days);
-  return toUtcDateOnly(date);
+  return formatUtcCalendarDate(date);
 }
 
 function getPreviousMonthEnd(asOf: string): string {
   const [year, month] = asOf.split('-').map(Number);
   // UTC day 0 of the current month is the last day of the previous month.
-  return toUtcDateOnly(new Date(Date.UTC(year, month - 1, 0)));
+  return formatUtcCalendarDate(new Date(Date.UTC(year, month - 1, 0)));
 }
 
 function normalizeUnitStatus(status: unknown): string {

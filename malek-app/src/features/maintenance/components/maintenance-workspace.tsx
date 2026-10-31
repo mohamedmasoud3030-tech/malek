@@ -26,7 +26,12 @@ import {
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './maintenance-list';
 import { defaultMaintenanceColumns, maintenanceColumnOptions } from './maintenance-list';
-import { maintenancePriorityLabels, maintenanceStatusLabels } from '@/lib/maintenanceStatus';
+import {
+  maintenancePriorityFilterOptions,
+  maintenancePriorityLabels,
+  maintenanceStatusFilterOptions,
+  maintenanceStatusLabels,
+} from '@/lib/maintenanceStatus';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
 import { maintenanceAttentionLabels, type MaintenanceAttentionFilter, type MaintenanceAttentionFlag } from '../maintenance-attention';
@@ -288,22 +293,18 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
               value={String(controller.statusFilter)}
               onChange={(event) => controller.setStatusFilter(event.target.value as MaintenanceStatusFilter)}
             >
-              <option value="all">كل الحالات</option>
-              <option value="open">مفتوح</option>
-              <option value="in_progress">قيد التنفيذ</option>
-              <option value="resolved">تم التنفيذ</option>
-              <option value="closed">مغلق</option>
+              {maintenanceStatusFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </Select>
             <Select
               aria-label="تصفية حسب الأولوية"
               value={String(controller.priorityFilter)}
               onChange={(event) => controller.setPriorityFilter(event.target.value as MaintenancePriorityFilter)}
             >
-              <option value="all">كل الأولويات</option>
-              <option value="low">منخفضة</option>
-              <option value="medium">متوسطة</option>
-              <option value="high">عالية</option>
-              <option value="urgent">عاجلة</option>
+              {maintenancePriorityFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </Select>
             <Select
               aria-label="تصفية حسب المتابعة التشغيلية"

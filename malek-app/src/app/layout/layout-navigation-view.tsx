@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { focusMenuItem, useMenuKeyboardNavigation } from '@/components/ui/menu-keyboard';
 import { shieldDoubleClickFollowUp } from '@/components/ui/menu-click-shield';
 import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';
+import { isPathAvailableInEdition } from '@/lib/product-edition';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
 import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
@@ -482,18 +483,20 @@ export function MobileFloatingControl({
             <NotificationsMenu authorization={authorization} />
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={openAiAssistant}
-            aria-label="فتح المساعد الذكي"
-            title="المساعد الذكي"
-            data-mobile-dock-ai
-            className={utilityActionClass}
-          >
-            <Sparkles className="size-[21px]" aria-hidden="true" />
-          </Button>
+          {isPathAvailableInEdition('/ai-assistant') ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={openAiAssistant}
+              aria-label="فتح المساعد الذكي"
+              title="المساعد الذكي"
+              data-mobile-dock-ai
+              className={utilityActionClass}
+            >
+              <Sparkles className="size-[21px]" aria-hidden="true" />
+            </Button>
+          ) : null}
         </div>
       </div>
     </>

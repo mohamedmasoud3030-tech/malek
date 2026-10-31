@@ -28,20 +28,32 @@ export function getContractNumber(contract: Pick<ContractListItem, 'id' | 'refer
 }
 
 
-export function buildContractsCsv(contracts: ContractListItem[]) {
-  const rows = contracts.map((contract) => [
+function contractIdentityColumns(contract: ContractListItem): string[] {
+  return [
     getContractNumber(contract),
     contract.people?.full_name ?? '',
     contract.people?.phone ?? '',
     contract.units?.unit_number ?? '',
     contract.properties?.title ?? '',
     contract.properties?.address ?? '',
-    formatDefaultCompanyMoney(contract.rent_amount),
-    DEFAULT_CURRENCY,
+  ];
+}
+
+function contractTermsColumns(contract: ContractListItem): string[] {
+  return [
     paymentCycleLabels[contract.payment_cycle],
     contract.start_date,
     contract.end_date,
     contractStatusLabels[normalizeContractStatus(contract.status)],
+  ];
+}
+
+export function buildContractsCsv(contracts: ContractListItem[]) {
+  const rows = contracts.map((contract) => [
+    ...contractIdentityColumns(contract),
+    formatDefaultCompanyMoney(contract.rent_amount),
+    DEFAULT_CURRENCY,
+    ...contractTermsColumns(contract),
   ]);
 
   return buildCsvMatrix([EXPORT_HEADERS, ...rows], { quoteText: false });
@@ -60,18 +72,10 @@ export function buildContractsXlsxBlob(contracts: ContractListItem[]) {
     name: 'العقود',
     headers: EXPORT_HEADERS,
     rows: contracts.map((contract) => [
-      getContractNumber(contract),
-      contract.people?.full_name ?? '',
-      contract.people?.phone ?? '',
-      contract.units?.unit_number ?? '',
-      contract.properties?.title ?? '',
-      contract.properties?.address ?? '',
+      ...contractIdentityColumns(contract),
       contract.rent_amount == null ? null : Number(contract.rent_amount),
       DEFAULT_CURRENCY,
-      paymentCycleLabels[contract.payment_cycle],
-      contract.start_date,
-      contract.end_date,
-      contractStatusLabels[normalizeContractStatus(contract.status)],
+      ...contractTermsColumns(contract),
     ]),
   });
 }

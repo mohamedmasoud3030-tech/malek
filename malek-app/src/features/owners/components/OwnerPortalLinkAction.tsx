@@ -3,6 +3,7 @@ import { Link2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
+import { isPathAvailableInEdition } from '@/lib/product-edition';
 import { buildOwnerPortalUrl, createOwnerPortalLink } from '../owner-portal-admin-service';
 
 export function OwnerPortalLinkAction({ ownerId }: Readonly<{ ownerId: string }>) {
@@ -21,7 +22,7 @@ export function OwnerPortalLinkAction({ ownerId }: Readonly<{ ownerId: string }>
     onError: () => toast.error('تعذر إنشاء رابط بوابة المالك.'),
   });
 
-  if (!canAccess('owner.portal.link')) return null;
+  if (!isPathAvailableInEdition('/owner-portal') || !canAccess('owner.portal.link')) return null;
 
   return (
     <Button type="button" variant="secondary" className="min-h-11" disabled={mutation.isPending} onClick={() => mutation.mutate()}>

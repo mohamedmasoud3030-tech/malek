@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../test/read-source';
 
 const root = resolve(import.meta.dirname, '..');
 
 describe('active company write guard', () => {
-  const companyHook = readFileSync(resolve(import.meta.dirname, 'use-company.tsx'), 'utf8');
-  const authHook = readFileSync(resolve(import.meta.dirname, 'use-auth.tsx'), 'utf8');
+  const companyHook = readSource(import.meta.url, 'use-company.tsx');
+  const authHook = readSource(import.meta.url, 'use-auth.tsx');
   const maintenanceController = readFileSync(resolve(root, 'features/maintenance/useMaintenancePageController.ts'), 'utf8');
   const maintenanceService = readFileSync(resolve(root, 'features/maintenance/maintenance-service.ts'), 'utf8');
 

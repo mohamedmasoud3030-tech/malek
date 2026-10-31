@@ -1,6 +1,6 @@
 import { useBlocker } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 
 /**
  * Mounts a `beforeunload` listener only while `isDirty` is true, and removes
@@ -107,14 +107,9 @@ export function DirtyRouteNavigationGuard({
   };
 
   return (
-    <ConfirmDialog
+    <UnsavedChangesDialog
       open={blocker.status === 'blocked'}
       onOpenChange={(open) => { if (!open) handleContinueEditing(); }}
-      title="تغييرات غير محفوظة"
-      description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
-      confirmLabel="تجاهل التغييرات"
-      cancelLabel="مواصلة التعديل"
-      variant="warning"
       onConfirm={handleDiscardChanges}
     />
   );

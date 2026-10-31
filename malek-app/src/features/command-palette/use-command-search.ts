@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useActiveCompanyId } from '@/hooks/use-company';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useCommandPaletteStore } from './command-palette-store';
+import { isPathAvailableInEdition } from '@/lib/product-edition';
 import { STATIC_COMMANDS } from './command-registry';
 
 export interface SearchResultItem {
@@ -67,6 +68,7 @@ export function useCommandSearch(query: string) {
   const filteredStaticCommands = useMemo(() => {
     if (!isAuthenticated) return [];
     return STATIC_COMMANDS.filter((cmd) => {
+      if (!isPathAvailableInEdition(cmd.canonicalRoute)) return false;
       // Respect permissions
       if (cmd.permission && !canAccess(cmd.permission)) {
         return false;
@@ -84,7 +86,7 @@ export function useCommandSearch(query: string) {
   const isQueryLongEnough = debouncedQuery.length >= 2;
 
   const canAccessOwners = canAccess('owners.hub.view');
-  const canAccessLands = canAccess('lands.view');
+  const canAccessLands = isPathAvailableInEdition('/lands') && canAccess('lands.view');
   const canAccessMaintenance = canAccess('maintenance.view');
 
   const entitySearchQuery = useQuery({
@@ -326,7 +328,7 @@ export function useCommandSearch(query: string) {
       }
 
       // Simple matching & ranking:
-      return results.sort((a, b) => {
+      return results.filter((result) => isPathAvailableInEdition(result.route)).sort((a, b) => {
         const scoreA = scoreResult(a.title, a.subtitle, normalizedQuery);
         const scoreB = scoreResult(b.title, b.subtitle, normalizedQuery);
         return scoreB - scoreA;

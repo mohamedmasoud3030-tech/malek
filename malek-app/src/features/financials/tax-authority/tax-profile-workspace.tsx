@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { CheckCircle2, Clock, Plus, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -43,6 +43,53 @@ function friendlyTaxError(action: 'create' | 'approve') {
   return action === 'approve'
     ? 'تعذر الاعتماد. تأكد أن مستخدمًا مخوّلًا مختلفًا هو من يعتمد المسودة.'
     : 'تعذر حفظ الإعداد الضريبي. راجع البيانات وحاول مرة أخرى.';
+}
+
+type TaxDraftFields = Readonly<{
+  tax_code: string;
+  tax_rate: number;
+  effective_from: string;
+  effective_to: string;
+  description: string;
+}>;
+
+type TaxCodeOption = Readonly<{ code: string; name_ar: string }>;
+
+/** Shared UI for the identical tax-code/rate/start-date/description fields. */
+export function TaxDefinitionFields<T extends TaxDraftFields>({
+  draft,
+  setDraft,
+  taxCodes,
+  includeEffectiveTo = false,
+}: Readonly<{
+  draft: T;
+  setDraft: Dispatch<SetStateAction<T>>;
+  taxCodes: readonly TaxCodeOption[];
+  includeEffectiveTo?: boolean;
+}>) {
+  const descriptionField = (
+    <EntityForm.Field label="ملاحظة"><Input value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} placeholder="ملاحظة اختيارية" /></EntityForm.Field>
+  );
+
+  return (
+    <EntityForm.Section title="بيانات الضريبة">
+      <EntityForm.Field label="نوع الضريبة *">
+        <Select required value={draft.tax_code} onChange={(event) => setDraft((current) => ({ ...current, tax_code: event.target.value }))}>
+          {taxCodes.map((code) => <option key={code.code} value={code.code}>{code.name_ar} — {code.code}</option>)}
+        </Select>
+      </EntityForm.Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <EntityForm.Field label="النسبة % *"><Input required type="number" min="0" max="100" step="0.001" value={draft.tax_rate} onChange={(event) => setDraft((current) => ({ ...current, tax_rate: Number(event.target.value) || 0 }))} /></EntityForm.Field>
+        <EntityForm.Field label="سارٍ من *"><Input required type="date" value={draft.effective_from} onChange={(event) => setDraft((current) => ({ ...current, effective_from: event.target.value }))} /></EntityForm.Field>
+      </div>
+      {includeEffectiveTo ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <EntityForm.Field label="سارٍ إلى (اختياري)"><Input type="date" value={draft.effective_to} onChange={(event) => setDraft((current) => ({ ...current, effective_to: event.target.value }))} /></EntityForm.Field>
+          {descriptionField}
+        </div>
+      ) : descriptionField}
+    </EntityForm.Section>
+  );
 }
 
 export function TaxAuthorityWorkspace() {
@@ -192,21 +239,12 @@ export function TaxAuthorityWorkspace() {
         visualVariant="operational"
       >
         <EntityForm.Root onSubmit={(event) => { event.preventDefault(); if (!taxForm.tax_code || !taxForm.effective_from) return; createTaxMut.mutate(); }}>
-          <EntityForm.Section title="بيانات الضريبة">
-            <EntityForm.Field label="نوع الضريبة *">
-              <Select required value={taxForm.tax_code} onChange={(event) => setTaxForm((current) => ({ ...current, tax_code: event.target.value }))}>
-                {taxCodesQuery.data?.map((code) => <option key={code.code} value={code.code}>{code.name_ar} — {code.code}</option>)}
-              </Select>
-            </EntityForm.Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="النسبة % *"><Input required type="number" min="0" max="100" step="0.001" value={taxForm.tax_rate} onChange={(event) => setTaxForm((current) => ({ ...current, tax_rate: Number(event.target.value) || 0 }))} /></EntityForm.Field>
-              <EntityForm.Field label="سارٍ من *"><Input required type="date" value={taxForm.effective_from} onChange={(event) => setTaxForm((current) => ({ ...current, effective_from: event.target.value }))} /></EntityForm.Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="سارٍ إلى (اختياري)"><Input type="date" value={taxForm.effective_to} onChange={(event) => setTaxForm((current) => ({ ...current, effective_to: event.target.value }))} /></EntityForm.Field>
-              <EntityForm.Field label="ملاحظة"><Input value={taxForm.description} onChange={(event) => setTaxForm((current) => ({ ...current, description: event.target.value }))} placeholder="ملاحظة اختيارية" /></EntityForm.Field>
-            </div>
-          </EntityForm.Section>
+          <TaxDefinitionFields
+            draft={taxForm}
+            setDraft={setTaxForm}
+            taxCodes={taxCodesQuery.data ?? []}
+            includeEffectiveTo
+          />
           <EntityForm.Actions submitLabel={createTaxMut.isPending ? 'جارٍ الحفظ...' : 'حفظ كمسودة'} onCancel={() => setActionType(null)} isSubmitting={createTaxMut.isPending} />
         </EntityForm.Root>
       </EntityForm.Overlay>
@@ -219,18 +257,11 @@ export function TaxAuthorityWorkspace() {
         visualVariant="operational"
       >
         <EntityForm.Root onSubmit={(event) => { event.preventDefault(); if (!feeForm.tax_code || !feeForm.effective_from) return; createFeeMut.mutate(); }}>
-          <EntityForm.Section title="بيانات الضريبة">
-            <EntityForm.Field label="نوع الضريبة *">
-              <Select required value={feeForm.tax_code} onChange={(event) => setFeeForm((current) => ({ ...current, tax_code: event.target.value }))}>
-                {taxCodesQuery.data?.map((code) => <option key={code.code} value={code.code}>{code.name_ar} — {code.code}</option>)}
-              </Select>
-            </EntityForm.Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="النسبة % *"><Input required type="number" min="0" max="100" step="0.001" value={feeForm.tax_rate} onChange={(event) => setFeeForm((current) => ({ ...current, tax_rate: Number(event.target.value) || 0 }))} /></EntityForm.Field>
-              <EntityForm.Field label="سارٍ من *"><Input required type="date" value={feeForm.effective_from} onChange={(event) => setFeeForm((current) => ({ ...current, effective_from: event.target.value }))} /></EntityForm.Field>
-            </div>
-            <EntityForm.Field label="ملاحظة"><Input value={feeForm.description} onChange={(event) => setFeeForm((current) => ({ ...current, description: event.target.value }))} placeholder="ملاحظة اختيارية" /></EntityForm.Field>
-          </EntityForm.Section>
+          <TaxDefinitionFields
+            draft={feeForm}
+            setDraft={setFeeForm}
+            taxCodes={taxCodesQuery.data ?? []}
+          />
           <EntityForm.Actions submitLabel={createFeeMut.isPending ? 'جارٍ الحفظ...' : 'حفظ كمسودة'} onCancel={() => setActionType(null)} isSubmitting={createFeeMut.isPending} />
         </EntityForm.Root>
       </EntityForm.Overlay>

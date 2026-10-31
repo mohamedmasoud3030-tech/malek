@@ -16,6 +16,7 @@
  * confirms closure.
  */
 import { normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
+import { toUtcDayNumber } from '@/lib/utc-day-number';
 import type { Maintenance } from './maintenance-service';
 
 /** A request still open past this age is treated as stalled. */
@@ -55,22 +56,15 @@ export const maintenanceAttentionLabels: Record<MaintenanceAttentionFlag, string
   schedule_missed: 'تجاوزت موعد الزيارة',
 };
 
-function toDayNumber(value: string | null | undefined): number | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? '');
-  if (!match) return null;
-  const time = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return Number.isFinite(time) ? Math.floor(time / 86_400_000) : null;
-}
-
 /** Reported-on date: `request_date` is the business fact, `created_at` the fallback. */
 function reportedDay(row: Maintenance): number | null {
-  return toDayNumber(row.request_date) ?? toDayNumber(row.created_at);
+  return toUtcDayNumber(row.request_date) ?? toUtcDayNumber(row.created_at);
 }
 
 export function deriveMaintenanceAttention(row: Maintenance, today: string): MaintenanceAttention {
   const status = normalizeMaintenanceStatus(row.status);
   const priority = normalizeMaintenancePriority(row.priority);
-  const todayDay = toDayNumber(today);
+  const todayDay = toUtcDayNumber(today);
   const startedDay = reportedDay(row);
   const ageDays = todayDay === null || startedDay === null ? null : Math.max(0, todayDay - startedDay);
 
@@ -78,7 +72,7 @@ export function deriveMaintenanceAttention(row: Maintenance, today: string): Mai
   const isStalled = isUnfinished && ageDays !== null && ageDays > MAINTENANCE_STALLED_AFTER_DAYS;
   const isAwaitingClosure = status === 'resolved';
 
-  const scheduledDay = toDayNumber(row.scheduled_date);
+  const scheduledDay = toUtcDayNumber(row.scheduled_date);
   const hasMissedSchedule = isUnfinished && scheduledDay !== null && todayDay !== null && scheduledDay < todayDay;
 
   const flags: MaintenanceAttentionFlag[] = [];

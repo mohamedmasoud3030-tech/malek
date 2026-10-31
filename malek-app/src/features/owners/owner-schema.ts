@@ -14,18 +14,8 @@
 // the same rules the form enforces.
 
 import { z } from 'zod';
-
-const trimmedShort = (max: number) =>
-  z
-    .string()
-    .max(max, `القيمة طويلة جداً (الحد الأقصى ${max} حرفاً)`)
-    .transform((value) => value.trim());
-
-const optionalTrimmedShort = (max: number) =>
-  trimmedShort(max).transform((value) => (value === '' ? null : value));
-
-/** Reasonable phone pattern: digits, spaces, dashes, leading +. */
-const phonePattern = /^[+\d][\d\s-]{6,19}$/;
+import { optionalPhoneFormField, PHONE_PATTERN } from '@/lib/validation/phone';
+import { optionalTrimmedShort, trimmedShort } from '@/lib/validation/text-fields';
 
 /** Form-level owner schema. */
 export const ownerFormSchema = z.object({
@@ -33,14 +23,7 @@ export const ownerFormSchema = z.object({
     message: 'اسم المالك مطلوب',
   }),
   display_name: optionalTrimmedShort(120),
-  phone: z
-    .string()
-    .trim()
-    .max(32)
-    .refine((value) => value === '' || phonePattern.test(value), {
-      message: 'رقم الهاتف غير صحيح',
-    })
-    .transform((value) => (value === '' ? null : value)),
+  phone: optionalPhoneFormField(),
   email: z
     .string()
     .trim()
@@ -70,7 +53,7 @@ export type OwnerFormValues = z.output<typeof ownerFormSchema>;
 export const ownerPayloadSchema = z.object({
   full_name: z.string().min(1).max(120),
   display_name: z.string().max(120).nullable(),
-  phone: z.string().regex(phonePattern).nullable(),
+  phone: z.string().regex(PHONE_PATTERN).nullable(),
   email: z.string().email().nullable(),
   national_id: z.string().regex(/^[A-Za-z0-9\-\/]{4,32}$/).nullable(),
   tax_number: z.string().max(64).nullable(),
@@ -89,7 +72,7 @@ export const ownerUpdateSchema = z.object({
     .string()
     .trim()
     .max(32)
-    .refine((value) => value === '' || phonePattern.test(value), {
+    .refine((value) => value === '' || PHONE_PATTERN.test(value), {
       message: 'رقم الهاتف غير صحيح',
     })
     .optional(),

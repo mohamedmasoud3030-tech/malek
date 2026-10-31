@@ -612,16 +612,17 @@ function EntityTableImpl<T>({
     () => effectiveViewportMode === 'tablet' && !effectiveManualViewMode ? resolveTabletColumns(resolvedColumns) : resolvedColumns,
     [effectiveManualViewMode, effectiveViewportMode, resolvedColumns],
   );
+  const toolbarContent: ReactNode = sharedViewMode?.renderStandaloneToggle || toolbar ? (
+    <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+      {sharedViewMode?.renderStandaloneToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={sharedViewMode.onChange} /> : null}
+      {toolbar}
+    </div>
+  ) : null;
 
   if (isLoading) {
     return (
       <div className={cn('space-y-2.5', className)} data-entity-table-register data-entity-table-presentation={presentationMode}>
-        {sharedViewMode?.renderStandaloneToggle || toolbar ? (
-          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            {sharedViewMode?.renderStandaloneToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={sharedViewMode.onChange} /> : null}
-            {toolbar}
-          </div>
-        ) : null}
+        {toolbarContent}
         {presentationMode === 'cards' ? (
           <MobileRegisterSkeleton rows={5} />
         ) : (
@@ -701,12 +702,7 @@ function EntityTableImpl<T>({
         aria-disabled={error != null ? 'true' : undefined}
         data-stale-register-content={error != null ? 'true' : undefined}
       >
-        {sharedViewMode?.renderStandaloneToggle || toolbar ? (
-          <div data-entity-table-toolbar className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-            {sharedViewMode?.renderStandaloneToggle ? <ViewModeToggle ariaLabel={ariaLabel} viewMode={presentationMode} onChange={sharedViewMode.onChange} /> : null}
-            {toolbar}
-          </div>
-        ) : null}
+        {toolbarContent}
 
         {presentationMode === 'cards' ? (
           <div data-entity-table-mobile data-entity-table-cards>

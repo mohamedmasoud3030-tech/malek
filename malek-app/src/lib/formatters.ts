@@ -43,10 +43,6 @@ export function getCurrencyMetadata(value: unknown): CurrencyMetadata {
   return currencyMetadata[normalizeCurrency(value)];
 }
 
-export function getCurrencyMinorUnit(value: unknown): number {
-  return getCurrencyMetadata(value).minorUnit;
-}
-
 /**
  * Ensures Latin (Western Arabic) numerals for any locale by appending -u-nu-latn
  * when the locale is Arabic-based and does not already specify a numbering system.
@@ -143,12 +139,20 @@ export function toDateOnlyISO(value: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-export function formatDate({ value, locale = DEFAULT_LOCALE, timeZone, dateStyle = 'medium' }: DateFormatOptions) {
+function formatLocalizedDateValue(
+  value: DateFormatOptions['value'],
+  locale: string | string[] | undefined,
+  options: Intl.DateTimeFormatOptions,
+): string {
   if (value === null || value === undefined || value === '') return '—';
   const date = value instanceof Date ? value : new Date(value as string | number);
   if (Number.isNaN(date.getTime())) return '—';
   const targetLocale = normalizeLocale(locale);
-  return new Intl.DateTimeFormat(targetLocale as string, { dateStyle, timeZone }).format(date);
+  return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
+}
+
+export function formatDate({ value, locale = DEFAULT_LOCALE, timeZone, dateStyle = 'medium' }: DateFormatOptions) {
+  return formatLocalizedDateValue(value, locale, { dateStyle, timeZone });
 }
 
 type DateTimeFormatOptions = DateFormatOptions & {
@@ -162,11 +166,7 @@ export function formatDateTime({
   dateStyle = 'medium',
   timeStyle = 'short',
 }: DateTimeFormatOptions) {
-  if (value === null || value === undefined || value === '') return '—';
-  const date = value instanceof Date ? value : new Date(value as string | number);
-  if (Number.isNaN(date.getTime())) return '—';
-  const targetLocale = normalizeLocale(locale);
-  return new Intl.DateTimeFormat(targetLocale as string, { dateStyle, timeStyle, timeZone }).format(date);
+  return formatLocalizedDateValue(value, locale, { dateStyle, timeStyle, timeZone });
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -188,10 +188,10 @@ export function formatLatinNumber(
 const DEFAULT_DATE_TIME_FORMAT_OPTIONS: Readonly<Intl.DateTimeFormatOptions> = Object.freeze({ dateStyle: 'medium', timeStyle: 'short' });
 const DEFAULT_TIME_FORMAT_OPTIONS: Readonly<Intl.DateTimeFormatOptions> = Object.freeze({ timeStyle: 'medium' });
 
-export function formatLatinDateTime(
+function formatLatinDateValue(
   value: Date | string | number | null | undefined,
-  locale?: string | string[],
-  options: Intl.DateTimeFormatOptions = DEFAULT_DATE_TIME_FORMAT_OPTIONS,
+  locale: string | string[] | undefined,
+  options: Intl.DateTimeFormatOptions | undefined,
 ): string {
   if (value === null || value === undefined) return '';
   const date = value instanceof Date ? value : new Date(value as string | number);
@@ -200,16 +200,20 @@ export function formatLatinDateTime(
   return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
 }
 
+export function formatLatinDateTime(
+  value: Date | string | number | null | undefined,
+  locale?: string | string[],
+  options: Intl.DateTimeFormatOptions = DEFAULT_DATE_TIME_FORMAT_OPTIONS,
+): string {
+  return formatLatinDateValue(value, locale, options);
+}
+
 export function formatLatinDate(
   value: Date | string | null | undefined,
   locale?: string | string[],
   options?: Intl.DateTimeFormatOptions,
 ): string {
-  if (value === null || value === undefined) return '';
-  const date = value instanceof Date ? value : new Date(value as string);
-  if (Number.isNaN(date.getTime())) return String(value ?? '');
-  const targetLocale = normalizeLocale(locale);
-  return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
+  return formatLatinDateValue(value, locale, options);
 }
 
 export function formatLatinTime(
@@ -217,11 +221,7 @@ export function formatLatinTime(
   locale?: string | string[],
   options: Intl.DateTimeFormatOptions = DEFAULT_TIME_FORMAT_OPTIONS,
 ): string {
-  if (value === null || value === undefined) return '';
-  const date = value instanceof Date ? value : new Date(value as string);
-  if (Number.isNaN(date.getTime())) return String(value ?? '');
-  const targetLocale = normalizeLocale(locale);
-  return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
+  return formatLatinDateValue(value, locale, options);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

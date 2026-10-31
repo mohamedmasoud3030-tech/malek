@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { Wrench, AlertCircle, Clock, Flame } from 'lucide-react';
+import { maintenancePriorityFilterOptions, maintenanceStatusFilterOptions } from '@/lib/maintenanceStatus';
 
 export function MaintenanceWorkspaceE2EFixture() {
   return (
@@ -29,18 +30,14 @@ export function MaintenanceWorkspaceE2EFixture() {
             filters={
               <>
                 <Select aria-label="تصفية حسب الحالة" value="all" onChange={() => {}}>
-                  <option value="all">كل الحالات</option>
-                  <option value="open">مفتوح</option>
-                  <option value="in_progress">قيد التنفيذ</option>
-                  <option value="resolved">تم التنفيذ</option>
-                  <option value="closed">مغلق</option>
+                  {maintenanceStatusFilterOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </Select>
                 <Select aria-label="تصفية حسب الأولوية" value="all" onChange={() => {}}>
-                  <option value="all">كل الأولويات</option>
-                  <option value="low">منخفضة</option>
-                  <option value="medium">متوسطة</option>
-                  <option value="high">عالية</option>
-                  <option value="urgent">عاجلة</option>
+                  {maintenancePriorityFilterOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </Select>
                 <Select aria-label="تصفية حسب العقار" value="" onChange={() => {}}>
                   <option value="">كل العقارات</option>

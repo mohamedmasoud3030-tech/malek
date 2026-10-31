@@ -18,6 +18,8 @@ describe('production env validation', () => {
     expect(content).toContain('VITEST');
     expect(content).toContain('isTest');
     expect(content).toContain('isProdBuild');
+    expect(content).toContain('config.command === "build" && config.isProduction');
+    expect(content).toContain('custom mode must not disable production');
   });
 
   it('env.ts still provides isConfigured for runtime diagnostics', () => {

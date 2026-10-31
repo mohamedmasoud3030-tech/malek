@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+report_failure() {
+  local exit_status=$?
+  local failed_line=${BASH_LINENO[0]:-unknown}
+  trap - ERR
+  printf '::error title=Canonical database baseline::build-baseline.sh failed at line %s (exit %s)\n' "$failed_line" "$exit_status" >&2
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+    printf '\n### Canonical database baseline failure\n- Script line: `%s`\n- Exit code: `%s`\n' "$failed_line" "$exit_status" >> "$GITHUB_STEP_SUMMARY"
+  fi
+  exit "$exit_status"
+}
+trap report_failure ERR
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
@@ -11,7 +23,7 @@ BASELINE_PATH="$ROOT_DIR/supabase/migrations/$BASELINE_NAME"
 VERIFY_SQL="$ROOT_DIR/scripts/canonical-db/verify-canonical.sql"
 mkdir -p "$OUT_DIR" "$DIAG_DIR"
 
-export SUPABASE_EXCLUDED_SERVICES="realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor"
+export SUPABASE_EXCLUDED_SERVICES="realtime,storage-api,imgproxy,mailpit,inbucket,studio,edge-runtime,logflare,vector,supavisor"
 
 cleanup() {
   local status=$?

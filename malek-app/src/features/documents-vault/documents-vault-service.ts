@@ -2,7 +2,6 @@ import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib
 import { formatFileSize } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import { buildTenantVaultPath, requireActiveCompanyIdForStorage } from '@/lib/tenant-storage-path';
 import type { DocumentEntityType } from '@/services/documents/contextualDocumentsService';
 import { fetchAllRows } from '@/lib/paginatedRead';
 
@@ -113,14 +112,6 @@ export async function listVaultDocuments(params: VaultListParams = {}): Promise<
   }));
 }
 
-type UploadVaultDocumentParams = {
-  file: File;
-  title: string;
-  category: VaultCategory;
-  relatedEntityType?: DocumentEntityType | null;
-  relatedEntityId?: string | null;
-};
-
 export function validateVaultFile(file: Pick<File, 'size' | 'type'>) {
   if (file.size <= 0) throw new Error('الملف فارغ ولا يمكن رفعه.');
   if (file.size > VAULT_MAX_FILE_SIZE) {
@@ -131,77 +122,6 @@ export function validateVaultFile(file: Pick<File, 'size' | 'type'>) {
   if (!VAULT_ALLOWED_MIME_TYPES.has(file.type)) {
     throw new Error(`نوع الملف غير مدعوم: ${file.type || 'غير معروف'}. الأنواع المدعومة: PDF، JPEG، PNG، WebP`);
   }
-}
-
-export async function uploadVaultDocument(params: UploadVaultDocumentParams): Promise<VaultDocumentItem> {
-  validateVaultFile(params.file);
-  if (!params.title.trim()) throw new Error('عنوان المستند مطلوب');
-
-  const companyId = await requireActiveCompanyIdForStorage();
-  const fileExt = params.file.name.split('.').pop() || 'bin';
-  const fullPath = buildTenantVaultPath(companyId, `${crypto.randomUUID()}.${fileExt}`);
-
-  const { error: uploadError } = await supabase.storage.from('attachments').upload(fullPath, params.file, {
-    cacheControl: '3600',
-    upsert: false,
-    contentType: params.file.type,
-  });
-  if (uploadError) handleSupabaseError(uploadError as any, 'تعذر رفع الملف إلى التخزين');
-
-  try {
-    const { data, error } = await ((supabase as any)
-      .from('vault_documents')
-      .insert({
-        title: params.title.trim(),
-        category: params.category,
-        related_entity_type: params.relatedEntityType || null,
-        related_entity_id: params.relatedEntityId || null,
-        file_name: params.file.name,
-        file_url: fullPath,
-        storage_path: fullPath,
-        file_size: params.file.size,
-        mime_type: params.file.type,
-      } as any)
-      .select('*')
-      .single() as any);
-
-    if (error) throw error;
-    if (!data) throw new Error('لم يتم حفظ بيانات المستند');
-
-    return {
-      id: data.id,
-      title: data.title,
-      category: data.category as VaultCategory,
-      relatedEntityType: data.related_entity_type ?? null,
-      relatedEntityId: data.related_entity_id ?? null,
-      relatedEntityTitle: data.related_entity_id ? 'سجل مرتبط' : null,
-      fileName: data.file_name,
-      fileUrl: data.file_url,
-      storagePath: data.storage_path,
-      fileSize: data.file_size,
-      mimeType: data.mime_type,
-      uploadedAt: data.created_at,
-      signedUrl: null,
-    };
-  } catch (error) {
-    try {
-      await supabase.storage.from('attachments').remove([fullPath]);
-    } catch {
-      // Preserve the original metadata error; cleanup failure is best-effort.
-    }
-    if (error instanceof Error) throw error;
-    handleSupabaseError(error as any, 'تعذر حفظ بيانات المستند بعد الرفع');
-    throw error;
-  }
-}
-
-export async function softDeleteVaultDocument(id: string): Promise<void> {
-  const { error } = await ((supabase as any)
-    .from('vault_documents')
-    .update({ deleted_at: new Date().toISOString() } as any)
-    .eq('id', id)
-    .is('deleted_at', null) as any);
-  if (error) handleSupabaseError(error, 'تعذر حذف المستند');
 }
 
 export async function getVaultDocumentSignedUrl(storagePath: string, expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<string> {

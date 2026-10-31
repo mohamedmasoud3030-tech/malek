@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { LeadFormValues } from '../types';
 import { createLead, leadPayload, updateLead } from './leads-service';
+import { readSource } from '../../../test/read-source';
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -78,7 +77,7 @@ describe('leads service validation', () => {
   });
 
   it('reads the authoritative status and applies the transition guard before an update write', () => {
-    const source = readFileSync(resolve(import.meta.dirname, './leads-service.ts'), 'utf8');
+    const source = readSource(import.meta.url, './leads-service.ts');
     expect(source).toContain(".select('status')");
     expect(source).toContain('assertLeadStatusTransition(');
     expect(source).toContain('leadStatusSchema.parse');
