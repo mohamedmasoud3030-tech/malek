@@ -55,7 +55,12 @@ export default defineConfig({
   webServer: isExternalTarget
     ? undefined
     : {
-        command: 'pnpm dev',
+        // Explicit opt-in used only by the isolated Property Operations browser
+        // proof: the browser hits the real compiled edition, not a Vite dev app.
+        // Auth and data APIs remain intercepted by the existing fake backend.
+        command: process.env.E2E_SERVE_PROPERTY_BUILD === 'true'
+          ? `pnpm exec vite preview --config vite.config.ts --host 127.0.0.1 --port ${port} --strictPort --outDir dist/property-operations`
+          : 'pnpm dev',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
