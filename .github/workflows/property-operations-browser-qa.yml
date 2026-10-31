@@ -1,7 +1,7 @@
 name: Property Operations / Compiled Browser QA
 
 # Optional hermetic proof for the actual compiled Property Operations edition.
-# Opt in per PR by adding [run-property-operations-qa] to its description.
+# Opt in per PR by adding <!-- run-property-operations-qa --> to its description.
 # This is not hosted staging, live Supabase or production release evidence.
 on:
   pull_request:
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   compiled-browser-smoke:
     name: property-operations-browser-${{ matrix.project }}
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.body, '[run-property-operations-qa]') }}
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.body, '<!-- run-property-operations-qa -->') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
