@@ -279,11 +279,17 @@ it("joins creation, versioned lawful offset, cash recovery and residual settleme
     await assumeIdentity(d, "c2000000-0000-4000-8000-000000000099", COMPANY);
     await command(d, "pay_owner_settlement_atomic", pay);
     await command(d, "pay_owner_settlement_atomic", pay);
+    // Payment defaults to the actual posting date, which may be after the 28th.
+    const paidOn = (await d.query<{ paid_on: string | null }>(
+      "select paid_at::date::text as paid_on from public.owner_settlements where id=$1",
+      [settlement],
+    )).rows[0]?.paid_on;
+    expect(paidOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(
       (
         await d.query(
           "select account_no,subledger_balance::text as source,gl_balance::text as control from public.wp05_reconcile_all($1,$2::date) where account_no in ('1300','2000') order by account_no",
-          [COMPANY, at(28)],
+          [COMPANY, paidOn],
         )
       ).rows,
     ).toEqual([
