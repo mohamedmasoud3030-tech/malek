@@ -1,0 +1,68 @@
+name: Property Operations / Compiled Browser QA
+
+# Optional hermetic proof for the actual compiled Property Operations edition.
+# Opt in per PR by adding [run-property-operations-qa] to its description.
+# This is not hosted staging, live Supabase or production release evidence.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: property-operations-browser-qa-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  compiled-browser-smoke:
+    name: property-operations-browser-${{ matrix.project }}
+    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.body, '[run-property-operations-qa]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-desktop, chromium-tablet, chromium-mobile]
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # RFC 2606 .invalid: cannot resolve to a production Supabase backend.
+      # The browser scenarios use explicitly stubbed auth/data endpoints.
+      VITE_SUPABASE_URL: https://e2e.supabase.invalid
+      VITE_SUPABASE_ANON_KEY: e2e-browser-public-key
+      E2E_SERVE_PROPERTY_BUILD: 'true'
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install deterministic dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Rebuild approved native toolchain
+        run: pnpm rebuild esbuild
+      - name: Build actual curated edition (no Vercel or Supabase deployment)
+        run: pnpm --filter @workspace/malek run build:property-operations
+      - name: Install Chromium and its OS dependencies
+        run: pnpm --filter @workspace/malek exec playwright install --with-deps chromium
+      - name: Exercise compiled login, runtime readiness and dashboard at device viewport
+        run: >-
+          pnpm --filter @workspace/malek exec playwright test
+          --config playwright.config.ts
+          --project=${{ matrix.project }}
+          e2e/readiness-smoke.spec.ts
+          e2e/login-flow.spec.ts
+          e2e/dashboard-workspace.spec.ts
+      - name: Preserve browser diagnostics (not a hosted deployment proof)
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: property-operations-browser-${{ matrix.project }}-${{ github.run_id }}
+          path: |
+            malek-app/playwright-report
+            malek-app/test-results
+          if-no-files-found: ignore
+          retention-days: 7
