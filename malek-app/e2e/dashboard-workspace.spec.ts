@@ -280,7 +280,7 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-test('dashboard empty/error/stale states remain honest after consolidation', async ({ page }) => {
+test('dashboard empty and initial error states remain honest after consolidation', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
 
   await openDashboardRoute(page, 'light', 'empty');
@@ -292,10 +292,18 @@ test('dashboard empty/error/stale states remain honest after consolidation', asy
   await openDashboardRoute(page, 'light', 'snapshot-error');
   await expect(page.getByText('تعذر تحميل بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-office-pulse]')).toHaveCount(0);
+});
 
-  await page.context().clearCookies();
-  await page.goto('/login', { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => window.localStorage.clear());
+test('dashboard stale refetch retains the previous snapshot on failure', async ({ page }) => {
+  // The refetch trigger is deliberately E2E-only and absent from a real
+  // compiled production edition. Keep this covered by the Vite dev browser
+  // matrix, while the compiled-edition matrix still verifies empty/error UI.
+  test.skip(
+    process.env.E2E_SERVE_PROPERTY_BUILD === 'true',
+    'Synthetic VITE_E2E refetch event is intentionally not shipped in the compiled edition.',
+  );
+
+  await page.setViewportSize({ width: 375, height: 812 });
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
   await expect(page.locator('[data-dashboard-office-pulse]')).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('malek-dashboard-e2e-refetch')));
