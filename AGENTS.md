@@ -99,6 +99,17 @@ Report:
 
 **Do not create parallel source-of-truth documents.** Update the Canonical Pack instead.
 
+## Instruction sources and authority order
+
+When two instruction files disagree, the lower number loses.
+
+1. `AGENTS.md` — the single entry point for every agent. New rules are added here.
+2. `DATABASE_RULES.md` and the Canonical Pack (`docs/source-of-truth/`) — product, accounting and database truth.
+3. `CLAUDE.md` and `.claude/` — Claude Code adapters. They point at this file and must not add rules that are absent from it.
+4. `skills/` (canonical) and `.claude/skills/` (copies) — task procedures; see the skill copies note below.
+5. `docs/agent-wiki/` — subordinate agent memory; it cannot define a rule.
+6. `AGENT_HANDOVER.md` and `docs/execution/HANDOFF_*` — historical snapshots, never current authority.
+
 ---
 
 ## Portfolio command center

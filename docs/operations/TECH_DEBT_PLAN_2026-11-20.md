@@ -13,7 +13,7 @@ Priority = (Impact + Risk) x (6 - Effort). Each factor is scored 1-5.
 | # | Item | Type | I | R | E | Priority |
 |---|---|---|---|---|---|---|
 | 1 | `check:sensitive-writes` and `check:wiki` run in `gate:local` but not in `ci.yml`; the full test suite and RLS matrix run twice on push to `main` | Infra | 3 | 4 | 1 | 35 |
-| 2 | Three money modules (`financialMath.ts`, `money.ts`, `moneyNormalization.ts`); `financialMath.ts` sums with plain `Number` and no 3-decimal OMR rounding (*verify* where it is used) | Code | 3 | 4 | 2 | 28 |
+| 2 | Three money modules (`financialMath.ts`, `money.ts`, `moneyNormalization.ts`); `financialMath.ts` sums with plain `Number` and no 3-decimal OMR rounding | Code | 3 | 4 | 2 | 28 |
 | 3 | `lint` is only `tsc`; Prettier is installed but never enforced | Code | 2 | 3 | 1 | 25 |
 | 4 | ACL grants repaired by six or more successive migrations; money precision by four; two migrations share the name `ai_assistant_postgrest_rpc_repair`, one dated before the baseline | Architecture | 3 | 5 | 3 | 24 |
 | 5 | Stale Vite config: chunk rules for `jspdf`/`html2canvas` (not dependencies), alias `@assets` to a non-existent directory; Replit leftovers (`.replit`, three `@replit/*` plugins) | Code | 2 | 2 | 1 | 20 |
@@ -26,39 +26,46 @@ Priority = (Impact + Risk) x (6 - Effort). Each factor is scored 1-5.
 
 ## 2. Phases
 
-### Phase 1 — one day (executed 2026-11-20, see section 3)
+### Phase 1 — executed 2026-11-20
 
-- [ ] Add `check:wiki` and `check:sensitive-writes` to `ci.yml` (item 1). **Blocked:** the GitHub integration used for this change cannot write under `.github/workflows/` (HTTP 403). Needs a push with the `workflow` scope; the exact diff is in section 3.
+- [ ] Add `check:wiki` and `check:sensitive-writes` to `ci.yml` (item 1). **Blocked:** the GitHub integration used cannot write under `.github/workflows/` (HTTP 403). Needs a push with the `workflow` scope; the exact diff is in section 3.
 - [ ] Remove the steps from `heavy-validation` that repeat work already done by the `build` job (item 1). **Blocked** for the same reason.
 - [x] Declare `engines.node` in the root `package.json` (item 8).
 - [x] Remove the stale `jspdf`/`html2canvas` chunk rule and the `@assets` alias from `vite.config.ts` (item 5).
-- [ ] Decide PR #1844 (merge or close). Owner decision, not changed here.
+- [ ] Decide PR #1844 (merge or close). Owner decision.
 
-### Phase 2 — three to five days
+Process note: the two Phase 1 code commits were pushed directly to `main` at the owner's explicit
+request. `CLAUDE.md` says never to push directly to `main`; Phase 2 and later follow that rule
+(branch plus pull request, no self-merge).
 
-- Trace every use of `financialMath.ts`, fold it into `money.ts`, and add boundary tests for OMR values such as `0.001` and `1234.567` (item 2).
-- Add ESLint, or `prettier --check` limited to changed files (item 3).
-- Mark `AGENT_HANDOVER.md` historical or refresh it, and name `AGENTS.md` as the single instruction source (item 6).
-- Remove the Replit leftovers once the Replit workflow is confirmed unused (item 5).
+### Phase 2 — executed 2026-11-20 on branch `chore/tech-debt-phase-2`
+
+- [x] **Item 2.** `sumFinancialValues` and `getSafeRemainingAmount` now round through `roundMoney` from `@/lib/money`, the single OMR 3-decimal source that mirrors the server `public._r3`. The 17 importers keep the same API. New boundary tests are in `financialMath-omr-boundary.test.ts`. The `.toFixed(3)` patch in `invoice-amounts.ts` is now redundant but harmless. **Not done:** `summarizeInvoices` still accumulates totals with plain `+=`; round its result in a follow-up.
+- [ ] **Item 3.** Not done, two blockers: ESLint needs new devDependencies and CI installs with `--frozen-lockfile`, so `pnpm-lock.yaml` must be regenerated locally; and a Prettier gate needs a baseline decision first, because `src/` uses single quotes while `vite.config.ts` uses double quotes, so a default-config check would fail on every touched file.
+- [x] **Item 6.** `AGENT_HANDOVER.md` carries a HISTORICAL banner; `AGENTS.md` has an authority-order section naming itself as the single entry point. The skill-copy drift between `skills/` and `.claude/skills/` is still open.
+- [x] **Item 5, Replit part: decided to keep.** Replit is an active execution environment for this project, so `.replit`, `.replitignore` and the `@replit/*` plugins stay. They are already gated on `REPL_ID`.
 
 ### Phase 3 — two weeks, incremental
 
 - Add an ACL golden snapshot checked in CI against the grants produced by migration replay, so a regression appears as a diff instead of another restore migration. Do not edit applied migrations (item 4).
 - Lazy-load the document renderer after login and lower the chunk warning limit (item 7).
 - Convert source-text contract tests to behaviour tests, starting with the files that change most (item 9).
+- Round `summarizeInvoices` totals (item 2 follow-up).
+- Resolve item 3 after the two blockers above.
 
 ### Deferred by decision
 
 - Item 11: merging overlapping domains needs a new ADR; ADR 0022 already rejected some re-splits for stated reasons.
 - Item 10: do when idle.
 
-## 3. Phase 1 verification status and pending workflow diff
+## 3. Verification status and pending workflow diff
 
-The applied Phase 1 changes (`package.json`, `vite.config.ts`) were pushed directly to `main` without
-running the suite locally. The first CI run on `main` is the verification. Points to watch:
+Phase 1 code changes were pushed to `main` without a local run; Phase 2 is a pull request so its CI run
+verifies it before merge. Points to watch:
 
 1. `landing-performance-contract.test.ts` asserts on the text of `vite.config.ts`; it should still pass because only the `vendor-pdf` rule and the `@assets` alias were removed.
-2. The root `package.json` change only adds `engines.node`; pnpm warns, but does not fail, on a mismatch unless `engine-strict` is set (it is not set in `.npmrc`).
+2. Phase 2 item 2 is the first change to money arithmetic. Inputs already at 3 decimals produce the same result except that float drift disappears; inputs with more than 3 decimals are now rounded half-up. Check the financial suites (`test:financials`, `test:frontend-backend-runtime-contract`) in the PR run.
+3. **Release snapshots:** `scripts/release/build-release.mjs` refuses a snapshot when any non-evidence, non-release file changed after the last verified commit. After these changes, run `pnpm gate:local --full` and `pnpm evidence:live` again before cutting the next snapshot. The existing `v1.0.0-rc.1` and `rc.2` records are historical and unaffected.
 
 **Pending, needs a token with the `workflow` scope** — changes to `.github/workflows/ci.yml`:
 
