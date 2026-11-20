@@ -1,5 +1,7 @@
 # Agent Handover — MALEK
 
+> **Status: HISTORICAL (recorded 2026-10-08).** This is a point-in-time snapshot of revision `2d20a0d356204857b4acc1e393eaea107aa8e6a7`. Its branch name, file counts and build numbers are not maintained and must not be read as current. Current instructions live in [AGENTS.md](AGENTS.md); current repository state is recorded in `docs/operations/REPOSITORY_HYGIENE_2026-10-21.md` and `docs/operations/TECH_DEBT_PLAN_2026-11-20.md`.
+
 > Supporting, point-in-time handover only. This document does not replace the [MALEK Canonical Pack](docs/source-of-truth/00_INDEX.md), change approved business rules, or grant governance-stage/release credit.
 
 - **Recorded local date:** 2026-10-08 (`America/Los_Angeles`).
