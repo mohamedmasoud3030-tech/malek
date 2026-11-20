@@ -166,12 +166,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
-      "@assets": path.resolve(
-        import.meta.dirname,
-        "..",
-        "..",
-        "attached_assets",
-      ),
     },
     dedupe: ["react", "react-dom"],
   },
@@ -212,7 +206,6 @@ export default defineConfig({
           // to avoid circular chunk warnings.
           if (id.includes("@supabase")) return "vendor-supabase";
           if (id.includes("recharts") || id.includes("d3-") || id.includes("victory")) return "vendor-charts";
-          if (id.includes("jspdf") || id.includes("html2canvas")) return "vendor-pdf";
           if (id.includes("date-fns")) return "vendor-date";
           // React, TanStack, Zustand, Sonner, Zod and all other node_modules
           // stay in a single vendor chunk to avoid circular dependencies

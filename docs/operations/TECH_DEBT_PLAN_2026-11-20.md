@@ -28,8 +28,8 @@ Priority = (Impact + Risk) x (6 - Effort). Each factor is scored 1-5.
 
 ### Phase 1 — one day (executed 2026-11-20, see section 3)
 
-- [x] Add `check:wiki` and `check:sensitive-writes` to `ci.yml` (item 1).
-- [x] Remove the steps from `heavy-validation` that repeat work already done by the `build` job (item 1).
+- [ ] Add `check:wiki` and `check:sensitive-writes` to `ci.yml` (item 1). **Blocked:** the GitHub integration used for this change cannot write under `.github/workflows/` (HTTP 403). Needs a push with the `workflow` scope; the exact diff is in section 3.
+- [ ] Remove the steps from `heavy-validation` that repeat work already done by the `build` job (item 1). **Blocked** for the same reason.
 - [x] Declare `engines.node` in the root `package.json` (item 8).
 - [x] Remove the stale `jspdf`/`html2canvas` chunk rule and the `@assets` alias from `vite.config.ts` (item 5).
 - [ ] Decide PR #1844 (merge or close). Owner decision, not changed here.
@@ -52,11 +52,19 @@ Priority = (Impact + Risk) x (6 - Effort). Each factor is scored 1-5.
 - Item 11: merging overlapping domains needs a new ADR; ADR 0022 already rejected some re-splits for stated reasons.
 - Item 10: do when idle.
 
-## 3. Phase 1 verification status
+## 3. Phase 1 verification status and pending workflow diff
 
-The Phase 1 changes were pushed directly to `main` without running the suite locally. The first CI run
-on `main` is the verification. Points to watch:
+The applied Phase 1 changes (`package.json`, `vite.config.ts`) were pushed directly to `main` without
+running the suite locally. The first CI run on `main` is the verification. Points to watch:
 
-1. `check:wiki` and `check:sensitive-writes` are new CI steps; they pass in `gate:local` per the hygiene audit but have not been seen passing in CI.
-2. `landing-performance-contract.test.ts` asserts on the text of `vite.config.ts`; it should still pass because only the `vendor-pdf` rule and the `@assets` alias were removed.
-3. `check-workflow-honesty` reads every workflow file; the edited jobs still execute real commands.
+1. `landing-performance-contract.test.ts` asserts on the text of `vite.config.ts`; it should still pass because only the `vendor-pdf` rule and the `@assets` alias were removed.
+2. The root `package.json` change only adds `engines.node`; pnpm warns, but does not fail, on a mismatch unless `engine-strict` is set (it is not set in `.npmrc`).
+
+**Pending, needs a token with the `workflow` scope** — changes to `.github/workflows/ci.yml`:
+
+- In the `build` job, after the `Architecture check` step, add:
+  - step `Agent wiki integrity` running `pnpm check:wiki`
+  - step `Sensitive financial write boundary` running `pnpm check:sensitive-writes`
+- In the `heavy-validation` job, remove the `Six-role RLS compatibility matrix`, `Full application tests` and `Shared primitive accessibility proof` steps; the `build` job already runs all three on every push. Keep `Canonical database integrity`, `Documentation links` and `Financial safety tests`.
+- Neither change breaks `check-workflow-honesty`: every remaining job still runs real commands.
+- `check:wiki` and `check:sensitive-writes` pass in `gate:local` per the hygiene audit but have not been seen passing in CI; watch the first run.
