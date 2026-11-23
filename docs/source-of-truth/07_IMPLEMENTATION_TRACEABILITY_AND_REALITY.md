@@ -15,6 +15,31 @@
 > and GAP-010 versioned tax authority (#1458). Statuses are repository-evidence
 > only; governed stage credit and live/hosted verification remain separate.
 
+## Production deployment record — 2026-10-22
+
+This addendum records a Vercel production deployment observed on 2026-10-22;
+it does not rewrite the historical repository baseline or close any governed
+release, QA, database, pilot, or sign-off gate.
+
+- Project: existing Vercel project `malek-plus`; production domain
+  `malek-plus.vercel.app`.
+- Deployed source: commit `e5b19ef2b057087c0cf8f2b55ff1d07f8a8f3063` on
+  `arena/9785b644-malek` (PR #1844), deployment
+  `dpl_6CSiYo4QdUYsoDB8HS74gr1jYyLn`.
+- Vercel reported `READY`, `readySubstate: PROMOTED`, and
+  `aliasAssigned: true`; the deployment aliases included
+  `malek-plus.vercel.app`.
+- The deployment used root `malek-app`, the Property Operations build command,
+  and output directory `dist/property-operations`. The production preflight
+  reported `approved`; the Vite build ran in `property-operations` mode.
+- This proves Vercel build and promotion/alias assignment only. No browser or
+  HTTP smoke test was performed; this is not evidence of user-journey,
+  financial, database-parity, pilot, or governed-stage completion. No Supabase
+  migration or environment-variable change was made in this deployment task.
+- At handoff, PR #1844 remained open; its `build`,
+  `canonical-baseline-real-supabase`, and `sonarcloud` checks were pending.
+  Other displayed checks had passed or were skipped.
+
 ## WP-00 checkout reconciliation — 2026-10-04
 
 This section records a read-only reconciliation of the checkout at

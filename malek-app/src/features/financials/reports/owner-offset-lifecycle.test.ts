@@ -14,8 +14,15 @@ async function command(name: string, payload: Record<string, unknown>) {
 async function offset(amount: number, request: string) {
   return command('offset_owner_receivable_atomic',{ due_from_owner_id: receivable, owner_settlement_id: settlement, amount, effective_date: at(10), lawful_offset_evidence: 'Approved contractual offset ordering', request_id: request });
 }
-async function balances(day: number) {
-  return (await db.query<{ account_no: string; source: string; control: string; reconciliation_status: string }>("select account_no,subledger_balance::text as source,gl_balance::text as control,reconciliation_status from public.wp05_reconcile_all($1::uuid,$2::date) where account_no in ('1300','2000') order by account_no",[COMPANY,at(day)])).rows;
+async function balances(day: number | 'paid') {
+  const asOf = day === 'paid'
+    ? (await db.query<{ paid_on: string | null }>(
+      "select paid_at::date::text as paid_on from public.owner_settlements where id=$1",
+      [settlement],
+    )).rows[0]?.paid_on
+    : at(day);
+  if (!asOf) throw new Error('Expected a paid settlement with a real paid_at date');
+  return (await db.query<{ account_no: string; source: string; control: string; reconciliation_status: string }>("select account_no,subledger_balance::text as source,gl_balance::text as control,reconciliation_status from public.wp05_reconcile_all($1::uuid,$2::date) where account_no in ('1300','2000') order by account_no",[COMPANY,asOf])).rows;
 }
 beforeAll(async () => { ({db,agreement,property,settlement,receivable}=await createOwnerOffsetFixture()); },60_000);
 afterAll(async()=>{ await db?.close(); });
@@ -151,7 +158,7 @@ it('does not rewrite a paid settlement through an offset reversal',async()=>{
     expect((await db.query('select * from public.owner_settlements where id=$1',[settlement])).rows).toEqual(before);
     expect((await db.query('select * from public.journal_batches order by id')).rows).toEqual(journals);
     await command('pay_owner_settlement_atomic',pay);
-    expect((await balances(28)).map(r=>[r.source,r.control])).toEqual([['175.000','175.000'],['0.000','0.000']]);
+    expect((await balances('paid')).map(r=>[r.source,r.control])).toEqual([['175.000','175.000'],['0.000','0.000']]);
   } finally {await db.exec('rollback');await assumeIdentity(db,MAKER,COMPANY);}
 });
 
@@ -225,7 +232,7 @@ it('quotes residual cash, rejects a stale amount confirmation, and replays the s
     await db.exec('savepoint changed_intent');
     await expect(command('pay_owner_settlement_atomic',pay)).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED/);
     await db.exec('rollback to changed_intent');
-    expect((await balances(28)).map(r=>[r.source,r.control])).toEqual([['175.000','175.000'],['0.000','0.000']]);
+    expect((await balances('paid')).map(r=>[r.source,r.control])).toEqual([['175.000','175.000'],['0.000','0.000']]);
   } finally {await db.exec('rollback');await assumeIdentity(db,MAKER,COMPANY);}
 });
 it('does not disclose payment quotes to another company',async()=>{

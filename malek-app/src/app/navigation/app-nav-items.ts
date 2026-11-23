@@ -1,3 +1,4 @@
+import { activeProductEdition, isPathAvailableInEdition } from '@/lib/product-edition';
 import { BarChart3, Building2, CircleDollarSign, ContactRound, DoorOpen, FileText, FolderKanban, Gauge, HandCoins, HardHat, KeyRound, LayoutDashboard, LifeBuoy, MapPinned, MessageSquareText, Percent, Receipt, ReceiptText, Settings, ShieldCheck, UserRound, Users, Wallet, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
@@ -6,7 +7,7 @@ export type NavItem = readonly [to: string, labelKey: string, description: strin
 type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission, search?: Readonly<Record<string, string>>];
 type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-export const navGroups: readonly NavGroup[] = [
+const allNavGroups: readonly NavGroup[] = [
   ['العمل', [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
     ['/properties', 'portfolio', 'العقارات والوحدات والملاك', Building2, 'properties.view'],
@@ -20,7 +21,15 @@ export const navGroups: readonly NavGroup[] = [
   ]],
 ];
 
-export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
+export const navGroups: readonly NavGroup[] = allNavGroups
+  .map(([title, items, adminOnly]) => [
+    title,
+    items.filter(([to]) => isPathAvailableInEdition(to, activeProductEdition)),
+    adminOnly,
+  ] as const)
+  .filter(([, items]) => items.length > 0);
+
+const allWorkspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
     ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, 'properties.view', { section: 'units' }],
     ['/owners', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRound, 'owners.hub.view'],
@@ -55,13 +64,24 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
 };
 
+export const workspaceChildNavItems: Record<string, readonly NavItem[]> = Object.fromEntries(
+  Object.entries(allWorkspaceChildNavItems).map(([root, items]) => [
+    root,
+    items.filter(([to]) => isPathAvailableInEdition(to, activeProductEdition)),
+  ]),
+);
+
 export function getAllNavItems(): readonly NavItem[] {
   return [...navGroups.flatMap((group) => group[1]), ...Object.values(workspaceChildNavItems).flat()];
 }
 export const mobileNavItems: readonly MobileNavItem[] = [];
-export const quickCreateItems: readonly MobileNavItem[] = [
+const allQuickCreateItems: readonly MobileNavItem[] = [
   ['/contracts/new', 'newContract', FileText, 'contracts.create'],
   ['/financials', 'collectPayment', HandCoins, 'financial.payments.create', { section: 'collections', view: 'invoices', quickAdd: 'collect' }],
   ['/maintenance', 'maintenanceRequest', Wrench, 'maintenance.create', { quickAdd: 'maintenance' }],
   ['/utilities', 'utilityBill', ReceiptText, 'maintenance.create', { quickAdd: 'utility-bill' }],
 ];
+
+export const quickCreateItems: readonly MobileNavItem[] = allQuickCreateItems.filter(([to]) =>
+  isPathAvailableInEdition(to, activeProductEdition),
+);

@@ -1,3 +1,5 @@
+import { formatUtcCalendarDate } from '@/lib/utc-calendar-date';
+
 /**
  * Comparable previous period arithmetic for professional reports.
  *
@@ -14,14 +16,6 @@
 const toUtcDate = (iso: string): Date => {
   const [year, month, day] = iso.slice(0, 10).split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day));
-};
-
-/** Formats a UTC-based date as YYYY-MM-DD without UTC-toISOString slicing. */
-const toIso = (date: Date): string => {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
 };
 
 /** Days between two UTC dates (positive when `from <= to`). */
@@ -67,9 +61,9 @@ export function previousPeriodRange(from: string | null | undefined, to: string 
   const lengthDays = daysBetween(from, to);
   const previousTo = toUtcDate(from);
   previousTo.setUTCDate(previousTo.getUTCDate() - 1);
-  const previousFrom = toUtcDate(toIso(previousTo));
+  const previousFrom = toUtcDate(formatUtcCalendarDate(previousTo));
   previousFrom.setUTCDate(previousFrom.getUTCDate() - lengthDays);
-  return { from: toIso(previousFrom), to: toIso(previousTo) };
+  return { from: formatUtcCalendarDate(previousFrom), to: formatUtcCalendarDate(previousTo) };
 }
 
 /**
@@ -111,5 +105,5 @@ export function arabicMonthLabel(monthKey: string): string {
 export function monthEndIso(monthKey: string): string {
   const [year, month] = monthKey.split('-').map(Number);
   const end = new Date(Date.UTC(year, month, 0));
-  return toIso(end);
+  return formatUtcCalendarDate(end);
 }

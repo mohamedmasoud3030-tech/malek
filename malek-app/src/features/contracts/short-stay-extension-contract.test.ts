@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../test/read-source';
 
 const migration = readFileSync(
   resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000049_extend_short_stay_atomic.sql'),
@@ -10,9 +11,9 @@ const granularMigration = readFileSync(
   resolve(import.meta.dirname, '../../../../supabase/migrations/20260901000051_granular_employee_action_permissions.sql'),
   'utf8',
 );
-const service = readFileSync(resolve(import.meta.dirname, './services/shortStayLifecycleService.ts'), 'utf8');
-const detailPage = readFileSync(resolve(import.meta.dirname, './pages/ContractDetailPage.tsx'), 'utf8');
-const form = readFileSync(resolve(import.meta.dirname, './lifecycle/ContractShortStayExtensionDialog.tsx'), 'utf8');
+const service = readSource(import.meta.url, './services/shortStayLifecycleService.ts');
+const detailPage = readSource(import.meta.url, './pages/ContractDetailPage.tsx');
+const form = readSource(import.meta.url, './lifecycle/ContractShortStayExtensionDialog.tsx');
 
 describe('short stay extension', () => {
   it('is a dedicated pre-checkout command with overlap and owner-agreement guards', () => {

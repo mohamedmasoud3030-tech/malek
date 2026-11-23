@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../test/read-source';
 
 /**
  * Dashboard Truth architecture guard.
@@ -10,7 +9,7 @@ import { describe, expect, it } from 'vitest';
  * classify actionable conditions in the unified attention queue.
  */
 describe('dashboard frontend/backend data contract', () => {
-  const read = (file: string) => readFileSync(resolve(import.meta.dirname, file), 'utf8');
+  const read = (file: string) => readSource(import.meta.url, file);
 
   it('loads the snapshot exclusively through the authoritative read model RPC', () => {
     const snapshotSource = read('dashboard-snapshot.ts');
@@ -70,7 +69,7 @@ describe('dashboard frontend/backend data contract', () => {
   it('keeps authoritative snapshot failure owned by the page boundary only', () => {
     const pageSource = read('dashboard-page.tsx');
     const collectionsSource = read('components/collections-section.tsx');
-    const bellSource = readFileSync(resolve(import.meta.dirname, '../../app/layout/notifications-menu.tsx'), 'utf8');
+    const bellSource = readSource(import.meta.url, '../../app/layout/notifications-menu.tsx');
     expect(pageSource).toContain("title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}");
     expect(collectionsSource).not.toContain('isError');
     // The bell delegates the queue to the shared hook — it never re-reads the

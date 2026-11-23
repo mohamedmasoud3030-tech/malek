@@ -1,11 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../test/read-source';
 
 const sourceRoot = resolve(import.meta.dirname, '../..');
 const routeTree = readFileSync(resolve(sourceRoot, 'app/router/route-tree.ts'), 'utf8');
-const workspace = readFileSync(resolve(import.meta.dirname, 'components/maintenance-workspace.tsx'), 'utf8');
-const controller = readFileSync(resolve(import.meta.dirname, 'useMaintenancePageController.ts'), 'utf8');
+const workspace = readSource(import.meta.url, 'components/maintenance-workspace.tsx');
+const controller = readSource(import.meta.url, 'useMaintenancePageController.ts');
 
 describe('maintenance production runtime wiring', () => {
   it('keeps the authenticated route wired directly to the live standalone workspace', () => {

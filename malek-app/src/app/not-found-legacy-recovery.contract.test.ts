@@ -6,6 +6,7 @@ import {
   LEGACY_ROUTE_REDIRECTS,
   resolveLegacyRedirect,
 } from "./not-found-page";
+import { readSource } from '../test/read-source';
 
 // Locks the legacy-path recovery contract: pre-unification URLs are
 // recovered at the not-found boundary (auto-redirect to the owning
@@ -50,7 +51,7 @@ describe("legacy path recovery at the not-found boundary", () => {
       // (/properties/$propertyId/units). No top-level legacy stub is allowed.
       expect(registrations, `route-tree registrations of ${legacyPath}`).toBeLessThanOrEqual(1);
     }
-    const page = readFileSync(resolve(import.meta.dirname, "not-found-page.tsx"), "utf8");
+    const page = readSource(import.meta.url, "not-found-page.tsx");
     expect(page).toContain("useEffect");
     expect(page).toContain("replace: true");
     expect(page).toContain("resolveLegacyRedirect");

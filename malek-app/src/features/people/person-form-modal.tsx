@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { LoadingState } from '@/components/ui/loading-state';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
+import { UnsavedChangesDialog } from '@/components/ui/unsaved-changes-dialog';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
@@ -147,16 +147,9 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         )}
       </EntityForm.Overlay>
 
-      <ConfirmDialog
+      <UnsavedChangesDialog
         open={showDiscardDialog}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) handleCancelDiscard();
-        }}
-        title="تغييرات غير محفوظة"
-        description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
-        confirmLabel="تجاهل التغييرات"
-        cancelLabel="مواصلة التعديل"
-        variant="warning"
+        onOpenChange={handleCancelDiscard}
         onConfirm={handleConfirmDiscard}
       />
     </>

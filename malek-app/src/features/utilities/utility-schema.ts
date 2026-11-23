@@ -30,25 +30,22 @@ const isoDate = z
 /** UUID validator. */
 const uuid = z.string().uuid('المعرف يجب أن يكون UUID صحيحاً');
 
+function nullableFiniteNumber(schema: z.ZodTypeAny) {
+  return z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return null;
+      const num = Number(value);
+      return Number.isFinite(num) ? num : Number.NaN;
+    },
+    schema.nullable(),
+  );
+}
+
 /** Positive number that becomes null on blank input. */
-const positiveNumber = z.preprocess(
-  (value) => {
-    if (value === '' || value === null || value === undefined) return null;
-    const num = Number(value);
-    return Number.isFinite(num) ? num : Number.NaN;
-  },
-  z.number().positive('القيمة يجب أن تكون أكبر من صفر').nullable(),
-);
+const positiveNumber = nullableFiniteNumber(z.number().positive('القيمة يجب أن تكون أكبر من صفر'));
 
 /** Non-negative number that becomes null on blank input. */
-const nonNegativeNumber = z.preprocess(
-  (value) => {
-    if (value === '' || value === null || value === undefined) return null;
-    const num = Number(value);
-    return Number.isFinite(num) ? num : Number.NaN;
-  },
-  z.number().nonnegative('القيمة لا يمكن أن تكون سالبة').nullable(),
-);
+const nonNegativeNumber = nullableFiniteNumber(z.number().nonnegative('القيمة لا يمكن أن تكون سالبة'));
 
 // ── Meter schemas ───────────────────────────────────────────────────────────
 

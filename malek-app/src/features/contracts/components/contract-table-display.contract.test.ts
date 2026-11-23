@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../../test/read-source';
 
 describe('contract register display architecture', () => {
-  const table = readFileSync(resolve(import.meta.dirname, './ContractTable.tsx'), 'utf8');
+  const table = readSource(import.meta.url, './ContractTable.tsx');
 
   it('uses EntityTable with explicit mobile hierarchy (tenant as primary datum)', () => {
     expect(table).toContain('EntityTable');

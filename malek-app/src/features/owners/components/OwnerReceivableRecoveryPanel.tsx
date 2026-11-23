@@ -1,19 +1,23 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Banknote, Fingerprint, ShieldCheck } from 'lucide-react';
+import { Banknote, Fingerprint } from 'lucide-react';
 import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityForm } from '@/components/ui/entity-form';
+import {
+  OwnerMovementAmountFields,
+  OwnerMovementAssurance,
+  OwnerMovementFeedback,
+  OwnerReceivableFacts,
+  OwnerReceivableSelector,
+} from './owner-receivable-panel-parts';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import {
   loadOwnerReceivables,
-  ownerReceivableStatusLabels,
   ownerReceivablesQueryKey,
 } from '../services/owner-receivable-offset-service';
 import {
@@ -122,53 +126,26 @@ export function OwnerReceivableRecoveryPanel({ ownerId }: OwnerReceivableRecover
         emptyDescription="سجّل مديونية على المالك أولاً لتتمكن من تسجيل تحصيل نقدي عليها."
       >
         <div className="space-y-3">
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">المديونية</span>
-            <Select
-              value={selectedReceivableId}
-              onChange={(event) => {
-                setSelectedReceivableId(event.target.value);
-                setStatusMessage(null);
-                setErrorMessage(null);
-              }}
-            >
-              <option value="">— اختر مديونية —</option>
-              {receivables.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {`${formatShortId(row.id)} · أصل ${formatMoney(row.amount)} · متبقٍّ ${formatMoney(row.outstanding)}`}
-                </option>
-              ))}
-            </Select>
-          </label>
+          <OwnerReceivableSelector
+            receivables={receivables}
+            value={selectedReceivableId}
+            onChange={(next) => {
+              setSelectedReceivableId(next);
+              setStatusMessage(null);
+              setErrorMessage(null);
+            }}
+          />
 
           {selected ? (
             <div className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">الحالة</p>
-                  <StatusBadge tone={selected.status === 'OPEN' ? 'warning' : 'success'}>
-                    {ownerReceivableStatusLabels[selected.status]}
-                  </StatusBadge>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">المبلغ الأصلي (لا يتغيّر)</p>
-                  <p className="font-medium" data-recovery-original>
-                    {formatMoney(selected.amount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">إجمالي المحصَّل</p>
-                  <p className="font-medium" data-recovery-recovered>
-                    {formatMoney(selected.recoveredAmount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">المتبقي بعد التحصيل</p>
-                  <p className="font-medium" data-recovery-outstanding>
-                    {formatMoney(selected.outstanding)}
-                  </p>
-                </div>
-              </div>
+              <OwnerReceivableFacts
+                selected={selected}
+                dataPrefix="recovery"
+                movementLabel="إجمالي المحصَّل"
+                movementAmount={selected.recoveredAmount}
+                movementDataKey="recovered"
+                outstandingLabel="المتبقي بعد التحصيل"
+              />
 
               <AsyncContentState
                 status={resolveAsyncContentStatus({ isLoading: recoveriesQuery.isLoading, isError: recoveriesQuery.isError, isEmpty: (recoveriesQuery.data ?? []).length === 0 })}
@@ -238,52 +215,26 @@ export function OwnerReceivableRecoveryPanel({ ownerId }: OwnerReceivableRecover
               </Select>
             </label>
 
-            <label className="block space-y-1">
-              <span className="text-sm font-medium">المبلغ</span>
-              <Input
-                type="number"
-                step="0.001"
-                min="0"
-                inputMode="decimal"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                required
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-sm font-medium">تاريخ الأثر</span>
-              <Input
-                type="date"
-                value={effectiveDate}
-                onChange={(event) => setEffectiveDate(event.target.value)}
-                required
-              />
-            </label>
+            <OwnerMovementAmountFields
+              amount={amount}
+              effectiveDate={effectiveDate}
+              onAmountChange={setAmount}
+              onEffectiveDateChange={setEffectiveDate}
+            />
           </EntityForm.Section>
 
           <Button type="submit" disabled={recoverMutation.isPending}>
             تسجيل التحصيل
           </Button>
 
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="size-3.5" aria-hidden />
+          <OwnerMovementAssurance>
             كل تحصيل يُرحَّل كقيد متوازن، ولا يُعدّل المبلغ الأصلي للمديونية، ويُرفض إذا تجاوز
             المتبقي.
-          </p>
+          </OwnerMovementAssurance>
         </EntityForm.Root>
       ) : null}
 
-      {statusMessage ? (
-        <p className="text-sm font-medium text-success" role="status">
-          {statusMessage}
-        </p>
-      ) : null}
-      {errorMessage ? (
-        <p className="text-sm font-medium text-destructive" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      <OwnerMovementFeedback statusMessage={statusMessage} errorMessage={errorMessage} />
     </section>
   );
 }

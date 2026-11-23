@@ -13,6 +13,7 @@
  * competing ledger.
  */
 import type { UtilityBill } from './utility-types';
+import { toUtcDayNumber } from '@/lib/utc-day-number';
 import type { ResponsibleParty, UtilityBillStatus } from './utility-schema';
 import type { SemanticTone } from '@/components/ui/status-badge';
 
@@ -65,15 +66,6 @@ export const utilityObligationUrgencyTone: Record<UtilityObligationUrgency, Sema
   settled: 'success',
 };
 
-function toDayNumber(value: string): number | null {
-  // Utility due dates are calendar dates (YYYY-MM-DD). Comparing them as UTC
-  // midnights keeps "late by N days" stable regardless of the viewer timezone.
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? '');
-  if (!match) return null;
-  const time = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return Number.isFinite(time) ? Math.floor(time / 86_400_000) : null;
-}
-
 function roundMoney(value: number): number {
   // OMR is a three-decimal currency; keep derived remainders on the same grid
   // so a fully paid bill never leaves a floating-point crumb behind.
@@ -114,8 +106,8 @@ export function billSettlementStatus(
 
 export function deriveUtilityObligation(bill: UtilityBill, today: string): UtilityObligation {
   const remainingAmount = utilityBillRemaining(bill);
-  const dueDay = toDayNumber(bill.due_date);
-  const todayDay = toDayNumber(today);
+  const dueDay = toUtcDayNumber(bill.due_date);
+  const todayDay = toUtcDayNumber(today);
   const daysUntilDue = dueDay === null || todayDay === null ? 0 : dueDay - todayDay;
 
   let urgency: UtilityObligationUrgency = 'scheduled';

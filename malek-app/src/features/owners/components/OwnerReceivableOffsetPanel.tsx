@@ -1,17 +1,22 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, Fingerprint, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { ArrowLeftRight, Fingerprint, ShieldAlert } from 'lucide-react';
 import { AsyncContentState, resolveAsyncContentStatus } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { EntityForm } from '@/components/ui/entity-form';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
+import {
+  OwnerMovementAmountFields,
+  OwnerMovementAssurance,
+  OwnerMovementFeedback,
+  OwnerReceivableFacts,
+  OwnerReceivableSelector,
+} from './owner-receivable-panel-parts';
 import {
   applyOwnerReceivableOffset,
   approvedOwnerSettlementsQueryKey,
@@ -20,7 +25,6 @@ import {
   loadOwnerReceivableOffsets,
   loadOwnerReceivables,
   ownerReceivableOffsetsQueryKey,
-  ownerReceivableStatusLabels,
   ownerReceivablesQueryKey,
   translateOwnerOffsetError,
 } from '../services/owner-receivable-offset-service';
@@ -136,53 +140,26 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
         emptyDescription="سجّل مديونية على المالك أولاً لتتمكن من إجراء مقاصة مقابل مستحقاته المعتمدة."
       >
         <div className="space-y-3">
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">المديونية</span>
-            <Select
-              value={selectedReceivableId}
-              onChange={(event) => {
-                setSelectedReceivableId(event.target.value);
-                setStatusMessage(null);
-                setErrorMessage(null);
-              }}
-            >
-              <option value="">— اختر مديونية —</option>
-              {receivables.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {`${formatShortId(row.id)} · أصل ${formatMoney(row.amount)} · متبقٍّ ${formatMoney(row.outstanding)}`}
-                </option>
-              ))}
-            </Select>
-          </label>
+          <OwnerReceivableSelector
+            receivables={receivables}
+            value={selectedReceivableId}
+            onChange={(next) => {
+              setSelectedReceivableId(next);
+              setStatusMessage(null);
+              setErrorMessage(null);
+            }}
+          />
 
           {selected ? (
             <div className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">الحالة</p>
-                  <StatusBadge tone={selected.status === 'OPEN' ? 'warning' : 'success'}>
-                    {ownerReceivableStatusLabels[selected.status]}
-                  </StatusBadge>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">المبلغ الأصلي (لا يتغيّر)</p>
-                  <p className="font-medium" data-receivable-original>
-                    {formatMoney(selected.amount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">إجمالي المقاصات</p>
-                  <p className="font-medium" data-receivable-offset>
-                    {formatMoney(selected.offsetAmount)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">المتبقي بعد المقاصة</p>
-                  <p className="font-medium" data-receivable-outstanding>
-                    {formatMoney(selected.outstanding)}
-                  </p>
-                </div>
-              </div>
+              <OwnerReceivableFacts
+                selected={selected}
+                dataPrefix="receivable"
+                movementLabel="إجمالي المقاصات"
+                movementAmount={selected.offsetAmount}
+                movementDataKey="offset"
+                outstandingLabel="المتبقي بعد المقاصة"
+              />
 
               <AsyncContentState
                 status={resolveAsyncContentStatus({ isLoading: offsetsQuery.isLoading, isError: offsetsQuery.isError, isEmpty: (offsetsQuery.data ?? []).length === 0 })}
@@ -262,28 +239,12 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
               </Select>
             </label>
 
-            <label className="block space-y-1">
-              <span className="text-sm font-medium">المبلغ</span>
-              <Input
-                type="number"
-                step="0.001"
-                min="0"
-                inputMode="decimal"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-                required
-              />
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-sm font-medium">تاريخ الأثر</span>
-              <Input
-                type="date"
-                value={effectiveDate}
-                onChange={(event) => setEffectiveDate(event.target.value)}
-                required
-              />
-            </label>
+            <OwnerMovementAmountFields
+              amount={amount}
+              effectiveDate={effectiveDate}
+              onAmountChange={setAmount}
+              onEffectiveDateChange={setEffectiveDate}
+            />
 
             <label className="block space-y-1">
               <span className="text-sm font-medium">سند المقاصة</span>
@@ -300,24 +261,14 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
             تنفيذ المقاصة
           </Button>
 
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="size-3.5" aria-hidden />
+          <OwnerMovementAssurance>
             كل مقاصة تُرحَّل كقيد متوازن، ولا تُعدّل المبلغ الأصلي للمديونية، وتُرفض إذا تجاوزت
             المتبقي أو صافي المستحق.
-          </p>
+          </OwnerMovementAssurance>
         </EntityForm.Root>
       ) : null}
 
-      {statusMessage ? (
-        <p className="text-sm font-medium text-success" role="status">
-          {statusMessage}
-        </p>
-      ) : null}
-      {errorMessage ? (
-        <p className="text-sm font-medium text-destructive" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      <OwnerMovementFeedback statusMessage={statusMessage} errorMessage={errorMessage} />
     </section>
   );
 }

@@ -7,6 +7,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { normalizeOm3 } from '@/lib/money';
+import { asJsonRecord as asRecord } from '@/lib/json-record';
 import type {
   TrialBalanceReport,
   IncomeStatementReport,
@@ -17,12 +18,6 @@ import type {
   BalanceSheetRpcResponse,
   CashFlowRpcResponse,
 } from '@/features/accounting/reports/contracts';
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
 
 function asArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
@@ -111,6 +106,17 @@ export async function getIncomeStatementReport(
 // 3. Balance Sheet Report
 // ---------------------------------------------------------------------------
 
+function mapBalanceSheetSection(rows: readonly unknown[]): BalanceSheetReport['assets'] {
+  return rows.map((row) => {
+    const section = row as { code: string | null; name: string | null; amount: number | string | null };
+    return {
+      code: String(section.code ?? '').trim(),
+      name: String(section.name ?? '').trim(),
+      amount: normalizeOm3(section.amount),
+    };
+  });
+}
+
 export async function getBalanceSheetReport(asOf: string): Promise<BalanceSheetReport> {
   const { data, error } = await supabase.rpc('rpt_balance_sheet', { p_as_of: asOf });
   if (error) throw error;
@@ -120,32 +126,9 @@ export async function getBalanceSheetReport(asOf: string): Promise<BalanceSheetR
   const rawLiabilities = Array.isArray(response?.liabilities) ? response.liabilities : [];
   const rawEquity = Array.isArray(response?.equity) ? response.equity : [];
 
-  const assets = rawAssets.map((row: unknown) => {
-    const r = row as { code: string | null; name: string | null; amount: number | string | null };
-    return {
-      code: String(r.code ?? '').trim(),
-      name: String(r.name ?? '').trim(),
-      amount: normalizeOm3(r.amount),
-    };
-  });
-
-  const liabilities = rawLiabilities.map((row: unknown) => {
-    const r = row as { code: string | null; name: string | null; amount: number | string | null };
-    return {
-      code: String(r.code ?? '').trim(),
-      name: String(r.name ?? '').trim(),
-      amount: normalizeOm3(r.amount),
-    };
-  });
-
-  const equity = rawEquity.map((row: unknown) => {
-    const r = row as { code: string | null; name: string | null; amount: number | string | null };
-    return {
-      code: String(r.code ?? '').trim(),
-      name: String(r.name ?? '').trim(),
-      amount: normalizeOm3(r.amount),
-    };
-  });
+  const assets = mapBalanceSheetSection(rawAssets);
+  const liabilities = mapBalanceSheetSection(rawLiabilities);
+  const equity = mapBalanceSheetSection(rawEquity);
 
   const totalAssets = assets.reduce((sum, row) => sum + row.amount, 0);
   const totalLiabilities = liabilities.reduce((sum, row) => sum + row.amount, 0);

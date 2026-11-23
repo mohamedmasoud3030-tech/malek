@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "../_shared/fetch-with-timeout.ts";
+
 type JsonObject = Record<string, unknown>;
 
 const MAX_COMPANIES_PER_INVOCATION = 5;
@@ -28,20 +30,6 @@ function constantTimeEqual(left: string, right: string): boolean {
       (a[index % Math.max(1, a.length)] ?? 0) ^
       (b[index % Math.max(1, b.length)] ?? 0);
   return mismatch === 0;
-}
-
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-  timeoutMs: number,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 async function rpc(

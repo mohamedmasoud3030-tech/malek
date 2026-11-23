@@ -34,6 +34,16 @@ export const maintenancePriorityTone: Record<CanonicalMaintenancePriority, Seman
   urgent: 'danger',
 };
 
+export const maintenanceStatusFilterOptions = [
+  { value: 'all', label: 'كل الحالات' },
+  ...(['open', 'in_progress', 'resolved', 'closed'] as const).map((value) => ({ value, label: maintenanceStatusLabels[value] })),
+] as const;
+
+export const maintenancePriorityFilterOptions = [
+  { value: 'all', label: 'كل الأولويات' },
+  ...(['low', 'medium', 'high', 'urgent'] as const).map((value) => ({ value, label: maintenancePriorityLabels[value] })),
+] as const;
+
 /**
  * Reads remain compatible with historic maintenance rows written before the
  * canonical lowercase constraint. Shared so list filters, reports, and the

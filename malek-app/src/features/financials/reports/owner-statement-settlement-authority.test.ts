@@ -118,7 +118,7 @@ it('preserves the legacy date/amount pair as posted history (no backfill, no rew
 it('MONETARY: the settlement movement is the 975 cash proven by the journal, not the 1000 entitlement', async () => {
   expect(await provenCash(f.settlement)).toBe(975);
 
-  const result = await statement(offsetDate(1), offsetDate(28));
+  const result = await statement(offsetDate(1), paidOn);
   const settlementRows = result.transactions.filter((tx) => tx.type === 'settlement');
   expect(settlementRows).toHaveLength(1);
 
@@ -148,15 +148,16 @@ it('MONETARY: the movement is not derivable from net_payable minus offset_applie
   // exactly why the statement must not use the header.
   expect(await provenCash(f.settlement)).toBe(975);
 
-  const result = await statement(offsetDate(1), offsetDate(28));
+  const result = await statement(offsetDate(1), paidOn);
   expect(result.transactions.find((tx) => tx.type === 'settlement')?.gross).toBe(-975);
 });
 
 it('TEMPORAL: the movement is dated to the actual payment date and found by a window covering it', async () => {
-  const result = await statement(offsetDate(1), offsetDate(28));
+  const result = await statement(offsetDate(1), paidOn);
   const row = result.transactions.find((tx) => tx.type === 'settlement');
   expect(row?.date).toBe(paidOn);
-  expect(row?.date).not.toBe(offsetDate(28));
+  // The real payment can legitimately fall on the 28th too; the before-payment
+  // window below separately proves that no payment appears before its paid_at.
 
   // A one-day window on the true payment date now finds it.
   const narrow = await statement(paidOn, paidOn);

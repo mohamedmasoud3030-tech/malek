@@ -23,9 +23,11 @@ describe('P6c — people and tenant dossier consistency (closeout)', () => {
     const person = read('./people/components/PersonDossier.tsx');
     const tenant = read('./tenants/components/TenantPreviewDialog.tsx');
     for (const source of [person, tenant]) {
-      expect(source).toContain('businessReferenceOrLabel');
-      expect(source).toContain('contract.properties?.title');
+      expect(source).toContain('DossierContractsSection');
     }
+    const sharedContracts = read('./people/components/dossier-contracts-section.tsx');
+    expect(sharedContracts).toContain('businessReferenceOrLabel');
+    expect(sharedContracts).toContain('contract.properties?.title');
   });
 
   it('aligns identity counts: active and total contracts shown for both person and tenant', () => {

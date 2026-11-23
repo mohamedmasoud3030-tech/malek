@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { sumFinancialValues } from '@/features/financials/financialMath';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchActiveOwnerOptions } from '@/services/owner-options';
 import {
   ownerFormSchema,
   ownerPayloadSchema,
@@ -280,15 +281,7 @@ export async function listOwners(): Promise<Owner[]> {
 }
 
 export async function listOperationalOwners(): Promise<OperationalOwner[]> {
-  const { rows } = await fetchAllRows<OperationalOwner>(() => supabase
-    .from('owners')
-    .select('id, full_name, display_name, name')
-    .is('deleted_at', null)
-    .eq('is_active', true)
-    .order('full_name', { ascending: true })
-    .order('id', { ascending: true })
-    .returns<OperationalOwner[]>());
-  return rows;
+  return fetchActiveOwnerOptions();
 }
 
 export async function getOwner(ownerId: string): Promise<Owner> {

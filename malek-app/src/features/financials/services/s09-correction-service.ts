@@ -256,13 +256,25 @@ export function parseS08ReviewListEnvelope(payload: unknown): Array<Record<strin
  * anchor contract and can be revoked per-employee — breaking the panel for
  * users the server would still accept.
  */
-export async function loadApprovedS08Reviews(): Promise<S08ApprovedReview[]> {
+/**
+ * The one query for frozen S08 reviews, filtered to APPROVED.
+ *
+ * Two panels need these rows in different shapes (the S09 correction panel
+ * needs the accounting period; the owner-funds cutover needs dataset lineage
+ * and review time). They share this loader so the RPC name, the null period
+ * argument, and the APPROVED filter exist once — a second copy would drift
+ * silently, since both are "just a read".
+ */
+export async function loadApprovedS08ReviewRows(): Promise<Array<Record<string, unknown>>> {
   const { data, error } = await supabase.rpc('s08_list_frozen_reviews', {
     p_period_id: null,
   });
   if (error) throw error;
-  return parseS08ReviewListEnvelope(data)
-    .filter((record) => record.reviewer_decision === 'APPROVED')
+  return parseS08ReviewListEnvelope(data).filter((record) => record.reviewer_decision === 'APPROVED');
+}
+
+export async function loadApprovedS08Reviews(): Promise<S08ApprovedReview[]> {
+  return (await loadApprovedS08ReviewRows())
     .map((record) => ({
       id: requireText(record.id, 'id'),
       accountingPeriodId: optionalText(record.accounting_period_id),

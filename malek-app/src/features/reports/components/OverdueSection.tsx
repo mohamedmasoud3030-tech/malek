@@ -1,5 +1,3 @@
-import { FileSpreadsheet, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   formatInvoiceStatusLabel,
   formatMoney,
@@ -20,7 +18,6 @@ import { agingBucketOrder } from '@/features/financials/reports/aging-buckets';
 import {
   buildAgingBucketChartRows,
   buildReportCsvFilename,
-  downloadCsv,
   getTodayLocalDateString,
 } from '../reports-page.helpers';
 import {
@@ -36,12 +33,8 @@ import {
   OverdueInvoicesPanel,
 } from './overdue/overdue-invoices-panel';
 import { formatLatinNumber } from '@/lib/formatters';
-import {
-  csvRowsToXlsxBlob,
-  downloadBlob,
-  xlsxFilenameFromCsv,
-} from '@/lib/tabular-export';
 import { ReportDocumentActions } from './report-document-actions';
+import { ReportTabularExportActions } from './report-tabular-export-actions';
 
 const UNAVAILABLE_VALUE = '—';
 const UNAVAILABLE_DETAIL = 'الملخص المعتمد غير متاح';
@@ -256,35 +249,14 @@ export function OverdueSection({
     invoiceCount: row.invoiceCount,
   }));
   const agingCsvFilename = buildReportCsvFilename('aged-receivables');
-  const agingAction = canExportReports ? (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() =>
-          downloadBlob(
-            csvRowsToXlsxBlob(agingCsvRows, 'تعتيق المتأخرات'),
-            xlsxFilenameFromCsv(agingCsvFilename),
-          )
-        }
-        className="min-h-11 gap-1.5 text-xs"
-        disabled={agingCsvRows.length === 0}
-      >
-        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
-        Excel
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => downloadCsv(agingCsvFilename, agingCsvRows)}
-        className="min-h-11 gap-1.5 text-xs"
-        disabled={agingCsvRows.length === 0}
-      >
-        <FileText className="size-3.5" aria-hidden="true" />
-        CSV
-      </Button>
-    </div>
-  ) : undefined;
+  const agingAction = (
+    <ReportTabularExportActions
+      rows={agingCsvRows}
+      filename={agingCsvFilename}
+      sheetName="تعتيق المتأخرات"
+      enabled={canExportReports}
+    />
+  );
 
   const concentrationTone = (share: number, warningAt: number) => {
     if (share <= 20) return 'good';

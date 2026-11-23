@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { parseS08ReviewListEnvelope } from '@/features/financials/services/s09-correction-service';
+import { loadApprovedS08ReviewRows } from '@/features/financials/services/s09-correction-service';
 
 /**
  * G6 — Governed historical adoption (owner-funds cutover) read/write authority.
@@ -219,12 +219,7 @@ export async function loadOwnerFundsCutover(): Promise<OwnerFundsCutoverReadStat
  * per-employee — breaking cutover adoption for users the server accepts.
  */
 export async function loadApprovedS08Reviews(): Promise<ApprovedS08ReviewOption[]> {
-  const { data, error } = await supabase.rpc('s08_list_frozen_reviews', {
-    p_period_id: null,
-  });
-  if (error) throw error;
-  return parseS08ReviewListEnvelope(data)
-    .filter((record) => record.reviewer_decision === 'APPROVED')
+  return (await loadApprovedS08ReviewRows())
     .flatMap((record) => {
       const id = optionalText(record.id);
       if (!id) return [];

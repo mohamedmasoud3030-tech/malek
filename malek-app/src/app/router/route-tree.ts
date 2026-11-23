@@ -5,10 +5,13 @@ import { RootRouteComponent } from '@/routes/__root';
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import type { AppPermission } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
+import { isPathAvailableInEdition } from '@/lib/product-edition';
+
+const includesAllProductSurfaces = import.meta.env.MODE !== 'property-operations';
 
 const rootRoute = createRootRoute({ component: RootRouteComponent, errorComponent: RouteErrorFallback, notFoundComponent: NotFoundPage });
 const authRoute = createRoute({ getParentRoute: () => rootRoute, id: 'auth', beforeLoad: async () => { const { getCurrentSession } = await import('@/services/auth-service'); const session = await getCurrentSession(); if (session) throw redirect({ to: '/dashboard' }); }, component: lazyRouteComponent(() => import('@/routes/_auth'), 'AuthRouteComponent') });
-const protectedRoute = createRoute({ getParentRoute: () => rootRoute, id: 'protected', beforeLoad: async () => { const { getCurrentSession } = await import('@/services/auth-service'); if (!await getCurrentSession()) throw redirect({ to: '/login' }); }, component: lazyRouteComponent(() => import('@/routes/_protected'), 'ProtectedRouteComponent') });
+const protectedRoute = createRoute({ getParentRoute: () => rootRoute, id: 'protected', beforeLoad: async ({ location }) => { const { getCurrentSession } = await import('@/services/auth-service'); if (!await getCurrentSession()) throw redirect({ to: '/login' }); if (!isPathAvailableInEdition(location.pathname)) throw redirect({ to: '/dashboard' }); }, component: lazyRouteComponent(() => import('@/routes/_protected'), 'ProtectedRouteComponent') });
 const requirePermission = (permission: AppPermission) => async () => { const { getCurrentSession } = await import('@/services/auth-service'); try { const session = await getCurrentSession(); if (!session) throw redirect({ to: '/login' }); await assertSessionPermission(session, permission); } catch (err) { if (isRedirect(err)) throw err; throw redirect({ to: '/login' }); } };
 const requireAnyPermission = (...permissions: AppPermission[]) => async () => { const { getCurrentSession } = await import('@/services/auth-service'); try { const session = await getCurrentSession(); if (!session) throw redirect({ to: '/login' }); let lastError: unknown = null; for (const permission of permissions) { try { await assertSessionPermission(session, permission); return; } catch (error) { lastError = error; } } throw lastError ?? new Error('Permission denied'); } catch (err) { if (isRedirect(err)) throw err; throw redirect({ to: '/login' }); } };
 
@@ -72,20 +75,65 @@ const dataIntegrityRoute = createRoute({ getParentRoute: () => protectedRoute, p
 const securityRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/settings/security', beforeLoad: requirePermission('auth.password.change'), component: lazyRouteComponent(() => import('@/features/auth/change-password-page'), 'ChangePasswordWorkspace'), staticData: { title: 'الأمان' } });
 
 const landingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: lazyRouteComponent(() => import('@/routes/landing'), 'LandingRouteComponent'), staticData: { title: `${APP_BRAND_NAME} — ${APP_BRAND_TAGLINE_AR}` } });
-const tenantPortalRoute = createRoute({ getParentRoute: () => rootRoute, path: '/tenant-portal', component: lazyRouteComponent(() => import('@/features/tenant-portal/tenant-portal-page'), 'TenantPortalPage'), staticData: { title: 'بوابة المستأجر' } });
-const ownerPortalRoute = createRoute({ getParentRoute: () => rootRoute, path: '/owner-portal', component: lazyRouteComponent(() => import('@/features/owner-portal/owner-portal-page'), 'OwnerPortalPage'), staticData: { title: 'بوابة مالك العقار' } });
+const tenantPortalRoute = createRoute({ getParentRoute: () => rootRoute, path: '/tenant-portal', beforeLoad: () => { if (!isPathAvailableInEdition('/tenant-portal')) throw redirect({ to: '/' }); }, component: lazyRouteComponent(() => import('@/features/tenant-portal/tenant-portal-page'), 'TenantPortalPage'), staticData: { title: 'بوابة المستأجر' } });
+const ownerPortalRoute = createRoute({ getParentRoute: () => rootRoute, path: '/owner-portal', beforeLoad: () => { if (!isPathAvailableInEdition('/owner-portal')) throw redirect({ to: '/' }); }, component: lazyRouteComponent(() => import('@/features/owner-portal/owner-portal-page'), 'OwnerPortalPage'), staticData: { title: 'بوابة مالك العقار' } });
 const privacyRoute = createRoute({ getParentRoute: () => rootRoute, path: '/privacy', component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'), staticData: { title: 'سياسة الخصوصية' } });
 const termsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/terms', component: lazyRouteComponent(() => import('@/routes/terms'), 'TermsRouteComponent'), staticData: { title: 'شروط الاستخدام' } });
 const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: '/support', component: lazyRouteComponent(() => import('@/features/help-support/public-support-page'), 'PublicSupportPage'), staticData: { title: 'الدعم والتواصل' } });
 const designSystemRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dev/design-system', beforeLoad: () => { if (!import.meta.env.DEV) throw redirect({ to: '/' }); }, component: import.meta.env.DEV ? lazyRouteComponent(() => import('@/features/design-system/design-system-showcase'), 'DesignSystemShowcase') : () => null, staticData: { title: 'MALEK Design System' } });
 
 export const routeTree = rootRoute.addChildren([
-  authRoute.addChildren([loginRoute, forgotPasswordRoute]), resetPasswordRoute, landingRoute, tenantPortalRoute, ownerPortalRoute, privacyRoute, termsRoute, publicSupportRoute, designSystemRoute,
+  authRoute.addChildren([loginRoute, forgotPasswordRoute]),
+  resetPasswordRoute,
+  landingRoute,
+  ...(includesAllProductSurfaces ? [tenantPortalRoute, ownerPortalRoute] : []),
+  privacyRoute,
+  termsRoute,
+  publicSupportRoute,
+  designSystemRoute,
   protectedRoute.addChildren([
-    dashboardRoute, propertiesRoute, propertyNewRoute, propertyDetailRoute.addChildren([propertyIndexRoute, propertyUnitsRoute, propertyUnitDetailRoute]), propertyEditRoute,
-    landsRoute, landDetailRoute, ownersRoute, ownerDetailRoute, ownerEditRoute, tenantsRoute, tenantDetailRoute, peopleRoute, leadsRoute, communicationRoute, personDetailRoute, personNewRoute, personEditRoute,
-    contractsRoute, contractNewRoute, contractDetailRoute, contractEditRoute, financialsRoute, commissionsRoute, receiptsRoute, reportsRoute, reportProductRoute, aiAssistantRoute, helpSupportRoute, adminSupportRoute,
-    maintenanceRoute, serviceProvidersRoute, serviceProviderNewRoute, serviceProviderDetailRoute, serviceProviderEditRoute, utilitiesRoute, documentsVaultRoute,
-    settingsRoute, companySettingsRoute, userRolesRoute, costCentersRoute, automationRoute, systemSettingsRoute, auditLogRoute, dataIntegrityRoute, securityRoute,
+    dashboardRoute,
+    propertiesRoute,
+    propertyNewRoute,
+    propertyDetailRoute.addChildren([propertyIndexRoute, propertyUnitsRoute, propertyUnitDetailRoute]),
+    propertyEditRoute,
+    ownersRoute,
+    ownerDetailRoute,
+    ownerEditRoute,
+    tenantsRoute,
+    tenantDetailRoute,
+    peopleRoute,
+    personDetailRoute,
+    personNewRoute,
+    personEditRoute,
+    contractsRoute,
+    contractNewRoute,
+    contractDetailRoute,
+    contractEditRoute,
+    financialsRoute,
+    commissionsRoute,
+    receiptsRoute,
+    reportsRoute,
+    reportProductRoute,
+    helpSupportRoute,
+    adminSupportRoute,
+    maintenanceRoute,
+    serviceProvidersRoute,
+    serviceProviderNewRoute,
+    serviceProviderDetailRoute,
+    serviceProviderEditRoute,
+    utilitiesRoute,
+    documentsVaultRoute,
+    settingsRoute,
+    companySettingsRoute,
+    userRolesRoute,
+    costCentersRoute,
+    systemSettingsRoute,
+    auditLogRoute,
+    dataIntegrityRoute,
+    securityRoute,
+    ...(includesAllProductSurfaces
+      ? [landsRoute, landDetailRoute, leadsRoute, communicationRoute, aiAssistantRoute, automationRoute]
+      : []),
   ]),
 ]);

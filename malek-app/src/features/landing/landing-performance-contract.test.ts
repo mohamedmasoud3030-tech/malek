@@ -1,13 +1,11 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-
-const readSource = (path: string) =>
-  readFileSync(new URL(path, import.meta.url), 'utf8');
+import { readSource } from '../../test/read-source';
 
 describe('public landing performance contract', () => {
   it('keeps authenticated providers and Supabase out of the public entry path', () => {
-    const appSource = readSource('../../App.tsx');
-    const routeTreeSource = readSource('../../app/router/route-tree.ts');
+    const appSource = readSource(import.meta.url, '../../App.tsx');
+    const routeTreeSource = readSource(import.meta.url, '../../app/router/route-tree.ts');
 
     expect(appSource).not.toContain('AppProviders');
     expect(routeTreeSource).not.toMatch(
@@ -24,7 +22,7 @@ describe('public landing performance contract', () => {
   });
 
   it('keeps hermetic E2E fixtures out of the production login route graph', () => {
-    const loginRouteSource = readSource('../../routes/_auth.login.tsx');
+    const loginRouteSource = readSource(import.meta.url, '../../routes/_auth.login.tsx');
 
     expect(loginRouteSource).toContain('import.meta.env.VITE_E2E');
     expect(loginRouteSource).toContain("import('./_auth.login.e2e-fixture')");
@@ -37,7 +35,7 @@ describe('public landing performance contract', () => {
   });
 
   it('keeps manual chunking vendor-only so optional vendors stay on their lazy paths', () => {
-    const viteConfigSource = readSource('../../../vite.config.ts');
+    const viteConfigSource = readSource(import.meta.url, '../../../vite.config.ts');
 
     // Bundle strategy (PR #1691): heavy vendor libraries are split into
     // dedicated `vendor-*` chunks for long-lived browser caching. This is
@@ -97,7 +95,7 @@ describe('public landing performance contract', () => {
   });
 
   it('keeps React and shared runtime out of the heavy lazy vendor chunks', () => {
-    const viteConfigSource = readSource('../../../vite.config.ts');
+    const viteConfigSource = readSource(import.meta.url, '../../../vite.config.ts');
 
     // Regression guard (initial-payload fix): with function-form
     // manualChunks, Rollup's default grouping merges the `react` package into
@@ -130,8 +128,8 @@ describe('public landing performance contract', () => {
   });
 
   it('keeps the landing brand mark lightweight and free of legacy icon assets', () => {
-    const navBarSource = readSource('./components/NavBar.tsx');
-    const footerSource = readSource('./components/Footer.tsx');
+    const navBarSource = readSource(import.meta.url, './components/NavBar.tsx');
+    const footerSource = readSource(import.meta.url, './components/Footer.tsx');
     const publicRoot = new URL('../../../public/', import.meta.url);
     const markBytes = statSync(new URL('malek-mark.svg', publicRoot)).size;
 
@@ -143,10 +141,10 @@ describe('public landing performance contract', () => {
   });
 
   it('loads the self-hosted brand fonts after the initial document load', () => {
-    const globalStyles = readSource('../../styles/globals.css');
-    const indexHtml = readSource('../../../index.html');
-    const entry = readSource('../../index.tsx');
-    const productFonts = readSource('../../lib/product-fonts.ts');
+    const globalStyles = readSource(import.meta.url, '../../styles/globals.css');
+    const indexHtml = readSource(import.meta.url, '../../../index.html');
+    const entry = readSource(import.meta.url, '../../index.tsx');
+    const productFonts = readSource(import.meta.url, '../../lib/product-fonts.ts');
 
     expect(globalStyles).not.toContain('fonts.googleapis.com');
     expect(indexHtml).not.toContain('fonts.googleapis.com');

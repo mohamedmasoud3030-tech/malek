@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { settingsSections, type SettingsSectionId } from '../registry/sectionRegistry';
+import { settingsSections } from '../registry/section-catalog';
+import type { SettingsSectionId } from '../registry/types';
 
 type SectionCardProps = Readonly<{
   id: SettingsSectionId;

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { normalizeUnitIds } from './unit-ids';
 import { listUnitContractConflicts } from '../services/unitAvailabilityService';
 
 const unitContractConflictKeys = {
@@ -21,10 +22,7 @@ export function useUnitContractConflicts({
   endDate: string;
   excludedContractId?: string | null;
 }>) {
-  const uniqueUnitIds = useMemo(
-    () => [...new Set(unitIds.filter(Boolean))].sort((left, right) => left.localeCompare(right)),
-    [unitIds],
-  );
+  const uniqueUnitIds = useMemo(() => normalizeUnitIds(unitIds), [unitIds]);
   return useQuery({
     queryKey: unitContractConflictKeys.period(propertyId, startDate, endDate, excludedContractId),
     queryFn: () => listUnitContractConflicts({ unitIds: uniqueUnitIds, startDate, endDate, excludedContractId }),

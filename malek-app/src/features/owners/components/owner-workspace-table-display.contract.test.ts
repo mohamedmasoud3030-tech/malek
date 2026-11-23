@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../../test/read-source';
 
 /**
  * Owner register mobile/desktop display contract (IA).
@@ -8,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * active-contracts datum + actions via shared EntityTable priorities.
  */
 describe('owner workspace table display architecture', () => {
-  const source = readFileSync(resolve(import.meta.dirname, './owner-workspace-table.tsx'), 'utf8');
+  const source = readSource(import.meta.url, './owner-workspace-table.tsx');
 
   it('uses the shared EntityTable foundation (not a page-local mobile card)', () => {
     expect(source).toContain("from '@/components/ui/entity-table'");

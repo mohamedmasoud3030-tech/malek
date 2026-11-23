@@ -11,7 +11,8 @@
  * Usage:
  *   node verify-deployment-identity.mjs --base-url https://malek-plus.vercel.app \
  *                                       --expected-sha <40-hex> \
- *                                       [--expected-schema-digest <hex>]
+ *                                       [--expected-schema-digest <hex>] \\
+ *                                       [--expected-edition standard|property-operations]
  *
  * Exit codes: 0 proven · 1 failed / unprovable.
  */
@@ -30,10 +31,14 @@ function fail(message) {
 const baseUrl = arg('base-url')?.trim();
 const expectedSha = arg('expected-sha')?.trim();
 const expectedSchemaDigest = arg('expected-schema-digest')?.trim();
+const expectedEdition = arg('expected-edition')?.trim();
 
 if (!baseUrl) fail('--base-url is required. A deployment cannot be verified without a target.');
 if (!expectedSha) fail('--expected-sha is required. Refusing to verify an unnamed revision.');
 if (!/^[0-9a-f]{40}$/.test(expectedSha)) fail(`--expected-sha must be a full 40-character lowercase Git SHA, got "${expectedSha}".`);
+if (expectedEdition && !['standard', 'property-operations'].includes(expectedEdition)) {
+  fail('--expected-edition must be standard or property-operations.');
+}
 
 let origin;
 try {
@@ -64,6 +69,7 @@ try {
 }
 
 const actualSha = typeof payload?.sha === 'string' ? payload.sha.trim() : '';
+const actualEdition = typeof payload?.productEdition === 'string' ? payload.productEdition.trim() : '';
 if (!actualSha) fail('the deployed build-proof carries no "sha" field.');
 
 const lines = [
@@ -73,7 +79,14 @@ const lines = [
   `  deployed builtAt    : ${payload?.builtAt ?? '<absent>'}`,
   `  deployed schema     : ${payload?.schemaDigest ?? '<absent>'} (${payload?.migrationCount ?? '?'} migrations)`,
   `  expected schema     : ${expectedSchemaDigest ?? '<not asserted>'}`,
+  `  deployed edition    : ${actualEdition || '<absent>'}`,
+  `  expected edition    : ${expectedEdition ?? '<not asserted>'}`,
 ];
+
+if (expectedEdition && actualEdition !== expectedEdition) {
+  console.error(lines.join('\n'));
+  fail(`deployed product edition ${actualEdition || '<absent>'} does not match expected edition ${expectedEdition}.`);
+}
 
 if (actualSha !== expectedSha) {
   console.error(lines.join('\n'));
@@ -91,4 +104,6 @@ if (expectedSchemaDigest && payload?.schemaDigest !== expectedSchemaDigest) {
 if (actualSha === 'local') fail('the deployed proof reports "local"; a real deployment must stamp a Git revision.');
 
 console.log(lines.join('\n'));
-console.log('DEPLOYMENT IDENTITY: PASS — built artifact SHA equals deployed SHA equals reviewed SHA.');
+console.log(
+  `DEPLOYMENT IDENTITY: PASS — built artifact SHA equals deployed SHA equals reviewed SHA${expectedEdition ? `; edition equals ${expectedEdition}` : ''}.`,
+);

@@ -17,6 +17,7 @@ import { NotificationsMenu } from './notifications-menu';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
+import { isPathAvailableInEdition } from '@/lib/product-edition';
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
 
 type AccountAccessStatus = Readonly<{
@@ -499,7 +500,7 @@ export function AppShell() {
         onMenu={handleOpenNav}
         drawerOpen={mobileNavOpen}
       />
-      <AiAssistantGlobalAction showTrigger={false} showHeaderTrigger />
+      {isPathAvailableInEdition('/ai-assistant') ? <AiAssistantGlobalAction showTrigger={false} showHeaderTrigger /> : null}
       <CommandPaletteDialog />
     </div>
   );

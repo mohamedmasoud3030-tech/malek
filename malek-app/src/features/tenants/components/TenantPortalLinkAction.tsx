@@ -3,6 +3,7 @@ import { Link2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
+import { isPathAvailableInEdition } from '@/lib/product-edition';
 import { buildTenantPortalUrl, createTenantPortalLink } from '../tenant-portal-admin-service';
 
 export function TenantPortalLinkAction({ tenantId }: Readonly<{ tenantId: string }>) {
@@ -23,7 +24,7 @@ export function TenantPortalLinkAction({ tenantId }: Readonly<{ tenantId: string
 
   // users.manage is owner-only in the canonical catalog. The RPC repeats the
   // owner check server-side; this gate is presentation only.
-  if (!canAccess('users.manage')) return null;
+  if (!isPathAvailableInEdition('/tenant-portal') || !canAccess('users.manage')) return null;
 
   return (
     <Button type="button" variant="secondary" disabled={mutation.isPending} onClick={() => mutation.mutate()}>

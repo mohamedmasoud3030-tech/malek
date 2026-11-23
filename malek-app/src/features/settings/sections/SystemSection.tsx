@@ -2,7 +2,7 @@ import { Check, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsPreviewModel } from '../settingsForm';
-import type { SettingsSectionId } from '../registry/sectionRegistry';
+import type { SettingsSectionId } from '../registry/types';
 import { SectionCard } from '../components/settings-section-card';
 
 type SystemSectionProps = Readonly<{

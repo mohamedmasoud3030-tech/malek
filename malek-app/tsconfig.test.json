@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test/**/*.ts", "src/test/**/*.tsx"],
+  "include": ["src/vite-env.d.ts", "src/**/*.test.ts", "src/**/*.test.tsx", "src/test/**/*.ts", "src/test/**/*.tsx"],
   "exclude": ["node_modules", "build", "dist"],
   "compilerOptions": {
     "types": ["node", "vite/client", "vitest", "@testing-library/jest-dom"]

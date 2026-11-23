@@ -13,7 +13,6 @@ describe('Vite / Vitest supported combination', () => {
     const lock = readFileSync(resolve(root, 'pnpm-lock.yaml'), 'utf8');
 
     expect(appPkg.devDependencies.vitest).toBe('3.2.7');
-    expect(appPkg.devDependencies['@vitest/coverage-v8']).toBe('3.2.7');
     expect(workspace).toMatch(/vite:\s*\^7\./);
     expect(lock).toContain('vitest@3.2.7');
     expect(lock).toContain('vite@7.3.2');

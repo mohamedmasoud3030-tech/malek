@@ -8,8 +8,9 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { formatLatinNumber } from '@/lib/formatters';
-import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
+import { buildReportCsvFilename } from '../reports-page.helpers';
 import { ReportInsightNote, ReportList, ReportListRow, ReportPanel, ReportState, ReportSummaryStrip } from '@/components/ui/report-section-primitives';
+import { ReportCsvExportButton } from './report-csv-export-button';
 import { getAgingLabel } from './overdue/overdue-invoices-panel';
 
 const FOLLOW_UP_QUEUE_LIMIT = 20;
@@ -74,34 +75,26 @@ export function FollowUpSection({
     void navigate(target as never);
   };
 
-  const exportAction = canExportReports ? (
-    <Button
-      type="button"
-      variant="secondary"
-      size="sm"
-      className="min-h-11 shrink-0 gap-2 text-xs"
-      onClick={() => downloadCsv(
-        buildReportCsvFilename('follow-up-queue'),
-        queue.map((row, index) => ({
-          rank: index + 1,
-          tenant: row.tenantName ?? '',
-          phone: row.tenantPhone ?? '',
-          property: row.propertyTitle ?? '',
-          unit: row.unitNumber ?? '',
-          contract: row.contractReference ?? '',
-          invoice: row.invoiceReference ?? row.shortInvoiceId,
-          dueDate: row.dueDate,
-          daysOverdue: row.daysOverdue,
-          remaining: row.remainingAmount,
-          tier: getFollowUpTier(row.daysOverdue).label,
-        })),
-      )}
-      disabled={queue.length === 0}
-    >
-      <FileText className="size-4" aria-hidden="true" />
-      CSV
-    </Button>
-  ) : undefined;
+  const exportRows = queue.map((row, index) => ({
+    rank: index + 1,
+    tenant: row.tenantName ?? '',
+    phone: row.tenantPhone ?? '',
+    property: row.propertyTitle ?? '',
+    unit: row.unitNumber ?? '',
+    contract: row.contractReference ?? '',
+    invoice: row.invoiceReference ?? row.shortInvoiceId,
+    dueDate: row.dueDate,
+    daysOverdue: row.daysOverdue,
+    remaining: row.remainingAmount,
+    tier: getFollowUpTier(row.daysOverdue).label,
+  }));
+  const exportAction = (
+    <ReportCsvExportButton
+      enabled={canExportReports}
+      filename={buildReportCsvFilename('follow-up-queue')}
+      rows={exportRows}
+    />
+  );
 
   return (
     <div className="space-y-3">

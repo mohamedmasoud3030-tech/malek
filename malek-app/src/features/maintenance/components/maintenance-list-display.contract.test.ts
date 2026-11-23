@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../../test/read-source';
 
 describe('maintenance list display architecture', () => {
-  const source = readFileSync(resolve(import.meta.dirname, './maintenance-list.tsx'), 'utf8');
+  const source = readSource(import.meta.url, './maintenance-list.tsx');
 
   it('uses shared EntityTable with status as the mobile work-queue datum', () => {
     expect(source).toContain('EntityTable');

@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../test/read-source';
 
 const source = (relativePath: string) =>
-  readFileSync(resolve(import.meta.dirname, relativePath), 'utf8');
+  readSource(import.meta.url, relativePath);
 
 describe('Reports collection-efficiency authority contract', () => {
   it('uses rpt_dashboard_snapshot as the only authority for the reports rate', () => {

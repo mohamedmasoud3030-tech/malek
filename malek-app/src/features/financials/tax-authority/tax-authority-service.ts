@@ -1,9 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-
-function asJsonObject(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-}
+import { asJsonRecord as asJsonObject } from '@/lib/json-record';
 
 type TaxCodeCatalogRecord = {
   code: string;
@@ -13,7 +10,7 @@ type TaxCodeCatalogRecord = {
   is_active: boolean;
 };
 
-export type TaxProfileRecord = {
+type TaxDefinitionRecord = {
   id: string;
   company_id: string;
   version_no: number;
@@ -31,23 +28,10 @@ export type TaxProfileRecord = {
   is_sole_admin_exception: boolean;
 };
 
-export type FeeTaxTreatmentRecord = {
-  id: string;
-  company_id: string;
+export type TaxProfileRecord = TaxDefinitionRecord;
+
+export type FeeTaxTreatmentRecord = TaxDefinitionRecord & {
   fee_kind: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY';
-  version_no: number;
-  tax_code: string;
-  tax_rate: number;
-  effective_from: string;
-  effective_to: string | null;
-  status: 'DRAFT' | 'APPROVED' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
-  description: string | null;
-  created_by: string;
-  approved_by: string | null;
-  approved_at: string | null;
-  created_at: string;
-  updated_at: string;
-  is_sole_admin_exception: boolean;
 };
 
 export async function listTaxCodes(): Promise<TaxCodeCatalogRecord[]> {

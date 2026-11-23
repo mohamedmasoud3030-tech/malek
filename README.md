@@ -19,6 +19,12 @@ pnpm typecheck
 pnpm lint
 pnpm check:docs
 pnpm build
+# Optional curated Property Operations edition; core property, leasing, finance,
+# maintenance and reporting stay available. The standard edition remains the default;
+# the curated build removes land, leads, communication, AI, portal and automation routes.
+# Output is separate and preserves dist/public.
+corepack pnpm --filter ./malek-app build:property-operations
+corepack pnpm --filter ./malek-app preview:property-operations
 pnpm --filter ./malek-app test
 pnpm --filter ./malek-app run test:financials
 ```

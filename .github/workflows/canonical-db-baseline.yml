@@ -70,6 +70,17 @@ jobs:
       - name: Verify Chromium installation
         run: pnpm --filter ./malek-app exec playwright install --dry-run chromium
 
+      - name: Authenticate Docker Hub when credentials are configured
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [[ -n "${DOCKERHUB_USERNAME:-}" && -n "${DOCKERHUB_TOKEN:-}" ]]; then
+            printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          else
+            echo '::warning::Docker Hub credentials are not configured; Supabase image pulls use the anonymous rate limit.'
+          fi
+
       - name: Build and prove canonical database foundation
         run: bash scripts/canonical-db/build-baseline.sh
 

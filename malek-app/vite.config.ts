@@ -14,6 +14,134 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+function replaceExactlyOnce(source: string, search: string, replacement: string, file: string): string {
+  const occurrences = source.split(search).length - 1;
+  if (occurrences !== 1) {
+    throw new Error(`Property Operations build expected one edit point in ${file}, found ${occurrences}.`);
+  }
+  return source.replace(search, replacement);
+}
+
+function propertyOperationsSurfacePlugin() {
+  let curatedBuild = false;
+  return {
+    name: "malek-property-operations-surface",
+    enforce: "pre" as const,
+    configResolved(config: any) {
+      curatedBuild = config.command === "build" && config.mode === "property-operations";
+    },
+    transform(source: string, id: string) {
+      if (!curatedBuild) return null;
+      const normalizedId = id.replaceAll("\\", "/");
+      let code = source;
+
+      if (normalizedId.endsWith("/src/app/router/route-tree.ts")) {
+        const excludedRoutes = [
+          "landsRoute", "landDetailRoute", "leadsRoute", "communicationRoute",
+          "aiAssistantRoute", "automationRoute", "tenantPortalRoute", "ownerPortalRoute",
+        ];
+        for (const routeName of excludedRoutes) {
+          const declaration = new RegExp(`^const ${routeName} = .*;\\n`, "m");
+          if (!declaration.test(code)) {
+            throw new Error(`Property Operations build could not find route declaration: ${routeName}.`);
+          }
+          code = code.replace(declaration, "");
+        }
+        code = replaceExactlyOnce(
+          code,
+          `  ...(includesAllProductSurfaces ? [tenantPortalRoute, ownerPortalRoute] : []),
+`,
+          "",
+          normalizedId,
+        );
+        code = replaceExactlyOnce(
+          code,
+          `    ...(includesAllProductSurfaces
+      ? [landsRoute, landDetailRoute, leadsRoute, communicationRoute, aiAssistantRoute, automationRoute]
+      : []),
+`,
+          "",
+          normalizedId,
+        );
+        code = replaceExactlyOnce(
+          code,
+          `const includesAllProductSurfaces = import.meta.env.MODE !== 'property-operations';
+
+`,
+          "",
+          normalizedId,
+        );
+      }
+
+      if (normalizedId.endsWith("/src/app/layout/app-shell.tsx")) {
+        code = replaceExactlyOnce(code, "import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';\n", "", normalizedId);
+        code = replaceExactlyOnce(code, "import { isPathAvailableInEdition } from '@/lib/product-edition';\n", "", normalizedId);
+        code = replaceExactlyOnce(code, "      {isPathAvailableInEdition('/ai-assistant') ? <AiAssistantGlobalAction showTrigger={false} showHeaderTrigger /> : null}\n", "", normalizedId);
+      }
+
+      if (normalizedId.endsWith("/src/app/layout/layout-navigation-view.tsx")) {
+        code = replaceExactlyOnce(code, "import { ChevronDown, Lock, LogOut, Menu, Plus, Search, Sparkles, X } from 'lucide-react';", "import { ChevronDown, Lock, LogOut, Menu, Plus, Search, X } from 'lucide-react';", normalizedId);
+        code = replaceExactlyOnce(code, "import { OPEN_AI_ASSISTANT_EVENT } from '@/features/ai-assistant/ai-assistant-global-action';\n", "", normalizedId);
+        code = replaceExactlyOnce(code, "import { isPathAvailableInEdition } from '@/lib/product-edition';\n", "", normalizedId);
+        code = replaceExactlyOnce(
+          code,
+          `  const openAiAssistant = () => {
+    setQuickOpen(false);
+    window.dispatchEvent(new Event(OPEN_AI_ASSISTANT_EVENT));
+  };
+
+`,
+          "",
+          normalizedId,
+        );
+        code = replaceExactlyOnce(
+          code,
+          `          {isPathAvailableInEdition('/ai-assistant') ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={openAiAssistant}
+              aria-label="فتح المساعد الذكي"
+              title="المساعد الذكي"
+              data-mobile-dock-ai
+              className={utilityActionClass}
+            >
+              <Sparkles className="size-[21px]" aria-hidden="true" />
+            </Button>
+          ) : null}
+`,
+          "",
+          normalizedId,
+        );
+      }
+
+      return code === source ? null : { code, map: null };
+    },
+    generateBundle(_options: any, bundle: any) {
+      if (!curatedBuild) return;
+      const excludedModules = [
+        "/src/features/lands/lands-page",
+        "/src/features/lands/land-detail-route",
+        "/src/features/leads/leads-page",
+        "/src/features/communication/communication-page",
+        "/src/features/ai-assistant/ai-assistant-page",
+        "/src/features/ai-assistant/ai-assistant-global-action",
+        "/src/features/tenant-portal/tenant-portal-page",
+        "/src/features/owner-portal/owner-portal-page",
+        "/src/features/automation/components/automation-workspace",
+      ];
+      const shippedModules = Object.values(bundle)
+        .filter((output: any) => output.type === "chunk")
+        .flatMap((output: any) => Object.keys(output.modules).map((id: string) => id.split(String.fromCharCode(92)).join("/")));
+      const leaks = excludedModules.filter((excluded) => shippedModules.some((id: string) => id.includes(excluded)));
+      if (leaks.length > 0) {
+        throw new Error(`Property Operations bundle contains excluded modules: ${leaks.join(", ")}`);
+      }
+    },
+  };
+}
+
 function productionEnvGuardPlugin() {
   return {
     name: "malek-production-env-guard",
@@ -22,8 +150,10 @@ function productionEnvGuardPlugin() {
         process.env.VITEST === "true" ||
         config.mode === "test" ||
         process.env.NODE_ENV === "test";
-      const isProdBuild =
-        config.command === "build" && config.mode === "production";
+      // Vite's `--mode` is also used to select product editions (for example
+      // `property-operations`). A custom mode must not disable production
+      // credential validation; `isProduction` reflects the actual build type.
+      const isProdBuild = config.command === "build" && config.isProduction;
       const isVercel = Boolean(
         process.env.VERCEL || process.env.VERCEL_ENV === "production",
       );
@@ -69,6 +199,7 @@ export default defineConfig({
   base: basePath,
   plugins: [
     productionEnvGuardPlugin(),
+    propertyOperationsSurfacePlugin(),
     react(),
     runtimeErrorOverlay(),
     VitePWA({

@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../test/read-source';
 
 /**
  * Duplicate-navigation prevention after the navigation architecture
@@ -29,13 +29,9 @@ const STANDALONE_SECTION_WORKSPACES = [
   'tenants/components/TenantPreviewDialog.tsx',
 ] as const;
 
-function readSource(relativePath: string): string {
-  return readFileSync(new URL(`./${relativePath}`, import.meta.url), 'utf8');
-}
-
 describe('section navigation — one section navigation surface per standalone workspace', () => {
   it.each(STANDALONE_SECTION_WORKSPACES)('%s keeps SectionTabs and drops the duplicated WorkspaceSubNav row', (path) => {
-    const source = readSource(path);
+    const source = readSource(import.meta.url, path);
 
     expect(source, `${path} must render SectionTabs as its section controller`).toContain('<SectionTabs');
     expect(source, `${path} must not render a duplicated WorkspaceSubNav row`).not.toContain('WorkspaceSubNav');
@@ -46,7 +42,7 @@ describe('section navigation — one section navigation surface per standalone w
 
   it('each standalone workspace renders SectionTabs as its sole section controller', () => {
     for (const path of STANDALONE_SECTION_WORKSPACES) {
-      const source = readSource(path);
+      const source = readSource(import.meta.url, path);
       const sectionTabsCount = (source.match(/<SectionTabs/g) ?? []).length;
       // Exactly one SectionTabs instance drives section state per workspace.
       expect(sectionTabsCount, `${path} should expose exactly one SectionTabs`).toBe(1);

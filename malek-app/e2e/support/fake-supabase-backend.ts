@@ -1,6 +1,8 @@
 import type { Page, Route } from '@playwright/test';
 import { appPermissions } from '../../src/features/auth/permissions';
-import { buildAcceptanceAccessToken } from './document-acceptance-session';
+import { buildAcceptanceAccessToken, IDS } from './acceptance-seed';
+
+export { IDS } from './acceptance-seed';
 
 /**
  * Deterministic seeded data plane for the PR 3 document/print/PDF browser
@@ -14,21 +16,6 @@ import { buildAcceptanceAccessToken } from './document-acceptance-session';
  * and the exact selects/normalizers in `src/`.
  */
 
-export const IDS = {
-  company: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-  companySettings: '00000000-0000-4000-8000-000000000001',
-  tenant: '11111111-1111-4111-8111-111111111111',
-  property: '22222222-2222-4222-8222-222222222222',
-  unit: '33333333-3333-4333-8333-333333333333',
-  contract: '44444444-4444-4444-8444-444444444444',
-  invoiceUnpaid: '55555555-5555-4555-8555-555555555501',
-  invoicePaid: '55555555-5555-4555-8555-555555555502',
-  invoiceOverdue: '55555555-5555-4555-8555-555555555503',
-  payment: '66666666-6666-4666-8666-666666666601',
-  receipt: '77777777-7777-4777-8777-777777777701',
-  owner: '88888888-8888-4888-8888-888888888801',
-  user: '99999999-9999-4999-8999-999999999901',
-} as const;
 
 /** The real company identity stored in `company_settings` for this suite. */
 export const COMPANY_NAME = 'شركة الأفق لإدارة الأملاك';

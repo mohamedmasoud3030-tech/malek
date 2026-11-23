@@ -11,7 +11,7 @@ import type { CompanySettingsPreviewModel } from '../settingsForm';
 import { useSettingsSection } from '../form/useSettingsSection';
 import { SettingsFormField, SettingsPreviewField, SettingsSelectField } from '../components/settings-form-fields';
 import { SectionCard } from '../components/settings-section-card';
-import type { SettingsSectionId } from '../registry/sectionRegistry';
+import type { SettingsSectionId } from '../registry/types';
 
 const currencyOptions = supportedCurrencies;
 const localeOptions = supportedCompanyLocales;

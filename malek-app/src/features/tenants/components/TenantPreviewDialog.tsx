@@ -19,22 +19,19 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
-import {
-  isContractStatus,
-  contractStatusLabels,
-  contractStatusTone,
-  normalizeContractStatus,
-} from '@/lib/contractStatus';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
+import { isContractStatus } from '@/lib/contractStatus';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
+import { DossierActivitySection } from '@/features/people/components/dossier-activity-section';
 import { useTenantDossier } from '../useTenantWorkspace';
 
 import { TenantPortalLinkAction } from './TenantPortalLinkAction';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { TenantWorkspaceRow } from '../tenantWorkspaceService';
+import { DossierContractsSection } from '@/features/people/components/dossier-contracts-section';
 
 type TenantSection = 'overview' | 'contracts' | 'ledger' | 'records';
 
@@ -49,7 +46,6 @@ function TenantDossierContent({
   tenantId,
   section,
 }: Readonly<{ tenantId: string; section?: TenantSection }>) {
-  const navigate = useNavigate();
   const { canAccess } = useAuth();
   const companyFormatters = useCompanyFormatters();
   const canViewFinancial = canAccess('arrears.view');
@@ -123,74 +119,12 @@ function TenantDossierContent({
       ) : null}
 
       {!section || section === 'contracts' ? (
-        <section
-          aria-labelledby="tenant-contracts-heading"
-          className={section ? undefined : 'border-t border-border/60 pt-4'}
-        >
-          <header className="border-b border-border/60 pb-2.5">
-            <h3
-              id="tenant-contracts-heading"
-              className="flex items-center gap-2 text-base font-black"
-            >
-              <FileText className="size-5 text-primary" />
-              العقود والعقارات والوحدات
-            </h3>
-          </header>
-          {dossier.contracts.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">
-              لا توجد عقود مسجلة لهذا المستأجر.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border/60">
-              {dossier.contracts.map((contract) => (
-                <li
-                  key={contract.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold">
-                      {businessReferenceOrLabel(contract, 'عقد مسجل')}
-                    </p>
-                    <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
-                      {contract.properties?.title ?? 'عقار غير محدد'} ·{' '}
-                      {contract.units?.unit_number
-                        ? `وحدة ${contract.units.unit_number}`
-                        : 'بدون وحدة'}{' '}
-                      · {contract.start_date} — {contract.end_date}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <StatusBadge
-                      tone={
-                        contractStatusTone[
-                          normalizeContractStatus(contract.status)
-                        ]
-                      }
-                    >
-                      {
-                        contractStatusLabels[
-                          normalizeContractStatus(contract.status)
-                        ]
-                      }
-                    </StatusBadge>
-                    <Button
-                      variant="secondary"
-                      className="min-h-11"
-                      onClick={() =>
-                        void navigate({
-                          to: '/contracts/$contractId',
-                          params: { contractId: contract.id },
-                        })
-                      }
-                    >
-                      فتح العقد
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <DossierContractsSection
+          contracts={dossier.contracts}
+          headingId="tenant-contracts-heading"
+          emptyMessage="لا توجد عقود مسجلة لهذا المستأجر."
+          standalone={Boolean(section)}
+        />
       ) : null}
 
       {(!section || section === 'ledger') && canViewFinancial ? (
@@ -284,39 +218,13 @@ function TenantDossierContent({
       ) : null}
 
       {(!section || section === 'records') && canViewActivity ? (
-        <section
-          aria-labelledby="tenant-activity-heading"
+        <DossierActivitySection
+          headingId="tenant-activity-heading"
+          emptyMessage="لا يوجد نشاط موثق."
+          entries={dossier.latestActivity}
+          formatDateTime={(value) => formatCompanyDateTime(companyFormatters, value)}
           className={section ? undefined : 'border-t border-border/60 pt-4'}
-        >
-          <header className="border-b border-border/60 pb-2.5">
-            <h3
-              id="tenant-activity-heading"
-              className="flex items-center gap-2 text-base font-black"
-            >
-              <Activity className="size-5 text-primary" />
-              آخر النشاط
-            </h3>
-          </header>
-          {dossier.latestActivity.length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">
-              لا يوجد نشاط موثق.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border/60">
-              {dossier.latestActivity.map((item) => (
-                <li key={item.id} className="py-3">
-                  <p className="font-bold">{item.subject || 'تواصل مسجل'}</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    {item.body}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {formatCompanyDateTime(companyFormatters, item.created_at)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        />
       ) : null}
       {!section || section === 'records' ? (
         <ContextualDocumentsSection

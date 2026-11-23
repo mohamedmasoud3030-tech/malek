@@ -77,42 +77,38 @@ export function toUtilitySplitPayload(params: {
   };
 }
 
-export function printUtilitySplit(params: {
+type UtilitySplitDocumentParams = {
   obligations: readonly UtilityObligation[];
   settings: DocumentCompanySettings;
   summary?: UtilityObligationsSummary | null;
   periodFrom?: string | null;
   periodTo?: string | null;
   propertyTitle?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
+};
+
+type DocumentAction = 'print' | 'pdf';
+
+function runUtilitySplitAction(params: UtilitySplitDocumentParams, action: DocumentAction): Promise<void> {
+  const { settings, ...payloadParams } = params;
+  const isPrint = action === 'print';
   return runGuardedDocumentAction({
     isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.printDocument('generic_report', {
-        settings,
-        payload: toUtilitySplitPayload(rest),
-      }),
-    fallbackMessage: 'تعذرت طباعة كشف توزيع المرافق.',
+    operation: () => {
+      const documentParams = { settings, payload: toUtilitySplitPayload(payloadParams) };
+      return isPrint
+        ? documentService.printDocument('generic_report', documentParams)
+        : documentService.downloadDocumentPdf('generic_report', documentParams);
+    },
+    fallbackMessage: isPrint
+      ? 'تعذرت طباعة كشف توزيع المرافق.'
+      : 'تعذر تصدير كشف توزيع المرافق كملف PDF.',
   });
 }
 
-export function downloadUtilitySplitPdf(params: {
-  obligations: readonly UtilityObligation[];
-  settings: DocumentCompanySettings;
-  summary?: UtilityObligationsSummary | null;
-  periodFrom?: string | null;
-  periodTo?: string | null;
-  propertyTitle?: string | null;
-}): Promise<void> {
-  const { settings, ...rest } = params;
-  return runGuardedDocumentAction({
-    isReady: hasCompleteCompanyIdentity(settings),
-    operation: () =>
-      documentService.downloadDocumentPdf('generic_report', {
-        settings,
-        payload: toUtilitySplitPayload(rest),
-      }),
-    fallbackMessage: 'تعذر تصدير كشف توزيع المرافق كملف PDF.',
-  });
+export function printUtilitySplit(params: UtilitySplitDocumentParams): Promise<void> {
+  return runUtilitySplitAction(params, 'print');
+}
+
+export function downloadUtilitySplitPdf(params: UtilitySplitDocumentParams): Promise<void> {
+  return runUtilitySplitAction(params, 'pdf');
 }

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
-import type { SettingsSectionId } from '../registry/sectionRegistry';
+import type { SettingsSectionId } from '../registry/types';
 // Same tile the workspace model builds — the hero never re-declares it.
 import type { SettingsSummaryTile } from '../settings-workspace-model';
 

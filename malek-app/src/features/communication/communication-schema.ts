@@ -11,22 +11,12 @@
 // form before any write so a hand-crafted call cannot bypass.
 
 import { z } from 'zod';
+import { optionalPhoneFormField, PHONE_PATTERN } from '@/lib/validation/phone';
+import { optionalTrimmedShort, trimmedShort } from '@/lib/validation/text-fields';
 
 export const COMMUNICATION_CHANNEL_VALUES = ['phone', 'whatsapp', 'email', 'meeting', 'note'] as const;
 export const COMMUNICATION_DIRECTION_VALUES = ['inbound', 'outbound', 'internal'] as const;
 export const COMMUNICATION_STATUS_VALUES = ['logged', 'follow_up', 'resolved', 'archived'] as const;
-
-const trimmedShort = (max: number) =>
-  z
-    .string()
-    .max(max, `القيمة طويلة جداً (الحد الأقصى ${max} حرفاً)`)
-    .transform((value) => value.trim());
-
-const optionalTrimmedShort = (max: number) =>
-  trimmedShort(max).transform((value) => (value === '' ? null : value));
-
-/** Reasonable phone pattern: digits, spaces, dashes, leading +. */
-const phonePattern = /^[+\d][\d\s-]{6,19}$/;
 
 /** UUID validator for entity references. */
 const optionalUuid = z
@@ -47,14 +37,7 @@ export const communicationFormSchema = z.object({
   contact_name: trimmedShort(120).refine((value) => value.length > 0, {
     message: 'اسم جهة التواصل مطلوب',
   }),
-  contact_phone: z
-    .string()
-    .trim()
-    .max(32)
-    .refine((value) => value === '' || phonePattern.test(value), {
-      message: 'رقم الهاتف غير صحيح',
-    })
-    .transform((value) => (value === '' ? null : value)),
+  contact_phone: optionalPhoneFormField(),
   contact_email: z
     .string()
     .trim()
@@ -85,7 +68,7 @@ export type CommunicationFormValues = z.output<typeof communicationFormSchema>;
  */
 export const communicationPayloadSchema = z.object({
   contact_name: z.string().min(1).max(120),
-  contact_phone: z.string().regex(phonePattern).nullable(),
+  contact_phone: z.string().regex(PHONE_PATTERN).nullable(),
   contact_email: z.string().email().nullable(),
   channel: z.enum(COMMUNICATION_CHANNEL_VALUES),
   direction: z.enum(COMMUNICATION_DIRECTION_VALUES),

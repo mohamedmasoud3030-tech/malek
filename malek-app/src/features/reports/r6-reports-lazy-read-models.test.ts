@@ -11,12 +11,11 @@
  *   2. Behavioral proof: rendering the read-model hook with a given location
  *      fires ONLY that location's service calls (spied at the service layer).
  */
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSource } from '../../test/read-source';
 
 const source = (relativePath: string) =>
-  readFileSync(resolve(import.meta.dirname, relativePath), 'utf8')
+  readSource(import.meta.url, relativePath)
     .replaceAll('"', "'")
     .replace(/\s+/g, ' ');
 

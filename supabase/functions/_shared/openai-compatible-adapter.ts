@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "./fetch-with-timeout.ts";
+
 import {
   AI_OUTPUT_SCHEMA_VERSION,
   AI_PLANNING_SCHEMA_VERSION,
@@ -22,20 +24,6 @@ export class ProviderAdapterError extends Error {
   ) {
     super(message);
     this.name = "ProviderAdapterError";
-  }
-}
-
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-  timeoutMs: number,
-): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
   }
 }
 

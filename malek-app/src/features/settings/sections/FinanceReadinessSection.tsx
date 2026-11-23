@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { FinanceReadinessSection as TaxAuthorityFinanceReadinessSection } from '@/features/financials/tax-authority/finance-readiness-section';
 import { TaxAuthorityWorkspace } from '@/features/financials/tax-authority/tax-profile-workspace';
 import { SectionCard } from '../components/settings-section-card';
-import type { SettingsSectionId } from '../registry/sectionRegistry';
+import type { SettingsSectionId } from '../registry/types';
 
 type SettingsFinanceReadinessSectionProps = Readonly<{
   activeSection: SettingsSectionId;

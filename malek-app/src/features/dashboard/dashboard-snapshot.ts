@@ -11,6 +11,7 @@
  * They are display context only and are never used as a KPI source.
  */
 import { toDateOnlyISO } from '@/lib/formatters';
+import { asJsonRecord as asRecord } from '@/lib/json-record';
 import { supabase } from '@/lib/supabase';
 
 type DashboardPeriod = {
@@ -135,10 +136,6 @@ function toNullableText(value: unknown): string | null {
 
 function toText(value: unknown): string {
   return typeof value === 'string' ? value : '';
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }
 
 function asArray(value: unknown): unknown[] {
