@@ -330,7 +330,10 @@ describe('owner portal snapshot — bounded, self-contained anon projection', ()
       owner_anon: true,
       owner_auth: true,
       // The PUBLIC pseudo-role must never gain execute; anon stays gated on
-      // the token, and the audited anon-definer allowlist (2 functions) holds.
+      // the token, and the audited anon-definer allowlist (3 functions) holds.
+      // preview_employee_invite joined the allowlist with the employee-invite
+      // feature: a brand-new employee has no session yet, so invite preview is
+      // keyed by the one-time token hash exactly like the portal snapshots.
       owner_public: false,
       owner_definer: true,
       tenant_anon: true,
@@ -347,6 +350,7 @@ describe('owner portal snapshot — bounded, self-contained anon projection', ()
     expect(anonDefiners.map((r) => r.name).sort()).toEqual([
       'get_owner_portal_snapshot',
       'get_tenant_portal_snapshot',
+      'preview_employee_invite',
     ]);
   });
 
