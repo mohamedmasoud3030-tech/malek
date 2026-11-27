@@ -14,7 +14,9 @@ export function formatMoney(value: number | null | undefined) {
 }
 
 export function formatDate(value: string | number | Date) {
-  return formatCompanyDate(defaultCompanyLocalSettings, value);
+  // Intl Arabic numeric dates carry RLM separators. Their marks can reorder
+  // digits even inside an LTR date island in a narrow RTL card.
+  return formatCompanyDate(defaultCompanyLocalSettings, value).replace(/[\u061c\u200e\u200f]/g, '');
 }
 
 /** Shared finance/report error boundary: never echo provider/database internals. */

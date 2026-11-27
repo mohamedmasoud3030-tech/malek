@@ -153,7 +153,7 @@ export function InvoiceListSection({
       priority: 'primary',
       render: (invoice) => (
         <div className="min-w-0">
-          <p className="min-w-0 truncate font-bold">{invoice.contracts?.people?.full_name ?? 'مستأجر غير محدد'}</p>
+          <p className="min-w-0 break-words font-bold">{invoice.contracts?.people?.full_name ?? 'مستأجر غير محدد'}</p>
           {invoice.contracts?.people?.phone ? (
             <p className="mt-0.5 text-[11px] text-muted-foreground" dir="ltr">{invoice.contracts.people.phone}</p>
           ) : null}
@@ -187,7 +187,7 @@ export function InvoiceListSection({
         const attention = invoiceDueAttention(invoice, today);
         return (
           <div className="min-w-0">
-            <span dir="ltr" className="whitespace-nowrap font-semibold tabular-nums">{formatDate(invoice.due_date)}</span>
+            <bdi dir="ltr" data-invoice-due-date className="inline-block whitespace-nowrap font-semibold tabular-nums">{formatDate(invoice.due_date)}</bdi>
             {attention ? (
               <p className={attention.tone === 'danger'
                 ? 'mt-0.5 whitespace-nowrap text-[11px] font-black text-destructive'
@@ -313,6 +313,7 @@ export function InvoiceListSection({
           </p>
           <EntityTable
             aria-label="سجل الفواتير"
+            className="malek-invoice-register"
             viewModeStorageKey="malek:invoices:register-view-mode-v1"
             rows={invoices}
             keyOf={(invoice) => invoice.id}

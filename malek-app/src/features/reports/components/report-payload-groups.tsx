@@ -58,7 +58,13 @@ function ReportGroupTable({ table }: Readonly<{ table: Extract<ProfessionalRepor
         </div>
       ) : null}
       {hasRows ? (
-        <div className="mobile-scroll-x overflow-x-auto overscroll-x-contain">
+        <div
+          className="mobile-scroll-x overflow-x-auto overscroll-x-contain"
+          role="region"
+          aria-label={`${table.title ?? 'تفاصيل التقرير'}، جدول قابل للتمرير أفقياً`}
+          tabIndex={0}
+          data-report-table-scroll
+        >
           <Table density="compact" className="min-w-full">
             <TableCaption className="sr-only">{table.title ?? 'تفاصيل التقرير'}</TableCaption>
             <TableHeader>
@@ -74,7 +80,7 @@ function ReportGroupTable({ table }: Readonly<{ table: Extract<ProfessionalRepor
               {table.rows.map((row, rowIndex) => (
                 <TableRow key={rowIndex} className="even:bg-muted/10">
                   {row.map((cell, cellIndex) => (
-                    <TableCell key={cellIndex} className="align-top">{renderCell(cell)}</TableCell>
+                    <TableCell key={cellIndex} className="max-w-64 whitespace-normal break-words align-top">{renderCell(cell)}</TableCell>
                   ))}
                 </TableRow>
               ))}

@@ -158,3 +158,19 @@
     max-width: 100%;
   }
 }
+
+/* Invoice identity, tenant names and dates need a full-width phone card.
+   Preserve the shared denser grid for other registers and wider screens. */
+@media (max-width: 639px) {
+  html [data-malek-surface] .malek-invoice-register [data-entity-table-mobile-list] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html [data-malek-surface] .malek-invoice-register [data-entity-table-mobile-summary] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  html [data-malek-surface] .malek-invoice-register [data-entity-table-mobile-primary],
+  html [data-malek-surface] .malek-invoice-register [data-entity-table-mobile-supporting] {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
