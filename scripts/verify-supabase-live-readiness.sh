@@ -27,6 +27,7 @@ select 'server_timestamp_utc=' || now() at time zone 'utc';
 select 'migration_count=' || count(*)
 from supabase_migrations.schema_migrations;
 
+
 with required_tables(table_name) as (
   -- 'sessions' was removed from this list: no migration in supabase/migrations
   -- ever created a public.sessions table (verified: zero `create table ... sessions`
@@ -258,6 +259,7 @@ $live_definer_search_path$;
 
 select 'p5_definer_search_path_pinned=pass';
 
+-- P6. Internal never-exposed helpers must not be executable by browser roles.
 -- P6. Internal never-exposed helpers must not be executable by browser roles.
 -- P7. create_contract_atomic_v2 must have exactly one overload. A second
 --     overload makes every PostgREST RPC call fail with PGRST203 ambiguity.
