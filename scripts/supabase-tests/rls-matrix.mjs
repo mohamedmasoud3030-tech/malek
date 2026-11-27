@@ -398,6 +398,12 @@ async function runStructural(db, schema) {
     'get_tenant_portal_snapshot(p_token uuid)',
     'get_owner_portal_snapshot(uuid)',
     'get_tenant_portal_snapshot(uuid)',
+    // Employee invites: a brand-new employee has no session yet, so the
+    // preview RPC is anon-executable. The one-time token hash is the
+    // capability, exactly like the portal snapshot links above; the function
+    // returns only company name, role, invited email and status.
+    'preview_employee_invite(p_token text)',
+    'preview_employee_invite(text)',
   ]);
   const anonDefinerNames = anonDefiners.map((row) => `${row.name}(${row.args})`);
   const unexpectedAnonDefiners = anonDefinerNames.filter((sig) => !allowedAnonDefiners.has(sig));
@@ -405,12 +411,12 @@ async function runStructural(db, schema) {
   record({
     id: 'struct.no_anon_definer',
     group: 'structural',
-    title: 'only audited portal snapshot RPCs are anon-executable SECURITY DEFINER (get_owner_portal_snapshot, get_tenant_portal_snapshot)',
-    status: unexpectedAnonDefiners.length === 0 && anonDefinerNames.length === 2 ? 'pass' : 'fail',
+    title: 'only audited token-capability RPCs are anon-executable SECURITY DEFINER (portal snapshots, employee invite preview)',
+    status: unexpectedAnonDefiners.length === 0 && anonDefinerNames.length === 3 ? 'pass' : 'fail',
     detail: unexpectedAnonDefiners.length
       ? `unexpected anon definers: ${unexpectedAnonDefiners.join(', ')}; allowed: ${[...allowedAnonDefiners].join(', ')}; found: ${anonDefinerNames.join(', ')}`
-      : anonDefinerNames.length !== 2
-        ? `expected exactly 2 audited anon definers, found ${anonDefinerNames.length}: ${anonDefinerNames.join(', ')}`
+      : anonDefinerNames.length !== 3
+        ? `expected exactly 3 audited anon definers, found ${anonDefinerNames.length}: ${anonDefinerNames.join(', ')}`
         : `${anonDefinerNames.length} anon-executable definers: ${anonDefinerNames.join(', ')}`,
   });
 

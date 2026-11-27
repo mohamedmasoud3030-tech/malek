@@ -1,5 +1,13 @@
 -- Employee invites (first-trial readiness).
 --
+-- ALLOW_GOVERNED_DATA_MIGRATION: the INSERTs into users and company_members
+-- occur only inside SECURITY DEFINER runtime commands (accept_employee_invite
+-- and app_private.apply_employee_invite_acceptance, reached via
+-- finalize_employee_invite_signup), gated on a hash-verified, single-use,
+-- unexpired invite row — the same governed-runtime-writer class as the pinned
+-- migrations in scripts/check-database-governance.mjs. No migration-time
+-- seed or backfill writes exist in this file.
+--
 -- An office ADMIN (effective users.manage authority in the active company)
 -- creates a single-use, expiring invite link for one of the five non-ADMIN
 -- canonical roles. The raw token is returned to the creator exactly once;
@@ -56,7 +64,7 @@ create policy employee_invites_member_read on public.employee_invites
   using (public.is_app_user() and company_id = public.current_company_id());
 
 -- Read projection without the token hash or the command idempotency key.
-create or replace view public.employee_invites_read with (security_invoker=on) as
+create or replace view public.employee_invites_read with (security_invoker=true) as
 select
   id,
   company_id,
