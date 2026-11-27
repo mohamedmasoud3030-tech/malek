@@ -242,7 +242,24 @@ function PropertyCreateModal({ open, onClose }: Readonly<{ open: boolean; onClos
           steps are validated, they own no tabpanel, and a tablist would promise
           arrow-key navigation this widget does not implement.
         */}
-        <nav className="md:col-span-2 flex flex-wrap gap-2 border-b border-border pb-3 text-xs font-semibold" aria-label="خطوات إنشاء العقار">
+        {/* Mobile: one calm progress line instead of three wrapping chips. */}
+        <div className="md:hidden" aria-live="polite" data-wizard-mobile-progress>
+          <p className="text-sm font-semibold text-foreground">
+            {`الخطوة ${step} من 3: ${['بيانات العقار', 'المالك والاتفاقية', 'المراجعة والوحدات'][step - 1]}`}
+          </p>
+          <div
+            className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-valuenow={step}
+            aria-valuemin={1}
+            aria-valuemax={3}
+            aria-label="تقدم إنشاء العقار"
+          >
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(step / 3) * 100}%` }} />
+          </div>
+        </div>
+
+        <nav className="md:col-span-2 hidden md:flex flex-wrap gap-2 border-b border-border pb-3 text-xs font-semibold" aria-label="خطوات إنشاء العقار">
           <Button
             type="button"
             variant="outline"

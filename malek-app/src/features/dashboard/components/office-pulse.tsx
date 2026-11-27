@@ -87,6 +87,7 @@ export const OfficePulse = memo(function OfficePulse({
         <Link
           to="/financials"
           data-dashboard-kpi-link
+          data-dashboard-kpi-hero
           className={pulseLinkClass}
           aria-label="التحصيل هذا الشهر — انتقل إلى المركز المالي"
         >
@@ -97,7 +98,7 @@ export const OfficePulse = memo(function OfficePulse({
             icon={HandCoins}
             accent={collectionAccent(collectionRate)}
             compact
-            className="dashboard-pulse-card h-full"
+            className="dashboard-pulse-card dashboard-pulse-card--hero h-full"
           />
         </Link>
 

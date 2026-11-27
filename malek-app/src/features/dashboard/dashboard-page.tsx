@@ -16,6 +16,7 @@ import { listPropertyTitles } from '@/features/properties/property-service';
 import { useFinancialCashflowReport } from '@/features/financials/reports/useFinancialReports';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { OfficePulse } from './components/office-pulse';
+import { MobileSectionDisclosure } from './components/mobile-section-disclosure';
 import { FinancialPerformanceSection } from './components/financial-performance-section';
 import { OccupancySection } from './components/occupancy-section';
 import { CollectionsSection } from './components/collections-section';
@@ -209,28 +210,38 @@ export function DashboardPage() {
 
               <div className="min-w-0 xl:col-span-7">
                 <DashboardGroup ariaLabel="الإشغال والشغور" sectionId="occupancy" showHeader={false}>
-                  <OccupancySection
-                    snapshot={snapshot}
-                    analytics={vacancyAnalytics}
-                    isLoading={isLoading || vacancyDetailsLoading}
-                    isError={needsVacancyDetails && unitsQuery.isError && !unitsQuery.data}
-                    detailsUnavailable={vacancyDetailsUnavailable}
-                    settings={settings}
-                  />
+                  <MobileSectionDisclosure
+                    title="الإشغال والشغور"
+                    description="حالة المحفظة الآن ومؤشر إعادة التأجير"
+                  >
+                    <OccupancySection
+                      snapshot={snapshot}
+                      analytics={vacancyAnalytics}
+                      isLoading={isLoading || vacancyDetailsLoading}
+                      isError={needsVacancyDetails && unitsQuery.isError && !unitsQuery.data}
+                      detailsUnavailable={vacancyDetailsUnavailable}
+                      settings={settings}
+                    />
+                  </MobileSectionDisclosure>
                 </DashboardGroup>
               </div>
 
               <div className="min-w-0 xl:col-span-12">
                 <DashboardGroup ariaLabel="الأداء المالي" sectionId="financial-performance" showHeader={false}>
-                  <FinancialPerformanceSection
-                    settings={settings}
-                    window={performanceWindow}
-                    onWindowChange={setPerformanceWindow}
-                    chartRows={chartRows}
-                    chartIsLoading={cashflowQuery.isLoading}
-                    chartIsError={cashflowQuery.isError && !cashflowQuery.data}
-                    onChartRetry={retryCashflow}
-                  />
+                  <MobileSectionDisclosure
+                    title="أداء المكتب"
+                    description="المحصل مقابل المصروفات خلال الفترة المختارة"
+                  >
+                    <FinancialPerformanceSection
+                      settings={settings}
+                      window={performanceWindow}
+                      onWindowChange={setPerformanceWindow}
+                      chartRows={chartRows}
+                      chartIsLoading={cashflowQuery.isLoading}
+                      chartIsError={cashflowQuery.isError && !cashflowQuery.data}
+                      onChartRetry={retryCashflow}
+                    />
+                  </MobileSectionDisclosure>
                 </DashboardGroup>
               </div>
             </div>
