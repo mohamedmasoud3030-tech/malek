@@ -15,6 +15,7 @@ const requireAnyPermission = (...permissions: AppPermission[]) => async () => { 
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
 const forgotPasswordRoute = createRoute({ getParentRoute: () => authRoute, path: '/forgot-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ForgotPasswordPage'), staticData: { title: 'استعادة كلمة المرور' } });
 const resetPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reset-password', component: lazyRouteComponent(() => import('@/features/auth/password-recovery-page'), 'ResetPasswordPage'), staticData: { title: 'تعيين كلمة مرور جديدة' } });
+const inviteAcceptRoute = createRoute({ getParentRoute: () => rootRoute, path: '/invite/$token', component: lazyRouteComponent(() => import('@/features/auth/invite-accept-page'), 'InviteAcceptPage'), staticData: { title: 'قبول دعوة الموظف' } });
 const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/features/dashboard/dashboard-page'), 'DashboardPage'), staticData: { title: 'اليوم' } });
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/features/properties/properties-list-page'), 'PropertiesListPage'), staticData: { title: 'العقارات' } });
 const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', beforeLoad: requirePermission('properties.create'), component: lazyRouteComponent(() => import('@/features/properties/property-form-page'), 'PropertyFormPage'), staticData: { title: 'إضافة عقار' } });
@@ -80,7 +81,7 @@ const publicSupportRoute = createRoute({ getParentRoute: () => rootRoute, path: 
 const designSystemRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dev/design-system', beforeLoad: () => { if (!import.meta.env.DEV) throw redirect({ to: '/' }); }, component: import.meta.env.DEV ? lazyRouteComponent(() => import('@/features/design-system/design-system-showcase'), 'DesignSystemShowcase') : () => null, staticData: { title: 'MALEK Design System' } });
 
 export const routeTree = rootRoute.addChildren([
-  authRoute.addChildren([loginRoute, forgotPasswordRoute]), resetPasswordRoute, landingRoute, tenantPortalRoute, ownerPortalRoute, privacyRoute, termsRoute, publicSupportRoute, designSystemRoute,
+  authRoute.addChildren([loginRoute, forgotPasswordRoute]), resetPasswordRoute, inviteAcceptRoute, landingRoute, tenantPortalRoute, ownerPortalRoute, privacyRoute, termsRoute, publicSupportRoute, designSystemRoute,
   protectedRoute.addChildren([
     dashboardRoute, propertiesRoute, propertyNewRoute, propertyDetailRoute.addChildren([propertyIndexRoute, propertyUnitsRoute, propertyUnitDetailRoute]), propertyEditRoute,
     landsRoute, landDetailRoute, ownersRoute, ownerDetailRoute, ownerEditRoute, tenantsRoute, tenantDetailRoute, peopleRoute, leadsRoute, communicationRoute, personDetailRoute, personNewRoute, personEditRoute,

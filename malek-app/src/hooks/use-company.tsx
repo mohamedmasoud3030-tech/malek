@@ -9,6 +9,19 @@ export const ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS = 12_000;
 const ACTIVE_COMPANY_BOOTSTRAP_FALLBACK_DELAY_MS = 300;
 
 /**
+ * Public routes a signed-in user WITHOUT any company membership must still
+ * reach. The fail-closed gate below exists to stop tenant data rendering
+ * without a resolved company; these routes expose no tenant data (invite
+ * preview/accept are keyed by the one-time token hash only), so they are
+ * exempt. Keep this list minimal — every entry weakens the boundary.
+ */
+export const COMPANY_GATE_EXEMPT_PATH_PREFIXES = ['/invite/'] as const;
+
+export function isCompanyGateExemptPath(pathname: string): boolean {
+  return COMPANY_GATE_EXEMPT_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+/**
  * A company claim is a security boundary, but the UI must not remain in a
  * permanent loading state when an Auth/PostgREST request stalls. Timing out
  * preserves the existing fail-closed behavior and returns the operator to a
@@ -144,7 +157,7 @@ async function requestServerClaimSync(companyId: string): Promise<string | null>
   return readCompanyIdFromAccessToken(refreshed.session?.access_token);
 }
 
-export function CompanyProvider({ children }: PropsWithChildren) {
+export function CompanyProvider({ children, gateExempt = false }: PropsWithChildren<{ gateExempt?: boolean }>) {
   const queryClient = useQueryClient();
   const { session, isLoading: isAuthLoading } = useAuth();
   const authenticatedUserId = session?.user.id ?? null;
@@ -333,7 +346,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   }), [companies, activeCompany, isLoading, switchCompany, currentRole]);
 
   const isCompanyContextTransition = authenticatedUserId !== resolvedUserId;
-  const shouldBlockForCompanyResolution = isCompanyContextTransition || (isLoading && !activeCompany);
+  const shouldBlockForCompanyResolution = !gateExempt && (isCompanyContextTransition || (isLoading && !activeCompany));
 
   useEffect(() => {
     if (!shouldBlockForCompanyResolution) {
@@ -378,7 +391,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     );
   }
 
-  if (hasAuthenticatedSession && (loadError || !activeCompany)) {
+  if (!gateExempt && hasAuthenticatedSession && (loadError || !activeCompany)) {
     return (
       <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl">
         <section className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm" role="alert">
