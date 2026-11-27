@@ -11,6 +11,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
+import { MONEY_MIN_POSITIVE, validateUserMoneyInput } from '@/lib/money';
 import { formatMoney, formatShortId } from './financials-formatters';
 import {
   applyS09Correction,
@@ -82,13 +83,13 @@ export function S09CorrectionPanel() {
   };
 
   const createMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (parsedAmount: number) =>
       createS09CorrectionDraft({
         reviewId,
         sourceType,
         sourceId,
         reason,
-        amount: Number(amount),
+        amount: parsedAmount,
         debitAccountNo,
         creditAccountNo,
         requestId: createS09RequestId(),
@@ -323,7 +324,12 @@ export function S09CorrectionPanel() {
             event.preventDefault();
             setStatusMessage(null);
             setErrorMessage(null);
-            createMutation.mutate();
+            const amountCheck = validateUserMoneyInput(amount, { min: Number(MONEY_MIN_POSITIVE) });
+            if (!amountCheck.ok) {
+              setErrorMessage(amountCheck.message);
+              return;
+            }
+            createMutation.mutate(amountCheck.value);
           }}
         >
           <EntityForm.Section

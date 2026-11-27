@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -26,6 +27,9 @@ export function OwnerExpenseAllocationFields({
 }: Props) {
   const owners = usePropertyOwners(propertyId);
   const agreements = useOwnerAgreements(propertyId);
+  // Raw per-row amount text so decimal typing is not mangled by a controlled
+  // numeric value; only finite numbers propagate to the form model.
+  const [rawAmounts, setRawAmounts] = useState<Record<number, string>>({});
   const eligible = (owners.data ?? []).filter(
     (row) =>
       row.owner &&
@@ -81,8 +85,17 @@ export function OwnerExpenseAllocationFields({
               type="number"
               min="0.001"
               step="0.001"
-              value={a.amount || ""}
-              onChange={(e) => change(i, { amount: Number(e.target.value) })}
+              value={rawAmounts[i] ?? (a.amount ? String(a.amount) : "")}
+              onChange={(e) => {
+                const raw = e.target.value;
+                setRawAmounts((current) => ({ ...current, [i]: raw }));
+                if (raw === "") {
+                  change(i, { amount: 0 });
+                  return;
+                }
+                const parsed = Number(raw);
+                if (Number.isFinite(parsed)) change(i, { amount: parsed });
+              }}
             />
           </label>
           <label>

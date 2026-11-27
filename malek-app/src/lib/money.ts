@@ -91,6 +91,37 @@ export function validateMoney(
 }
 
 /**
+ * Validate a free-form user money entry before a financial mutation. Returns
+ * the rounded value or an Arabic user-facing message: the submit path shows
+ * the message instead of letting Number(...) silently turn bad input into 0
+ * or NaN. Server rows still go through normalizeOm3.
+ */
+export function validateUserMoneyInput(
+  value: unknown,
+  options: { min?: number; currency?: SupportedCurrency } = {},
+): { ok: true; value: number } | { ok: false; message: string } {
+  const currency = options.currency ?? 'OMR';
+  if (typeof value !== 'number' && String(value ?? '').trim() === '') {
+    return { ok: false, message: 'أدخل مبلغاً صحيحاً بالأرقام.' };
+  }
+  const checked = validateMoney(value, { min: options.min, currency });
+  if (checked.ok) return { ok: true, value: checked.value };
+  switch (checked.reason) {
+    case 'below_min':
+      return {
+        ok: false,
+        message: (options.min ?? 0) > 0 ? 'المبلغ يجب أن يكون أكبر من صفر.' : 'المبلغ لا يمكن أن يكون سالباً.',
+      };
+    case 'above_max':
+      return { ok: false, message: 'المبلغ يتجاوز الحد الأقصى المسموح.' };
+    case 'precision':
+      return { ok: false, message: `المبلغ يقبل ${getCurrencyMinorUnit(currency)} خانات عشرية كحد أقصى.` };
+    default:
+      return { ok: false, message: 'أدخل مبلغاً صحيحاً بالأرقام.' };
+  }
+}
+
+/**
  * Canonical props for a money <Input type="number">. Spread them instead of
  * hand-writing step/min/inputMode so the precision can never drift:
  *   <Input type="number" {...moneyInputProps()} {...register('amount')} />
