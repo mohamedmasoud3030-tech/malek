@@ -259,6 +259,28 @@ $live_definer_search_path$;
 select 'p5_definer_search_path_pinned=pass';
 
 -- P6. Internal never-exposed helpers must not be executable by browser roles.
+-- P7. create_contract_atomic_v2 must have exactly one overload. A second
+--     overload makes every PostgREST RPC call fail with PGRST203 ambiguity.
+do $live_v2_overload$
+declare
+  v_count int;
+  v_sigs text;
+begin
+  select count(*), string_agg(pg_get_function_identity_arguments(p.oid), ' | ' order by p.oid)
+    into v_count, v_sigs
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.proname = 'create_contract_atomic_v2';
+
+  if v_count <> 1 then
+    raise exception 'RPC AMBIGUITY: create_contract_atomic_v2 overloads=% signatures: %', v_count, coalesce(v_sigs, 'none')
+      using errcode = '42501';
+  end if;
+end
+$live_v2_overload$;
+
+select 'p7_contract_atomic_v2_single_overload=pass';
+
 select 'p6_internal_rpc_execute_grantees=' || coalesce(string_agg(distinct grantee, ', ' order by grantee), 'none')
 from information_schema.routine_privileges
 where routine_schema = 'public'
