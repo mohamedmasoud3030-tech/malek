@@ -236,6 +236,6 @@ export default defineConfig({
     // Node's built-in test runner owns the contract-script self-tests. Keeping
     // them out of Vitest avoids executing valid node:test files as empty
     // Vitest suites while their dedicated package gates still run them.
-    exclude: ["e2e/**", "scripts/**/*.test.mjs", "node_modules/**", "dist/**"],
+    exclude: ["e2e/**", "local-proof/**", "scripts/**/*.test.mjs", "node_modules/**", "dist/**"],
   },
 });
