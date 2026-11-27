@@ -18,6 +18,8 @@ import { CommandPaletteDialog } from '@/features/command-palette/command-palette
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
 import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 import { sanitizeSupportRoute } from '@/features/help-support/help-context';
+import { FirstRunGuide } from '@/features/first-run/first-run-guide';
+import { PageIntroLine } from '@/features/first-run/page-intro-line';
 
 type AccountAccessStatus = Readonly<{
   tone: 'info' | 'warning';
@@ -490,6 +492,8 @@ export function AppShell() {
               </div>
             </div>
           ) : null}
+          <PageIntroLine />
+          <FirstRunGuide />
           <Outlet />
         </main>
       </div>
