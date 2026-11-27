@@ -12,7 +12,6 @@ export interface FirstRunStep {
   hint: string;
   to: string;
   actionLabel: string;
-  table: 'properties' | 'units' | 'people' | 'contracts';
 }
 
 export const FIRST_RUN_STEPS: readonly FirstRunStep[] = [
@@ -22,7 +21,6 @@ export const FIRST_RUN_STEPS: readonly FirstRunStep[] = [
     hint: 'ابدأ بعمارة أو عقار واحد اللي هتديره هنا.',
     to: '/properties/new',
     actionLabel: 'إضافة عقار',
-    table: 'properties',
   },
   {
     key: 'units',
@@ -30,7 +28,6 @@ export const FIRST_RUN_STEPS: readonly FirstRunStep[] = [
     hint: 'شقق أو محلات أو مكاتب جوه العقار اللي ضفته.',
     to: '/properties',
     actionLabel: 'فتح العقارات',
-    table: 'units',
   },
   {
     key: 'people',
@@ -38,7 +35,6 @@ export const FIRST_RUN_STEPS: readonly FirstRunStep[] = [
     hint: 'أضف بيانات الناس اللي ليهم عقود على الوحدات.',
     to: '/people/new',
     actionLabel: 'إضافة شخص',
-    table: 'people',
   },
   {
     key: 'contracts',
@@ -46,9 +42,19 @@ export const FIRST_RUN_STEPS: readonly FirstRunStep[] = [
     hint: 'اربط مستأجر بوحدة بإيجار ومدة، والباقي علينا.',
     to: '/contracts/new',
     actionLabel: 'إنشاء عقد',
-    table: 'contracts',
   },
 ];
+
+/**
+ * عدّادات الجداول بأسماء حرفية ثابتة: بوابة عقد الواجهة وقاعدة البيانات
+ * (frontend-db-contract) ترفض الاستهداف الديناميكي غير المراجع.
+ */
+const STEP_COUNT_QUERIES: Record<FirstRunStep['key'], () => PromiseLike<{ count: number | null; error: unknown }>> = {
+  properties: () => supabase.from('properties').select('id', { count: 'exact', head: true }),
+  units: () => supabase.from('units').select('id', { count: 'exact', head: true }),
+  people: () => supabase.from('people').select('id', { count: 'exact', head: true }),
+  contracts: () => supabase.from('contracts').select('id', { count: 'exact', head: true }),
+};
 
 export type FirstRunStepCounts = Partial<Record<FirstRunStep['key'], number>>;
 
@@ -59,9 +65,7 @@ export type FirstRunStepCounts = Partial<Record<FirstRunStep['key'], number>>;
 export async function fetchFirstRunStepCounts(): Promise<FirstRunStepCounts> {
   const entries = await Promise.all(
     FIRST_RUN_STEPS.map(async (step) => {
-      const { count, error } = await supabase
-        .from(step.table)
-        .select('id', { count: 'exact', head: true });
+      const { count, error } = await STEP_COUNT_QUERIES[step.key]();
       if (error) throw error;
       return [step.key, count ?? 0] as const;
     }),
