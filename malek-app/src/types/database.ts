@@ -3466,6 +3466,76 @@ export type Database = {
           },
         ];
       };
+      employee_invites: {
+        Row: {
+          id: string;
+          company_id: string;
+          email: string;
+          role: 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
+          note: string | null;
+          token_hash: string;
+          invited_by: string;
+          created_at: string;
+          expires_at: string;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          revoked_at: string | null;
+          idempotency_key: string;
+        };
+        Insert: {
+          id?: string;
+          company_id?: string;
+          email: string;
+          role?: 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
+          note?: string | null;
+          token_hash: string;
+          invited_by: string;
+          created_at?: string;
+          expires_at: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          revoked_at?: string | null;
+          idempotency_key: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          email?: string;
+          role?: 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
+          note?: string | null;
+          token_hash?: string;
+          invited_by?: string;
+          created_at?: string;
+          expires_at?: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          revoked_at?: string | null;
+          idempotency_key?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_invites_accepted_by_fkey';
+            columns: ['accepted_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'employee_invites_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'employee_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       expense_owner_allocations: {
         Row: {
           expense_id: string;
@@ -8066,6 +8136,23 @@ export type Database = {
         };
         Relationships: [];
       };
+      employee_invites_read: {
+        Row: {
+          id: string | null;
+          company_id: string | null;
+          email: string | null;
+          role: string | null;
+          note: string | null;
+          invited_by: string | null;
+          created_at: string | null;
+          expires_at: string | null;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          revoked_at: string | null;
+          status: string | null;
+        };
+        Relationships: [];
+      };
       journal_entries: {
         Row: {
           id: string | null;
@@ -8255,6 +8342,12 @@ export type Database = {
       _safe_date: {
         Args: {
           v: string | null;
+        };
+        Returns: string;
+      };
+      accept_employee_invite: {
+        Args: {
+          p_token: string | null;
         };
         Returns: string;
       };
@@ -8590,6 +8683,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_employee_invite: {
+        Args: {
+          p_email: string | null;
+          p_role: string | null;
+          p_note: string | null;
+          p_idempotency_key: string | null;
+        };
+        Returns: string;
+      };
       create_expense_with_journal_atomic: {
         Args: {
           p_payload: Json | null;
@@ -8905,6 +9007,14 @@ export type Database = {
           p_request_id: string | null;
         };
         Returns: Json;
+      };
+      finalize_employee_invite_signup: {
+        Args: {
+          p_token: string | null;
+          p_user_id: string | null;
+          p_full_name?: string | null;
+        };
+        Returns: string;
       };
       find_payment_account_id: {
         Args: {
@@ -9297,6 +9407,12 @@ export type Database = {
         };
         Returns: { id: string | null; requester_user_id: string | null; requester_name: string | null; requester_email: string | null; permission: string | null; resource_route: string | null; reason: string | null; status: string | null; reviewer_user_id: string | null; decided_at: string | null; decision_reason: string | null; created_at: string | null; grant_active: boolean | null }[];
       };
+      lookup_employee_invite_for_signup: {
+        Args: {
+          p_token: string | null;
+        };
+        Returns: { invite_id: string | null; company_id: string | null; email: string | null; role: string | null; invite_status: string | null }[];
+      };
       mark_app_notification_read: {
         Args: {
           p_notification_id: string | null;
@@ -9447,6 +9563,12 @@ export type Database = {
           payload: Json | null;
         };
         Returns: Json;
+      };
+      preview_employee_invite: {
+        Args: {
+          p_token: string | null;
+        };
+        Returns: { company_name: string | null; email: string | null; role: string | null; invite_status: string | null }[];
       };
       preview_owner_settlement_payment: {
         Args: {
@@ -9723,6 +9845,12 @@ export type Database = {
           p_payload: Json | null;
         };
         Returns: Json;
+      };
+      revoke_employee_invite: {
+        Args: {
+          p_invite_id: string | null;
+        };
+        Returns: undefined;
       };
       revoke_onboarding_waiver_atomic: {
         Args: {
