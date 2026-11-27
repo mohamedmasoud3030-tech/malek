@@ -90,3 +90,32 @@
 [dir='ltr'] [data-dashboard-office-pulse] .dashboard-pulse-card [dir='ltr'] {
   text-align: left;
 }
+
+/* ------------------------------------------------------------------ *
+ * Mobile focus pass — one headline number, details on demand
+ * ------------------------------------------------------------------ */
+
+/* Below the desktop layout the collection KPI becomes the single hero:
+   full width, calm surface, larger type. The remaining three tiles keep
+   their compact 2-up rhythm underneath. */
+@media (max-width: 1023px) {
+  [data-dashboard-office-pulse] [data-dashboard-kpi-hero] {
+    grid-column: 1 / -1;
+  }
+
+  [data-dashboard-office-pulse] .dashboard-pulse-card--hero {
+    padding: 1.125rem 1.25rem;
+  }
+
+  [data-dashboard-office-pulse] .dashboard-pulse-card--hero p.text-lg {
+    font-size: 1.875rem;
+    line-height: 1.15;
+  }
+}
+
+/* Mobile-only disclosure chrome for the on-demand detail sections. */
+@media (max-width: 767px) {
+  [data-dashboard-mobile-disclosure-panel][data-open='false'] {
+    display: none;
+  }
+}
