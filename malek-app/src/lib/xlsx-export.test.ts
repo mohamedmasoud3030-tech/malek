@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { buildXlsxBytes, neutralizeSpreadsheetFormula } from './xlsx-export';
 
 describe('XLSX export', () => {
+  it('fits opted-in statements to one A4 landscape page wide without limiting height', () => {
+    const input = { name: 'كشف المالك', headers: ['البيان', 'القيمة'], rows: [['مرجع طويل', 0.111]] } as const;
+    const text = new TextDecoder().decode(buildXlsxBytes({ ...input, printFit: true }));
+    expect(text).toContain('<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+    expect(text).toContain('orientation="landscape" fitToWidth="1" fitToHeight="0"');
+    expect(text).toContain('<c r="B2" t="n"><v>0.111</v></c>');
+    expect(new TextDecoder().decode(buildXlsxBytes(input))).not.toContain('<pageSetup ');
+  });
+
   it('neutralizes formula-looking user text without changing normal text', () => {
     expect(neutralizeSpreadsheetFormula('=1+1')).toBe("'=1+1");
     expect(neutralizeSpreadsheetFormula(' +SUM(A1:A2)')).toBe("' +SUM(A1:A2)");

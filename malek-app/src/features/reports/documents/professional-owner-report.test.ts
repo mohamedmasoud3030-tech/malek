@@ -214,7 +214,7 @@ describe('professional-owner-report adapter', () => {
       table: { title: string; rows: unknown[][] };
     };
     expect(finalTable.table.title).toBe('الحساب الختامي — تسوية حساب المالك');
-    expect(finalTable.table.rows).toHaveLength(8);
+    expect(finalTable.table.rows).toHaveLength(9);
     expect(finalTable.table.rows[0][0]).toEqual({ kind: 'text', value: '+ التحصيلات العائدة للمالك' });
     expect(finalTable.table.rows[7][1]).toEqual({ kind: 'amount', value: 1437.5 });
   });
@@ -323,6 +323,28 @@ describe('professional-owner-report adapter', () => {
     expect(utilityTable!.table.rows[0][5]).toEqual({ kind: 'amount', value: 0 });
     // The totals row obeys the same rule, so the column can never sum negative.
     expect(utilityTable!.table.totals![5]).toEqual({ kind: 'amount', value: 0 });
+  });
+
+  it('keeps held funds separate from unpaid recorded settlements in the final account', () => {
+    const payload = buildOwnerReportPayload({ ...baseContext, statement, position: {
+      ...position,
+      lifecycle_all_time: { ...position.lifecycle_all_time, remaining_payable: 0 },
+      owner_funds: { held: 0.111, held_proven_total: 0.111, held_evidence_missing_count: 0 },
+    } });
+    const rows = findTable(payload, 'الحساب الختامي — تسوية حساب المالك')!.table.rows;
+    expect(rows[7]).toEqual([
+      { kind: 'text', value: 'متبقي التسويات المسجلة غير المدفوعة (مسودات ومعتمدة)، كل الفترات' },
+      { kind: 'amount', value: 0 },
+    ]);
+    expect(rows[8]).toEqual([
+      { kind: 'text', value: 'أموال المالك المحتجزة لدى المكتب (مستقلة عن متبقي التسويات)' },
+      { kind: 'amount', value: 0.111 },
+    ]);
+    const unproven = buildOwnerReportPayload({ ...baseContext, position: {
+      ...position, owner_funds: { held: null, held_proven_total: 0, held_evidence_missing_count: 1 },
+    } });
+    expect(findTable(unproven, 'الحساب الختامي — تسوية حساب المالك')!.table.rows[8][1])
+      .toEqual({ kind: 'text', value: 'غير متاح — لا توجد سلطة بيانات' });
   });
 
   it('reports held funds as unavailable when the register carries no evidence', () => {
@@ -611,7 +633,7 @@ describe('Golden Owner fixture — full integration', () => {
     const lastGroup = payload.groups[payload.groups.length - 1];
     const finalTable = lastGroup.blocks.find((block) => (block as { table?: { title?: string } }).table?.title === 'الحساب الختامي — تسوية حساب المالك') as { table: { rows: unknown[][] } };
     expect(finalTable).toBeDefined();
-    expect(finalTable.table.rows).toHaveLength(8);
+    expect(finalTable.table.rows).toHaveLength(9);
     expect(finalTable.table.rows[7][1]).toEqual({ kind: 'amount', value: 3042.75 });
   });
 });

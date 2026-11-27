@@ -5,6 +5,7 @@ type XlsxSheetInput = Readonly<{
   headers: readonly string[];
   rows: readonly (readonly XlsxCellValue[])[];
   rightToLeft?: boolean;
+  printFit?: boolean;
 }>;
 
 const encoder = new TextEncoder();
@@ -77,9 +78,11 @@ function worksheetXml(input: XlsxSheetInput) {
     const excelRow = rowIndex + 2;
     return `<row r="${excelRow}">${input.headers.map((_, columnIndex) => cellXml(`${columnName(columnIndex)}${excelRow}`, row[columnIndex])).join('')}</row>`;
   }).join('');
+  const printSettings = input.printFit ? '<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' : '';
+  const sheetProperties = input.printFit ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '';
   const rtl = input.rightToLeft === false ? '' : ' rightToLeft="1"';
 
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastCell}"/><sheetViews><sheetView workbookViewId="0"${rtl}><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${columns}</cols><sheetData>${header}${rows}</sheetData><autoFilter ref="A1:${columnName(columnCount - 1)}${rowCount}"/></worksheet>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${sheetProperties}<dimension ref="A1:${lastCell}"/><sheetViews><sheetView workbookViewId="0"${rtl}><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${columns}</cols><sheetData>${header}${rows}</sheetData><autoFilter ref="A1:${columnName(columnCount - 1)}${rowCount}"/>${printSettings}</worksheet>`;
 }
 
 const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

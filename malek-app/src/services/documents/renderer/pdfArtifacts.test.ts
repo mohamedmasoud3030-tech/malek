@@ -8,6 +8,7 @@
  * page cap. Arabic shaping/bidi and repeated headers are verified visually
  * by the golden gate (scripts/verify-golden-documents.mjs).
  */
+import { wrapPdfTableIdentifiers } from './pdf/pdfDocument';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { UnifiedDocumentModel } from '../types';
 import { buildDocumentPdf, DocumentRenderError, setDocumentPdfFontBaseUrl } from '../DocumentRenderer';
@@ -59,6 +60,14 @@ const longTableModel = (rowCount: number): UnifiedDocumentModel => ({
 });
 
 describe('vector PDF artifacts', () => {
+  it('wraps long Latin references without changing their characters or Arabic shaping', () => {
+    const reference = 'LOCAL-SETTLEMENT-e9739106-3d9c-453b-be30-43fdc97ac9e3';
+    const wrapped = wrapPdfTableIdentifiers(reference);
+    expect(wrapped.split('\n').every(line => line.length <= 10)).toBe(true);
+    expect(wrapped.replaceAll('\n', '')).toBe(reference);
+    expect(wrapPdfTableIdentifiers('أحمد الحارثي 594.111 OMR')).toBe('أحمد الحارثي 594.111 OMR');
+  });
+
   it('produces a real application/pdf with vector text (tiny files, %PDF magic)', async () => {
     const { blob, pageCount } = await buildDocumentPdf(smallModel);
     expect(blob.type).toBe('application/pdf');
