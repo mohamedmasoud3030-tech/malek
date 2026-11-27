@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Check, CircleArrowLeft, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   fetchFirstRunStepCounts,
   FIRST_RUN_STEPS,
@@ -84,15 +85,17 @@ export function FirstRunGuide() {
               {counts !== null ? ` خلصت ${completedCount} من ${FIRST_RUN_STEPS.length}.` : ''}
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={handleDismiss}
             data-first-run-guide-dismiss
-            className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+            className="shrink-0 gap-1 text-muted-foreground"
           >
             <X className="size-3.5" aria-hidden="true" />
             إخفاء الدليل
-          </button>
+          </Button>
         </div>
 
         <ol className="mt-3 grid gap-2 sm:grid-cols-2">
