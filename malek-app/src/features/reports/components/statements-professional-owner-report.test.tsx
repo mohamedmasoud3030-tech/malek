@@ -142,6 +142,13 @@ describe('StatementsSection owner body boundary', () => {
     ).toBeNull();
   });
 
+  it('uses the full report width for an owner-only statement', () => {
+    const { container } = renderOwnerSection({ focus: 'owner' });
+    const panel = container.querySelector('[data-report-panel]');
+    expect(panel?.parentElement?.className).toContain('lg:grid-cols-1');
+    expect(panel?.parentElement?.className).not.toContain('lg:grid-cols-2');
+  });
+
   it('does not create a running balance when the owner authority lacks an opening balance', () => {
     renderOwnerSection({ focus: 'owner' });
 

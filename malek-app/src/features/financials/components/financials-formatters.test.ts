@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatMoney, getErrorMessage } from './financials-formatters';
+import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
 
 describe('financials-formatters — currency contract', () => {
+  it('keeps numeric dates in day/month/year order without embedded RTL marks', () => {
+    const date = formatDate('2026-12-05');
+    expect(date).toBe('05/12/2026');
+    expect(date).not.toMatch(/[\u061c\u200e\u200f]/);
+  });
   it('renders money with the canonical default currency (OMR), never a hard-coded EGP', () => {
     const rendered = formatMoney(12000);
     expect(rendered).toContain('OMR');

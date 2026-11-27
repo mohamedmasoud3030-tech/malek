@@ -162,10 +162,16 @@ async function prepareMasterData(maker, checker) {
     tax_code: 'NON_TAXABLE', tax_rate: 0, effective_from: '2020-01-01', effective_to: '2039-12-31', status: 'ACTIVE',
     created_by: maker.id, approved_by: checker.id, approved_at: new Date().toISOString(),
   });
-  await upsert('accounting_periods', {
-    id: '00000000-0000-4000-8000-000000000105', company_id: COMPANY_ID,
+  const periodId = '00000000-0000-4000-8000-000000000105';
+  const period = dataOrThrow('read pilot accounting period', await service.from('accounting_periods')
+    .select('id,status').eq('id', periodId).eq('company_id', COMPANY_ID).maybeSingle());
+  if (period && period.status !== 'OPEN') {
+    throw new Error('Pilot accounting period is not OPEN; refusing to reopen financial history.');
+  }
+  if (!period) dataOrThrow('create pilot accounting period', await service.from('accounting_periods').insert({
+    id: periodId, company_id: COMPANY_ID,
     name: `Pilot ${start}..${end}`, start_date: start, end_date: end, status: 'OPEN',
-  });
+  }));
 
   for (const owner of owners) {
     await upsert('owners', { id: owner.id, full_name: owner.full, display_name: owner.display, is_active: true, company_id: COMPANY_ID });
@@ -253,7 +259,19 @@ async function seedFinancialActivity(makerClient, contractIds) {
     { request_id: '00000000-0000-4000-8800-000000000003', property_id: properties[2].id, category: 'تشغيل المكتب', amount: 12, expense_date: today, charged_to: 'COMPANY', description: `${TAG}: مصروف تشغيلي لا يخص المالك` },
   ];
   for (const payload of expenses) {
-    dataOrThrow(`create expense ${payload.request_id}`, await makerClient.rpc('create_expense_with_journal_atomic', { p_payload: payload }));
+    const propertyIndex = properties.findIndex((property) => property.id === payload.property_id);
+    const allocatedPayload = payload.charged_to === 'OWNER'
+      ? {
+          ...payload,
+          owner_allocations: [{
+            owner_id: properties[propertyIndex].owner,
+            amount: payload.amount,
+            owner_agreement_id: agreementId(propertyIndex),
+          }],
+          allocation_evidence: `${TAG}: sole owner, 100% allocation`,
+        }
+      : payload;
+    dataOrThrow(`create expense ${payload.request_id}`, await makerClient.rpc('create_expense_with_journal_atomic', { p_payload: allocatedPayload }));
   }
 }
 

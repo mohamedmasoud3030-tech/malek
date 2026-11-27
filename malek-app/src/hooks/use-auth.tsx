@@ -46,6 +46,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [grantedPermissions, setGrantedPermissions] = useState<readonly AppPermission[]>([]);
   const [effectivePermissionsResolved, setEffectivePermissionsResolved] = useState(false);
+  const [authorizationRevision, setAuthorizationRevision] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const hadSessionRef = useRef(false);
   const explicitLogoutRef = useRef(false);
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     } finally {
       setEffectivePermissionsResolved(true);
     }
-  }, [session?.user.id]);
+  }, [session?.user.id, authorizationRevision]);
 
   useEffect(() => {
     let mounted = true;
@@ -94,7 +95,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      if (bootstrapPendingRef.current) authEventDuringBootstrapRef.current = true;
+      // INITIAL_SESSION is only the SDK's local cache, not a verified auth
+      // decision. Let getCurrentSession finish checking it with the server.
+      if (bootstrapPendingRef.current && event !== 'INITIAL_SESSION') authEventDuringBootstrapRef.current = true;
 
       switch (event) {
         case 'SIGNED_OUT': {
@@ -117,6 +120,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         case 'USER_UPDATED':
         case 'TOKEN_REFRESHED':
           setEffectivePermissionsResolved(false);
+          // A refreshed session can keep the same user ID. Its invalidation
+          // must still schedule a new permission read, including on reload.
+          setAuthorizationRevision((revision) => revision + 1);
           setSession(nextSession);
           hadSessionRef.current = Boolean(nextSession);
           break;

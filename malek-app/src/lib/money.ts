@@ -38,14 +38,22 @@ export const MONEY_STEP = getCurrencyStep('OMR');
 export const MONEY_MIN_POSITIVE = MONEY_STEP;
 
 /**
- * Round to the currency minor unit with the same half-up-away-from-artifact
- * semantics as the server (public._r3 = round(numeric, 3)). EPSILON absorbs
- * binary float artifacts (e.g. 1.0005 stored as 1.00049999…).
+ * Round to the currency minor unit with PostgreSQL numeric semantics:
+ * decimal half ties round away from zero, including negative corrections.
+ * Shift the decimal exponent rather than multiplying a binary float. A fixed
+ * EPSILON is too small to repair ties once an amount grows beyond a few units.
  */
 export function roundMoney(value: number, currency: SupportedCurrency = 'OMR'): number {
-  const factor = 10 ** getCurrencyMinorUnit(currency);
+  const digits = getCurrencyMinorUnit(currency);
   if (!Number.isFinite(value)) return 0;
-  return Math.round((value + Number.EPSILON * Math.sign(value)) * factor) / factor;
+  const [coefficient, exponent = '0'] = Math.abs(value).toString().split('e');
+  const shifted = Number(`${coefficient}e${Number(exponent) + digits}`);
+  // At this magnitude a finite JS number has no fractional minor units.
+  if (!Number.isFinite(shifted)) return value;
+  const rounded = Math.round(shifted);
+  if (rounded === 0) return 0;
+  const [roundedCoefficient, roundedExponent = '0'] = rounded.toString().split('e');
+  return Math.sign(value) * Number(`${roundedCoefficient}e${Number(roundedExponent) - digits}`);
 }
 
 /**

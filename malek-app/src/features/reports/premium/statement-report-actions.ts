@@ -148,6 +148,7 @@ export function downloadOwnerStatementExcel(statement: OwnerStatementReport | nu
   downloadBlob(
     buildXlsxBlob({
       name: 'كشف المالك',
+      printFit: true,
       headers: ['التاريخ', 'نوع الحركة', 'العقار', 'البيان', 'الإجمالي', 'الاستقطاع', 'صافي الحركة'],
       rows: ownerStatementExcelRows(statement) as readonly (readonly string[])[],
     }),

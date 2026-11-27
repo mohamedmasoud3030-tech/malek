@@ -97,6 +97,13 @@ function KpiStrip({ kpis }: { kpis: Array<{ label: string; value: string; compar
 /* Tables                                                               */
 /* ------------------------------------------------------------------ */
 
+export function wrapPdfTableIdentifiers(value: string): string {
+  // Explicit soft layout boundaries for long Latin references. Never split
+  // Arabic words or change the identifier's non-whitespace characters.
+  return value.replace(/[A-Za-z0-9_./:@-]{16,}/g, (token) =>
+    token.match(/.{1,10}/g)!.join('\n'));
+}
+
 function Table({ table }: { table: DocumentTable | import('../../types').ReportTable }): El {
   const numeric = table.columns.map((_, i) => isNumericColumn(table.rows, i));
   const totalsRows: string[][] = table.totals
@@ -105,6 +112,8 @@ function Table({ table }: { table: DocumentTable | import('../../types').ReportT
   const cell = (value: string, i: number, kind: 'head' | 'body' | 'foot', rowKey?: string): El =>
     h(Text, {
       key: `${rowKey ?? kind}-${i}`,
+      // Explicit boundaries above must not gain visible hyphens in references.
+      hyphenationCallback: (word: string) => [word],
       style: {
         width: `${100 / table.columns.length}%`,
         padding: `${S.cellY} ${S.cellX}`,
@@ -112,9 +121,10 @@ function Table({ table }: { table: DocumentTable | import('../../types').ReportT
         lineHeight: LH_CELL,
         color: kind === 'head' ? '#fff' : kind === 'foot' ? C.ink : C.ink,
         fontWeight: kind === 'head' || kind === 'foot' || numeric[i] ? 700 : 400,
-        ...(numeric[i] ? { textAlign: 'left', direction: 'ltr' } : rtl),
+        ...(numeric[i] ? { textAlign: 'left', direction: 'ltr' }
+          : /^[A-Za-z0-9_./:@-]{16,}$/.test(value) ? { textAlign: 'right', direction: 'ltr' } : rtl),
       },
-    }, value);
+    }, wrapPdfTableIdentifiers(value));
 
   // NOTE: the page-spanning wrapper must stay BORDERLESS — pdfkit's border
   // clipping math overflows when a bordered node is fragmented across pages.

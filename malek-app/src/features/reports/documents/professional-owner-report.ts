@@ -354,7 +354,8 @@ export function buildOwnerReportPayload(context: OwnerReportContext): OwnerRepor
       [text('= المستحق قبل الصرف (من سلطة التسوية)'), amount(position.period.net_payable)],
       [text('استحقاقات التسويات المسوّاة — كل الفترات'), amount(position.lifecycle_all_time.paid_net)],
       [text('النقد المصروف المثبت — كل الفترات'), position.lifecycle_all_time.paid_cash === null ? text('غير مكتمل الإثبات') : amount(position.lifecycle_all_time.paid_cash)],
-      [text('المتبقي المستحق — كل الفترات'), amount(position.lifecycle_all_time.remaining_payable)],
+      [text('متبقي التسويات المسجلة غير المدفوعة (مسودات ومعتمدة)، كل الفترات'), amount(position.lifecycle_all_time.remaining_payable)],
+      [text('أموال المالك المحتجزة لدى المكتب (مستقلة عن متبقي التسويات)'), position.owner_funds.held === null ? text('غير متاح — لا توجد سلطة بيانات') : amount(position.owner_funds.held)],
     );
   } else if (statement) {
     finalRows.push(

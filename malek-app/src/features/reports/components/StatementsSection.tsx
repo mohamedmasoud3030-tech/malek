@@ -75,7 +75,7 @@ export function StatementsSection({
   return (
     <div className="space-y-4">
       {showTenant || showOwner ? (
-        <ReportColumns>
+        <ReportColumns className={focus !== 'all' ? 'lg:grid-cols-1' : undefined}>
           {showTenant ? (
             <TenantStatementPanel
               selectedContractId={selectedContractId}
