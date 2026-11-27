@@ -10,6 +10,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
+import { MONEY_MIN_POSITIVE, validateUserMoneyInput } from '@/lib/money';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import {
   loadOwnerReceivables,
@@ -72,11 +73,11 @@ export function OwnerReceivableRecoveryPanel({ ownerId }: OwnerReceivableRecover
   });
 
   const recoverMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (parsedAmount: number) => {
       if (!selected) throw new Error('لم تُحدَّد مديونية.');
       return recoverOwnerReceivable({
         dueFromOwnerId: selected.id,
-        amount: Number(amount),
+        amount: parsedAmount,
         effectiveDate,
         cashAccountNo,
         requestId: createOwnerRecoveryRequestId(),
@@ -216,7 +217,12 @@ export function OwnerReceivableRecoveryPanel({ ownerId }: OwnerReceivableRecover
             event.preventDefault();
             setStatusMessage(null);
             setErrorMessage(null);
-            recoverMutation.mutate();
+            const amountCheck = validateUserMoneyInput(amount, { min: Number(MONEY_MIN_POSITIVE) });
+            if (!amountCheck.ok) {
+              setErrorMessage(amountCheck.message);
+              return;
+            }
+            recoverMutation.mutate(amountCheck.value);
           }}
         >
           <EntityForm.Section

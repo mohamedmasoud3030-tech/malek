@@ -27,7 +27,7 @@ import {
 import { commissionTypeLabels } from './owner-agreement-labels';
 import { useCreateOwnerAgreement, useCreateOwnerAgreementVersion, useOwnerAgreements, useOwnerAgreementVersions } from './useOwnerAgreements';
 import { useQuery } from '@tanstack/react-query';
-import { MONEY_STEP } from '@/lib/money';
+import { MONEY_STEP, validateUserMoneyInput } from '@/lib/money';
 
 type AgreementFormState = {
   owner_id: string;
@@ -178,7 +178,11 @@ export function OwnerAgreementsManager({ propertyId }: Readonly<{ propertyId: st
     if (!amendingAgreement || !versionForm) return;
     setVersionError(null);
     try {
-      const terms: OwnerAgreementVersionTerms = { collection_role: versionForm.collection_role, commission_type: versionForm.commission_type, commission_value: Number(versionForm.commission_value), effective_from: versionForm.effective_from, effective_to: versionForm.effective_to || null, offset_allowed: versionForm.offset_allowed, reserve_amount: Number(versionForm.reserve_amount || 0), deposit_beneficiary: versionForm.deposit_beneficiary || null, deposit_custodian: versionForm.deposit_custodian || null, notes: versionForm.notes || null };
+      const commissionValue = Number(versionForm.commission_value);
+      if (!versionForm.commission_value.trim() || !Number.isFinite(commissionValue) || commissionValue <= 0) { setVersionError('قيمة العمولة يجب أن تكون رقماً موجباً.'); return; }
+      const reserveCheck = validateUserMoneyInput(versionForm.reserve_amount || '0', { min: 0 });
+      if (!reserveCheck.ok) { setVersionError(reserveCheck.message); return; }
+      const terms: OwnerAgreementVersionTerms = { collection_role: versionForm.collection_role, commission_type: versionForm.commission_type, commission_value: commissionValue, effective_from: versionForm.effective_from, effective_to: versionForm.effective_to || null, offset_allowed: versionForm.offset_allowed, reserve_amount: reserveCheck.value, deposit_beneficiary: versionForm.deposit_beneficiary || null, deposit_custodian: versionForm.deposit_custodian || null, notes: versionForm.notes || null };
       await versionMutation.mutateAsync({ agreementId: amendingAgreement.id, terms });
       toast.success('تم حفظ تعديل الشروط مع الاحتفاظ بالسجل السابق.');
       closeAmendment();

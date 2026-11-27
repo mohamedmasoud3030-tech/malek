@@ -10,6 +10,7 @@ import {
   MONEY_MIN_POSITIVE,
   MONEY_STEP,
   getCurrencyMinorUnit,
+  validateUserMoneyInput,
   getCurrencyStep,
   moneyInputProps,
   normalizeOm3,
@@ -81,6 +82,38 @@ describe('R3 money contract (OMR = 3 decimals)', () => {
     for (const currency of supportedCurrencies) {
       expect(getCurrencyMinorUnit(currency), currency).toBe(currencyFractionDigits(currency));
     }
+  });
+});
+
+describe('validateUserMoneyInput (financial form submit guard)', () => {
+  it('returns the rounded value for valid plain and comma-grouped input', () => {
+    expect(validateUserMoneyInput('1,234.567')).toEqual({ ok: true, value: 1234.567 });
+    expect(validateUserMoneyInput('0.001', { min: 0.001 })).toEqual({ ok: true, value: 0.001 });
+  });
+
+  it('rejects empty and non-numeric input instead of coercing to zero', () => {
+    for (const bad of ['', '   ', 'abc', '١٢٣']) {
+      const result = validateUserMoneyInput(bad, { min: 0.001 });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.message).toContain('مبلغ');
+    }
+  });
+
+  it('enforces the minimum with a clear message', () => {
+    expect(validateUserMoneyInput('0', { min: 0.001 })).toEqual({
+      ok: false,
+      message: 'المبلغ يجب أن يكون أكبر من صفر.',
+    });
+    expect(validateUserMoneyInput('-1', { min: 0 })).toEqual({
+      ok: false,
+      message: 'المبلغ لا يمكن أن يكون سالباً.',
+    });
+  });
+
+  it('rejects precision beyond the currency minor unit', () => {
+    const result = validateUserMoneyInput('1.2345');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain('خانات عشرية');
   });
 });
 

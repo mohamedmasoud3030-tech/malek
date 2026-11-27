@@ -11,6 +11,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { invalidateFinancialReadModels } from '@/lib/financial-cache';
+import { MONEY_MIN_POSITIVE, validateUserMoneyInput } from '@/lib/money';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import {
   applyOwnerReceivableOffset,
@@ -83,12 +84,12 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
   });
 
   const applyMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (parsedAmount: number) => {
       if (!selected) throw new Error('لم تُحدَّد مديونية.');
       return applyOwnerReceivableOffset({
         dueFromOwnerId: selected.id,
         ownerSettlementId: settlementId,
-        amount: Number(amount),
+        amount: parsedAmount,
         effectiveDate,
         lawfulOffsetEvidence: evidence,
         requestId: createOwnerOffsetRequestId(),
@@ -239,7 +240,12 @@ export function OwnerReceivableOffsetPanel({ ownerId }: OwnerReceivableOffsetPan
             event.preventDefault();
             setStatusMessage(null);
             setErrorMessage(null);
-            applyMutation.mutate();
+            const amountCheck = validateUserMoneyInput(amount, { min: Number(MONEY_MIN_POSITIVE) });
+            if (!amountCheck.ok) {
+              setErrorMessage(amountCheck.message);
+              return;
+            }
+            applyMutation.mutate(amountCheck.value);
           }}
         >
           <EntityForm.Section

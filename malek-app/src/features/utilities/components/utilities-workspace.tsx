@@ -37,7 +37,7 @@ import {
   useDeleteUtilityMeter,
   useDeleteUtilityBill,
 } from '../use-utilities';
-import { MONEY_MIN_POSITIVE, MONEY_STEP } from '@/lib/money';
+import { MONEY_MIN_POSITIVE, MONEY_STEP, validateUserMoneyInput } from '@/lib/money';
 import { UtilityBillDetailOverlay } from './utility-bill-detail-overlay';
 import {
   deriveMeterBillingCoverage,
@@ -125,6 +125,11 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   const [showBillForm, setShowBillForm] = useState(false);
   const [meterForm, setMeterForm] = useState<UtilityMeterFormValues>(emptyMeterForm);
   const [billForm, setBillForm] = useState<UtilityBillFormValues>(emptyBillForm);
+  // Raw text for the bill amount so decimal typing is not mangled by a
+  // controlled numeric state, and invalid input is rejected with a message
+  // instead of silently becoming 0.
+  const [billAmountText, setBillAmountText] = useState('');
+  const [billAmountError, setBillAmountError] = useState<string | null>(null);
   const [meterToArchive, setMeterToArchive] = useState<UtilityMeter | null>(null);
   const [billToArchive, setBillToArchive] = useState<UtilityBill | null>(null);
   const [billToPreview, setBillToPreview] = useState<UtilityBill | null>(null);
@@ -258,11 +263,18 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   };
 
   const handleCreateBill = async () => {
-    if (!billForm.property_id || billForm.amount <= 0 || !billForm.due_date) return;
+    setBillAmountError(null);
+    if (!billForm.property_id || !billForm.due_date) return;
+    const amountCheck = validateUserMoneyInput(billAmountText, { min: Number(MONEY_MIN_POSITIVE) });
+    if (!amountCheck.ok) {
+      setBillAmountError(amountCheck.message);
+      return;
+    }
     try {
-      await createBillMut.mutateAsync(billForm);
+      await createBillMut.mutateAsync({ ...billForm, amount: amountCheck.value });
       setShowBillForm(false);
       setBillForm(emptyBillForm());
+      setBillAmountText('');
     } catch {
       // Mutation exposes its error inside the form.
     }
@@ -607,7 +619,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         actions={(
           <div className="flex w-full gap-2 sm:w-auto">
             <Button disabled={isError} onClick={() => { if (!isError) setShowMeterForm(true); }}><Plus className="size-4" />إضافة عداد</Button>
-            <Button variant="secondary" disabled={isError} onClick={() => { if (!isError) setShowBillForm(true); }}><Plus className="size-4" />فاتورة مرافق</Button>
+            <Button variant="secondary" disabled={isError} onClick={() => { if (!isError) { setBillAmountText(billForm.amount > 0 ? String(billForm.amount) : ''); setBillAmountError(null); setShowBillForm(true); } }}><Plus className="size-4" />فاتورة مرافق</Button>
           </div>
         )}
 
@@ -710,12 +722,12 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
       <EntityForm.Overlay open={showBillForm} onOpenChange={(open) => { if (!createBillMut.isPending) setShowBillForm(open); }} title="إضافة فاتورة مرافق" description="سجل القراءة والمبلغ وتاريخ الاستحقاق." visualVariant="operational">
         <EntityForm.Root onSubmit={(event) => { event.preventDefault(); void handleCreateBill(); }} aria-busy={createBillMut.isPending}>
-          <EntityForm.ErrorSummary message={createBillMut.isError ? (createBillMut.error as Error).message : undefined} />
+          <EntityForm.ErrorSummary message={billAmountError ?? (createBillMut.isError ? (createBillMut.error as Error).message : undefined)} />
           <EntityForm.Section title="بيانات الفاتورة">
             <div className="grid gap-4 sm:grid-cols-2">
               <EntityForm.Field label="العقار *"><Select required value={billForm.property_id} onChange={(event) => setBillForm((form) => ({ ...form, property_id: event.target.value }))}><option value="">اختر العقار</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select></EntityForm.Field>
               <EntityForm.Field label="العداد"><Select value={billForm.meter_id || ''} onChange={(event) => setBillForm((form) => ({ ...form, meter_id: event.target.value || null }))}><option value="">بدون عداد محدد</option>{meters.map((meter) => <option key={meter.id} value={meter.id}>{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</option>)}</Select></EntityForm.Field>
-              <EntityForm.Field label="المبلغ *"><Input required type="number" min={MONEY_MIN_POSITIVE} step={MONEY_STEP} inputMode="decimal" dir="ltr" value={billForm.amount} onChange={(event) => setBillForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} /></EntityForm.Field>
+              <EntityForm.Field label="المبلغ *"><Input required type="number" min={MONEY_MIN_POSITIVE} step={MONEY_STEP} inputMode="decimal" dir="ltr" value={billAmountText} onChange={(event) => { setBillAmountText(event.target.value); setBillAmountError(null); }} /></EntityForm.Field>
               <EntityForm.Field label="تاريخ الاستحقاق *"><Input required type="date" value={billForm.due_date} onChange={(event) => setBillForm((form) => ({ ...form, due_date: event.target.value }))} /></EntityForm.Field>
               <EntityForm.Field label="القراءة السابقة"><Input type="number" inputMode="decimal" value={billForm.previous_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, previous_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
               <EntityForm.Field label="القراءة الحالية"><Input type="number" inputMode="decimal" value={billForm.current_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, current_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
@@ -726,7 +738,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
             </div>
             <EntityForm.Field label="ملاحظات"><Textarea value={billForm.notes || ''} onChange={(event) => setBillForm((form) => ({ ...form, notes: event.target.value }))} /></EntityForm.Field>
           </EntityForm.Section>
-          <EntityForm.Actions submitLabel={createBillMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الفاتورة'} onCancel={() => setShowBillForm(false)} isSubmitting={createBillMut.isPending} submitDisabled={!billForm.property_id || billForm.amount <= 0 || !billForm.due_date} />
+          <EntityForm.Actions submitLabel={createBillMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الفاتورة'} onCancel={() => setShowBillForm(false)} isSubmitting={createBillMut.isPending} submitDisabled={!billForm.property_id || !billAmountText.trim() || !billForm.due_date} />
         </EntityForm.Root>
       </EntityForm.Overlay>
 
