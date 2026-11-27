@@ -74,7 +74,9 @@ describe('active company write guard', () => {
   it('fails closed and clears tenant cache across logout/login user changes', () => {
     expect(companyHook).toContain('const [resolvedUserId, setResolvedUserId]');
     expect(companyHook).toContain('const isCompanyContextTransition = authenticatedUserId !== resolvedUserId');
-    expect(companyHook).toContain('const shouldBlockForCompanyResolution = isCompanyContextTransition || (isLoading && !activeCompany)');
+    // The gate-exemption prefix is scoped to COMPANY_GATE_EXEMPT_PATH_PREFIXES
+    // (public invite acceptance); every other route keeps the fail-closed block.
+    expect(companyHook).toContain('const shouldBlockForCompanyResolution = !gateExempt && (isCompanyContextTransition || (isLoading && !activeCompany))');
     expect(companyHook).toContain('if (shouldBlockForCompanyResolution)');
     expect(companyHook).toContain('setResolvedUserId(sessionUser.id)');
     expect(companyHook).toContain('setResolvedUserId(null)');
