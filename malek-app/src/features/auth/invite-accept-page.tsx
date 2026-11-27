@@ -86,7 +86,9 @@ export function InviteAcceptPage() {
     setIsSubmitting(true);
     try {
       await acceptEmployeeInvite(token);
-      await navigate({ to: '/dashboard', replace: true });
+      // Full reload: CompanyProvider resolves the brand-new membership only on a
+      // fresh mount (its load effect keys on the user id, which did not change).
+      window.location.assign('/dashboard');
     } catch (acceptError) {
       setError(employeeInviteErrorMessage(acceptError, 'تعذر قبول الدعوة. حاول مرة أخرى.'));
     } finally {
@@ -120,6 +122,10 @@ export function InviteAcceptPage() {
     }
     try {
       await login(preview.email, password);
+      // Account created and invite accepted: land in the app, not back on the
+      // (now consumed) invite page. Full reload so the company gate resolves
+      // the fresh membership from a clean mount.
+      window.location.assign('/dashboard');
     } catch {
       setIsSubmitting(false);
       setError('أُنشئ حسابك وقُبلت الدعوة. سجّل الدخول الآن.');

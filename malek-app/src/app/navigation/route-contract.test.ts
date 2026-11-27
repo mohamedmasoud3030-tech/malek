@@ -147,6 +147,7 @@ describe('route-contract — single source of truth', () => {
     const structuralPublicRoutes = new Set([
       '/forgot-password',
       '/reset-password',
+      '/invite/$token',
       '/tenant-portal',
       '/owner-portal',
       '/dev/design-system',

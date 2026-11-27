@@ -32,6 +32,7 @@ const {
   useCompany,
   ACTIVE_COMPANY_ERROR,
   ACTIVE_COMPANY_RESOLUTION_TIMEOUT_MS,
+  isCompanyGateExemptPath,
   withCompanyResolutionTimeout,
 } = await import('@/hooks/use-company');
 
@@ -119,11 +120,11 @@ function ContextProbe() {
   );
 }
 
-function renderProvider() {
+function renderProvider(options: { gateExempt?: boolean } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const renderResult = render(
     <QueryClientProvider client={queryClient}>
-      <CompanyProvider>
+      <CompanyProvider gateExempt={options.gateExempt ?? false}>
         <ContextProbe />
       </CompanyProvider>
     </QueryClientProvider>,
@@ -248,6 +249,21 @@ describe('CompanyProvider resolution', () => {
     renderProvider();
     await waitFor(() => expect(screen.getByText(ACTIVE_COMPANY_ERROR)).toBeInTheDocument());
     expect(capturedContext).toBeNull();
+  });
+
+  it('renders children on a gate-exempt route even when no membership exists', async () => {
+    mocks.sessionHolder.current = makeSession(USER_ID, null);
+    membershipsResult = { data: [], error: null };
+    renderProvider({ gateExempt: true });
+    await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent('none'));
+    expect(screen.queryByText(ACTIVE_COMPANY_ERROR)).not.toBeInTheDocument();
+  });
+
+  it('keeps the exemption scoped to exact path prefixes', () => {
+    expect(isCompanyGateExemptPath('/invite/some-token')).toBe(true);
+    expect(isCompanyGateExemptPath('/invite')).toBe(false);
+    expect(isCompanyGateExemptPath('/invitee/some-token')).toBe(false);
+    expect(isCompanyGateExemptPath('/dashboard')).toBe(false);
   });
 
   it('fails closed when the membership query errors', async () => {
