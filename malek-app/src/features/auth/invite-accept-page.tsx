@@ -14,7 +14,7 @@ import {
   previewEmployeeInvite,
   signupWithEmployeeInvite,
   type EmployeeInvitePreview,
-} from '@/features/settings/employee-invites-service';
+} from '@/services/employee-invites-service';
 
 const CLOSED_STATUS_MESSAGES: Record<string, string> = {
   REVOKED: 'أُلغيت هذه الدعوة. اطلب رابطًا جديدًا من مسؤول المكتب.',

@@ -18,7 +18,7 @@ import {
   type EmployeeInviteRow,
   type EmployeeInviteStatus,
   type InvitableRole,
-} from './employee-invites-service';
+} from '@/services/employee-invites-service';
 
 const STATUS_LABELS: Record<EmployeeInviteStatus, string> = {
   PENDING: 'بانتظار القبول',
